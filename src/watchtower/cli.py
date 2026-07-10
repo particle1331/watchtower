@@ -152,8 +152,18 @@ def ls(tier: str = typer.Argument(..., help="notes | writings | projects")) -> N
 
 
 @app.command()
-def render(notebook: str) -> None:
-    """Render a notebook to PDF (notes/pdf/) and open it."""
+def render(
+    tier_or_path: str = typer.Argument(..., help="tier (notes|writings) or notebook path"),
+    name: str | None = typer.Argument(None, help="notebook name (omit if path given)"),
+) -> None:
+    """Render a tier/note to PDF (notes/pdf/) and open it.
+
+    Usage:
+      wt render notes test          → render notes/src/test.ipynb
+      wt render writings test       → render writings/src/test.ipynb
+      wt render notes/src/test.ipynb  → full path (backwards compat)
+    """
+    notebook = f"{tier_or_path}/src/{name}.ipynb" if name else tier_or_path
     from . import render as render_mod
     pdf = render_mod.render_pdf(notebook)
     console.print(f"[green]rendered {pdf}[/green]")
