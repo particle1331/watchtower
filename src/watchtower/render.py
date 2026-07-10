@@ -15,12 +15,20 @@ def _quarto_env() -> dict[str, str]:
     return {**os.environ, "QUARTO_PYTHON": sys.executable}
 
 
-def render_pdf(notebook: str) -> Path:
-    """Render a notebook to PDF under notes/pdf/.
+def _find_output_pdf(nb: Path) -> Path | None:
+    """Locate the PDF Quarto produced — next to the notebook or in _site/."""
+    local = nb.with_suffix(".pdf")
+    if local.exists():
+        return local
+    # Project renders go to _site/<relative-path>.pdf
+    site = Path("_site") / nb.relative_to(Path(".").resolve()).with_suffix(".pdf")
+    if site.exists():
+        return site
+    return None
 
-    Quarto writes the PDF next to the input by default (single-file renders
-    don't support --output-dir / --output with paths). We move it after.
-    """
+
+def render_pdf(notebook: str) -> Path:
+    """Render a notebook to PDF under notes/pdf/."""
     nb = Path(notebook).resolve()
     if not nb.exists():
         raise FileNotFoundError(nb)
@@ -30,7 +38,12 @@ def render_pdf(notebook: str) -> Path:
         check=True,
         env=_quarto_env(),
     )
-    out_pdf = nb.with_suffix(".pdf")
+    out_pdf = _find_output_pdf(nb)
+    if out_pdf is None:
+        raise FileNotFoundError(
+            f"quarto rendered but no PDF found (searched: {nb.with_suffix('.pdf')}, "
+            f"_site/{nb.relative_to(Path('.').resolve()).with_suffix('.pdf')})"
+        )
     dest_pdf = NOTES_PDF_DIR / nb.name.replace(".ipynb", ".pdf")
     out_pdf.rename(dest_pdf)
     return dest_pdf
