@@ -16,3 +16,13 @@ uv.lock
 # *.ipynb  # <- intentionally NOT ignored
 /.quarto/
 **/*.quarto_ipynb
+
+# Quarto single-file render intermediates
+*_files/
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

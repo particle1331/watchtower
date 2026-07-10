@@ -1,0 +1,5 @@
+# Applied to all notebooks in this directory when rendered.
+format:
+  pdf:
+    filters:
+      - ../../filters/center-images.lua
