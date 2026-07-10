@@ -26,9 +26,3 @@ format:
     theme: cosmo
     toc: true
     code-fold: true
-  pdf:
-    filters:
-      - filters/center-images.lua
-
-filters:
-  - filters/center-images.lua
