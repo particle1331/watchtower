@@ -1,0 +1,34 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - portfolio.qmd
+    - writings/index.qmd
+    - writings/src/*.ipynb
+
+website:
+  title: "watchtower"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: portfolio.qmd
+        text: Portfolio
+      - href: writings/index.qmd
+        text: Writings
+  sidebar:
+    style: "docked"
+    search: true
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+  pdf:
+    filters:
+      - filters/center-images.lua
+
+filters:
+  - filters/center-images.lua

@@ -1,0 +1,18 @@
+# Render / build noise
+.ipynb_checkpoints/
+.DS_Store
+notes/pdf/
+_site/
+.jupyter/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.watchtower/
+.venv/
+uv.lock
+
+# Sanity: NEVER ignore notebooks (we want them in git)
+# *.ipynb  # <- intentionally NOT ignored
+/.quarto/
+**/*.quarto_ipynb

@@ -1,0 +1,14 @@
+---
+title: "watchtower"
+---
+
+# watchtower
+
+A personal system for notes, writings, and projects — designed for low-maintenance, AI-grounded knowledge.
+
+- **Notes** are private working notebooks in `notes/src/`. Markdown mirrors in `notes/mirror/` are the canonical knowledge base for retrieval.
+- **Writings** are promoted essays in `writings/src/`, published via Quarto to `_site/`.
+- **Portfolio** is a hand-curated [`portfolio.qmd`](portfolio.qmd) of project cards.
+- **Projects** in `projects/` are `uv` workspaces.
+
+See [Writings](writings/index.qmd) for chronological essays, or [Portfolio](portfolio.qmd) for showcased work.

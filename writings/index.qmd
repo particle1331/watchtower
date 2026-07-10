@@ -1,0 +1,11 @@
+---
+title: "Writings"
+listing:
+  contents:
+    - src/*.ipynb
+  type: default
+  sort: "date desc"
+  fields: [title, date, reading-time, author]
+---
+
+Essays and notes I've promoted from my private notebooks. Newest first.

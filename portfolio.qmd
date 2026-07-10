@@ -1,0 +1,27 @@
+---
+title: "Portfolio"
+---
+
+::: {#portfolio}
+## Project name
+
+![Thumbnail](https://placehold.co/400x250?text=thumbnail)
+
+Short summary of what this is and why it matters. Replace this card with
+your own; copy the block below to add more.
+
+- [Repo](https://github.com/you/foo)
+- [Writing](writings/src/foo.ipynb)
+- [Blog post](https://example.com)
+:::
+
+::: {#portfolio}
+## Another project
+
+![Thumbnail](https://placehold.co/400x250?text=thumbnail)
+
+Another short summary. The portfolio page is hand-maintained — this is the
+one file you edit on the rare occasion a project is worth showcasing.
+
+- [Repo](https://github.com/you/bar)
+:::

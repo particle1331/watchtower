@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: watchtower-sync
+        name: watchtower mirror sync check
+        entry: make check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

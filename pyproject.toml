@@ -1,0 +1,58 @@
+[project]
+name = "watchtower"
+version = "0.1.0"
+description = "Personal notes, writings, and projects system with notebook-mirror sync."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "typer>=0.15.0",
+    "rich>=14.1.0",
+    "keyring>=25.6.0",
+    "pyyaml>=6.0.3",
+    "jupytext>=1.16.0",
+    "nbformat>=5.10.0",
+    "matplotlib>=3.11.0",
+    "ipython>=9.15.0",
+    "ipykernel>=7.3.0",
+    "jupyter>=1.1.1",
+]
+
+[project.scripts]
+watchtower = "watchtower.cli:app"
+wt = "watchtower.cli:app"
+
+[tool.uv.workspace]
+members = ["projects/*"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=9.0.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+    "pyright>=1.1.390.0",
+    "pre-commit>=4.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/watchtower"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.pyright]
+include = ["src", "projects"]
+pythonVersion = "3.13"
+typeCheckingMode = "basic"
