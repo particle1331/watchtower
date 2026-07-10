@@ -8,6 +8,12 @@ import sys
 from pathlib import Path
 
 NOTES_PDF_DIR = Path("notes/pdf")
+WRITINGS_PDF_DIR = Path("writings/pdf")
+WRITINGS_SRC = Path("writings").resolve()
+
+
+def _pdf_dir_for(nb: Path) -> Path:
+    return WRITINGS_PDF_DIR if WRITINGS_SRC in nb.parents else NOTES_PDF_DIR
 
 
 def _quarto_env() -> dict[str, str]:
@@ -28,11 +34,12 @@ def _find_output_pdf(nb: Path) -> Path | None:
 
 
 def render_pdf(notebook: str) -> Path:
-    """Render a notebook to PDF under notes/pdf/."""
+    """Render a notebook to PDF under notes/pdf/ or writings/pdf/."""
     nb = Path(notebook).resolve()
     if not nb.exists():
         raise FileNotFoundError(nb)
-    NOTES_PDF_DIR.mkdir(parents=True, exist_ok=True)
+    pdf_dir = _pdf_dir_for(nb)
+    pdf_dir.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ["quarto", "render", str(nb), "--to", "pdf"],
         check=True,
@@ -44,7 +51,7 @@ def render_pdf(notebook: str) -> Path:
             f"quarto rendered but no PDF found (searched: {nb.with_suffix('.pdf')}, "
             f"_site/{nb.relative_to(Path('.').resolve()).with_suffix('.pdf')})"
         )
-    dest_pdf = NOTES_PDF_DIR / nb.name.replace(".ipynb", ".pdf")
+    dest_pdf = pdf_dir / nb.name.replace(".ipynb", ".pdf")
     out_pdf.rename(dest_pdf)
     return dest_pdf
 

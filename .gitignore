@@ -2,6 +2,7 @@
 .ipynb_checkpoints/
 .DS_Store
 notes/pdf/
+writings/pdf/
 _site/
 .jupyter/
 __pycache__/
@@ -11,6 +12,11 @@ __pycache__/
 .watchtower/
 .venv/
 uv.lock
+
+# Scratch / test notebooks (never part of knowledge base)
+**/test*.ipynb
+**/scratch*.ipynb
+**/_*.ipynb
 
 # Sanity: NEVER ignore notebooks (we want them in git)
 # *.ipynb  # <- intentionally NOT ignored
