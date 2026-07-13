@@ -2,43 +2,52 @@
 
 ## Architecture
 This repo is a personal system with three tiers of content with DIFFERENT visibility:
-- `notes/src/*.ipynb` — private working notebooks (personal drafting surface)
-- `writings/src/*.ipynb` — public essays (promoted from notes, published via Quarto)
+- `notes/*.qmd` — private working notes (personal drafting surface)
+- `essays/*.qmd` — public essays (promoted from notes, published via Quarto)
 - `projects/<name>/` — code projects (each a uv workspace member)
 
-Mirrors live in `notes/mirror/*.md` and `writings/mirror/*.md`, regenerated via `wt sync`.
+Source files are Quarto markdown (`.qmd`) — plain text, prose + code. There is
+no mirror or sync step: the `.qmd` source IS the knowledge base.
 
-## CRITICAL: do NOT read past notebooks
-- `*.ipynb` files are excluded from `grep`/`glob` via `.ignore` — past notebooks are NOT knowledge base material. YAML+JSON+base64 noise makes them poor retrieval sources.
-- The canonical knowledge base is `notes/mirror/*.md` and `writings/mirror/*.md` (clean text, prose + code, no outputs).
-- For PAST note context: use `wt find <query>` (searches mirrors) or `wt cat <name>` (reads one mirror). Do NOT grep across notebooks.
-- For the CURRENT notebook (the one I'm actively editing): you may read it directly when I @-mention it.
+## Knowledge base
+- The canonical knowledge base is `notes/*.qmd` and `essays/*.qmd`.
+- `*.ipynb` files are excluded from `grep`/`glob` via `.ignore` — legacy
+  notebooks are NOT knowledge base material and are gitignored. Convert any
+  dropped-in notebook with `wt convert <foo.ipynb>` before working with it.
+- For PAST note context: use `wt find <query>` (searches sources) or
+  `wt cat <name>` (reads one source). You may also grep `*.qmd` directly.
 
 ## Navigation
 - Run `wt map` first to get structured repo layout as JSON.
-- Run `wt ls notes|writings|projects` for plain listings of mirrors (never source notebooks).
+- Run `wt ls notes|essays|projects` for plain listings of source files.
 
-## Sync discipline
-- I edit `.ipynb`. Mirrors are regeneratable. NEVER edit a `.md` mirror directly — they're auto-generated artifacts.
-- Before commit, `make check` (or the pre-commit hook) regenerates mirrors and fails on drift.
-- If a mirror appears out of sync, treat it as a sync bug — run `wt sync`, never hand-edit the mirror.
+## Editing
+- Edit `.qmd` files directly — they are plain markdown with ```{python} code
+  chunks. No sync, no mirrors, no regeneration step.
+- Before commit there is no hook; run `make lint` and `make typecheck` if you
+  changed Python under `src/` or `projects/`.
+
+## Legacy notebooks
+- `.ipynb` is not tracked. To migrate one: `wt convert <path.ipynb>` writes a
+  `.qmd` next to it (or `wt convert <in.ipynb> <out.qmd>` for an explicit dest).
+- `jupytext` is kept as a dependency solely for this one-time conversion.
 
 ## Per-project rules
-If working inside `projects/<name>/`, also read `projects/<name>/AGENTS.md` if present (project-specific rules stack on top of these).
+If working inside `projects/<name>/`, also read `projects/<name>/AGENTS.md` if
+present (project-specific rules stack on top of these).
 
 ## Vault (secrets)
 - Secrets live in the OS keyring, accessed via `wt vault`. NEVER commit secret values.
 - `wt vault env` emits export lines — projects use it via `eval $(wt vault env)` or `from watchtower.vault import get_secret`.
 
 ## CLI command reference (for the agent)
-- `wt sync` — regenerate all mirrors from notebooks
-- `wt check` — verify mirrors in sync (used by pre-commit)
-- `wt new note|writing|project <name>` — scaffold new artifact
-- `wt vault get|set|list|env <key>` — secret management
+- `wt convert <ipynb> [dest.qmd]` — one-time convert legacy notebook to qmd
+- `wt new note|essay|project <name>` — scaffold new artifact (`.qmd` stub)
 - `wt map` — JSON repo structure (orientation)
-- `wt find <query>` — grep across mirrors only
-- `wt cat <name>` — print one mirror
-- `wt ls notes|writings|projects` — list mirrors
-- `wt render <notebook>` — render notebook -> PDF (notes/pdf/)
-- `wt preview` — serve the writings+portfolio site
+- `wt find <query>` — grep across .qmd sources only
+- `wt cat <name>` — print one .qmd source
+- `wt ls notes|essays|projects` — list sources in a tier
+- `wt render <tier> <name> | <path.qmd>` — render source -> PDF (`notes/pdf/` or `essays/pdf/`)
+- `wt preview` — serve the essays+portfolio site
 - `wt publish` — render site to _site/
+- `wt vault get|set|list|env <key>` — secret management

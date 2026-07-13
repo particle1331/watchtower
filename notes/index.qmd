@@ -1,11 +1,11 @@
 ---
-title: "Writings"
+title: "Notes"
 listing:
   contents:
-    - src/*.ipynb
+    - "*.qmd"
   type: default
   sort: "date desc"
   fields: [title, date, reading-time, author]
 ---
 
-Essays and notes I've promoted from my private notebooks. Newest first.
+Random working drafts and low-effort notes. Newest first.

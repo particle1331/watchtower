@@ -1,0 +1,23 @@
+---
+title: "Photos"
+---
+
+Things that matter to me.
+
+## Mountaineering
+
+Me and my fiancée, up in the mountains.
+
+![](assets/img/test.jpg){.lightbox}
+
+## Philippine landscapes
+
+Photos I took back home.
+
+![](assets/img/test.jpg){.lightbox}
+
+## The kid
+
+Dad life.
+
+![](assets/img/test.jpg){.lightbox}

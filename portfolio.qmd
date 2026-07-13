@@ -11,7 +11,6 @@ Short summary of what this is and why it matters. Replace this card with
 your own; copy the block below to add more.
 
 - [Repo](https://github.com/you/foo)
-- [Writing](writings/src/foo.ipynb)
 - [Blog post](https://example.com)
 :::
 

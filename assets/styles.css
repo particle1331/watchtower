@@ -1,0 +1,87 @@
+body, p {
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* For Jupyter and nbconvert, sometimes table cells need extra specificity: */
+table, thead, tbody, tr, td, th {
+  text-align: left !important;
+  hyphens: auto;
+}
+
+.sidebar {
+  text-align: left !important;
+  hyphens: auto;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin: auto;
+  display: block;
+  margin-top: 1.5rem;
+  margin-bottom: 1.0rem;
+  padding-bottom: 0.5rem;
+  filter: brightness(96%);
+}
+
+.cell-output-display img,
+.cell-output img {
+  margin-top: 0rem;
+  margin-bottom: 1.25rem;
+  display: block;
+  border-radius: 4px;
+}
+
+.cell-output table {
+  margin-bottom: 1.5em;
+}
+
+code {
+  word-break: break-word;
+  hyphens: none;
+}
+
+table.dataframe td,
+table.dataframe th {
+  text-align: left !important;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width:   4px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #e3e3e3;
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #666;
+}
+
+#quarto-back-to-top {
+  right: 9rem !important;
+  left: auto !important;
+  bottom: 1.5rem !important;
+}
+
+/* Fix Quarto tooltip readability in light mode */
+body:not(.quarto-dark) .tippy-box {
+  background-color: #fefefe !important;
+  border: 1px solid #ccc !important;
+  color: #222 !important;
+  box-shadow: 0px 2px 8px rgba(0,0,0,0.15);
+}
+
+h2 {
+  margin-top: 0.75em !important;
+}
