@@ -1,10 +1,12 @@
-# Read by ripgrep (used by opencode's grep/glob). Excludes notebooks from
-# agent retrieval — mirrors in */mirror/*.md are the canonical knowledge base.
+# Read by ripgrep (used by opencode's grep/glob). The knowledge base is the
+# .qmd source files under notes/src/ and essays/src/ — plain markdown, no
+# mirror step. Legacy .ipynb files are excluded from retrieval.
 *.ipynb
 *.pdf
 *.html
 .ipynb_checkpoints/
 _site/
 notes/pdf/
+essays/pdf/
 .watchtower/
 .venv/

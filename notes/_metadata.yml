@@ -1,0 +1,4 @@
+# Applied to all .qmd files in this directory when rendered.
+# `wt render notes <name>` passes --to pdf; filters apply to any format.
+filters:
+  - ../filters/center-images.lua

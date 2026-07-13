@@ -1,28 +1,52 @@
+bibliography: assets/references.bib
+
+execute:
+  freeze: true
+
 project:
   type: website
   output-dir: _site
   render:
     - index.qmd
     - portfolio.qmd
-    - writings/index.qmd
-    - writings/src/*.ipynb
+    - notes/index.qmd
+    - notes/*.qmd
+    - essays/index.qmd
+    - essays/*.qmd
+    - learning/index.qmd
+    - learning/*.qmd
+    - photos.qmd
+  preview:
+    port: 4200
+    browser: false
 
 website:
-  title: "watchtower"
+  title: "Ron Medina &mdash; Resume"
+  back-to-top-navigation: true
+  page-navigation: true
+  bread-crumbs: true
+  reader-mode: true
+  favicon: assets/favicon.jpg
+
   navbar:
     left:
-      - href: index.qmd
-        text: Home
       - href: portfolio.qmd
-        text: Portfolio
-      - href: writings/index.qmd
-        text: Writings
-  sidebar:
-    style: "docked"
-    search: true
+        text: portfolio
+      - href: essays/index.qmd
+        text: essays
+      - href: learning/index.qmd
+        text: learning
+      - href: notes/index.qmd
+        text: notes
+      - href: photos.qmd
+        text: photos
 
 format:
   html:
-    theme: cosmo
+    theme: united
+    lightbox: true
+    html-math-method: katex
+    highlight-annotations: true
     toc: true
-    code-fold: true
+    toc-location: right
+    css: assets/styles.css

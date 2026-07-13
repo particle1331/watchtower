@@ -1,0 +1,11 @@
+---
+title: "Essays"
+listing:
+  contents:
+    - "*.qmd"
+  type: default
+  sort: "date desc"
+  fields: [title, date, reading-time, author]
+---
+
+Essays I've promoted from my notes. Newest first.

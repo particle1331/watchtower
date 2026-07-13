@@ -1,6 +1,0 @@
-# Applied to all notebooks in this directory when rendered standalone.
-# Quarto auto-discovers _metadata.yml in the file's directory tree.
-format:
-  pdf:
-    filters:
-      - ../../filters/center-images.lua

@@ -1,9 +1,10 @@
-# Render / build noise
-.ipynb_checkpoints/
+# Build / render noise
 .DS_Store
+.ipynb_checkpoints/
 notes/pdf/
-writings/pdf/
+essays/pdf/
 _site/
+_freeze/
 .jupyter/
 __pycache__/
 *.pyc
@@ -11,17 +12,12 @@ __pycache__/
 .ruff_cache/
 .watchtower/
 .venv/
-uv.lock
-
-# Scratch / test notebooks (never part of knowledge base)
-**/test*.ipynb
-**/scratch*.ipynb
-**/_*.ipynb
-
-# Sanity: NEVER ignore notebooks (we want them in git)
-# *.ipynb  # <- intentionally NOT ignored
 /.quarto/
 **/*.quarto_ipynb
+
+# Legacy notebooks are not part of the system (qmd-only).
+# `wt convert <foo.ipynb>` migrates them to .qmd.
+*.ipynb
 
 # Quarto single-file render intermediates
 *_files/
