@@ -1,5 +1,7 @@
 # Build / render noise
 .DS_Store
+todo.txt
+notes/hello.qmd
 .ipynb_checkpoints/
 notes/pdf/
 essays/pdf/
@@ -28,3 +30,8 @@ __pycache__/
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+*.tex
+
+# Résumé source + built PDF (tracked so the site can serve them)
+!assets/resume.tex
+!assets/resume.pdf

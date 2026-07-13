@@ -13,6 +13,7 @@ from rich.table import Table
 from . import convert as convert_mod
 from . import inspect as inspect_mod
 from . import render as render_mod
+from . import resume as resume_mod
 from . import scaffold as scaffold_mod
 from . import vault as vault_mod
 
@@ -168,6 +169,17 @@ def render(
     pdf = render_mod.render_pdf(source)
     console.print(f"[green]rendered {pdf}[/green]")
     _open(pdf)
+
+
+@app.command()
+def resume() -> None:
+    """Compile assets/resume.tex -> assets/resume.pdf (moderncv)."""
+    try:
+        pdf = resume_mod.build_resume()
+    except FileNotFoundError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]resume PDF: {pdf}[/green]")
 
 
 @app.command()

@@ -48,6 +48,7 @@ present (project-specific rules stack on top of these).
 - `wt cat <name>` — print one .qmd source
 - `wt ls notes|essays|projects` — list sources in a tier
 - `wt render <tier> <name> | <path.qmd>` — render source -> PDF (`notes/pdf/` or `essays/pdf/`)
+- `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd` via Jinja2 templates, then `pdflatex` -> `assets/resume.pdf` (builds in a temp dir). The YAML is the single source; edit it, never the generated `.tex`/`.qmd`.
 - `wt preview` — serve the essays+portfolio site
 - `wt publish` — render site to _site/
 - `wt vault get|set|list|env <key>` — secret management

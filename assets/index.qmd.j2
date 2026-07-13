@@ -1,0 +1,86 @@
+---
+title: ""
+---
+
+# {{ name }} — Resume
+
+::: {.lead}
+AI / ML Engineer · Tinkerer · Lifelong learner
+:::
+
+{{ summary }}
+
+[Download PDF](assets/resume.pdf) · [GitHub](https://github.com/{{ contact.github }}) · [LinkedIn](https://{{ contact.linkedin }}) · {{ contact.email | html_entities }} · {{ contact.phone }}
+
+---
+
+The sections below mirror the PDF résumé above. More context lives in the
+rest of this site:
+
+| Section | What it is | Effort |
+|---|---|---|
+| [Portfolio](portfolio.qmd) | Showcased projects | high |
+| [Essays](essays/index.qmd) | Essays and research | high |
+| [Learning](learning/index.qmd) | Full course notes | mid |
+| [Notes](notes/index.qmd) | Working drafts and random bits | low |
+
+## Employment History
+
+{% for job in employment %}
+### {{ job.title }} · {{ job.company }}
+*{{ job.dates }}*
+
+{% for b in job.bullets %}
+- {{ b }}
+{% endfor %}
+
+{% endfor %}
+
+## Skills
+
+{% for skill in skills %}
+**{{ skill.name }}**
+
+{% for it in skill.entries %}
+- {{ it }}
+{% endfor %}
+
+{% endfor %}
+
+## Projects
+
+{% for proj in projects %}
+### {{ proj.title }}
+{% for b in proj.bullets %}
+- {{ b }}
+{% endfor %}
+
+{% endfor %}
+
+## Education
+
+{% for edu in education %}
+{% if edu.major %}
+### {{ edu.institution }}
+*{{ edu.degree }}, Major in {{ edu.major }}*
+Dates: {{ edu.dates }}.
+
+{% if edu.awards %}- **Awards**: {{ edu.awards }}{% endif %}
+{% if edu.thesis %}- **Thesis**: *{{ edu.thesis }}*{% endif %}
+{% if edu.courses %}- **Relevant courses**: {{ edu.courses | join(', ') }}{% endif %}
+
+{% else %}
+### {{ edu.institution }}
+*{{ edu.degree }} · {{ edu.dates }}*
+
+{{ edu.description }}
+
+{% endif %}
+{% endfor %}
+
+## Links
+
+- [GitHub](https://github.com/{{ contact.github }})
+- [LinkedIn](https://{{ contact.linkedin }})
+- Email: {{ contact.email | html_entities }} (no `mailto:` link — type it in)
+- [Download PDF résumé](assets/resume.pdf)

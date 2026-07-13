@@ -8,7 +8,7 @@ plain-text source directly. No mirror, no sync — the `.qmd` IS the knowledge b
 
 | Tier      | Where                       | Effort | Audience | Listing             |
 |-----------|-----------------------------|--------|----------|---------------------|
-| Home      | `index.qmd`                 | —      | public   | site landing page   |
+| Home      | `index.qmd`                 | —      | public   | resume landing page |
 | Essays    | `essays/*.qmd`               | high   | public   | `essays/index.qmd`  |
 | Portfolio | `portfolio.qmd`             | high   | public   | cards on one page   |
 | Notes     | `notes/*.qmd`                | low    | you      | `notes/index.qmd`    |
@@ -29,6 +29,7 @@ wt new essay my-essay                # essays/<YYYY-MM-DD>-my-essay.qmd
 wt new project my-code-project       # uv init projects/my-code-project
 
 wt render notes my-note              # render qmd -> PDF (notes/pdf/) and open
+wt resume                             # compile assets/resume.tex -> assets/resume.pdf
 wt preview                            # serve site on :4200
 wt publish                            # render site to _site/
 ```
@@ -103,6 +104,10 @@ _quarto.yml               # publishes all content tiers (incl. freeze: true)
 assets/
   styles.css              # site styling
   img/                    # shared images
+  resume.yaml              # canonical résumé source (single source of truth)
+  resume.tex.j2            # Jinja2 template -> moderncv LaTeX (PDF)
+  index.qmd.j2             # Jinja2 template -> site home page (HTML)
+  resume.pdf               # built by `wt resume` (served as download link)
 filters/
   center-images.lua        # Quarto lua filter (image centering for PDF)
 
@@ -138,6 +143,7 @@ src/watchtower/            # the `wt` CLI + importable `watchtower` package
 | `wt render notes <name>`         | render one qmd to PDF (`notes/pdf/`), open it             |
 | `wt render essays <name>`        | render one qmd to PDF (`essays/pdf/`), open it           |
 | `wt render <path/to.qmd>`        | render by full path                                       |
+| `wt resume`                     | render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd`, then `pdflatex` -> `assets/resume.pdf` |
 | `wt preview`                     | serve the site (blocking; :4200)                          |
 | `wt publish`                     | render site to `_site/`                                   |
 | `wt map`                         | print repo structure as JSON                              |

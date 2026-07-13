@@ -1,0 +1,143 @@
+# Canonical résumé source. `wt resume` renders this into:
+#   - assets/resume.tex  (via assets/resume.tex.j2) -> assets/resume.pdf
+#   - index.qmd          (via assets/index.qmd.j2)  -> site home page
+# Edit this file; never hand-edit the generated .tex / .qmd.
+
+name: Ron Medina
+
+contact:
+  phone: (+63) 976 459 2991
+  email: ron.mdn@gmail.com
+  github: particle1331
+  linkedin: linkedin.com/in/ron-medina-5a411218a/
+
+summary: >
+  With a strong background in mathematics, my goal is to develop machine and
+  deep learning systems that (1) optimize business functions and (2) generate
+  valuable information and insight that allow businesses to serve their
+  customers better.
+
+employment:
+  - title: Machine Learning Engineer
+    company: Ubiquity
+    dates: Aug 2022 -- Present
+    bullets:
+      - "R&D / creating POCs and MVPs of AI products applicable to client domain"
+      - Perform evaluation, cost-estimation, deployment strategies based on infrastructure constraints and business goals
+      - Developed and deployed transcription service which transcribed 1.2M+ production calls
+      - "Reduced cost by 6X and increased accuracy of speech recognition system by +10%"
+      - Developed and designed a fault tolerant distributed offline task queue service to scale speech recognition
+      - Helped develop the backend application for searching and filtering transcriptions
+      - Developed AI services for downstream processing, modeling, and analytics of call transcripts
+      - Extended existing open-source annotation tool for human data labeling to serve our internal use-case
+      - Developed a Transformer-based semantic search engine that runs performant on CPU
+      - Helped develop a masking model for images (screenshots) containing sensitive data using Tesseract
+      - Within 3 months after hiring, presented a POC for extending call recorder system from mono to stereo recording using socket programming and Avaya APIs which became the basis for a major project for the Telecommunications team.
+
+  - title: Junior Data Scientist
+    company: Sitel
+    dates: June 2021 -- Aug 2022
+    bullets:
+      - Works directly under the Director of District Operations Quality Management
+      - Design of KPIs and metrics for various business processes
+      - Creation and deployment of Power BI dashboards
+      - Creation and deployment of APIs for integrating ML algorithms with existing products
+      - Ensure integrity and accuracy of reports
+
+  - title: Machine Learning Engineer
+    company: BrewedLogic, Inc.
+    dates: Mar 2020 -- June 2021
+    bullets:
+      - Preprocessing, analysis, and feature engineering of datasets (1M-5M) for model training, selection, and evaluation
+      - Research and implementation of novel techniques and architectures for RecSys and fraud detection
+      - Developed RecSys used by Crisp online ordering and deployed on 26 franchises each with multiple stores in the US
+      - "The collaborative filtering based model was written using NumPy, Scikit-Learn, and Pandas, and served in a Django server. Deployment of food RecSys increased average ticket count from 3.38 to 4.86 and average ticket value from $11.49 to $14.21 after the first two months in production."
+      - Worked with a senior data scientist on customer segmentation and sales forecasting
+      - Developed fraud detection system for fraudulent VoIP transactions which drastically improved previous rule-based approaches
+      - Maintenance, testing, and monitoring of deployed models, and service migration to FastAPI
+
+  - title: Bootcamp Associate
+    company: Eskwelabs
+    dates: Oct 2019 -- Jan 2020
+    bullets:
+      - Developed curriculum materials on machine learning algorithms
+      - Facilitated live Hackathons
+      - Presented a talk at the National Youth Congress held at UP Diliman School of Economics, Nov 2019, on the topic of artificial intelligence and deep learning
+
+  - title: Data Analyst
+    company: "Tita's Groceria"
+    dates: June 2017 -- June 2019
+    bullets:
+      - Worked part-time at an E-commerce shop with hundreds of daily transactions.
+      - Performed basic statistical analysis of customer data including clustering based on RFM criteria.
+      - Analysis of frequently bought together items using graphs, Markov chains, and correlations.
+      - Created reports about product ROI rate.
+      - Helped grew follower count from 30,000 to 100,000+.
+
+skills:
+  - name: Data Analysis
+    entries:
+      - Data visualization, data wrangling, and EDA using Pandas, seaborn, matplotlib, and NumPy.
+      - SQL, probability modelling, statistics, clustering
+
+  - name: Machine Learning
+    entries:
+      - Deep neural networks in TensorFlow and PyTorch
+      - Machine learning models in scikit-learn
+      - Recommender systems, anomaly detection / imbalanced learning
+      - Weak supervision for training noise-aware models
+      - Gradient Boosting (Catboost, XGBoost, LightGBM), ensembling/stacking
+
+  - name: Model Deployment and MLOps
+    entries:
+      - Development and deployment of prediction APIs (Django, FastAPI, Flask)
+      - "Automation: Gitlab CI/CD, pdm, GitHub Actions, tox, Makefiles"
+      - Task management with Celery
+      - MLflow experiment tracking, system metrics, evaluation, and model management
+      - Production quality Python packages with pdm
+      - Version control using git
+      - Unit testing with pytest, differential, and regression testing
+      - Containerization with Docker
+      - AWS Lambda, SQS and RabbitMQ, S3, RDS, EC2 / Auto Scaling groups
+      - PostgreSQL, MySQL, and Redis
+
+  - name: Algorithms and Data Structures
+    entries:
+      - "Gold level in Problem Solving and Python @ Hackerrank (https://www.hackerrank.com/particle)"
+
+projects:
+  - title: "Writing: OK Transformer webpage"
+    bullets:
+      - "URL: https://particle1331.github.io/ok-transformer/intro.html"
+      - Collection of notebooks and articles on deep learning, ML engineering and MLOps
+      - Automatic build and deploy using GitHub Actions + tox
+      - Featured in the Gallery of Jupyter Books (https://executablebooks.org/en/latest/gallery/)
+
+  - title: "Open source: Dive into Deep Learning"
+    bullets:
+      - Made a small contribution in the mathematics appendix to the book d2l.ai (https://www.d2l.ai/)
+      - Acknowledged as a contributor (https://www.d2l.ai/chapter_preface/index.html#acknowledgments)
+
+education:
+  - institution: University of the Philippines - Diliman
+    degree: Bachelor of Science
+    major: Mathematics
+    dates: "06/13 -- 12/18 (courses), 09/23 -- 01/24 (thesis)"
+    awards: "University Scholar, 2nd Semester 2013-2014. GWA: 1.23"
+    thesis: "An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames"
+    courses:
+      - Introduction to Computer Science (Python)
+      - Numerical Analysis
+      - General Relativity (Graduate level)
+      - Linear Algebra
+      - Advanced Calculus
+
+  - institution: Eskwelabs
+    degree: Data Science Bootcamp
+    dates: "July 2019 -- Oct 2019"
+    description: >
+      Attended a 10-week bootcamp which included 160 hours of in-class learning
+      in addition to coursework. At the end of the bootcamp, I presented my
+      capstone project about modeling nonlinear chaotic systems using neural
+      networks implemented in TensorFlow 1.x to industry leaders in Makati City,
+      Philippines.

@@ -1,14 +1,146 @@
 ---
-title: "watchtower"
+title: ""
 ---
 
-# watchtower
+# Ron Medina — Resume
 
-A personal system for notes, writings, and projects — designed for low-maintenance, AI-grounded knowledge.
+::: {.lead}
+AI / ML Engineer · Tinkerer · Lifelong learner
+:::
 
-- **Notes** are private working notebooks in `notes/src/`. Markdown mirrors in `notes/mirror/` are the canonical knowledge base for retrieval.
-- **Writings** are promoted essays in `writings/src/`, published via Quarto to `_site/`.
-- **Portfolio** is a hand-curated [`portfolio.qmd`](portfolio.qmd) of project cards.
-- **Projects** in `projects/` are `uv` workspaces.
+With a strong background in mathematics, my goal is to develop machine and deep learning systems that (1) optimize business functions and (2) generate valuable information and insight that allow businesses to serve their customers better.
 
-See [Writings](writings/index.qmd) for chronological essays, or [Portfolio](portfolio.qmd) for showcased work.
+
+[Download PDF](assets/resume.pdf) · [GitHub](https://github.com/particle1331) · [LinkedIn](https://linkedin.com/in/ron-medina-5a411218a/) · &#114;&#111;&#110;&#46;&#109;&#100;&#110;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109; · (+63) 976 459 2991
+
+---
+
+The sections below mirror the PDF résumé above. More context lives in the
+rest of this site:
+
+| Section | What it is | Effort |
+|---|---|---|
+| [Portfolio](portfolio.qmd) | Showcased projects | high |
+| [Essays](essays/index.qmd) | Essays and research | high |
+| [Learning](learning/index.qmd) | Full course notes | mid |
+| [Notes](notes/index.qmd) | Working drafts and random bits | low |
+
+## Employment History
+
+### Machine Learning Engineer · Ubiquity
+*Aug 2022 -- Present*
+
+- R&D / creating POCs and MVPs of AI products applicable to client domain
+- Perform evaluation, cost-estimation, deployment strategies based on infrastructure constraints and business goals
+- Developed and deployed transcription service which transcribed 1.2M+ production calls
+- Reduced cost by 6X and increased accuracy of speech recognition system by +10%
+- Developed and designed a fault tolerant distributed offline task queue service to scale speech recognition
+- Helped develop the backend application for searching and filtering transcriptions
+- Developed AI services for downstream processing, modeling, and analytics of call transcripts
+- Extended existing open-source annotation tool for human data labeling to serve our internal use-case
+- Developed a Transformer-based semantic search engine that runs performant on CPU
+- Helped develop a masking model for images (screenshots) containing sensitive data using Tesseract
+- Within 3 months after hiring, presented a POC for extending call recorder system from mono to stereo recording using socket programming and Avaya APIs which became the basis for a major project for the Telecommunications team.
+
+### Junior Data Scientist · Sitel
+*June 2021 -- Aug 2022*
+
+- Works directly under the Director of District Operations Quality Management
+- Design of KPIs and metrics for various business processes
+- Creation and deployment of Power BI dashboards
+- Creation and deployment of APIs for integrating ML algorithms with existing products
+- Ensure integrity and accuracy of reports
+
+### Machine Learning Engineer · BrewedLogic, Inc.
+*Mar 2020 -- June 2021*
+
+- Preprocessing, analysis, and feature engineering of datasets (1M-5M) for model training, selection, and evaluation
+- Research and implementation of novel techniques and architectures for RecSys and fraud detection
+- Developed RecSys used by Crisp online ordering and deployed on 26 franchises each with multiple stores in the US
+- The collaborative filtering based model was written using NumPy, Scikit-Learn, and Pandas, and served in a Django server. Deployment of food RecSys increased average ticket count from 3.38 to 4.86 and average ticket value from \$11.49 to \$14.21 after the first two months in production.
+- Worked with a senior data scientist on customer segmentation and sales forecasting
+- Developed fraud detection system for fraudulent VoIP transactions which drastically improved previous rule-based approaches
+- Maintenance, testing, and monitoring of deployed models, and service migration to FastAPI
+
+### Bootcamp Associate · Eskwelabs
+*Oct 2019 -- Jan 2020*
+
+- Developed curriculum materials on machine learning algorithms
+- Facilitated live Hackathons
+- Presented a talk at the National Youth Congress held at UP Diliman School of Economics, Nov 2019, on the topic of artificial intelligence and deep learning
+
+### Data Analyst · Tita's Groceria
+*June 2017 -- June 2019*
+
+- Worked part-time at an E-commerce shop with hundreds of daily transactions.
+- Performed basic statistical analysis of customer data including clustering based on RFM criteria.
+- Analysis of frequently bought together items using graphs, Markov chains, and correlations.
+- Created reports about product ROI rate.
+- Helped grew follower count from 30,000 to 100,000+.
+
+
+## Skills
+
+**Data Analysis**
+
+- Data visualization, data wrangling, and EDA using Pandas, seaborn, matplotlib, and NumPy.
+- SQL, probability modelling, statistics, clustering
+
+**Machine Learning**
+
+- Deep neural networks in TensorFlow and PyTorch
+- Machine learning models in scikit-learn
+- Recommender systems, anomaly detection / imbalanced learning
+- Weak supervision for training noise-aware models
+- Gradient Boosting (Catboost, XGBoost, LightGBM), ensembling/stacking
+
+**Model Deployment and MLOps**
+
+- Development and deployment of prediction APIs (Django, FastAPI, Flask)
+- Automation: Gitlab CI/CD, pdm, GitHub Actions, tox, Makefiles
+- Task management with Celery
+- MLflow experiment tracking, system metrics, evaluation, and model management
+- Production quality Python packages with pdm
+- Version control using git
+- Unit testing with pytest, differential, and regression testing
+- Containerization with Docker
+- AWS Lambda, SQS and RabbitMQ, S3, RDS, EC2 / Auto Scaling groups
+- PostgreSQL, MySQL, and Redis
+
+**Algorithms and Data Structures**
+
+- Gold level in Problem Solving and Python @ Hackerrank (https://www.hackerrank.com/particle)
+
+
+## Projects
+
+### Writing: OK Transformer webpage
+- URL: https://particle1331.github.io/ok-transformer/intro.html
+- Collection of notebooks and articles on deep learning, ML engineering and MLOps
+- Automatic build and deploy using GitHub Actions + tox
+- Featured in the Gallery of Jupyter Books (https://executablebooks.org/en/latest/gallery/)
+
+### Open source: Dive into Deep Learning
+- Made a small contribution in the mathematics appendix to the book d2l.ai (https://www.d2l.ai/)
+- Acknowledged as a contributor (https://www.d2l.ai/chapter_preface/index.html#acknowledgments)
+
+
+## Education
+
+### University of the Philippines - Diliman
+*Bachelor of Science, Major in Mathematics*
+Dates: 06/13 -- 12/18 (courses), 09/23 -- 01/24 (thesis).
+
+- **Awards**: University Scholar, 2nd Semester 2013-2014. GWA: 1.23- **Thesis**: *An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames*- **Relevant courses**: Introduction to Computer Science (Python), Numerical Analysis, General Relativity (Graduate level), Linear Algebra, Advanced Calculus
+### Eskwelabs
+*Data Science Bootcamp · July 2019 -- Oct 2019*
+
+Attended a 10-week bootcamp which included 160 hours of in-class learning in addition to coursework. At the end of the bootcamp, I presented my capstone project about modeling nonlinear chaotic systems using neural networks implemented in TensorFlow 1.x to industry leaders in Makati City, Philippines.
+
+
+## Links
+
+- [GitHub](https://github.com/particle1331)
+- [LinkedIn](https://linkedin.com/in/ron-medina-5a411218a/)
+- Email: &#114;&#111;&#110;&#46;&#109;&#100;&#110;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109; (no `mailto:` link — type it in)
+- [Download PDF résumé](assets/resume.pdf)
