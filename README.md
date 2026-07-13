@@ -97,17 +97,17 @@ get_secret("OPENAI_API_KEY")
 ## Layout
 
 ```
-index.qmd                  # "Ron Medina — Resume" home page
-portfolio.qmd              # hand-maintained project cards
-photos.qmd                 # personal photos (mountaineering, landscapes, kid)
+index.qmd                 # "Ron Medina — Resume" home page
+portfolio.qmd             # hand-maintained project cards
+photos.qmd                # personal photos (mountaineering, landscapes, kid)
 _quarto.yml               # publishes all content tiers (incl. freeze: true)
 assets/
   styles.css              # site styling
   img/                    # shared images
-  resume.yaml              # canonical résumé source (single source of truth)
-  resume.tex.j2            # Jinja2 template -> moderncv LaTeX (PDF)
-  index.qmd.j2             # Jinja2 template -> site home page (HTML)
-  resume.pdf               # built by `wt resume` (served as download link)
+  resume.yaml             # canonical résumé source (single source of truth)
+  resume.tex.j2           # Jinja2 template -> moderncv LaTeX (PDF)
+  index.qmd.j2            # Jinja2 template -> site home page (HTML)
+  resume.pdf              # built by `wt resume` (served as download link)
 filters/
   center-images.lua        # Quarto lua filter (image centering for PDF)
 
@@ -122,8 +122,8 @@ essays/
 learning/
   *.qmd                   # full course notes
   index.qmd               # listing page
-projects/                  # uv workspaces (each member has its own pyproject.toml)
-src/watchtower/            # the `wt` CLI + importable `watchtower` package
+projects/                 # uv workspaces (each member has its own pyproject.toml)
+src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
   scaffold.py             # `wt new note|essay|project`
   convert.py              # `wt convert`

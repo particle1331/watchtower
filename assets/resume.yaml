@@ -12,10 +12,10 @@ contact:
   linkedin: linkedin.com/in/ron-medina-5a411218a/
 
 summary: >
-  With a strong background in mathematics, my goal is to develop machine and
-  deep learning systems that (1) optimize business functions and (2) generate
-  valuable information and insight that allow businesses to serve their
-  customers better.
+  Machine Learning Engineer with a mathematics background. I build and ship
+  ML and deep learning systems that optimize operations and surface useful
+  insight — with attention to the infrastructure and engineering that keeps
+  them running in production.
 
 employment:
   - title: Machine Learning Engineer
@@ -50,7 +50,7 @@ employment:
     bullets:
       - Preprocessing, analysis, and feature engineering of datasets (1M-5M) for model training, selection, and evaluation
       - Research and implementation of novel techniques and architectures for RecSys and fraud detection
-      - Developed RecSys used by Crisp online ordering and deployed on 26 franchises each with multiple stores in the US
+      - Developed RecSys used by [Crisp restaurant platform](https://www.crispqsr.com/post/restaurant-data-analysis-artificial-intelligence) and deployed on 26 franchises each with multiple stores in the US
       - "The collaborative filtering based model was written using NumPy, Scikit-Learn, and Pandas, and served in a Django server. Deployment of food RecSys increased average ticket count from 3.38 to 4.86 and average ticket value from $11.49 to $14.21 after the first two months in production."
       - Worked with a senior data scientist on customer segmentation and sales forecasting
       - Developed fraud detection system for fraudulent VoIP transactions which drastically improved previous rule-based approaches
@@ -103,20 +103,12 @@ skills:
 
   - name: Algorithms and Data Structures
     entries:
-      - "Gold level in Problem Solving and Python @ Hackerrank (https://www.hackerrank.com/particle)"
+      - "Gold level in Problem Solving and Python @ [Hackerrank](https://www.hackerrank.com/particle)"
 
-projects:
-  - title: "Writing: OK Transformer webpage"
-    bullets:
-      - "URL: https://particle1331.github.io/ok-transformer/intro.html"
-      - Collection of notebooks and articles on deep learning, ML engineering and MLOps
-      - Automatic build and deploy using GitHub Actions + tox
-      - Featured in the Gallery of Jupyter Books (https://executablebooks.org/en/latest/gallery/)
-
-  - title: "Open source: Dive into Deep Learning"
-    bullets:
-      - Made a small contribution in the mathematics appendix to the book d2l.ai (https://www.d2l.ai/)
-      - Acknowledged as a contributor (https://www.d2l.ai/chapter_preface/index.html#acknowledgments)
+  - name: Writing
+    entries:
+      - "Author of [OK Transformer](https://particle1331.github.io/ok-transformer/intro.html) — a collection of notebooks and articles on deep learning, ML engineering, and MLOps. Auto build/deploy via GitHub Actions + tox. Featured in the [Gallery of Jupyter Books](https://executablebooks.org/en/latest/gallery/)."
+      - "Contributed to the mathematics appendix of [Dive into Deep Learning](https://www.d2l.ai/); acknowledged as a [contributor](https://www.d2l.ai/chapter_preface/index.html#acknowledgments)."
 
 education:
   - institution: University of the Philippines - Diliman

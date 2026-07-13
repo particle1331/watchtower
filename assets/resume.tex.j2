@@ -35,7 +35,7 @@
 \section{Employment History}
 \vspace{0.50em}
 {% for job in employment %}
-\cventry{}{}{ {{- job.title -}} | {{- job.company -}} }{ {{- job.dates -}} \vspace{-1.0em}}{}{
+\cventry{}{}{ {{- job.title -}} \; | \; {{- job.company -}} }{ {{- job.dates -}} \vspace{-1.0em}}{}{
 \begin{itemize}
 {% for b in job.bullets %}
 \item {{ b }}
@@ -60,6 +60,7 @@
 {% endfor %}
 
 \vspace{0.5em}
+{% if projects %}
 \section{Projects}
 {% for proj in projects %}
 \cventry{}{}{ {{- proj.title -}} }{\vspace{-1.0em}}{}{
@@ -70,6 +71,7 @@
 \end{itemize}}
 \vspace{0.50em}
 {% endfor %}
+{% endif %}
 
 \section{Education}
 \vspace{0.5em}
@@ -82,7 +84,7 @@
 {% else %}
 \cventry{}{}{ {{- edu.institution -}} }{ {{- edu.dates -}} }{\hspace*{-2.5 mm} {{- edu.degree -}} }{ {{- edu.description -}} }
 {% endif %}
-{% if not loop.last %}\vspace*{5.5 mm}{% endif %}
+{% if not loop.last %}\par\vspace*{8 mm}{% endif %}
 {% endfor %}
 
 \end{document}

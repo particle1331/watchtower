@@ -22,12 +22,18 @@ from .paths import repo_root
 
 RESUME_YAML = Path("assets/resume.yaml")
 RESUME_TEX_J2 = Path("assets/resume.tex.j2")
+RESUME_TEX = Path("assets/resume.tex")
 RESUME_PDF = Path("assets/resume.pdf")
 INDEX_QMD_J2 = Path("assets/index.qmd.j2")
 INDEX_QMD = Path("index.qmd")
 LATEX_ENGINE = "pdflatex"
 
 _URL_RE = re.compile(r"https?://[^\s)]+")
+_MD_LINK_RE = re.compile(r"\[(?P<text>[^\]]*)\]\((?P<url>https?://[^\s)]+)\)")
+_URL_OR_LINK_RE = re.compile(
+    r"\[(?P<md_text>[^\]]*)\]\((?P<md_url>https?://[^\s)]+)\)"
+    r"|(?P<bare>https?://[^\s)]+)"
+)
 
 # Order matters: backslash first so we don't double-escape the ones we add.
 _LATEX_SPECIAL = str.maketrans({
@@ -47,20 +53,22 @@ _LATEX_SPECIAL = str.maketrans({
 def _latex_text(text: str) -> str:
     """Escape LaTeX special chars in prose, wrap bare URLs in robust \\url{}.
 
-    URLs are kept raw inside \\url{...} (which is robust to #, _, ~, etc.).
+    Markdown links [text](url) become \\href{url}{escaped text}.
+    Bare URLs are kept raw inside \\url{...} (which is robust to #, _, ~, etc.).
     The surrounding text gets standard escaping.
     """
     out: list[str] = []
     pos = 0
-    for m in _URL_RE.finditer(text):
+    for m in _URL_OR_LINK_RE.finditer(text):
         if m.start() > pos:
             out.append(text[pos:m.start()].translate(_LATEX_SPECIAL))
-        url = m.group(0)
-        # Strip #fragment — the bare # is a parameter token inside \cventry's
-        # argument capture and breaks pdflatex even inside \url{...}. The page
-        # resolves fine without the anchor; the web version keeps the full URL.
-        url = url.split("#", 1)[0]
-        out.append(r"\url{" + url + "}")
+        if m.group("md_url"):
+            url = m.group("md_url").split("#", 1)[0]
+            link_text = m.group("md_text").translate(_LATEX_SPECIAL)
+            out.append(r"\href{" + url + "}{" + link_text + "}")
+        else:
+            url = m.group("bare").split("#", 1)[0]
+            out.append(r"\url{" + url + "}")
         pos = m.end()
     if pos < len(text):
         out.append(text[pos:].translate(_LATEX_SPECIAL))
@@ -160,6 +168,7 @@ def build_resume() -> tuple[Path, Path]:
     # Render resume.tex (PDF version with LaTeX escaping).
     tex_template = env.get_template(RESUME_TEX_J2.name)
     tex_rendered = tex_template.render(**_escape_for_target(data, _latex_text))
+    (root / RESUME_TEX).write_text(tex_rendered, encoding="utf-8")
     with tempfile.TemporaryDirectory(prefix="watchtower-resume-") as tmp:
         tmp_dir = Path(tmp)
         tex_copy = tmp_dir / "resume.tex"
