@@ -10,34 +10,19 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from . import convert as convert_mod
 from . import inspect as inspect_mod
+from . import render as render_mod
 from . import scaffold as scaffold_mod
-from . import sync as sync_mod
 from . import vault as vault_mod
 
 app = typer.Typer(
     name="wt",
-    help="Personal notes, writings, and projects system.",
+    help="Personal notes, essays, and projects system.",
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
-
-
-@app.command()
-def sync() -> None:
-    """Regenerate markdown mirrors from all notebooks."""
-    sync_mod.sync_all()
-    console.print("[green]synced.[/green]")
-
-
-@app.command()
-def check() -> None:
-    """Verify mirrors are in sync with notebooks. Exits 1 on drift."""
-    if not sync_mod.check_drift():
-        console.print("[red]mirrors are stale. run `wt sync` to regenerate.[/red]")
-        raise typer.Exit(1)
-    console.print("[green]ok — mirrors in sync.[/green]")
 
 
 new_app = typer.Typer(name="new", help="Scaffold new artifacts.", no_args_is_help=True)
@@ -46,15 +31,15 @@ app.add_typer(new_app)
 
 @new_app.command("note")
 def new_note(name: str) -> None:
-    """Create notes/src/<name>.ipynb, jupytext-paired to mirror/<name>.md."""
+    """Create notes/<name>.qmd with a minimal front-matter stub."""
     path = scaffold_mod.new_note(name)
     console.print(f"[green]created {path}[/green]")
 
 
-@new_app.command("writing")
-def new_writing(slug: str) -> None:
-    """Create writings/src/<YYYY-MM-DD>-<slug>.ipynb."""
-    path = scaffold_mod.new_writing(slug)
+@new_app.command("essay")
+def new_essay(slug: str) -> None:
+    """Create essays/<YYYY-MM-DD>-<slug>.qmd."""
+    path = scaffold_mod.new_essay(slug)
     console.print(f"[green]created {path}[/green]")
 
 
@@ -114,35 +99,37 @@ def map_cmd() -> None:
 
 @app.command()
 def find(query: str) -> None:
-    """Grep across mirror *.md files only (never notebooks)."""
-    out = inspect_mod.find_mirrors(query)
+    """Grep across .qmd source files only."""
+    out = inspect_mod.find_in_src(query)
     if out:
         print(out)
     else:
-        console.print(f"[yellow]no mirrors match '{query}'.[/yellow]")
+        console.print(f"[yellow]no sources match '{query}'.[/yellow]")
 
 
 @app.command()
 def cat(name: str) -> None:
-    """Print a mirror's content by note name. The agent reads this, not .ipynb."""
+    """Print a .qmd source file by stem name."""
     try:
-        print(inspect_mod.cat_mirror(name), end="")
+        print(inspect_mod.cat_qmd(name), end="")
     except FileNotFoundError as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
 
 
 @app.command()
-def ls(tier: str = typer.Argument(..., help="notes | writings | projects")) -> None:
-    """List mirrors in a tier."""
+def ls(tier: str = typer.Argument(..., help="notes | essays | learning | projects")) -> None:
+    """List source .qmd files in a tier."""
     if tier == "notes":
-        items = inspect_mod.list_mirrors(Path("notes/mirror"))
-    elif tier == "writings":
-        items = inspect_mod.list_mirrors(Path("writings/mirror"))
+        items = inspect_mod.list_qmd(Path("notes"))
+    elif tier == "essays":
+        items = inspect_mod.list_qmd(Path("essays"))
+    elif tier == "learning":
+        items = inspect_mod.list_qmd(Path("learning"))
     elif tier == "projects":
         items = [p["name"] for p in inspect_mod.list_projects()]
     else:
-        console.print(f"[red]unknown tier: {tier}. try notes|writings|projects.[/red]")
+        console.print(f"[red]unknown tier: {tier}. try notes|essays|learning|projects.[/red]")
         raise typer.Exit(2)
     if not items:
         console.print(f"[yellow]no {tier} yet.[/yellow]")
@@ -152,35 +139,46 @@ def ls(tier: str = typer.Argument(..., help="notes | writings | projects")) -> N
 
 
 @app.command()
-def render(
-    tier_or_path: str = typer.Argument(..., help="tier (notes|writings) or notebook path"),
-    name: str | None = typer.Argument(None, help="notebook name (omit if path given)"),
+def convert(
+    ipynb: str = typer.Argument(..., help="path to .ipynb file to convert"),
+    dest: str | None = typer.Argument(None, help="destination .qmd path (default: alongside source)"),
 ) -> None:
-    """Render a tier/note to PDF (notes/pdf/) and open it.
+    """One-time convert a legacy .ipynb notebook to .qmd (jupytext)."""
+    try:
+        out = convert_mod.convert_ipynb_to_qmd(ipynb, dest)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]converted -> {out}[/green]")
+
+
+@app.command()
+def render(
+    tier_or_path: str = typer.Argument(..., help="tier (notes|essays) or qmd path"),
+    name: str | None = typer.Argument(None, help="source name (omit if path given)"),
+) -> None:
+    """Render a source .qmd to PDF (notes/pdf/) and open it.
 
     Usage:
-      wt render notes test          → render notes/src/test.ipynb
-      wt render writings test       → render writings/src/test.ipynb
-      wt render notes/src/test.ipynb  → full path (backwards compat)
+      wt render notes test          -> render notes/test.qmd
+      wt render essays test         -> render essays/test.qmd
+      wt render notes/test.qmd      -> full path
     """
-    notebook = f"{tier_or_path}/src/{name}.ipynb" if name else tier_or_path
-    from . import render as render_mod
-    pdf = render_mod.render_pdf(notebook)
+    source = f"{tier_or_path}/{name}.qmd" if name else tier_or_path
+    pdf = render_mod.render_pdf(source)
     console.print(f"[green]rendered {pdf}[/green]")
     _open(pdf)
 
 
 @app.command()
 def preview() -> None:
-    """Serve the writings+portfolio Quarto site."""
-    from . import render as render_mod
+    """Serve the Quarto site (blocking — previews in browser)."""
     render_mod.preview_site()
 
 
 @app.command()
 def publish() -> None:
     """Render the site to _site/."""
-    from . import render as render_mod
     render_mod.publish_site()
     console.print("[green]published to _site/.[/green]")
 

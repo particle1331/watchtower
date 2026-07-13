@@ -1,58 +1,47 @@
-"""Scaffold new artifacts: notes, writings, projects.
+"""Scaffold new artifacts: notes, essays, projects.
 
-New notebooks are minimal `.ipynb` files with a Python kernelspec. Pairing to
-the mirror is driven by the sync module (no jupytext metadata in the notebook).
+Notes and essays are Quarto markdown (`.qmd`) files — plain text, so the
+source doubles directly as the knowledge base. Project scaffolding delegates
+to `uv init`.
 """
 
 from __future__ import annotations
 
-import json
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
-NOTES_SRC = Path("notes/src")
-WRITINGS_SRC = Path("writings/src")
+NOTES_DIR = Path("notes")
+ESSAYS_DIR = Path("essays")
 PROJECTS = Path("projects")
 
 
-def _minimal_notebook() -> dict:
-    return {
-        "cells": [],
-        "metadata": {
-            "kernelspec": {
-                "display_name": "Python 3",
-                "language": "python",
-                "name": "python3",
-            },
-            "language_info": {"name": "python"},
-        },
-        "nbformat": 4,
-        "nbformat_minor": 5,
-    }
+def _minimal_qmd(title: str) -> str:
+    return f"""---
+title: "{title}"
+---
+
+"""
 
 
-def _write_nb(path: Path) -> None:
+def _write_qmd(path: Path, title: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(_minimal_notebook(), indent=1))
+    path.write_text(_minimal_qmd(title))
 
 
 def new_note(name: str) -> Path:
-    """Create notes/src/<name>.ipynb.
-
-    The mirror is regenerated on the next `wt sync` — no jupytext metadata
-    is embedded in the notebook; pairing is driven by sync.py.
-    """
-    path = NOTES_SRC / f"{name}.ipynb"
-    _write_nb(path)
+    """Create notes/<name>.qmd with a minimal front-matter stub."""
+    path = NOTES_DIR / f"{name}.qmd"
+    _write_qmd(path, name)
     return path
 
 
-def new_writing(slug: str) -> Path:
-    """Create writings/src/<YYYY-MM-DD>-<slug>.ipynb."""
+def new_essay(slug: str) -> Path:
+    """Create essays/<YYYY-MM-DD>-<slug>.qmd."""
     date = datetime.now().strftime("%Y-%m-%d")
-    path = WRITINGS_SRC / f"{date}-{slug}.ipynb"
-    _write_nb(path)
+    title = slug.replace("-", " ")
+    path = ESSAYS_DIR / f"{date}-{slug}.qmd"
+    _write_qmd(path, title)
     return path
 
 
