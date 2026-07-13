@@ -29,9 +29,9 @@ wt new essay my-essay                # essays/<YYYY-MM-DD>-my-essay.qmd
 wt new project my-code-project       # uv init projects/my-code-project
 
 wt render notes my-note              # render qmd -> PDF (notes/pdf/) and open
-wt resume                             # compile assets/resume.tex -> assets/resume.pdf
-wt preview                            # serve site on :4200
-wt publish                            # render site to _site/
+wt resume                            # compile assets/resume.tex -> assets/resume.pdf
+wt preview                           # serve site on :4200
+wt publish                           # render site to _site/
 ```
 
 > **Note:** `wt new` only scaffolds `note`, `writing`, and `project` today. For
@@ -109,7 +109,7 @@ assets/
   index.qmd.j2            # Jinja2 template -> site home page (HTML)
   resume.pdf              # built by `wt resume` (served as download link)
 filters/
-  center-images.lua        # Quarto lua filter (image centering for PDF)
+  center-images.lua       # Quarto lua filter (image centering for PDF)
 
 notes/
   *.qmd                   # working notes

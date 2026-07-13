@@ -8,6 +8,7 @@ to produce assets/resume.pdf. Edit the YAML; never hand-edit the generated
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -128,7 +129,11 @@ def _make_env(root: Path) -> Environment:
     return env
 
 
-def _run_pdflatex(tex: Path, out_dir: Path) -> None:
+def _run_pdflatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
+    # SOURCE_DATE_EPOCH makes pdfTeX stamp /CreationDate, /ModDate, and /ID
+    # from this epoch instead of the current wall-clock, so reruns produce
+    # byte-identical PDFs when the sources are unchanged (reproducible build).
+    env = {**os.environ, "SOURCE_DATE_EPOCH": str(source_epoch)}
     subprocess.run(
         [
             LATEX_ENGINE,
@@ -139,6 +144,7 @@ def _run_pdflatex(tex: Path, out_dir: Path) -> None:
         ],
         check=True,
         capture_output=True,
+        env=env,
     )
 
 
@@ -159,6 +165,9 @@ def build_resume() -> tuple[Path, Path]:
     data = _load_yaml(yaml_path)
     env = _make_env(root)
 
+    # Pin PDF timestamps to the newest source mtime so reruns are reproducible.
+    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, qmd_src, yaml_path)))
+
     # Render index.qmd (web version with markdown escaping).
     qmd_template = env.get_template(INDEX_QMD_J2.name)
     qmd_rendered = qmd_template.render(**_escape_for_target(data, _md_escape))
@@ -169,12 +178,18 @@ def build_resume() -> tuple[Path, Path]:
     tex_template = env.get_template(RESUME_TEX_J2.name)
     tex_rendered = tex_template.render(**_escape_for_target(data, _latex_text))
     (root / RESUME_TEX).write_text(tex_rendered, encoding="utf-8")
-    with tempfile.TemporaryDirectory(prefix="watchtower-resume-") as tmp:
-        tmp_dir = Path(tmp)
+    # Use a STABLE scratch dir basename: pdfTeX hashes the absolute build path
+    # into the PDF /ID, so a random tmp suffix would make every run's bytes
+    # differ. Combined with SOURCE_DATE_EPOCH (set in _run_pdflatex) this
+    # makes reruns byte-identical when sources are unchanged.
+    tmp_dir = Path(tempfile.gettempdir()) / "watchtower-resume-build"
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    try:
         tex_copy = tmp_dir / "resume.tex"
         tex_copy.write_text(tex_rendered, encoding="utf-8")
-        _run_pdflatex(tex_copy, tmp_dir)
-        _run_pdflatex(tex_copy, tmp_dir)  # 2nd pass for cross-refs / page count.
+        _run_pdflatex(tex_copy, tmp_dir, source_epoch)
+        _run_pdflatex(tex_copy, tmp_dir, source_epoch)  # 2nd pass for cross-refs / page count.
         built = tmp_dir / "resume.pdf"
         if not built.exists():
             raise FileNotFoundError(
@@ -183,6 +198,8 @@ def build_resume() -> tuple[Path, Path]:
         dest_pdf = root / RESUME_PDF
         dest_pdf.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(built, dest_pdf)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
     return dest_pdf, index_path
 
 
