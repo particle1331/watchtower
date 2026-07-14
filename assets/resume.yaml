@@ -99,19 +99,23 @@ skills:
       - Recommender systems, anomaly detection / imbalanced learning
       - Weak supervision for training noise-aware models
       - Gradient Boosting (Catboost, XGBoost, LightGBM), ensembling/stacking
+      - "LLMs: prompting, RAG, fine-tuning, MCP, agentic workflows (LangChain, LangGraph)"
+      - Embedding-based retrieval and semantic search
 
   - name: Model Deployment and MLOps
     entries:
       - Development and deployment of prediction APIs (Django, FastAPI, Flask)
-      - "Automation: Gitlab CI/CD, pdm, GitHub Actions, tox, Makefiles"
+      - "Automation: Gitlab CI/CD, GitHub Actions, uv, Typer (CLI), Makefiles"
       - Task management with Celery
       - MLflow experiment tracking, system metrics, evaluation, and model management
-      - Production quality Python packages with pdm
+      - Production quality Python packages & environments with uv
       - Version control using git
       - Unit testing with pytest, differential, and regression testing
       - Containerization with Docker
       - AWS Lambda, SQS and RabbitMQ, S3, RDS, EC2 / Auto Scaling groups
       - PostgreSQL, MySQL, and Redis
+      - "Microsoft Azure: Azure ML / Foundry, Azure Container Registry (ACR), App Service, Blob Storage"
+      - Serverless model deployment and monitoring via Azure Functions
 
   - name: Algorithms and Data Structures
     entries:
@@ -119,8 +123,8 @@ skills:
 
   - name: Writing
     entries:
-      - "Author of [OK Transformer](https://particle1331.github.io/ok-transformer/intro.html) — a collection of notebooks and articles on deep learning, ML engineering, and MLOps. Auto build/deploy via GitHub Actions + tox. Featured in the [Gallery of Jupyter Books](https://executablebooks.org/en/latest/gallery/)."
-      - "Contributed to the mathematics appendix of [Dive into Deep Learning](https://www.d2l.ai/); acknowledged as a [contributor](https://www.d2l.ai/chapter_preface/index.html#acknowledgments)."
+      - "Author of [OK Transformer](https://particle1331.github.io/ok-transformer/intro.html) — a collection of notebooks and articles on deep learning, ML engineering, and MLOps. Auto build / deploy via GitHub Actions + tox. Featured in the [Gallery of Jupyter Books](https://executablebooks.org/en/latest/gallery/)."
+      - "Contributed to the [Appendix: Mathematics for Deep Learning](https://www.d2l.ai/chapter_appendix-mathematics-for-deep-learning/index.html) of [Dive into Deep Learning](https://www.d2l.ai/) — a widely used open-source DL textbook; acknowledged as a [contributor](https://www.d2l.ai/chapter_preface/index.html#acknowledgments)."
 
 education:
   - institution: University of the Philippines - Diliman
