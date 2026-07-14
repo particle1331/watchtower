@@ -27,8 +27,23 @@ rest of this site:
 
 ## Employment History
 
+### Sr. Machine Learning Engineer · Afni
+*Jan 2025 -- Present*
+
+- Designed a repeatable feature engineering, preprocessing, training, and monitoring pipeline with a clean deployment interface for ML models served via Azure Functions; trained per-program per-KPI models, overcoming sparsity through extensive EDA
+- A/B tested the hiring platform against the legacy process — hires made via the intelligence platform showed a 6% increase in lifetime over the same time period, alongside significant improvement in KPI performance
+- Built predictive models for customer and employee retention risk, and ranking/recommender-style models for employee performance across program placements
+- Models above serve as the core backend to the hiring platform that evaluates 5,000+ monthly candidates across all PH sites
+- Designed a document analysis pipeline processing up to 30K documents daily with failure tracking, retries, and sufficient throughput; documents are attributed to the organizational hierarchy (employee, coach, manager) supporting RBAC, and tagged using NLP and LLM tools
+- Built a monitoring and analytics dashboard with role-based access — users only see analytical results for documents they have access to based on their org hierarchy
+- Implemented an agentic solution for determining ideal program placement of candidate hires, combining program description/LOB, contractual obligations, headcount fill requirements, candidate history, and interview/assessment scores
+- Collaborated with multiple VPs on feature discussions, roadmap, capabilities, and communications
+- Direct report to the VP of Software Engineering & AI on day-to-day operations and progress
+- Managed a team of 4 vendors/contractors and led 2 in-house developers
+- Ran POCs with other teams for the AI Team
+
 ### Machine Learning Engineer · Ubiquity
-*Aug 2022 -- Present*
+*Aug 2022 -- Jan 2025*
 
 - R&D / creating POCs and MVPs of AI products applicable to client domain
 - Perform evaluation, cost-estimation, deployment strategies based on infrastructure constraints and business goals
@@ -126,7 +141,7 @@ rest of this site:
 
 - **Awards**: University Scholar, 2nd Semester 2013-2014. GWA: 1.23
 - **Thesis**: *An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames*
-- **Relevant courses**: Introduction to Computer Science (Python), Numerical Analysis, General Relativity (Graduate level), Linear Algebra, Advanced Calculus
+- **Relevant courses**: Intro to Computer Science (Python), Numerical Analysis, General Relativity (MS / PhD level), Linear Algebra, Advanced Calculus
 
 ### Eskwelabs
 *Data Science Bootcamp &nbsp; · &nbsp; July 2019 -- Oct 2019*
