@@ -183,16 +183,9 @@ def resume() -> None:
 
 
 @app.command()
-def preview() -> None:
+def docs() -> None:
     """Serve the Quarto site (blocking — previews in browser)."""
     render_mod.preview_site()
-
-
-@app.command()
-def publish() -> None:
-    """Render the site to _site/."""
-    render_mod.publish_site()
-    console.print("[green]published to _site/.[/green]")
 
 
 def _open(path: Path) -> None:

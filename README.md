@@ -30,9 +30,11 @@ wt new project my-code-project       # uv init projects/my-code-project
 
 wt render notes my-note              # render qmd -> PDF (notes/pdf/) and open
 wt resume                            # compile assets/resume.tex -> assets/resume.pdf
-wt preview                           # serve site on :4200
-wt publish                           # render site to _site/
+wt docs                              # serve site on :4200
 ```
+
+The site is published automatically to `gh-pages` on push to `main` via
+`.github/workflows/publish.yml`.
 
 > **Note:** `wt new` only scaffolds `note`, `writing`, and `project` today. For
 > `learning/`, drop a `.qmd` into the folder by hand. `wt ls` recognizes
@@ -71,9 +73,9 @@ The site (rendered to `_site/`) pulls together all five content tiers:
 - Each content tier has an `index.qmd` listing (Quarto auto-generates a
   paginated table of contents from sibling `.qmd` files).
 
-Quarto needs to find Python with `jupyter` installed. The `wt` wrappers
-(`wt preview`, `wt publish`) handle this by pointing `QUARTO_PYTHON` at the
-venv interpreter. Calling `quarto` directly? Set it yourself:
+Quarto needs to find Python with `jupyter` installed. The `wt` wrapper
+(`wt docs`) handles this by pointing `QUARTO_PYTHON` at the venv interpreter.
+Calling `quarto` directly? Set it yourself:
 
 ```bash
 QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
@@ -127,7 +129,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
   scaffold.py             # `wt new note|essay|project`
   convert.py              # `wt convert`
-  render.py               # `wt render` / `preview` / `publish`
+  render.py               # `wt render` / `docs`
   inspect.py              # `wt map` / `find` / `cat` / `ls`
   vault.py                # OS keyring wrapper
 ```
@@ -144,8 +146,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt render essays <name>`        | render one qmd to PDF (`essays/pdf/`), open it           |
 | `wt render <path/to.qmd>`        | render by full path                                       |
 | `wt resume`                     | render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd`, then `pdflatex` -> `assets/resume.pdf` |
-| `wt preview`                     | serve the site (blocking; :4200)                          |
-| `wt publish`                     | render site to `_site/`                                   |
+| `wt docs`                        | serve the site (blocking; :4200)                          |
 | `wt map`                         | print repo structure as JSON                              |
 | `wt find <query>`                | grep across `.qmd` sources                                |
 | `wt cat <name>`                  | print one `.qmd` source by stem                           |

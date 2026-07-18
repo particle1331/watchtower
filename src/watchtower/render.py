@@ -1,4 +1,4 @@
-"""Quarto wrappers: render qmd->PDF for read-back, publish site."""
+"""Quarto wrappers: render qmd->PDF for read-back, serve site."""
 
 from __future__ import annotations
 
@@ -59,8 +59,3 @@ def render_pdf(source: str) -> Path:
 def preview_site() -> None:
     """Serve the essays+portfolio site (blocking — previews in browser)."""
     subprocess.run(["quarto", "preview"], check=True, env=_quarto_env())
-
-
-def publish_site() -> None:
-    """Render the site to _site/."""
-    subprocess.run(["quarto", "render"], check=True, env=_quarto_env())
