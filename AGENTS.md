@@ -52,3 +52,12 @@ present (project-specific rules stack on top of these).
 - `wt docs` — serve the essays+portfolio site (publishing is handled by the
   `publish.yml` GitHub Action on push to `main`, output goes to `gh-pages`).
 - `wt vault get|set|list|env <key>` — secret management
+
+## Freeze / CI execution policy
+- `_quarto.yml` sets `execute.freeze: true` and the `_freeze/` directory is
+  tracked.
+- The GitHub Action renders with `--no-execute`, so the runner never runs code
+  in `.qmd` files. Outputs must already be cached in `_freeze/`.
+- After adding or editing executable cells locally, run `quarto render` or
+  `wt docs` to update the freeze cache, then commit both the `.qmd` source and
+  the matching `_freeze/` changes.
