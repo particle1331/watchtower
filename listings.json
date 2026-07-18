@@ -1,0 +1,16 @@
+[
+  {
+    "listing": "/essays/index.html",
+    "items": []
+  },
+  {
+    "listing": "/notes/index.html",
+    "items": [
+      "/notes/hello.html"
+    ]
+  },
+  {
+    "listing": "/learning/index.html",
+    "items": []
+  }
+]

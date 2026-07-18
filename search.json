@@ -1,0 +1,114 @@
+[
+  {
+    "objectID": "photos.html",
+    "href": "photos.html",
+    "title": "Photos",
+    "section": "",
+    "text": "Things that matter to me."
+  },
+  {
+    "objectID": "photos.html#mountaineering",
+    "href": "photos.html#mountaineering",
+    "title": "Photos",
+    "section": "Mountaineering",
+    "text": "Mountaineering\nMe and my fiancée, up in the mountains."
+  },
+  {
+    "objectID": "photos.html#philippine-landscapes",
+    "href": "photos.html#philippine-landscapes",
+    "title": "Photos",
+    "section": "Philippine landscapes",
+    "text": "Philippine landscapes\nPhotos I took back home."
+  },
+  {
+    "objectID": "photos.html#the-kid",
+    "href": "photos.html#the-kid",
+    "title": "Photos",
+    "section": "The kid",
+    "text": "The kid\nDad life."
+  },
+  {
+    "objectID": "essays/index.html",
+    "href": "essays/index.html",
+    "title": "Essays",
+    "section": "",
+    "text": "Essays I’ve promoted from my notes. Newest first.\n\n\n\n\n\n\n\n\nNo matching items\n Back to top"
+  },
+  {
+    "objectID": "notes/index.html",
+    "href": "notes/index.html",
+    "title": "Notes",
+    "section": "",
+    "text": "Random working drafts and low-effort notes. Newest first.\n\n\n\n\n\n\n\n\n\nhello\n\n\n\n\n2 min\n\n\n\n\nNo matching items\n Back to top"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Ron Medina — Resume",
+    "section": "",
+    "text": "AI / ML Engineer · Tinkerer · Lifelong learner\n\nMachine Learning Engineer with a mathematics background. I build and ship ML and deep learning systems that optimize operations and surface useful insight — with attention to the infrastructure and engineering that keeps them running in production.\nDownload PDF résumé · GitHub · LinkedIn · ron.mdn@gmail.com · (+63) 976 459 2991\n\nThe sections below mirror the PDF résumé above. More context lives in the rest of this site:\n\n\n\nSection\nWhat it is\nEffort\n\n\n\n\nPortfolio\nShowcased projects\nhigh\n\n\nEssays\nEssays and research\nhigh\n\n\nLearning\nFull course notes\nmid\n\n\nNotes\nWorking drafts and random bits\nlow\n\n\n\n\n\n\n\nJan 2025 – Present\n\nDeveloped backend predictive models and evaluation pipeline for the hiring platform, with a recruiter-facing UI serving model predictions — drove a 6% increase in lifetime value and significant KPI improvements vs BAU hiring in A/B tests\nTeam lead for multiple AI team initiatives: owner of cloud infra & code repositories, contractor coordination on task delivery, stakeholder meetings, roadmap development, code review, mentoring, and individual contribution. Drafted the team’s MLOps framework and roadmap\nCollaborated with multiple VPs on feature discussions, roadmap, capabilities, and communications\nDirect report to the VP of Software Engineering & AI on day-to-day operations and progress\nBuilt the core backend models for the hiring platform that evaluates 5,000+ monthly candidates across all PH sites — predictive models for customer and employee retention risk, and ranking/recommender-style models for employee performance across program placements\nDesigned a document analysis pipeline processing up to 30K documents daily with failure tracking, retries, and sufficient throughput; documents are attributed to the organizational hierarchy (employee, coach, manager) supporting RBAC, tagged using NLP and LLM tools, with a monitoring and analytics dashboard that only surfaces results users have access to based on their org hierarchy\nImplemented an agentic solution for determining ideal program placement of candidate hires, combining program description/LOB, contractual obligations, headcount fill requirements, candidate history, and interview/assessment scores\nDesigned a repeatable feature engineering, preprocessing, training, and monitoring pipeline with a clean deployment interface for ML models served via Azure Functions; trained per-program per-KPI models, overcoming sparsity through extensive EDA and domain understanding\n\n\n\n\nAug 2022 – Jan 2025\n\nReduced cost by 6X and increased accuracy of speech recognition system by +10%\nDeveloped and deployed a transcription service which transcribed 1.2M+ production calls\nWithin 3 months after hiring, presented a POC for extending the call recorder system from mono to stereo recording using socket programming and Avaya APIs — became the basis for a major project for the Telecommunications team\nDeveloped and designed a fault-tolerant distributed offline task queue service to scale speech recognition\nDeveloped a Transformer-based semantic search engine that runs performant on CPU\nExtended an existing open-source annotation tool for human data labeling to serve our internal use-case\nDeveloped AI services for downstream processing, modeling, and analytics of call transcripts\nHelped develop the backend application for searching and filtering transcriptions\nContributed to a masking service for images (screenshots) containing sensitive data using Tesseract\n\n\n\n\nJune 2021 – Aug 2022\n\nCreation and deployment of APIs for integrating ML algorithms with existing products\nCreation and deployment of Power BI dashboards\nDesign of KPIs and metrics for various business processes\nWorks directly under the Director of District Operations Quality Management\nEnsure integrity and accuracy of reports\n\n\n\n\nMar 2020 – June 2021\n\nCollaborative filtering RecSys written in NumPy, Scikit-Learn, and Pandas and served via Django — deployment increased average ticket count from 3.38 to 4.86 and average ticket value from $11.49 to $14.21 after the first two months in production\nDeveloped the RecSys used by the Crisp restaurant platform, deployed on 26 US franchises each with multiple stores\nDeveloped a fraud detection system for fraudulent VoIP transactions, drastically improving over previous rule-based approaches\nResearch and implementation of novel techniques and architectures for RecSys and fraud detection\nPreprocessing, analysis, and feature engineering of datasets (1M-5M) for model training, selection, and evaluation\nMaintenance, testing, and monitoring of deployed models, and service migration to FastAPI\nWorked with a senior data scientist on customer segmentation and sales forecasting\n\n\n\n\nOct 2019 – Jan 2020\n\nDeveloped curriculum materials on machine learning algorithms\nFacilitated live Hackathons\nPresented a talk at the National Youth Congress held at UP Diliman School of Economics, Nov 2019, on the topic of artificial intelligence and deep learning\n\n\n\n\nJune 2017 – June 2019\n\nWorked part-time at an E-commerce shop with hundreds of daily transactions.\nPerformed basic statistical analysis of customer data including clustering based on RFM criteria.\nAnalysis of frequently bought together items using graphs, Markov chains, and correlations.\nCreated reports about product ROI rate.\nHelped grew follower count from 30,000 to 100,000+.\n\n\n\n\n\nData Analysis\n\nData visualization, data wrangling, and EDA using Pandas, seaborn, matplotlib, and NumPy.\nSQL, probability modelling, statistics, clustering\n\nMachine Learning\n\nDeep neural networks in TensorFlow and PyTorch\nMachine learning models in scikit-learn\nRecommender systems, anomaly detection / imbalanced learning\nWeak supervision for training noise-aware models\nGradient Boosting (Catboost, XGBoost, LightGBM), ensembling/stacking\nLLMs: prompting, RAG, fine-tuning, MCP, agentic workflows (LangChain, LangGraph)\nEmbedding-based retrieval and semantic search\n\nModel Deployment and MLOps\n\nDevelopment and deployment of prediction APIs (Django, FastAPI, Flask)\nAutomation: Gitlab CI/CD, GitHub Actions, uv, Typer (CLI), Makefiles\nTask management with Celery\nMLflow experiment tracking, system metrics, evaluation, and model management\nProduction quality Python packages & environments with uv\nVersion control using git\nUnit testing with pytest, differential, and regression testing\nContainerization with Docker\nAWS Lambda, SQS and RabbitMQ, S3, RDS, EC2 / Auto Scaling groups\nPostgreSQL, MySQL, and Redis\nMicrosoft Azure: Azure ML / Foundry, Azure Container Registry (ACR), App Service, Blob Storage\nServerless model deployment and monitoring via Azure Functions\n\nAlgorithms and Data Structures\n\nGold level in Problem Solving and Python @ Hackerrank\n\nWriting\n\nAuthor of OK Transformer — a collection of notebooks and articles on deep learning, ML engineering, and MLOps. Auto build / deploy via GitHub Actions + tox. Featured in the Gallery of Jupyter Books.\nContributed to the Appendix: Mathematics for Deep Learning of Dive into Deep Learning — a widely used open-source DL textbook; acknowledged as a contributor.\n\n\n\n\n\n\nBachelor of Science, Major in Mathematics   ·   06/13 – 12/18 (courses), 09/23 – 01/24 (thesis).\n\nAwards: University Scholar, 2nd Semester 2013-2014. GWA: 1.23\nThesis: An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames\nRelevant courses: Intro to Computer Science (Python), Numerical Analysis, General Relativity (MS / PhD level), Linear Algebra, Advanced Calculus\n\n\n\n\nData Science Bootcamp   ·   July 2019 – Oct 2019\nAttended a 10-week bootcamp which included 160 hours of in-class learning in addition to coursework. At the end of the bootcamp, I presented my capstone project about modeling nonlinear chaotic systems using neural networks implemented in TensorFlow 1.x to industry leaders in Makati City, Philippines."
+  },
+  {
+    "objectID": "index.html#employment-history",
+    "href": "index.html#employment-history",
+    "title": "Ron Medina — Resume",
+    "section": "",
+    "text": "Jan 2025 – Present\n\nDeveloped backend predictive models and evaluation pipeline for the hiring platform, with a recruiter-facing UI serving model predictions — drove a 6% increase in lifetime value and significant KPI improvements vs BAU hiring in A/B tests\nTeam lead for multiple AI team initiatives: owner of cloud infra & code repositories, contractor coordination on task delivery, stakeholder meetings, roadmap development, code review, mentoring, and individual contribution. Drafted the team’s MLOps framework and roadmap\nCollaborated with multiple VPs on feature discussions, roadmap, capabilities, and communications\nDirect report to the VP of Software Engineering & AI on day-to-day operations and progress\nBuilt the core backend models for the hiring platform that evaluates 5,000+ monthly candidates across all PH sites — predictive models for customer and employee retention risk, and ranking/recommender-style models for employee performance across program placements\nDesigned a document analysis pipeline processing up to 30K documents daily with failure tracking, retries, and sufficient throughput; documents are attributed to the organizational hierarchy (employee, coach, manager) supporting RBAC, tagged using NLP and LLM tools, with a monitoring and analytics dashboard that only surfaces results users have access to based on their org hierarchy\nImplemented an agentic solution for determining ideal program placement of candidate hires, combining program description/LOB, contractual obligations, headcount fill requirements, candidate history, and interview/assessment scores\nDesigned a repeatable feature engineering, preprocessing, training, and monitoring pipeline with a clean deployment interface for ML models served via Azure Functions; trained per-program per-KPI models, overcoming sparsity through extensive EDA and domain understanding\n\n\n\n\nAug 2022 – Jan 2025\n\nReduced cost by 6X and increased accuracy of speech recognition system by +10%\nDeveloped and deployed a transcription service which transcribed 1.2M+ production calls\nWithin 3 months after hiring, presented a POC for extending the call recorder system from mono to stereo recording using socket programming and Avaya APIs — became the basis for a major project for the Telecommunications team\nDeveloped and designed a fault-tolerant distributed offline task queue service to scale speech recognition\nDeveloped a Transformer-based semantic search engine that runs performant on CPU\nExtended an existing open-source annotation tool for human data labeling to serve our internal use-case\nDeveloped AI services for downstream processing, modeling, and analytics of call transcripts\nHelped develop the backend application for searching and filtering transcriptions\nContributed to a masking service for images (screenshots) containing sensitive data using Tesseract\n\n\n\n\nJune 2021 – Aug 2022\n\nCreation and deployment of APIs for integrating ML algorithms with existing products\nCreation and deployment of Power BI dashboards\nDesign of KPIs and metrics for various business processes\nWorks directly under the Director of District Operations Quality Management\nEnsure integrity and accuracy of reports\n\n\n\n\nMar 2020 – June 2021\n\nCollaborative filtering RecSys written in NumPy, Scikit-Learn, and Pandas and served via Django — deployment increased average ticket count from 3.38 to 4.86 and average ticket value from $11.49 to $14.21 after the first two months in production\nDeveloped the RecSys used by the Crisp restaurant platform, deployed on 26 US franchises each with multiple stores\nDeveloped a fraud detection system for fraudulent VoIP transactions, drastically improving over previous rule-based approaches\nResearch and implementation of novel techniques and architectures for RecSys and fraud detection\nPreprocessing, analysis, and feature engineering of datasets (1M-5M) for model training, selection, and evaluation\nMaintenance, testing, and monitoring of deployed models, and service migration to FastAPI\nWorked with a senior data scientist on customer segmentation and sales forecasting\n\n\n\n\nOct 2019 – Jan 2020\n\nDeveloped curriculum materials on machine learning algorithms\nFacilitated live Hackathons\nPresented a talk at the National Youth Congress held at UP Diliman School of Economics, Nov 2019, on the topic of artificial intelligence and deep learning\n\n\n\n\nJune 2017 – June 2019\n\nWorked part-time at an E-commerce shop with hundreds of daily transactions.\nPerformed basic statistical analysis of customer data including clustering based on RFM criteria.\nAnalysis of frequently bought together items using graphs, Markov chains, and correlations.\nCreated reports about product ROI rate.\nHelped grew follower count from 30,000 to 100,000+."
+  },
+  {
+    "objectID": "index.html#skills",
+    "href": "index.html#skills",
+    "title": "Ron Medina — Resume",
+    "section": "",
+    "text": "Data Analysis\n\nData visualization, data wrangling, and EDA using Pandas, seaborn, matplotlib, and NumPy.\nSQL, probability modelling, statistics, clustering\n\nMachine Learning\n\nDeep neural networks in TensorFlow and PyTorch\nMachine learning models in scikit-learn\nRecommender systems, anomaly detection / imbalanced learning\nWeak supervision for training noise-aware models\nGradient Boosting (Catboost, XGBoost, LightGBM), ensembling/stacking\nLLMs: prompting, RAG, fine-tuning, MCP, agentic workflows (LangChain, LangGraph)\nEmbedding-based retrieval and semantic search\n\nModel Deployment and MLOps\n\nDevelopment and deployment of prediction APIs (Django, FastAPI, Flask)\nAutomation: Gitlab CI/CD, GitHub Actions, uv, Typer (CLI), Makefiles\nTask management with Celery\nMLflow experiment tracking, system metrics, evaluation, and model management\nProduction quality Python packages & environments with uv\nVersion control using git\nUnit testing with pytest, differential, and regression testing\nContainerization with Docker\nAWS Lambda, SQS and RabbitMQ, S3, RDS, EC2 / Auto Scaling groups\nPostgreSQL, MySQL, and Redis\nMicrosoft Azure: Azure ML / Foundry, Azure Container Registry (ACR), App Service, Blob Storage\nServerless model deployment and monitoring via Azure Functions\n\nAlgorithms and Data Structures\n\nGold level in Problem Solving and Python @ Hackerrank\n\nWriting\n\nAuthor of OK Transformer — a collection of notebooks and articles on deep learning, ML engineering, and MLOps. Auto build / deploy via GitHub Actions + tox. Featured in the Gallery of Jupyter Books.\nContributed to the Appendix: Mathematics for Deep Learning of Dive into Deep Learning — a widely used open-source DL textbook; acknowledged as a contributor."
+  },
+  {
+    "objectID": "index.html#education",
+    "href": "index.html#education",
+    "title": "Ron Medina — Resume",
+    "section": "",
+    "text": "Bachelor of Science, Major in Mathematics   ·   06/13 – 12/18 (courses), 09/23 – 01/24 (thesis).\n\nAwards: University Scholar, 2nd Semester 2013-2014. GWA: 1.23\nThesis: An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames\nRelevant courses: Intro to Computer Science (Python), Numerical Analysis, General Relativity (MS / PhD level), Linear Algebra, Advanced Calculus\n\n\n\n\nData Science Bootcamp   ·   July 2019 – Oct 2019\nAttended a 10-week bootcamp which included 160 hours of in-class learning in addition to coursework. At the end of the bootcamp, I presented my capstone project about modeling nonlinear chaotic systems using neural networks implemented in TensorFlow 1.x to industry leaders in Makati City, Philippines."
+  },
+  {
+    "objectID": "portfolio.html",
+    "href": "portfolio.html",
+    "title": "Portfolio",
+    "section": "",
+    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
+  },
+  {
+    "objectID": "portfolio.html#project-name",
+    "href": "portfolio.html#project-name",
+    "title": "Portfolio",
+    "section": "",
+    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
+  },
+  {
+    "objectID": "portfolio.html#another-project",
+    "href": "portfolio.html#another-project",
+    "title": "Portfolio",
+    "section": "Another project",
+    "text": "Another project\n\n\n\nThumbnail\n\n\nAnother short summary. The portfolio page is hand-maintained — this is the one file you edit on the rare occasion a project is worth showcasing.\n\nRepo"
+  },
+  {
+    "objectID": "notes/hello.html#math-section",
+    "href": "notes/hello.html#math-section",
+    "title": "hello",
+    "section": "Math section",
+    "text": "Math section\nInstead, we look at the probabilities assigned by the model to each class. To do this, we have to convert the class scores to probabilities exponentiating and normalizing its entries (i.e. making \\sum_j p = 1 s.t. p_j \\geq 0). Class scores h_j(\\mathbf{x}) = \\Theta_j^\\top \\mathbf{x} are exponentiated before normalizing:\n\np_j = \\frac{\\exp(h_j(\\mathbf{x}))}{\\sum_l \\exp(h_l(\\mathbf{x}))} := \\text{Softmax} (h(\\mathbf{x}))_j.\n\nWe can let \\hat{\\mathbf{y}} be equal to \\mathbf{p} = \\text{Softmax} (h(\\mathbf{x})) since the softmax approximates the one-hot vector \\mathbf{y} of the target label y (see remark below). Then, what is left is to define a loss function that captures the difference between the model probability vector and the true one. For this, we use the cross-entropy loss given by the negative log of the probability of the true class y:\n\n\\boxed{\n    \\begin{aligned}\n    \\ell_{\\text{CE}}(h(\\mathbf{x}), y)\n    &= -\\log \\hat{\\mathbf{y}} \\odot \\mathbf{y}\\\\[0.8em]\n    &= -\\log \\text{Softmax} (h(\\mathbf{x}))_y \\\\\n    &= -h_y(\\mathbf{x})+\\log \\sum_{j=1}^K \\exp \\left(h_j(\\mathbf{x})\\right).\n    \\end{aligned}\n}"
+  },
+  {
+    "objectID": "notes/hello.html#code",
+    "href": "notes/hello.html#code",
+    "title": "hello",
+    "section": "Code",
+    "text": "Code\nRaw code cell:\n3x + 1\nExecutable codeblock:\n\nfor i in range(10):\n    print(i)\n\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n\n\nPlotting:\n\nimport matplotlib.pyplot as plt\n\nplt.plot([1, 2, 3])\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nElement\nObject\nDescription\n\n\n\n\nHypothesis class\n\\mathcal{H}  \nDefines the program structure from inputs to outputs. In practical terms, it corresponds to the choice of model architecture and hyper-parameters (e.g. linear model or tree-based models with depth 20). Formally, \\mathcal{H} = \\{ h_\\Theta\\colon \\mathcal{X} \\to \\mathcal{Y} \\mid \\Theta \\in \\mathbb{R}^M \\} consisting of parametric functions.\n\n\nLoss function\n\\mathcal{L}, \\ell\nSpecifies how well a given hypothesis h_\\Theta (i.e. a choice of parameters) performs on the task of interest. The loss is generally expressed in terms of a pointwise loss function \\ell such that: \\displaystyle \\mathcal{L}_{\\mathcal{D}}(\\Theta) = \\frac{1}{N}\\sum_{i=1}^N \\ell(h_\\Theta(\\mathbf{x}_i), y_i) where \\ell \\geq 0 and \\ell \\to 0 whenever the predictions are accurate, and \\ell \\to \\infty as the predictions become increasingly worse.\n\n\nOptimizer\ne.g. torch.optim.*, LRScheduler\nThe optimizer handles state and the algorithm required to find optimal parameters that minimize the training loss. For deep learning, this is typically an iterative approach via SGD and its variants: \\displaystyle \\Theta_{t+1}, \\Lambda_{t+1} = \\mathscr{G}(\\Theta_t, \\Lambda_{t}) where \\Lambda_t is the current state. The goal of training is for the parameters to converge to some \\hat{\\Theta} that approximately minimizes the training loss. That is, \\hat{\\Theta} \\approx \\underset{\\Theta}{\\operatorname{argmin}} \\; \\mathcal{L}_{\\mathcal{D}}(\\Theta)."
+  },
+  {
+    "objectID": "learning/index.html",
+    "href": "learning/index.html",
+    "title": "Learning",
+    "section": "",
+    "text": "Full course notes, mid-effort. Newest first.\n\n\n\n\n\n\n\n\nNo matching items\n Back to top"
+  }
+]
