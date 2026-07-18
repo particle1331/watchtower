@@ -6,7 +6,6 @@ notes/hello.qmd
 notes/pdf/
 essays/pdf/
 _site/
-_freeze/
 .jupyter/
 __pycache__/
 *.pyc

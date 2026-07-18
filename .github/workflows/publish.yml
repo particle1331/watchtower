@@ -13,23 +13,18 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install uv and Python
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: "3.13"
-
-      - name: Sync dependencies
-        run: uv sync
-
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.7.32   # https://github.com/quarto-dev/quarto-cli/releases
 
-      - name: Render and Publish
+      - name: Render site (no execution)
+        run: quarto render --no-execute
+
+      - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: gh-pages
+          render: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          QUARTO_PYTHON: ${{ github.workspace }}/.venv/bin/python
