@@ -50,7 +50,7 @@ present (project-specific rules stack on top of these).
 - `wt render <tier> <name> | <path.qmd>` — render source -> PDF (`notes/pdf/` or `essays/pdf/`)
 - `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd` via Jinja2 templates, then `pdflatex` -> `assets/resume.pdf` (builds in a temp dir). The YAML is the single source; edit it, never the generated `.tex`/`.qmd`.
 - `wt docs` — serve the essays+portfolio site (publishing is handled by the
-  `publish.yml` GitHub Action on push to `main`, output goes to `gh-pages`).
+  `publish.yml` GitHub Action on push to `main`).
 - `wt vault get|set|list|env <key>` — secret management
 
 ## Freeze / CI execution policy
