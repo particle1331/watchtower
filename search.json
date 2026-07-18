@@ -35,11 +35,25 @@
     "text": "Essays I’ve promoted from my notes. Newest first.\n\n\n\n\n\n\n\n\nNo matching items\n Back to top"
   },
   {
-    "objectID": "notes/index.html",
-    "href": "notes/index.html",
-    "title": "Notes",
+    "objectID": "portfolio.html",
+    "href": "portfolio.html",
+    "title": "Portfolio",
     "section": "",
-    "text": "Random working drafts and low-effort notes. Newest first.\n\n\n\n\n\n\n\n\n\nhello\n\n\n\n\n2 min\n\n\n\n\nNo matching items\n Back to top"
+    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
+  },
+  {
+    "objectID": "portfolio.html#project-name",
+    "href": "portfolio.html#project-name",
+    "title": "Portfolio",
+    "section": "",
+    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
+  },
+  {
+    "objectID": "portfolio.html#another-project",
+    "href": "portfolio.html#another-project",
+    "title": "Portfolio",
+    "section": "Another project",
+    "text": "Another project\n\n\n\nThumbnail\n\n\nAnother short summary. The portfolio page is hand-maintained — this is the one file you edit on the rare occasion a project is worth showcasing.\n\nRepo"
   },
   {
     "objectID": "index.html",
@@ -70,39 +84,11 @@
     "text": "Bachelor of Science, Major in Mathematics   ·   06/13 – 12/18 (courses), 09/23 – 01/24 (thesis).\n\nAwards: University Scholar, 2nd Semester 2013-2014. GWA: 1.23\nThesis: An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames\nRelevant courses: Intro to Computer Science (Python), Numerical Analysis, General Relativity (MS / PhD level), Linear Algebra, Advanced Calculus\n\n\n\n\nData Science Bootcamp   ·   July 2019 – Oct 2019\nAttended a 10-week bootcamp which included 160 hours of in-class learning in addition to coursework. At the end of the bootcamp, I presented my capstone project about modeling nonlinear chaotic systems using neural networks implemented in TensorFlow 1.x to industry leaders in Makati City, Philippines."
   },
   {
-    "objectID": "portfolio.html",
-    "href": "portfolio.html",
-    "title": "Portfolio",
+    "objectID": "notes/index.html",
+    "href": "notes/index.html",
+    "title": "Notes",
     "section": "",
-    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
-  },
-  {
-    "objectID": "portfolio.html#project-name",
-    "href": "portfolio.html#project-name",
-    "title": "Portfolio",
-    "section": "",
-    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
-  },
-  {
-    "objectID": "portfolio.html#another-project",
-    "href": "portfolio.html#another-project",
-    "title": "Portfolio",
-    "section": "Another project",
-    "text": "Another project\n\n\n\nThumbnail\n\n\nAnother short summary. The portfolio page is hand-maintained — this is the one file you edit on the rare occasion a project is worth showcasing.\n\nRepo"
-  },
-  {
-    "objectID": "notes/hello.html#math-section",
-    "href": "notes/hello.html#math-section",
-    "title": "hello",
-    "section": "Math section",
-    "text": "Math section\nInstead, we look at the probabilities assigned by the model to each class. To do this, we have to convert the class scores to probabilities exponentiating and normalizing its entries (i.e. making \\sum_j p = 1 s.t. p_j \\geq 0). Class scores h_j(\\mathbf{x}) = \\Theta_j^\\top \\mathbf{x} are exponentiated before normalizing:\n\np_j = \\frac{\\exp(h_j(\\mathbf{x}))}{\\sum_l \\exp(h_l(\\mathbf{x}))} := \\text{Softmax} (h(\\mathbf{x}))_j.\n\nWe can let \\hat{\\mathbf{y}} be equal to \\mathbf{p} = \\text{Softmax} (h(\\mathbf{x})) since the softmax approximates the one-hot vector \\mathbf{y} of the target label y (see remark below). Then, what is left is to define a loss function that captures the difference between the model probability vector and the true one. For this, we use the cross-entropy loss given by the negative log of the probability of the true class y:\n\n\\boxed{\n    \\begin{aligned}\n    \\ell_{\\text{CE}}(h(\\mathbf{x}), y)\n    &= -\\log \\hat{\\mathbf{y}} \\odot \\mathbf{y}\\\\[0.8em]\n    &= -\\log \\text{Softmax} (h(\\mathbf{x}))_y \\\\\n    &= -h_y(\\mathbf{x})+\\log \\sum_{j=1}^K \\exp \\left(h_j(\\mathbf{x})\\right).\n    \\end{aligned}\n}"
-  },
-  {
-    "objectID": "notes/hello.html#code",
-    "href": "notes/hello.html#code",
-    "title": "hello",
-    "section": "Code",
-    "text": "Code\nRaw code cell:\n3x + 1\nExecutable codeblock:\n\nfor i in range(10):\n    print(i)\n\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n\n\nPlotting:\n\nimport matplotlib.pyplot as plt\n\nplt.plot([1, 2, 3])\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nElement\nObject\nDescription\n\n\n\n\nHypothesis class\n\\mathcal{H}  \nDefines the program structure from inputs to outputs. In practical terms, it corresponds to the choice of model architecture and hyper-parameters (e.g. linear model or tree-based models with depth 20). Formally, \\mathcal{H} = \\{ h_\\Theta\\colon \\mathcal{X} \\to \\mathcal{Y} \\mid \\Theta \\in \\mathbb{R}^M \\} consisting of parametric functions.\n\n\nLoss function\n\\mathcal{L}, \\ell\nSpecifies how well a given hypothesis h_\\Theta (i.e. a choice of parameters) performs on the task of interest. The loss is generally expressed in terms of a pointwise loss function \\ell such that: \\displaystyle \\mathcal{L}_{\\mathcal{D}}(\\Theta) = \\frac{1}{N}\\sum_{i=1}^N \\ell(h_\\Theta(\\mathbf{x}_i), y_i) where \\ell \\geq 0 and \\ell \\to 0 whenever the predictions are accurate, and \\ell \\to \\infty as the predictions become increasingly worse.\n\n\nOptimizer\ne.g. torch.optim.*, LRScheduler\nThe optimizer handles state and the algorithm required to find optimal parameters that minimize the training loss. For deep learning, this is typically an iterative approach via SGD and its variants: \\displaystyle \\Theta_{t+1}, \\Lambda_{t+1} = \\mathscr{G}(\\Theta_t, \\Lambda_{t}) where \\Lambda_t is the current state. The goal of training is for the parameters to converge to some \\hat{\\Theta} that approximately minimizes the training loss. That is, \\hat{\\Theta} \\approx \\underset{\\Theta}{\\operatorname{argmin}} \\; \\mathcal{L}_{\\mathcal{D}}(\\Theta)."
+    "text": "Random working drafts and low-effort notes. Newest first.\n\n\n\n\n\n\n\n\nNo matching items\n Back to top"
   },
   {
     "objectID": "learning/index.html",
