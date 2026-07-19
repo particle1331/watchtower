@@ -1,21 +1,21 @@
 bibliography: assets/references.bib
 
 execute:
-  freeze: true
+  enabled: false
 
 project:
   type: website
   output-dir: _site
   render:
-    - index.qmd
-    - portfolio.qmd
-    - notes/index.qmd
-    - notes/*.qmd
-    - essays/index.qmd
-    - essays/*.qmd
-    - learning/index.qmd
-    - learning/*.qmd
-    - photos.qmd
+    - index.ipynb
+    - portfolio/portfolio.ipynb
+    - notes/index.ipynb
+    - notes/*.ipynb
+    - essays/index.ipynb
+    - essays/*.ipynb
+    - learning/index.ipynb
+    - learning/*.ipynb
+    - photos/photos.ipynb
   preview:
     port: 4200
     browser: false
@@ -30,15 +30,15 @@ website:
 
   navbar:
     left:
-      - href: portfolio.qmd
+      - href: portfolio/portfolio.ipynb
         text: portfolio
-      - href: essays/index.qmd
+      - href: essays/index.ipynb
         text: essays
-      - href: learning/index.qmd
+      - href: learning/index.ipynb
         text: learning
-      - href: notes/index.qmd
+      - href: notes/index.ipynb
         text: notes
-      - href: photos.qmd
+      - href: photos/photos.ipynb
         text: photos
 
 format:

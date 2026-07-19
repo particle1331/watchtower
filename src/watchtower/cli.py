@@ -12,6 +12,7 @@ from rich.table import Table
 
 from . import convert as convert_mod
 from . import inspect as inspect_mod
+from . import notebook as notebook_mod
 from . import render as render_mod
 from . import resume as resume_mod
 from . import scaffold as scaffold_mod
@@ -32,14 +33,14 @@ app.add_typer(new_app)
 
 @new_app.command("note")
 def new_note(name: str) -> None:
-    """Create notes/<name>.qmd with a minimal front-matter stub."""
+    """Create notes/<name>.ipynb with a minimal frontmatter stub."""
     path = scaffold_mod.new_note(name)
     console.print(f"[green]created {path}[/green]")
 
 
 @new_app.command("essay")
 def new_essay(slug: str) -> None:
-    """Create essays/<YYYY-MM-DD>-<slug>.qmd."""
+    """Create essays/<YYYY-MM-DD>-<slug>.ipynb."""
     path = scaffold_mod.new_essay(slug)
     console.print(f"[green]created {path}[/green]")
 
@@ -100,7 +101,7 @@ def map_cmd() -> None:
 
 @app.command()
 def find(query: str) -> None:
-    """Grep across .qmd source files only."""
+    """Grep across notebook cell sources only."""
     out = inspect_mod.find_in_src(query)
     if out:
         print(out)
@@ -109,24 +110,61 @@ def find(query: str) -> None:
 
 
 @app.command()
-def cat(name: str) -> None:
-    """Print a .qmd source file by stem name."""
+def count(name: str) -> None:
+    """Print the number of cells in a notebook."""
     try:
-        print(inspect_mod.cat_qmd(name), end="")
-    except FileNotFoundError as e:
+        n = notebook_mod.count_cells(name)
+        print(f"{n} cells")
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+
+
+@app.command()
+def cat(
+    name: str,
+    index: str | None = typer.Option(None, "--index", "-i", help="0-based cell index, or N:M range (Python-style slice; :M and N: also ok)"),
+    tag: str | None = typer.Option(None, "--tag", "-t", help="show cells with this tag"),
+    label: str | None = typer.Option(None, "--label", "-l", help="show cells with this #| label: pragma"),
+    offset: int = typer.Option(0, "--offset", "-o", help="char offset into the cell source (use with --limit)"),
+    limit: int | None = typer.Option(None, "--limit", help="max chars per cell source (default: 4096; 0 = unlimited)"),
+    with_outputs: bool = typer.Option(False, "--with-outputs", help="also show each code cell's outputs"),
+    out_offset: int = typer.Option(0, "--out-offset", help="char offset into each output's text body"),
+    out_limit: int | None = typer.Option(None, "--out-limit", help="max chars per output body"),
+) -> None:
+    """Print notebook cell sources as markdown (JSON-stripped)."""
+    # Default read limit protects agent context windows; 0 = no limit.
+    effective_limit: int | None = None
+    if limit == 0:
+        effective_limit = None
+    elif limit is not None:
+        effective_limit = limit
+    else:
+        effective_limit = notebook_mod.DEFAULT_READ_LIMIT
+    try:
+        print(
+            notebook_mod.cat_notebook(
+                name, index=index, tag=tag, label=label,
+                offset=offset, limit=effective_limit,
+                with_outputs=with_outputs,
+                out_offset=out_offset, out_limit=out_limit,
+            ),
+            end="",
+        )
+    except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
 
 
 @app.command()
 def ls(tier: str = typer.Argument(..., help="notes | essays | learning | projects")) -> None:
-    """List source .qmd files in a tier."""
+    """List source `.ipynb` notebooks in a tier."""
     if tier == "notes":
-        items = inspect_mod.list_qmd(Path("notes"))
+        items = inspect_mod.list_ipynb(Path("notes"))
     elif tier == "essays":
-        items = inspect_mod.list_qmd(Path("essays"))
+        items = inspect_mod.list_ipynb(Path("essays"))
     elif tier == "learning":
-        items = inspect_mod.list_qmd(Path("learning"))
+        items = inspect_mod.list_ipynb(Path("learning"))
     elif tier == "projects":
         items = [p["name"] for p in inspect_mod.list_projects()]
     else:
@@ -139,33 +177,142 @@ def ls(tier: str = typer.Argument(..., help="notes | essays | learning | project
         print(i)
 
 
-@app.command()
-def convert(
-    ipynb: str = typer.Argument(..., help="path to .ipynb file to convert"),
-    dest: str | None = typer.Argument(None, help="destination .qmd path (default: alongside source)"),
+@app.command(name="import")
+def import_cmd(
+    ipynb: str = typer.Argument(..., help="path to source .ipynb to import"),
+    tier: str = typer.Argument(..., help="notes | essays | learning"),
+    name: str | None = typer.Argument(None, help="destination stem (default: source stem)"),
 ) -> None:
-    """One-time convert a legacy .ipynb notebook to .qmd (jupytext)."""
+    """Import an external notebook into a content tier (preserves outputs)."""
     try:
-        out = convert_mod.convert_ipynb_to_qmd(ipynb, dest)
+        out = convert_mod.import_notebook(ipynb, tier, name)
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
-    console.print(f"[green]converted -> {out}[/green]")
+    console.print(f"[green]imported -> {out}[/green]")
+
+
+@app.command()
+def edit_cell(
+    name: str,
+    index: int | None = typer.Option(None, "--index", "-i", help="0-based cell index"),
+    tag: str | None = typer.Option(None, "--tag", "-t", help="cell tag to match (must be unique)"),
+    label: str | None = typer.Option(None, "--label", "-l", help="Quarto `#| label:` to match (must be unique)"),
+    content: str | None = typer.Option(None, "--content", "-c", help="new source string (if omitted, read from stdin)"),
+) -> None:
+    """Replace a notebook cell's source. Preserves outputs/metadata.
+
+    Exactly one of --index / --tag / --label is required. Source comes from
+    --content (for one-liners) or stdin (for multi-line). Errors if the
+    locator matches zero or multiple cells.
+    """
+    src = content if content is not None else sys.stdin.read()
+    try:
+        out = notebook_mod.edit_cell(name, src, index=index, tag=tag, label=label)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]updated {out}[/green]")
+
+
+@app.command()
+def append_cell(
+    name: str,
+    cell_type: str = typer.Option("md", "--type", "-t", help="md | code"),
+    content: str | None = typer.Option(None, "--content", "-c", help="cell source (if omitted, read from stdin)"),
+) -> None:
+    """Append a new cell to the end of the notebook."""
+    src = content if content is not None else sys.stdin.read()
+    try:
+        out = notebook_mod.append_cell(name, src, cell_type=cell_type)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]appended to {out}[/green]")
+
+
+@app.command()
+def insert_cell(
+    name: str,
+    cell_type: str = typer.Option("md", "--type", "-t", help="md | code"),
+    after: int | None = typer.Option(None, "--after", "-a", help="insert below this 0-based index"),
+    before: int | None = typer.Option(None, "--before", "-b", help="insert above this 0-based index"),
+    tag: str | None = typer.Option(None, "--tag", help="insert below the cell with this tag (must be unique)"),
+    label: str | None = typer.Option(None, "--label", help="insert below the cell with this Quarto label (must be unique)"),
+    content: str | None = typer.Option(None, "--content", "-c", help="cell source (if omitted, read from stdin)"),
+) -> None:
+    """Insert a new cell above/below a located cell.
+
+    Pass exactly one of --after / --before / --tag / --label. --tag and
+    --label insert *below* the matched cell. Source from --content or stdin.
+    """
+    src = content if content is not None else sys.stdin.read()
+    try:
+        out = notebook_mod.insert_cell(
+            name, src, after=after, before=before, tag=tag, label=label,
+            cell_type=cell_type,
+        )
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]inserted into {out}[/green]")
+
+
+@app.command()
+def remove_cell(
+    name: str,
+    index: int | None = typer.Option(None, "--index", "-i", help="0-based cell index"),
+    tag: str | None = typer.Option(None, "--tag", "-t", help="remove all cells with this tag"),
+    label: str | None = typer.Option(None, "--label", "-l", help="remove cell with this Quarto label"),
+) -> None:
+    """Remove cells matching the locator. A tag may remove multiple."""
+    try:
+        out = notebook_mod.remove_cell(name, index=index, tag=tag, label=label)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]removed from {out}[/green]")
+
+
+@app.command()
+def tag(
+    name: str,
+    index: int = typer.Option(..., "--index", "-i", help="0-based cell index"),
+    add: list[str] = typer.Option([], "--add", "-a", help="tag to add (may be repeated)"),
+    remove: list[str] = typer.Option([], "--remove", "-r", help="tag to remove (may be repeated)"),
+) -> None:
+    """Add and/or remove tags on a single cell (by index).
+
+    Without --add or --remove, prints current tags.
+    """
+    try:
+        out = notebook_mod.tag_cell(name, index=index, add=add or None, remove=remove or None)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    if isinstance(out, list):
+        if out:
+            for t in out:
+                print(t)
+        else:
+            console.print("[yellow](no tags)[/yellow]")
+    else:
+        console.print(f"[green]tagged {out}[/green]")
 
 
 @app.command()
 def render(
-    tier_or_path: str = typer.Argument(..., help="tier (notes|essays) or qmd path"),
+    tier_or_path: str = typer.Argument(..., help="tier (notes|essays) or ipynb path"),
     name: str | None = typer.Argument(None, help="source name (omit if path given)"),
 ) -> None:
-    """Render a source .qmd to PDF (notes/pdf/) and open it.
+    """Render a source .ipynb to PDF (notes/pdf/) and open it.
 
     Usage:
-      wt render notes test          -> render notes/test.qmd
-      wt render essays test         -> render essays/test.qmd
-      wt render notes/test.qmd      -> full path
+      wt render notes test          -> render notes/test.ipynb
+      wt render essays test         -> render essays/test.ipynb
+      wt render notes/test.ipynb    -> full path
     """
-    source = f"{tier_or_path}/{name}.qmd" if name else tier_or_path
+    source = f"{tier_or_path}/{name}.ipynb" if name else tier_or_path
     pdf = render_mod.render_pdf(source)
     console.print(f"[green]rendered {pdf}[/green]")
     _open(pdf)

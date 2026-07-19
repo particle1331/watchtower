@@ -1,9 +1,9 @@
 """Resume builder — YAML is the single source for both outputs.
 
 `wt resume` renders assets/resume.yaml -> assets/resume.tex (moderncv PDF)
-and index.qmd (site home page) via Jinja2 templates, then runs pdflatex
+and index.ipynb (site home page) via a Jinja2 template, then runs pdflatex
 to produce assets/resume.pdf. Edit the YAML; never hand-edit the generated
-.tex / .qmd.
+.tex / .ipynb.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import nbformat
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -25,8 +26,8 @@ RESUME_YAML = Path("assets/resume.yaml")
 RESUME_TEX_J2 = Path("assets/resume.tex.j2")
 RESUME_TEX = Path("assets/resume.tex")
 RESUME_PDF = Path("assets/resume.pdf")
-INDEX_QMD_J2 = Path("assets/index.qmd.j2")
-INDEX_QMD = Path("index.qmd")
+INDEX_IPYNB_J2 = Path("assets/index.ipynb.j2")
+INDEX_IPYNB = Path("index.ipynb")
 LATEX_ENGINE = "pdflatex"
 
 _URL_RE = re.compile(r"https?://[^\s)]+")
@@ -149,12 +150,12 @@ def _run_pdflatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
 
 
 def build_resume() -> tuple[Path, Path]:
-    """Render YAML -> assets/resume.pdf and index.qmd. Returns (pdf, qmd)."""
+    """Render YAML -> assets/resume.pdf and index.ipynb. Returns (pdf, ipynb)."""
     root = repo_root()
     tex_src = root / RESUME_TEX_J2
-    qmd_src = root / INDEX_QMD_J2
+    ipynb_src = root / INDEX_IPYNB_J2
     yaml_path = root / RESUME_YAML
-    for p in (tex_src, qmd_src, yaml_path):
+    for p in (tex_src, ipynb_src, yaml_path):
         if not p.exists():
             raise FileNotFoundError(f"resume source missing: {p}")
     if not shutil.which(LATEX_ENGINE):
@@ -166,13 +167,21 @@ def build_resume() -> tuple[Path, Path]:
     env = _make_env(root)
 
     # Pin PDF timestamps to the newest source mtime so reruns are reproducible.
-    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, qmd_src, yaml_path)))
+    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, ipynb_src, yaml_path)))
 
-    # Render index.qmd (web version with markdown escaping).
-    qmd_template = env.get_template(INDEX_QMD_J2.name)
-    qmd_rendered = qmd_template.render(**_escape_for_target(data, _md_escape))
-    index_path = root / INDEX_QMD
-    index_path.write_text(qmd_rendered, encoding="utf-8")
+    # Render index.ipynb (web version with markdown escaping) as a single
+    # markdown cell containing Quarto frontmatter + body.
+    ipynb_template = env.get_template(INDEX_IPYNB_J2.name)
+    ipynb_rendered = ipynb_template.render(**_escape_for_target(data, _md_escape))
+    nb = nbformat.v4.new_notebook()
+    nb.metadata["kernelspec"] = {
+        "display_name": "Python 3",
+        "language": "python",
+        "name": "python3",
+    }
+    nb.cells = [nbformat.v4.new_markdown_cell(ipynb_rendered)]
+    index_path = root / INDEX_IPYNB
+    nbformat.write(nb, index_path)
 
     # Render resume.tex (PDF version with LaTeX escaping).
     tex_template = env.get_template(RESUME_TEX_J2.name)

@@ -1,31 +1,43 @@
-"""One-time conversion of legacy Jupyter notebooks (`.ipynb`) to Quarto markdown.
+"""Import an external Jupyter notebook into a content tier.
 
-Uses `jupytext` to write a `.qmd` file next to the source notebook (or at an
-explicit destination), preserving prose + code. This is a migration helper —
-the rest of the system is qmd-only.
+`wt import <src.ipynb> notes|essays|learning [<name>]` copies a notebook
+(usually one you ran elsewhere — Colab, Kaggle, a teammate's machine) into
+the chosen tier dir. Outputs are preserved as-is; Quarto renders them
+without re-execution.
 """
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
+import nbformat
 
-def convert_ipynb_to_qmd(ipynb: str, dest: str | None = None) -> Path:
-    """Convert <path>.ipynb -> <path>.qmd (or an explicit dest .qmd).
+TIERS = ("notes", "essays", "learning")
 
-    jupytext's `qmd` format is Quarto markdown with the right cell fencing
-    (```{python} ... ```), so the output renders directly with `quarto render`.
-    """
-    src = Path(ipynb).resolve()
-    if not src.exists():
-        raise FileNotFoundError(src)
-    if src.suffix != ".ipynb":
-        raise ValueError(f"expected an .ipynb file, got: {src}")
-    out = Path(dest).resolve() if dest else src.with_suffix(".qmd")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        ["jupytext", "--to", "qmd", "--output", str(out), str(src)],
-        check=True,
-    )
-    return out
+
+def import_notebook(src: str, tier: str, name: str | None = None) -> Path:
+    """Copy <src.ipynb> into <tier>/<name>.ipynb (default: same stem as src)."""
+    if tier not in TIERS:
+        raise ValueError(f"tier must be one of {TIERS}, got: {tier}")
+    source = Path(src).resolve()
+    if not source.exists():
+        raise FileNotFoundError(source)
+    if source.suffix != ".ipynb":
+        raise ValueError(f"expected an .ipynb file, got: {source}")
+
+    stem = name if name is not None else source.stem
+    dest_dir = Path(tier)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"{stem}.ipynb"
+
+    # Re-write via nbformat for a clean, normalized JSON (drops Colab metadata
+    # noise, etc.). Outputs are preserved.
+    nb = nbformat.read(source, as_version=nbformat.NO_CONVERT)
+    if "kernelspec" not in nb.metadata:
+        nb.metadata["kernelspec"] = {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3",
+        }
+    nbformat.write(nb, dest)
+    return dest

@@ -1,34 +1,35 @@
 # watchtower
 
-A personal system for notes, essays, projects, and course material — write in
-Quarto markdown (`.qmd`), render to PDF or a website, and let an AI ingest the
-plain-text source directly. No mirror, no sync — the `.qmd` IS the knowledge base.
+A personal system for notes, essays, projects, and course material. Edit in
+JupyterLab (running cells, getting outputs); Quarto renders the notebooks
+to the website using **inline outputs, no re-execution** — so heavy compute
+done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Tiers
 
 | Tier      | Where                       | Effort | Audience | Listing             |
 |-----------|-----------------------------|--------|----------|---------------------|
-| Home      | `index.qmd`                 | —      | public   | resume landing page |
-| Essays    | `essays/*.qmd`               | high   | public   | `essays/index.qmd`  |
-| Portfolio | `portfolio.qmd`             | high   | public   | cards on one page   |
-| Notes     | `notes/*.qmd`                | low    | you      | `notes/index.qmd`    |
-| Learning  | `learning/*.qmd`             | mid    | you      | `learning/index.qmd` |
-| Photos    | `photos.qmd`                | —      | public   | single gallery page  |
+| Home      | `index.ipynb`               | —      | public   | resume landing page |
+| Essays    | `essays/*.ipynb`            | high   | public   | `essays/index.ipynb` |
+| Portfolio | `portfolio.ipynb`           | high   | public   | cards on one page   |
+| Notes     | `notes/*.ipynb`             | low    | you      | `notes/index.ipynb`  |
+| Learning  | `learning/*.ipynb`          | mid    | you      | `learning/index.ipynb`|
+| Photos    | `photos.ipynb`              | —      | public   | single gallery page |
 
-Source files are Quarto markdown — plain markdown with ```` ```{python} ```` code
-chunks. The same file renders to HTML (site), PDF (read-back), and serves as
-clean text for agent retrieval.
+Source files are Jupyter notebooks (`.ipynb`). Agents read cell sources as
+plain markdown via the `wt` CLI (jupytext under the hood); they never see
+the raw JSON.
 
 ## Quick start
 
 ```bash
 make bootstrap                       # uv sync (creates .venv)
 
-wt new note my-note                  # notes/my-note.qmd
-wt new essay my-essay                # essays/<YYYY-MM-DD>-my-essay.qmd
+wt new note my-note                  # notes/my-note.ipynb
+wt new essay my-essay                # essays/<YYYY-MM-DD>-my-essay.ipynb
 wt new project my-code-project       # uv init projects/my-code-project
 
-wt render notes my-note              # render qmd -> PDF (notes/pdf/) and open
+wt render notes my-note              # render ipynb -> PDF (notes/pdf/) and open
 wt resume                            # compile assets/resume.tex -> assets/resume.pdf
 wt docs                              # serve site on :4200
 ```
@@ -36,46 +37,29 @@ wt docs                              # serve site on :4200
 The site is published automatically to `gh-pages` on push to `main` via
 `.github/workflows/publish.yml`.
 
-> **Note:** `wt new` only scaffolds `note`, `writing`, and `project` today. For
-> `learning/`, drop a `.qmd` into the folder by hand. `wt ls` recognizes
-> `notes | essays | projects` (not `learning` yet).
-
 ## Editing workflow
 
-`.qmd` files are runnable notebooks, not just static markdown. Open them in
-JupyterLab (with the `jupyterlab-quarto` extension, already installed) or VS
-Code + the Quarto extension — run cells inline, see figures and math render.
+Open the `.ipynb` in JupyterLab, run cells, save. Inline outputs are
+preserved on render — Quarto never re-runs your code (see `execute.enabled:
+false` in `_quarto.yml`).
 
-Renders reuse cached outputs: `_quarto.yml` has `execute.freeze: true`, so
-`quarto render` will NOT re-run cells unless you explicitly pass `--execute`
-or change the source. Run things once in JupyterLab; the site picks up those
-outputs on the first render and freezes them.
+For agent reads/edits, never touch the raw `.ipynb` JSON. Use `wt cat`,
+`wt edit-cell`, etc. (see `AGENTS.md` for the full reference).
 
-## Migrating legacy notebooks
+## Importing notebooks from elsewhere
 
 ```bash
-wt convert old.ipynb                       # writes old.qmd next to it
-wt convert old.ipynb notes/new.qmd         # explicit destination
+wt import ~/Downloads/foo.ipynb notes my-foo   # copy + normalize into notes/
 ```
 
-`.ipynb` files are gitignored and excluded from agent retrieval — convert once,
-then work in the `.qmd`.
+Inline outputs are preserved — Colab/Kaggle runs ship with the file, so a
+heavy-training notebook renders with its figures intact, no re-execution.
 
-## Site
-
-The site (rendered to `_site/`) pulls together all five content tiers:
-
-- `_quarto.yml` — project config, navbar, format, theme, freeze.
-- Theme: `united` (Bootstrap), KaTeX math, lightbox images, justified text,
-  back-to-top, reader-mode, breadcrumbs.
-- `assets/styles.css` — layout + typography tweaks.
-- Navbar: Portfolio · Essays · Learning · Notes · Photos.
-- Each content tier has an `index.qmd` listing (Quarto auto-generates a
-  paginated table of contents from sibling `.qmd` files).
+## Rendering
 
 Quarto needs to find Python with `jupyter` installed. The `wt` wrapper
-(`wt docs`) handles this by pointing `QUARTO_PYTHON` at the venv interpreter.
-Calling `quarto` directly? Set it yourself:
+(`wt docs`, `wt render`, `wt resume`) sets `QUARTO_PYTHON` at the venv
+interpreter automatically. Calling `quarto` directly? Set it yourself:
 
 ```bash
 QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
@@ -99,67 +83,113 @@ get_secret("OPENAI_API_KEY")
 ## Layout
 
 ```
-index.qmd                 # "Ron Medina — Resume" home page
-portfolio.qmd             # hand-maintained project cards
-photos.qmd                # personal photos (mountaineering, landscapes, kid)
-_quarto.yml               # publishes all content tiers (incl. freeze: true)
+index.ipynb               # "Ron Medina — Resume" home page (generated by wt resume)
+portfolio.ipynb           # hand-maintained project cards
+photos.ipynb              # personal photos (mountaineering, landscapes, kid)
+_quarto.yml               # publishes all content tiers (execute.enabled: false)
 assets/
   styles.css              # site styling
   img/                    # shared images
   resume.yaml             # canonical résumé source (single source of truth)
   resume.tex.j2           # Jinja2 template -> moderncv LaTeX (PDF)
-  index.qmd.j2            # Jinja2 template -> site home page (HTML)
+  index.ipynb.j2          # Jinja2 template -> site home page (notebook)
   resume.pdf              # built by `wt resume` (served as download link)
 filters/
   center-images.lua       # Quarto lua filter (image centering for PDF)
 
 notes/
-  *.qmd                   # working notes
-  index.qmd               # listing page
+  *.ipynb                 # working notes
+  index.ipynb             # listing page
   pdf/                    # gitignored rendered PDFs
 essays/
-  *.qmd                   # YYYY-MM-DD-slug.qmd essays
-  index.qmd               # listing page
+  *.ipynb                 # YYYY-MM-DD-slug.ipynb essays
+  index.ipynb             # listing page
   pdf/                    # gitignored rendered PDFs
 learning/
-  *.qmd                   # full course notes
-  index.qmd               # listing page
+  *.ipynb                 # full course notes
+  index.ipynb             # listing page
 projects/                 # uv workspaces (each member has its own pyproject.toml)
 src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
   scaffold.py             # `wt new note|essay|project`
-  convert.py              # `wt convert`
-  render.py               # `wt render` / `docs`
-  inspect.py              # `wt map` / `find` / `cat` / `ls`
+  notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
+  inspect.py              # `wt map | find | ls` + resolver
+  convert.py              # `wt import` (external ipynb -> tier)
+  render.py               # `wt render | docs`
+  resume.py               # `wt resume`
   vault.py                # OS keyring wrapper
 ```
 
 ## CLI reference (`wt`)
 
-| Command                          | What it does                                              |
-|----------------------------------|-----------------------------------------------------------|
-| `wt new note <name>`             | create `notes/<name>.qmd`                                 |
-| `wt new essay <slug>`           | create `essays/<YYYY-MM-DD>-<slug>.qmd`                   |
-| `wt new project <name>`          | `uv init projects/<name>` and wire workspace              |
-| `wt convert <ipynb> [dest.qmd]`  | one-time `.ipynb` → `.qmd` (jupytext)                     |
-| `wt render notes <name>`         | render one qmd to PDF (`notes/pdf/`), open it             |
-| `wt render essays <name>`        | render one qmd to PDF (`essays/pdf/`), open it           |
-| `wt render <path/to.qmd>`        | render by full path                                       |
-| `wt resume`                     | render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd`, then `pdflatex` -> `assets/resume.pdf` |
-| `wt docs`                        | serve the site (blocking; :4200)                          |
-| `wt map`                         | print repo structure as JSON                              |
-| `wt find <query>`                | grep across `.qmd` sources                                |
-| `wt cat <name>`                  | print one `.qmd` source by stem                           |
-| `wt ls notes\|essays\|learning\|projects` | list sources in a tier                              |
-| `wt vault set <key> <value>`      | store secret                                              |
-| `wt vault get <key>`              | print secret value                                        |
-| `wt vault list`                   | list stored secret keys                                   |
-| `wt vault env`                    | emit `export` lines for all secrets                       |
+> **Defaults**: `wt cat` limits each cell source to 4096 chars (use `--limit 0`
+> for unlimited). Cell writes (edit/append/insert) are hard-capped at 20k chars.
+
+### Scaffolding & importing
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt new note <name>`                 | create `notes/<name>.ipynb`                                |
+| `wt new essay <slug>`                | create `essays/<YYYY-MM-DD>-<slug>.ipynb`                  |
+| `wt new project <name>`              | `uv init projects/<name>` and wire workspace               |
+| `wt import <ipynb> <tier> [<name>]`  | import external notebook (Colab/Kaggle) into a tier        |
+
+### Rendering & serving
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt render notes <name>`             | render one notebook to PDF (`notes/pdf/`), open it        |
+| `wt render essays <name>`            | render one notebook to PDF (`essays/pdf/`)                 |
+| `wt render <path/to.ipynb>`          | render by full path                                        |
+| `wt resume`                          | render `assets/resume.yaml` -> `assets/resume.tex` + `index.ipynb`, then `pdflatex` -> `assets/resume.pdf` |
+| `wt docs`                            | serve the site (blocking; :4200)                           |
+
+### Navigation & search
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt map`                             | print repo structure as JSON                              |
+| `wt find <query>`                    | grep across `.ipynb` cell sources                          |
+| `wt count <name>`                    | print cell count (plan ranges before `--index N:M`)       |
+| `wt cat <name>`                      | print notebook as markdown; each cell headed `## Cell N [code\|md]` (use N for `--index`) |
+| `wt cat <name> --index N`            | print only cell N                                          |
+| `wt cat <name> --index N:M`          | print cells N..M-1 (Python slice; `:M` and `N:` ok)        |
+| `wt cat <name> --tag foo`            | print cells with Jupyter tag `foo`                         |
+| `wt cat <name> --label foo`          | print cells with Quarto `#| label: foo`                    |
+| `wt cat <name> --index N --offset O [--limit L]` | slice chars `O:O+L` of cell N (default limit 4096; 0 = unlimited) |
+| `wt cat <name> --with-outputs`        | also print each code cell's outputs (stream/error/etc.)    |
+| `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
+
+### Editing notebooks
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt edit-cell <name> --index N [--content X]` | replace cell N source (outputs preserved)         |
+| `wt append-cell <name> [--type md\|code] [--content X]` | append a new cell (default: md)          |
+| `wt insert-cell <name> --after N [--type] [--content X]` | insert a new cell below index N            |
+| `wt insert-cell <name> --before N ...`           | insert above index N                                    |
+| `wt insert-cell <name> --tag foo ...`            | insert below the cell with tag foo                       |
+| `wt insert-cell <name> --label foo ...`          | insert below the cell with label foo                     |
+| `wt remove-cell <name> --index N`     | delete cell N                                             |
+| `wt remove-cell <name> --tag foo`     | delete all cells with tag foo                             |
+| `wt tag <name> --index N [--add foo] [--remove bar]` | list tags on cell N (no flags), or add/remove |
+
+### Secrets (vault)
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt vault set <key> <value>`          | store secret                                              |
+| `wt vault get <key>`                 | print secret value                                        |
+| `wt vault list`                      | list stored secret keys                                   |
+| `wt vault env`                       | emit `export` lines for all secrets                       |
+
+> `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
+> the new source is read from stdin (useful for multi-line contents via heredoc).
 
 ## Make targets
 
 The Makefile covers only the generic dev workflows (external tools that
-don't belong in `wt`). Watchtower-specific commands live in `wt`.
+don't belong in `wt`).
 
 | Target             | What it runs   |
 |--------------------|----------------|
@@ -174,7 +204,7 @@ under `src/` or `projects/`. There is no pre-commit hook wired up.
 ## Dependencies
 
 - `uv` (workspace + project management) — https://docs.astral.sh/uv
-- `quarto` CLI (render `.qmd` to PDF/HTML) — install separately from https://quarto.org
-- `ripgrep` (`rg`) — used by `wt find` for searching `.qmd` sources — `brew install ripgrep`
-- `jupytext` — used only by `wt convert` for one-time notebook migration
-- `jupyterlab-quarto` — edit `.qmd` as notebooks in JupyterLab
+- `quarto` CLI (render `.ipynb` to PDF/HTML) — install separately from https://quarto.org
+- `ripgrep` (`rg`) — used by `wt find` for searching cell sources — `brew install ripgrep`
+- `jupyterlab` + `jupyterlab-quarto` — edit `.ipynb` in JupyterLab
+- `nbformat` — read/write `.ipynb` files from `wt` wrappers
