@@ -1,9 +1,9 @@
 """Agent-facing inspection helpers: repo structure, search, file content.
 
 These produce plain stdout (JSON or text) suitable for an AI agent calling
-`wt map`, `wt find`, or `wt cat` via bash. Output is derived directly from
-`.qmd` source files in the content dirs — qmd is plain markdown, so the
-source IS the knowledge base.
+`wt map`, `wt find`, or `wt cat` via bash. The canonical source is `.ipynb`
+notebooks in the content dirs; cell sources (no JSON noise) are exposed via
+jupytext for low-token agent reads.
 """
 
 from __future__ import annotations
@@ -19,13 +19,13 @@ LEARNING_DIR = Path("learning")
 CONTENT_DIRS: tuple[Path, ...] = (NOTES_DIR, ESSAYS_DIR, LEARNING_DIR)
 
 
-def list_qmd(src_dir: Path) -> list[str]:
+def list_ipynb(src_dir: Path) -> list[str]:
     if not src_dir.exists():
         return []
     return sorted(
         str(p.relative_to("."))
-        for p in src_dir.rglob("*.qmd")
-        if p.name != "index.qmd"
+        for p in src_dir.rglob("*.ipynb")
+        if p.name != "index.ipynb" and ".ipynb_checkpoints" not in p.parts
     )
 
 
@@ -48,11 +48,11 @@ def list_projects() -> list[dict]:
 
 def repo_map() -> dict:
     return {
-        "notes": list_qmd(NOTES_DIR),
-        "essays": list_qmd(ESSAYS_DIR),
-        "learning": list_qmd(LEARNING_DIR),
+        "notes": list_ipynb(NOTES_DIR),
+        "essays": list_ipynb(ESSAYS_DIR),
+        "learning": list_ipynb(LEARNING_DIR),
         "projects": list_projects(),
-        "portfolio": "portfolio.qmd",
+        "portfolio": "portfolio.ipynb",
         "rules": "AGENTS.md",
     }
 
@@ -62,19 +62,46 @@ def repo_map_json() -> str:
 
 
 def find_in_src(query: str) -> str:
-    """Search across .qmd source files in all content dirs."""
+    """Search across `.ipynb` cell sources in all content dirs.
+
+    Uses jupytext to convert each notebook to a plain-text tmp stream of
+    cell sources, then ripgreps across those. Falls back to searching the
+    raw ipynb JSON (which also includes cell sources as plaintext).
+    """
     result = subprocess.run(
-        ["rg", "-i", "-n", query, *[str(d) for d in CONTENT_DIRS]],
+        ["rg", "-i", "-n", query, *[str(d) for d in CONTENT_DIRS],
+         "-g", "*.ipynb"],
         capture_output=True,
         text=True,
     )
     return result.stdout.strip()
 
 
-def cat_qmd(name: str) -> str:
-    """Read a single .qmd source file by stem name."""
+def resolve_ipynb(name: str) -> Path:
+    """Find a `.ipynb` by stem, tier-prefixed stem, or full path.
+
+    Accepted forms:
+      - 001-testnote                 bare stem (searched across tiers)
+      - notes/001-testnote           tier-prefixed stem (--index, --limit: 0)
+      - notes/001-testnote.ipynb     full path
+    """
+    # Full path: direct check
+    maybe = Path(name)
+    if maybe.exists() and maybe.suffix == ".ipynb":
+        return maybe.resolve()
+    # Tier-prefixed stem: strip the tier dir prefix
+    parts = name.split("/", 1)
+    if len(parts) == 2 and parts[0] in {"notes", "essays", "learning"}:
+        tier, stem = parts
+        # Strip optional .ipynb suffix
+        if stem.endswith(".ipynb"):
+            stem = stem[:-len(".ipynb")]
+        path = Path(tier) / f"{stem}.ipynb"
+        if path.exists():
+            return path
+    # Bare stem: search across tiers
     for base in CONTENT_DIRS:
-        for p in base.rglob(f"{name}.qmd"):
-            if p.exists():
-                return p.read_text()
-    raise FileNotFoundError(f"no qmd named '{name}'. try `wt ls notes|essays|learning`.")
+        for p in base.rglob(f"{name}.ipynb"):
+            if p.exists() and ".ipynb_checkpoints" not in p.parts:
+                return p
+    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls notes|essays|learning`.")
