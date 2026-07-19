@@ -16,9 +16,9 @@ __pycache__/
 /.quarto/
 **/*.quarto_ipynb
 
-# Legacy notebooks are not part of the system (qmd-only).
-# `wt convert <foo.ipynb>` migrates them to .qmd.
-*.ipynb
+# Notebook checkpoints (actual notebook ipynbs in notes/essays/learning
+# are tracked as canonical content).
+.ipynb_checkpoints/
 
 # Quarto single-file render intermediates
 *_files/

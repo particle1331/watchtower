@@ -26,8 +26,8 @@ wt = "watchtower.cli:app"
 [tool.uv.workspace]
 members = ["projects/*"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=9.0.0",
     "pytest-cov>=6.0.0",
     "ruff>=0.8.0",
@@ -51,7 +51,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]
+ignore = ["E501", "B008"]
 
 [tool.pyright]
 include = ["src", "projects"]
