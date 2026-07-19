@@ -75,6 +75,14 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 - Do NOT commit secret values — secrets live in the OS keyring via
   `wt vault` (see below).
 
+## Tooling gaps
+If you hit a rough edge the `wt` CLI doesn't cover (a missing command, a
+locator that won't resolve, a cell operation that would clobber outputs, a
+render path that breaks) — do NOT silently work around it with raw `.ipynb`
+JSON or ad-hoc shell scripts. **Open an issue** with
+`gh issue create -R particle1331/watchtower -t "<title>" -b "<body>"`
+covering the gap, the command you ran, and what you expected.
+
 ## Per-project rules
 If working inside `projects/<name>/`, also read `projects/<name>/AGENTS.md`
 if present (project-specific rules stack on top of these).
