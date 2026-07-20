@@ -101,8 +101,8 @@ if present (project-specific rules stack on top of these).
 
 ## Vault (secrets)
 - Secrets live in the OS keyring, accessed via `wt vault`. NEVER commit secret values.
-- `wt vault env` emits export lines — projects use it via
-  `eval $(wt vault env)` or `from watchtower.vault import get_secret`.
+- `wt vault export` emits export lines — projects use it via
+  `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
 ## CLI command reference (for the agent)
 - `wt new note|essay|project <name>` — scaffold new artifact (`.ipynb` stub)

@@ -70,7 +70,7 @@ QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
 ```bash
 wt vault set OPENAI_API_KEY sk-...
 wt vault list
-eval $(wt vault env)        # export lines for current shell
+eval $(wt vault export)        # export lines for current shell
 ```
 
 Stored in the OS keyring; never committed. Projects read them via:
@@ -169,6 +169,9 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt insert-cell <name> --before N ...`           | insert above index N                                    |
 | `wt remove-cell <name> --index N`     | delete cell N                                             |
 | `wt tag <name> --index N [--add foo] [--remove bar]` | list tags on cell N (no flags), or add/remove |
+> `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
+> the new source is read from stdin (useful for multi-line contents via heredoc).
+
 
 ### Secrets (vault)
 
@@ -177,10 +180,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt vault set <key> <value>`          | store secret                                              |
 | `wt vault get <key>`                 | print secret value                                        |
 | `wt vault list`                      | list stored secret keys                                   |
-| `wt vault env`                       | emit `export` lines for all secrets                       |
-
-> `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
-> the new source is read from stdin (useful for multi-line contents via heredoc).
+| `wt vault export`                       | emit `export` lines for all secrets                       |
 
 ## Make targets
 
