@@ -38,7 +38,7 @@ employment:
     bullets:
       - "Reduced cost by 6X and increased accuracy of speech recognition system by +10%"
       - Developed and deployed a transcription service which transcribed 1.2M+ production calls
-      - "Within 3 months after hiring, presented a POC for extending the call recorder system from mono to stereo recording using socket programming and Avaya APIs — became the basis for a major project for the Telecommunications team"
+      - "Within 3 months after hiring, presented a POC for extending the call recorder system from mono to stereo recording using socket programming and Avaya APIs — became the basis for a major project for the Telco team and subsequent realtime transcription efforts"
       - Developed and designed a fault-tolerant distributed offline task queue service to scale speech recognition
       - Developed a Transformer-based semantic search engine that runs performant on CPU
       - Extended an existing open-source annotation tool for human data labeling to serve our internal use-case
@@ -60,31 +60,24 @@ employment:
     company: BrewedLogic, Inc.
     dates: Mar 2020 -- June 2021
     bullets:
-      - "Collaborative filtering RecSys written in NumPy, Scikit-Learn, and Pandas and served via Django — deployment increased average ticket count from 3.38 to 4.86 and average ticket value from $11.49 to $14.21 after the first two months in production"
-      - Developed the RecSys used by the [Crisp restaurant platform](https://www.crispqsr.com/post/restaurant-data-analysis-artificial-intelligence), deployed on 26 US franchises each with multiple stores
-      - Developed a fraud detection system for fraudulent VoIP transactions, drastically improving over previous rule-based approaches
-      - Research and implementation of novel techniques and architectures for RecSys and fraud detection
-      - Preprocessing, analysis, and feature engineering of datasets (1M-5M) for model training, selection, and evaluation
-      - Maintenance, testing, and monitoring of deployed models, and service migration to FastAPI
-      - Worked with a senior data scientist on customer segmentation and sales forecasting
+      - "Collaborative filtering RecSys written in NumPy, Scikit-Learn, and Pandas and served via Django — deployment increased average ticket count from 3.38 to 4.86 and average ticket value from $11.49 to $14.21 after the first two months in production. Became the RecSys platform of [Crisp](https://www.crispqsr.com/post/restaurant-data-analysis-artificial-intelligence) deployed on 26 US franchises each with multiple stores"
+      - Worked with a senior data scientist on customer segmentation and sales forecasting and in developing a fraud detection model for fraudulent VoIP transactions, drastically improving over previous rule-based approaches
+      - Preprocessing, feature engineering, training, and monitoring of deployed models on 1M-5M row datasets; service migration from Django to FastAPI
 
+early_employment:
   - title: Bootcamp Associate
     company: Eskwelabs
     dates: Oct 2019 -- Jan 2020
     bullets:
-      - Developed curriculum materials on machine learning algorithms
-      - Facilitated live Hackathons
-      - Presented a talk at the National Youth Congress held at UP Diliman School of Economics, Nov 2019, on the topic of artificial intelligence and deep learning
+      - Developed curriculum materials on machine learning algorithms. Facilitated live hackatons
+      - Presented a talk on artificial intelligence and deep learning at the National Youth Congress, UP Diliman School of Economics, Nov 2019
 
   - title: Data Analyst
     company: "Tita's Groceria"
     dates: June 2017 -- June 2019
     bullets:
-      - Worked part-time at an E-commerce shop with hundreds of daily transactions.
-      - Performed basic statistical analysis of customer data including clustering based on RFM criteria.
-      - Analysis of frequently bought together items using graphs, Markov chains, and correlations.
-      - Created reports about product ROI rate.
-      - Helped grew follower count from 30,000 to 100,000+.
+      - Helped grow an E-commerce shop's follower count from 30,000 to 100,000+ across hundreds of daily transactions
+      - Analyzed frequently-bought-together items using graphs, Markov chains, and correlations, and clustered customers by RFM criteria
 
 skills:
   - name: Data Analysis
@@ -104,25 +97,15 @@ skills:
 
   - name: Model Deployment and MLOps
     entries:
-      - Development and deployment of prediction APIs (Django, FastAPI, Flask)
-      - "Automation: Gitlab CI/CD, GitHub Actions, uv, Typer (CLI), Makefiles"
-      - Task management with Celery
-      - MLflow experiment tracking, system metrics, evaluation, and model management
-      - Production quality Python packages & environments with uv
-      - Version control using git
-      - Unit testing with pytest, differential, and regression testing
-      - Containerization with Docker
-      - AWS Lambda, SQS and RabbitMQ, S3, RDS, EC2 / Auto Scaling groups
-      - PostgreSQL, MySQL, and Redis
-      - "Microsoft Azure: Azure ML / Foundry, Azure Container Registry (ACR), App Service, Blob Storage"
-      - Serverless model deployment and monitoring via Azure Functions
+      - "REST APIs (Django, FastAPI, Flask); CI/CD (Gitlab CI/CD, GitHub Actions); uv, Typer, Makefiles"
+      - "Experiment tracking & model management with MLflow; task queues with Celery, SQS, RabbitMQ"
+      - "Containerization with Docker; unit/differential/regression testing with pytest; version control with git"
+      - "AWS: Lambda, SQS, RabbitMQ, S3, RDS, EC2 / Auto Scaling groups; PostgreSQL, MySQL, Redis"
+      - "Microsoft Azure: Azure ML / Foundry, Azure Container Registry, App Service, Blob Storage, Azure Functions"
 
-  - name: Algorithms and Data Structures
+  - name: Others
     entries:
       - "Gold level in Problem Solving and Python @ [Hackerrank](https://www.hackerrank.com/particle)"
-
-  - name: Writing
-    entries:
       - "Author of [OK Transformer](https://particle1331.github.io/ok-transformer/intro.html) — a collection of notebooks and articles on deep learning, ML engineering, and MLOps. Auto build / deploy via GitHub Actions + tox. Featured in the [Gallery of Jupyter Books](https://executablebooks.org/en/latest/gallery/)."
       - "Contributed to the [Appendix: Mathematics for Deep Learning](https://www.d2l.ai/chapter_appendix-mathematics-for-deep-learning/index.html) of [Dive into Deep Learning](https://www.d2l.ai/) — a widely used open-source DL textbook; acknowledged as a [contributor](https://www.d2l.ai/chapter_preface/index.html#acknowledgments)."
 
