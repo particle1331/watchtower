@@ -70,7 +70,7 @@ QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
 ```bash
 wt vault set OPENAI_API_KEY sk-...
 wt vault list
-eval $(wt vault env)        # export lines for current shell
+eval $(wt vault export)        # export lines for current shell
 ```
 
 Stored in the OS keyring; never committed. Projects read them via:
@@ -146,33 +146,32 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 
 ### Navigation & search
 
-| Command                              | What it does                                              |
-|--------------------------------------|-----------------------------------------------------------|
-| `wt map`                             | print repo structure as JSON                              |
-| `wt find <query>`                    | grep across `.ipynb` cell sources                          |
-| `wt count <name>`                    | print cell count (plan ranges before `--index N:M`)       |
-| `wt cat <name>`                      | print notebook as markdown; each cell headed `## Cell N [code\|md]` (use N for `--index`) |
-| `wt cat <name> --index N`            | print only cell N                                          |
-| `wt cat <name> --index N:M`          | print cells N..M-1 (Python slice; `:M` and `N:` ok)        |
-| `wt cat <name> --tag foo`            | print cells with Jupyter tag `foo`                         |
-| `wt cat <name> --label foo`          | print cells with Quarto `#| label: foo`                    |
+| Command | What it does |
+| --- | --- |
+| `wt map` | print repo structure as JSON |
+| `wt find <query>` | grep across `.ipynb` cell sources |
+| `wt count <name>` | print cell count (plan ranges before `--index N:M`) |
+| `wt cat <name>` | print notebook as markdown; each cell headed `> cell N [code\|md]` (use N for `--index`) |
+| `wt cat <name> --index N` | print only cell N |
+| `wt cat <name> --index N:M` | print cells N..M-1 (Python slice; `:M` and `N:` ok) |
+| `wt cat <name> --tag foo` | print cells with Jupyter tag `foo` |
+| `wt cat <name> --label foo` | print cells with matching [Quarto label](https://quarto.org/docs/authoring/cross-references.html#computations) |
 | `wt cat <name> --index N --offset O [--limit L]` | slice chars `O:O+L` of cell N (default limit 4096; 0 = unlimited) |
-| `wt cat <name> --with-outputs`        | also print each code cell's outputs (stream/error/etc.)    |
+| `wt cat <name> --with-outputs` | also print each code cell's outputs (stream/error/etc.) |
 | `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
 
 ### Editing notebooks
-
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
 | `wt edit-cell <name> --index N [--content X]` | replace cell N source (outputs preserved)         |
 | `wt append-cell <name> [--type md\|code] [--content X]` | append a new cell (default: md)          |
 | `wt insert-cell <name> --after N [--type] [--content X]` | insert a new cell below index N            |
 | `wt insert-cell <name> --before N ...`           | insert above index N                                    |
-| `wt insert-cell <name> --tag foo ...`            | insert below the cell with tag foo                       |
-| `wt insert-cell <name> --label foo ...`          | insert below the cell with label foo                     |
 | `wt remove-cell <name> --index N`     | delete cell N                                             |
-| `wt remove-cell <name> --tag foo`     | delete all cells with tag foo                             |
 | `wt tag <name> --index N [--add foo] [--remove bar]` | list tags on cell N (no flags), or add/remove |
+> `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
+> the new source is read from stdin (useful for multi-line contents via heredoc).
+
 
 ### Secrets (vault)
 
@@ -181,10 +180,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt vault set <key> <value>`          | store secret                                              |
 | `wt vault get <key>`                 | print secret value                                        |
 | `wt vault list`                      | list stored secret keys                                   |
-| `wt vault env`                       | emit `export` lines for all secrets                       |
-
-> `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
-> the new source is read from stdin (useful for multi-line contents via heredoc).
+| `wt vault export`                       | emit `export` lines for all secrets                       |
 
 ## Make targets
 

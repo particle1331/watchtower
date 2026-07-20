@@ -86,9 +86,9 @@ def vault_list() -> None:
     console.print(t)
 
 
-@vault_app.command("env")
-def vault_env() -> None:
-    """Emit export lines for all stored secrets. Usage: eval $(wt vault env)."""
+@vault_app.command("export")
+def vault_export() -> None:
+    """Emit export lines for all stored secrets. Usage: eval $(wt vault export)."""
     for k, v in vault_mod.all_secrets().items():
         print(f"export {k}={shlex.quote(v)}")
 
@@ -101,7 +101,7 @@ def map_cmd() -> None:
 
 @app.command()
 def find(query: str) -> None:
-    """Grep across notebook cell sources only."""
+    """Grep across notebook cell sources, reporting cell indices."""
     out = inspect_mod.find_in_src(query)
     if out:
         print(out)
