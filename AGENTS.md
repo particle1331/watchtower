@@ -26,7 +26,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   tier-prefixed stem (`notes/001-testnote`), or full path (`notes/001-testnote.ipynb`).
 
 ## Reading notebooks
-- `wt cat <name>` — print all cells as markdown (`## Cell N [code|markdown] ...`).
+- `wt cat <name>` — print all cells as markdown (`> cell N [code|markdown] ...` headers; `>` marks tool meta, not notebook content).
 - `wt cat <name> --index N` — just cell N.
 - `wt cat <name> --tag foo` — cells with Jupyter tag `foo` (may be multiple).
 - `wt cat <name> --label fig-x` — cell whose first line is `#| label: fig-x`.
@@ -88,7 +88,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   `wt vault` (see below).
 
 ## Tooling gaps
-If you hit a rough edge the `wt` CLI doesn't cover (a missing command, a
+If you hit a rough edge the `wt` CLI doesn't cover (a missing command, a parsing error, a
 locator that won't resolve, a cell operation that would clobber outputs, a
 render path that breaks) — do NOT silently work around it with raw `.ipynb`
 JSON or ad-hoc shell scripts. **Open an issue** with

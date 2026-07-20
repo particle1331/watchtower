@@ -62,19 +62,43 @@ def repo_map_json() -> str:
 
 
 def find_in_src(query: str) -> str:
-    """Search across `.ipynb` cell sources in all content dirs.
+    """Search `.ipynb` cell sources across all content dirs.
 
-    Uses jupytext to convert each notebook to a plain-text tmp stream of
-    cell sources, then ripgreps across those. Falls back to searching the
-    raw ipynb JSON (which also includes cell sources as plaintext).
+    Uses ripgrep to cheaply list notebooks whose raw JSON contains the
+    query, then parses each hit file once with ``json.load`` to report
+    matches keyed by cell index. Output is always:
+
+        path [cell N]: matching text
+
+    so agents can follow up directly with ``wt cat <path> --index N``.
     """
-    result = subprocess.run(
-        ["rg", "-i", "-n", query, *[str(d) for d in CONTENT_DIRS],
+    q = query.lower()
+    rg = subprocess.run(
+        ["rg", "-i", "-l", query, *[str(d) for d in CONTENT_DIRS],
          "-g", "*.ipynb"],
         capture_output=True,
         text=True,
     )
-    return result.stdout.strip()
+    files = [Path(ln) for ln in rg.stdout.splitlines() if ln]
+    results: list[str] = []
+    for p in sorted(files):
+        if ".ipynb_checkpoints" in p.parts:
+            continue
+        try:
+            with open(p, encoding="utf-8") as f:
+                nb = json.load(f)
+        except Exception:
+            continue
+        for i, cell in enumerate(nb.get("cells", [])):
+            src = cell.get("source", "")
+            if isinstance(src, list):
+                src = "".join(src)
+            if q not in src.lower():
+                continue
+            for line in src.splitlines():
+                if q in line.lower():
+                    results.append(f"{p} [cell {i}]: {line}")
+    return "\n".join(results)
 
 
 def resolve_ipynb(name: str) -> Path:

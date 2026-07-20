@@ -64,13 +64,6 @@ def _check_source_limit(source: str) -> None:
         )
 
 
-def _cell_id(cell: nbformat.NotebookNode, index: int) -> str:
-    """Stable display id: prefer cell `id` metadata, fall back to index."""
-    if "id" in cell:
-        return cell["id"]
-    return str(index)
-
-
 def _cell_tags(cell: nbformat.NotebookNode) -> list[str]:
     return list(cell.get("metadata", {}).get("tags", []))
 
@@ -108,7 +101,6 @@ def _render_cell(
     When sliced, headers carry the range and total so an agent can chain
     reads without re-paying for bytes already seen.
     """
-    cid = _cell_id(cell, index)
     kind = cell["cell_type"]
     extras: list[str] = []
     tags = _cell_tags(cell)
@@ -117,7 +109,7 @@ def _render_cell(
     label = _cell_label(cell)
     if label:
         extras.append(f"label:{label}")
-    header = f"## Cell {index} [{kind}] id:{cid}"
+    header = f"> cell {index} [{kind}]"
     if extras:
         header += " " + " ".join(extras)
     body = cell.get("source", "")
@@ -139,7 +131,7 @@ def _render_cell(
         out.append(f"{header}\n\n{body}" if body else header)
     if with_outputs and kind == "code":
         outputs = cell.get("outputs", []) or []
-        out.append(f"## Cell {index} Outputs ({len(outputs)} total)")
+        out.append(f"> cell {index} outputs ({len(outputs)} total)")
         for k, o in enumerate(outputs):
             out.append(_render_output(o, k, index, out_offset, out_limit))
     return "\n\n".join(out)
@@ -154,7 +146,7 @@ def _render_output(
 ) -> str:
     """Render one cell output with sliceable text body."""
     label, raw = _output_body(output)
-    header = f"### Cell {cell_index} Output {k} [{label}]"
+    header = f">> cell {cell_index} output {k} [{label}]"
     total = len(raw)
     if limit is not None:
         body = raw[offset:offset + limit]
