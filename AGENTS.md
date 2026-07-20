@@ -34,7 +34,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   of cell N's source. Header carries `src[start:end] of total` so you can
   chain reads without re-paying for bytes you've already seen.
 - `wt cat <name> --index N --with-outputs` — also print the cell's outputs,
-  each with its own `### Cell N Output K [stream stdout|error ...]` header.
+  each with its own `>> cell N output K [stream stdout|error ...]` header.
   Use `--out-offset` / `--out-limit` to slice each output's body the same
   way `--offset` / `--limit` slice the source. Image/base64 payloads are
   summarized (`[image/png, N chars — not shown]`), not dumped.
@@ -46,7 +46,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   `--index` only.** Tags and labels are read-only locators, usable with
   `wt cat` to *find* a cell — they are not accepted on writes. To target a
   cell by tag or label, first run `wt cat <name> --tag foo` or
-  `wt cat <name> --label foo` to read the `## Cell N ...` index from the
+  `wt cat <name> --label foo` to read the `> cell N ...` index from the
   output, then pass that `N` to the mutation. One cell, one index, one
   auditable locator.
 - **Indices shift after insert/remove.** Any `insert-cell` or `remove-cell`
@@ -84,6 +84,11 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 ## General
 - Before commit there is no hook; run `make lint` and `make typecheck` if
   you changed Python under `src/` or `projects/`.
+- **Doc-drift check before committing:** any change to the `wt` CLI's
+  commands, options, or output format MUST be reflected in both
+  `AGENTS.md` (agent-facing) and `README.md` (user-facing). Stale docs
+  are worse than no docs — `wt` CLI reference is one place agents/users
+  learn the surface area without reading source code.
 - Do NOT commit secret values — secrets live in the OS keyring via
   `wt vault` (see below).
 

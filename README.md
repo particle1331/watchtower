@@ -151,7 +151,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt map` | print repo structure as JSON |
 | `wt find <query>` | grep across `.ipynb` cell sources |
 | `wt count <name>` | print cell count (plan ranges before `--index N:M`) |
-| `wt cat <name>` | print notebook as markdown; each cell headed `## Cell N [code\|md]` (use N for `--index`) |
+| `wt cat <name>` | print notebook as markdown; each cell headed `> cell N [code\|md]` (use N for `--index`) |
 | `wt cat <name> --index N` | print only cell N |
 | `wt cat <name> --index N:M` | print cells N..M-1 (Python slice; `:M` and `N:` ok) |
 | `wt cat <name> --tag foo` | print cells with Jupyter tag `foo` |
