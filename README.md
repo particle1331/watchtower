@@ -30,7 +30,7 @@ wt new essay my-essay                # essays/<YYYY-MM-DD>-my-essay.ipynb
 wt new project my-code-project       # uv init projects/my-code-project
 
 wt render notes my-note              # render ipynb -> PDF (notes/pdf/) and open
-wt resume                            # compile assets/resume.tex -> assets/resume.pdf
+wt resume                            # render assets/resume.yaml -> assets/resume.tex + index.ipynb, then pdflatex -> assets/resume.pdf
 wt docs                              # serve site on :4200
 ```
 

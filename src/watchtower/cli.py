@@ -320,13 +320,14 @@ def render(
 
 @app.command()
 def resume() -> None:
-    """Compile assets/resume.tex -> assets/resume.pdf (moderncv)."""
+    """Render assets/resume.yaml -> assets/resume.tex + index.ipynb, then pdflatex -> assets/resume.pdf."""
     try:
-        pdf = resume_mod.build_resume()
+        pdf_path, index_path = resume_mod.build_resume()
     except FileNotFoundError as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
-    console.print(f"[green]resume PDF: {pdf}[/green]")
+    console.print(f"[green]resume PDF: {pdf_path}[/green]")
+    console.print(f"[green]home page: {index_path}[/green]")
 
 
 @app.command()
