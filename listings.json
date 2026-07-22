@@ -5,7 +5,9 @@
   },
   {
     "listing": "/notes/index.html",
-    "items": []
+    "items": [
+      "/notes/001-testnote.html"
+    ]
   },
   {
     "listing": "/learning/index.html",

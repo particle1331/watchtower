@@ -82,7 +82,7 @@ ul.task-list li input[type="checkbox"] {
     const options = {
       valueNames: ['listing-title','listing-date','listing-reading-time','listing-author',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: [],
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -165,7 +165,7 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../portfolio.html"> 
+    <a class="nav-link" href="../portfolio/portfolio.html"> 
 <span class="menu-text">portfolio</span></a>
   </li>  
   <li class="nav-item">
@@ -181,7 +181,7 @@ window.Quarto = {
 <span class="menu-text">notes</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../photos.html"> 
+    <a class="nav-link" href="../photos/photos.html"> 
 <span class="menu-text">photos</span></a>
   </li>  
 </ul>
@@ -232,7 +232,18 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-
+<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1784725409379" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../notes/001-testnote.html" class="no-external">Test</a>
+</h3>
+</div>
+<div class="metadata">
+<a href="../notes/001-testnote.html" class="no-external">
+<div class="listing-reading-time">1 min</div>
+</a>
+</div>
+</div>
 </div>
 <div class="listing-no-matching d-none">No matching items</div>
 </div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
@@ -308,7 +319,7 @@ window.Quarto = {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/particle1331\.github\.io\/watchtower\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
