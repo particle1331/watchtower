@@ -45,6 +45,7 @@
 \vspace{0.8em}
 {% endfor %}
 
+\newpage
 \vspace*{1.50em}
 
 \section{Skills}
@@ -85,5 +86,21 @@
 {% endif %}
 {% if not loop.last %}\par\vspace*{8 mm}{% endif %}
 {% endfor %}
+
+{% if early_employment %}
+\vspace*{1.0em}
+\section{Early Employment}
+\vspace{0.50em}
+{% for job in early_employment %}
+\cventry{}{}{ {{- job.title -}} \; | \; {{- job.company -}} }{ {{- job.dates -}} \vspace{-1.0em}}{}{
+\begin{itemize}
+{% for b in job.bullets %}
+\item {{ b }}
+{% endfor %}
+\end{itemize}
+}
+\vspace{0.8em}
+{% endfor %}
+{% endif %}
 
 \end{document}

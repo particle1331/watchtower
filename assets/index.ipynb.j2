@@ -26,7 +26,7 @@ rest of this site:
 
 ## Employment History
 
-{% for job in employment %}
+{% for job in employment + (early_employment or []) %}
 ### {{ job.title }} · {{ job.company }}
 *{{ job.dates }}*
 

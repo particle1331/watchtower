@@ -223,7 +223,7 @@ def _escape_for_target(data: dict, esc) -> dict:
     out = copy.deepcopy(data)
     if "summary" in out:
         out["summary"] = esc(out["summary"])
-    for key in ("employment", "skills", "projects", "education"):
+    for key in ("employment", "early_employment", "skills", "projects", "education"):
         items = out.get(key)
         if not isinstance(items, list):
             continue
