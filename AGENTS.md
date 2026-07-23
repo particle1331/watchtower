@@ -18,6 +18,10 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   `wt` wrappers below, which expose cell sources as plain markdown.
 - `.ipynb_checkpoints/` is excluded from listings and resolution.
 
+## Environment
+- All `wt` commands require the venv. Use `.venv/bin/wt` (from repo root)
+  or activate the venv first. Never run bare `wt`.
+
 ## Navigation
 - Run `wt map` first to get structured repo layout as JSON.
 - Run `wt ls notes|essays|learning|projects` for plain listings of notebooks.
