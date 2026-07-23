@@ -36,10 +36,9 @@ flowchart TB
     end
 
     subgraph BatchInf["Batch inference - 30k docs/day"]
-        PROD[Uploader or reconciliation producer<br/>task contract + idempotency key]
-        RMQ[(Managed RabbitMQ<br/>versioned queues + DLQ)]
+        PROD[Uploader + Beat reconciliation<br/>task contract + idempotency key]
+        RDS[(Self-hosted Redis on Container Apps<br/>versioned list keys as queues<br/>broker + result backend + 7d expiry)]
         CA[Celery on Container Apps + KEDA<br/>workers scale 0 to N<br/>on queue depth]
-        STATUS[(PostgreSQL status store<br/>task state + deduplication)]
         ACR[(ACR<br/>immutable images)]
     end
 
@@ -48,8 +47,8 @@ flowchart TB
     end
 
     subgraph Monitor["Monitoring + feedback"]
-        AI[Application Insights<br/>errors, latency, tokens]
-        AM[Azure Monitor<br/>metrics + operational alerts]
+        AI[Application Insights<br/>structured telemetry + traces]
+        AM[Azure Monitor<br/>service health + KQL dashboards]
         COST[Azure Cost Management<br/>budgets + forecast alerts]
         QJOB[Scheduled Azure ML job<br/>weekly quality evaluation]
         TEAMS[Teams feedback<br/>exported to Blob/Table]
@@ -80,11 +79,11 @@ flowchart TB
     MLFEVAL --> MLF
 
     BLOB --> PROD
-    PROD -->|publish to release queue| RMQ
-    RMQ -->|versioned tasks| CA
+    PROD -->|publish to release key| RDS
+    RDS -->|Celery dequeues tasks| CA
     ACR -->|pull image| CA
     CA --> AOAI
-    CA --> STATUS
+    CA -->|write results + idempotency| RDS
     CA -->|structured logs| AI
 
     FUNC --> MLR
@@ -137,7 +136,7 @@ flowchart LR
         S9[pytest + MLflow]
         S10[Git + MLflow Prompt Registry]
         S11[Azure OpenAI]
-        S12[Celery + RabbitMQ + Container Apps KEDA]
+        S12[Celery + Redis + Container Apps KEDA]
         S13[Azure Functions]
         S14[MLflow Models + ACR]
         S15[GitHub Actions + workload identity]
@@ -174,41 +173,41 @@ flowchart LR
 
 ## Stale-worker-safe rollout
 
-Queue workers do not receive HTTP traffic, so Container Apps traffic splitting cannot stop an old revision from fetching a new task. Batch releases therefore use multiple-revision mode and release-specific queues such as `documents.v3`.
+Queue workers do not receive HTTP traffic, so Container Apps traffic splitting cannot stop an old revision from fetching a new task. Batch releases therefore use multiple-revision mode and release-specific Redis list keys such as `documents:v3`.
 
 ```mermaid
 sequenceDiagram
     participant CI as GitHub Actions
     participant New as New worker revision
     participant Producer as Task producer
-    participant QNew as documents.v3
-    participant QOld as documents.v2
+    participant RNew as Redis key documents:v3
+    participant ROld as Redis key documents:v2
     participant Old as Old worker revision
 
-    CI->>New: Deploy immutable image digest, consuming only documents.v3
-    CI->>QNew: Publish compatibility smoke task
-    New->>QNew: Process smoke task
+    CI->>New: Deploy immutable image digest, consuming only documents:v3
+    CI->>RNew: Publish compatibility smoke task
+    New->>RNew: Dequeue smoke task
     New-->>CI: Readiness and contract checks pass
-    CI->>Producer: Switch active task contract and route to documents.v3
-    Producer->>QNew: Publish all new tasks
-    Old->>QOld: Finish ready and unacknowledged tasks
-    CI->>QOld: Verify ready = 0 and unacknowledged = 0
+    CI->>Producer: Switch active task contract and route to documents:v3
+    Producer->>RNew: Publish all new tasks
+    Old->>ROld: Finish ready tasks via LLEN check
+    CI->>ROld: Verify LLEN documents:v2 = 0
     CI->>Old: Deactivate old Container Apps revision
 ```
 
-Every task includes `task_contract_version`, `producer_release`, an idempotency key, and exact model and prompt versions. Celery workers consume only their configured release queue, use late acknowledgement, reject tasks with unsupported contracts, and handle `SIGTERM` as a warm shutdown. Deactivation occurs only after RabbitMQ reports no ready or unacknowledged tasks; otherwise the workflow stops and alerts. Rollback routes producers back to the preceding queue and revision only when the task contract is backward-compatible.
+Every task includes `task_contract_version`, `producer_release`, an idempotency key, and exact model and prompt versions. Celery workers consume only their configured release key, use late acknowledgement, reject tasks with unsupported contracts, and handle `SIGTERM` as a warm shutdown. Deactivation occurs only after `LLEN <release-key>` reports zero remaining tasks; otherwise the workflow stops and alerts. Rollback routes producers back to the preceding key and revision only when the task contract is backward-compatible.
 
 ## What is NOT Azure ML
 
 | Activity | Service used | Why not Azure ML |
 |---|---|---|
-| Batch inference (30k docs) | Celery + managed RabbitMQ + Container Apps + KEDA | Azure ML batch endpoints wrap a scoring script; this workload is durable task orchestration around Azure OpenAI calls. Celery and AMQP are portable, while Container Apps provides managed scale-to-zero compute. |
+| Batch inference (30k docs) | Celery + self-hosted Redis + Container Apps + KEDA | Azure ML batch endpoints wrap a scoring script; this workload is durable task orchestration around Azure OpenAI calls. Redis lists provide versioned release keys; KEDA scales to zero natively. |
 | Online inference (low volume) | Azure Functions | Managed online endpoints charge always-on compute; Functions scale to zero between requests. |
 | LLM calls | Azure OpenAI | Azure ML has no LLM hosting role here; it only logs runs. |
 | Prompt management | Git + MLflow 3 Prompt Registry | Git reviews prompt source; immutable registry versions and aliases control deployment. Azure ML's MLflow integration cannot provide the required MLflow 3 APIs. |
 | CI/CD | GitHub Actions + ACR | Azure ML pipelines are for ML jobs, not app deployment. |
-| Service monitoring | Application Insights + Azure Monitor | Azure ML's built-in monitoring covers jobs and endpoints, not Functions or Container Apps. |
-| Deployment + rollback | Versioned queues, Container Apps revisions, and immutable Function packages | Queue routing prevents stale worker revisions from accepting new task contracts. Azure ML's deployment surface only covers its own endpoints. |
+| Service monitoring | Application Insights + Azure Monitor + Log Analytics | Real-time health dashboards and custom KQL workbooks cover all services; MLflow, Redis, PostgreSQL, and worker health are all monitored from one pane. |
+| Deployment + rollback | Versioned Redis keys, Container Apps revisions, and immutable Function packages | Key routing prevents stale worker revisions from accepting new task contracts. Azure ML's deployment surface only covers its own endpoints. |
 | Data validation | Pandera (OSS) | Azure ML has no built-in data validation; it must be added as a pipeline step. |
 | Feature engineering | scikit-learn Pipeline (OSS) | Azure ML has no feature store; pipeline packaging in MLflow model is standard OSS. |
 
