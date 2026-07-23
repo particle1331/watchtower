@@ -14,7 +14,7 @@ project:
     - essays/index.ipynb
     - essays/*.ipynb
     - learning/index.ipynb
-    - learning/*.ipynb
+    - learning/**/*.ipynb
     - photos/photos.ipynb
   preview:
     port: 4200
@@ -34,12 +34,54 @@ website:
         text: portfolio
       - href: essays/index.ipynb
         text: essays
-      - href: learning/index.ipynb
-        text: learning
       - href: notes/index.ipynb
         text: notes
+      - href: learning/index.ipynb
+        text: learning
       - href: photos/photos.ipynb
         text: photos
+
+  sidebar:
+    - id: mlops
+      style: "floating"
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: learning/mlops/index.ipynb
+          contents:
+            - text: "01. Overview"
+              href: learning/mlops/01-overview.ipynb
+        - section: "Local Stack"
+          href: learning/mlops/02-local-stack.ipynb
+          contents:
+            - text: "02. Docker Compose Local Stack"
+              href: learning/mlops/02-local-stack.ipynb
+            - text: "03. MLflow 3: Tracking, Registry, Prompts"
+              href: learning/mlops/03-mlflow.ipynb
+            - text: "04. Data Validation with Pandera"
+              href: learning/mlops/04-data-validation.ipynb
+            - text: "05. ML Pipeline: Training & Packaging"
+              href: learning/mlops/05-ml-pipeline.ipynb
+            - text: "06. Celery + Redis: Task Queue"
+              href: learning/mlops/06-celery-redis.ipynb
+            - text: "07. The Idempotency Guard"
+              href: learning/mlops/07-idempotency.ipynb
+            - text: "08. Reconciliation Producer"
+              href: learning/mlops/08-reconciliation.ipynb
+        - section: "Azure Deployment"
+          href: learning/mlops/09-azure-iac.ipynb
+          contents:
+            - text: "09. Bicep: Infrastructure as Code"
+              href: learning/mlops/09-azure-iac.ipynb
+            - text: "10. Deploying and Tearing Down"
+              href: learning/mlops/10-azure-deploy.ipynb
+            - text: "11. Observability: Dashboards & Alerts"
+              href: learning/mlops/11-observability.ipynb
+            - text: "12. KEDA Scaling"
+              href: learning/mlops/12-keda-scaling.ipynb
+            - text: "13. End-to-End Integration Demo"
+              href: learning/mlops/13-integration-demo.ipynb
 
 format:
   html:
