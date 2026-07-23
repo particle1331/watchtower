@@ -49,3 +49,44 @@ Worker releases use versioned Redis list keys. A new Container Apps revision con
 **Result expiry.** `result_expires = 604800` (7 days) and per-result Redis TTLs keep the broker compact at ~210 MB for 30k daily documents with 1 KB result payloads. Idempotency keys share the same TTL — after expiry a document cannot be replayed without risking a duplicate, so the reconciliation window and result expiry window are aligned.
 
 **Crash safety.** A Redis restart loses queued but unacknowledged messages. In-flight tasks complete normally and reconnect when Redis returns. Lost queue entries are recovered by the next reconciliation scan. No tasks require manual resubmission.
+
+## Document processing pipeline
+
+Every worker task carries an exact model version, prompt version, release identifier, task contract version, and an idempotency key derived from the document's immutable identifier. Celery is configured as follows:
+
+```python
+# celeryconfig.py
+broker_url = "redis://redis-container:6379/0"
+result_backend = "redis://redis-container:6379/0"
+result_expires = 604800           # 7 days
+task_acks_late = True             # ack only after task completes
+task_reject_on_worker_lost = True # redeliver immediately if worker crashes
+worker_prefetch_multiplier = 1    # one task per worker at a time to respect quota
+```
+
+
+```python
+# tasks.py
+@app.task(bind=True, acks_late=True, task_reject_on_worker_lost=True,
+          autoretry_for=(Exception,), retry_backoff=True,
+          retry_backoff_max=600, retry_jitter=True, max_retries=5)
+def process_document(self, doc_id, doc_content, model_version, prompt_version,
+                     contract_version, release_id, idempotency_key):
+    if contract_version != SUPPORTED_CONTRACT:
+        logger.warning(f"Rejecting unsupported contract {contract_version}")
+        return  # no retry — log and skip
+
+    with idempotency_guard(idempotency_key):
+        result = call_openai(
+            deployment=DEPLOYMENT,
+            prompt=load_prompt(prompt_version),
+            content=doc_content,
+        )
+        store_result(doc_id, result, model_version, prompt_version)
+    # Celery acknowledges here — if the worker dies before this line,
+    # task_reject_on_worker_lost triggers immediate redelivery.
+```
+
+**`idempotency_guard(idempotency_key)`** is a context manager using `SETNX` (SET-if-Not-eXists) in Redis. It atomically writes a sentinel key with a 7-day TTL. If the key already exists, the task is a duplicate delivery and the guard skips processing — no duplicate OpenAI call, no duplicate side effect. If the key doesn't exist, the task proceeds normally. This is the single mechanism that makes Redis at-least-once delivery safe without broker-level acknowledgements.
+
+**Why Redis over a second service.** At 30,000 documents per day (~21/minute), RabbitMQ's durable queues, dead-letter exchanges, and publisher confirms address problems that only emerge at two orders of magnitude more load. The task code above achieves the same correctness guarantee with three lines of Celery configuration, a 30-line `idempotency_guard`, and the Beat reconciliation schedule — all running on one Redis instance that also serves as the result backend. The operational surface stays at one self-hosted process instead of a separate stateful cluster you patch, monitor, back up, and pay for.
