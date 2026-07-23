@@ -4,6 +4,9 @@
 //   az group create -n ml-platform-demo -l southeastasia
 //   az deployment group create -g ml-platform-demo -f infra/main.bicep
 //
+// Optional GPU training compute (deploy separately after quota approval):
+//   az deployment group create -g ml-platform-demo -f infra/gpu-training.bicep
+//
 // Tear down:
 //   az group delete -n ml-platform-demo --yes --no-wait
 //
@@ -75,6 +78,22 @@ param openAiName string = 'ml-platform-aoai-${suffix}'
 // ── Azure Functions ────────────────────────────────────────────────────────
 @description('Functions app name — globally unique.')
 param functionAppName string = 'ml-platform-fn-${suffix}'
+
+// ── Azure Machine Learning ─────────────────────────────────────────────────
+@description('Azure ML workspace name.')
+param amlWorkspaceName string = 'ml-platform-aml-${suffix}'
+
+@description('CPU training compute cluster name.')
+param amlCpuComputeName string = 'cpu-cluster'
+
+@description('CPU training VM size.')
+param amlCpuVmSize string = 'Standard_DS3_v2'
+
+@description('Minimum nodes for CPU training cluster (0 = scale to zero).')
+param amlCpuMinNodes int = 0
+
+@description('Maximum nodes for CPU training cluster.')
+param amlCpuMaxNodes int = 2
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Resources
@@ -172,6 +191,48 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-pr
   sku: { name: 'Basic' }
   properties: {
     adminUserEnabled: true
+  }
+}
+
+// ── Azure Machine Learning workspace ───────────────────────────────────────
+resource amlWorkspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
+  name: amlWorkspaceName
+  location: location
+  tags: { demo: demoTag }
+  identity: {
+    type: 'SystemAssigned'
+  }
+  sku: {
+    name: 'Basic'
+    tier: 'Basic'
+  }
+  properties: {
+    friendlyName: amlWorkspaceName
+    storageAccount: storageAccount.id
+    keyVault: keyVault.id
+    applicationInsights: appInsights.id
+    containerRegistry: containerRegistry.id
+    hbiWorkspace: false
+  }
+}
+
+// ── Azure ML CPU compute cluster (scale-to-zero) ───────────────────────────
+resource amlCpuCompute 'Microsoft.MachineLearningServices/workspaces/computes@2024-04-01' = {
+  parent: amlWorkspace
+  name: amlCpuComputeName
+  location: location
+  tags: { demo: demoTag }
+  properties: {
+    computeType: 'AmlCompute'
+    properties: {
+      vmSize: amlCpuVmSize
+      vmPriority: 'Dedicated'
+      scaleSettings: {
+        minNodeCount: amlCpuMinNodes
+        maxNodeCount: amlCpuMaxNodes
+      }
+      remoteLoginPortPublicAccess: 'Disabled'
+    }
   }
 }
 
@@ -371,5 +432,6 @@ output postgresFqdn string = postgresServer.properties.fullyQualifiedDomainName
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob
 output keyVaultUri string = keyVault.properties.vaultUri
 output acrLoginServer string = containerRegistry.properties.loginServer
+output amlWorkspaceName string = amlWorkspace.name
 output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
 output appInsightsKey string = appInsights.properties.InstrumentationKey

@@ -18,7 +18,8 @@ A lightweight ML platform built from portable OSS components hosted on managed A
 - **MLflow 3 on Azure Container Apps** for experiment tracking, model and prompt registries, evaluation, and LLM tracing
 - **Azure Database for PostgreSQL + Blob Storage** as MLflow's backend and proxied artifact stores
 - **Microsoft Entra ID + Key Vault** for MLflow user, workload, and secret management
-- **Azure ML compute** (scale-to-zero) for training and evaluation jobs
+- **Azure ML workspace + CPU compute cluster** (scale-to-zero) for training and evaluation jobs, deployed with the main platform
+- **Optional GPU compute module** (`infra/gpu-training.bicep`) for future multi-GPU fine-tuning POCs, deployed separately after GPU quota is approved
 - **Self-hosted Redis on Container Apps** as Celery broker and result backend with 7-day expiry
 - **Celery + Celery Beat + Container Apps/KEDA** for portable batch inference that scales to zero
 - **Idempotency-keyed task model** so Redis restarts are safe — the Beat reconciliation producer recovers any lost queue state

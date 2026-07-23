@@ -26,7 +26,7 @@ flowchart TB
     end
 
     subgraph Train["Training + evaluation compute"]
-        AMLC[Azure ML Compute Cluster<br/>scale-to-zero CPU]
+        AMLC[Azure ML Compute Cluster<br/>scale-to-zero CPU or GPU]
     end
 
     subgraph LLMServices["LLM + prompt layer"]
@@ -226,5 +226,6 @@ Every task includes `task_contract_version`, `producer_release`, an idempotency 
 | Activity | Service used | Why Azure ML |
 |---|---|---|
 | Training jobs | Azure ML compute cluster (scale-to-zero) | Quota-backed, reproducible environments, job definitions in Git. |
+| GPU training / fine-tuning | Azure ML compute cluster with GPU SKU | Managed GPU quota, reproducible multi-node jobs, and logging to the self-hosted MLflow server. |
 | Dataset versioning | Azure ML data assets | Immutable references to Blob paths; integrated with jobs. |
 | Quality monitoring | Scheduled Azure ML evaluation job | Uses scale-to-zero compute and logs results to the self-hosted MLflow 3 server. |
