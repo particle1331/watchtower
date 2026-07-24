@@ -1,6 +1,6 @@
 # watchtower
 
-A personal system for notes, essays, projects, and course material. Edit in
+A personal system for notes, articles, projects, and course notes. Edit in
 JupyterLab (running cells, getting outputs); Quarto renders the notebooks
 to the website using **inline outputs, no re-execution** — so heavy compute
 done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
@@ -10,10 +10,10 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 | Tier      | Where                       | Effort | Audience | Listing             |
 |-----------|-----------------------------|--------|----------|---------------------|
 | Home      | `index.ipynb`               | —      | public   | resume landing page |
-| Essays    | `essays/*.ipynb`            | high   | public   | `essays/index.ipynb` |
+| Articles  | `articles/*.ipynb`          | high   | public   | `articles/index.ipynb` |
 | Portfolio | `portfolio.ipynb`           | high   | public   | cards on one page   |
 | Notes     | `notes/*.ipynb`             | low    | you      | `notes/index.ipynb`  |
-| Learning  | `learning/*.ipynb`          | mid    | you      | `learning/index.ipynb`|
+| Courses   | `courses/*.ipynb`           | mid    | you      | `courses/index.ipynb`|
 | Photos    | `photos.ipynb`              | —      | public   | single gallery page |
 
 Source files are Jupyter notebooks (`.ipynb`). Agents read cell sources as
@@ -26,7 +26,7 @@ the raw JSON.
 make bootstrap                       # uv sync (creates .venv)
 
 wt new note my-note                  # notes/my-note.ipynb
-wt new essay my-essay                # essays/<YYYY-MM-DD>-my-essay.ipynb
+wt new article my-article             # articles/<YYYY-MM-DD>-my-article.ipynb
 wt new project my-code-project       # uv init projects/my-code-project
 
 wt render notes my-note              # render ipynb -> PDF (notes/pdf/) and open
@@ -101,17 +101,17 @@ notes/
   *.ipynb                 # working notes
   index.ipynb             # listing page
   pdf/                    # gitignored rendered PDFs
-essays/
-  *.ipynb                 # YYYY-MM-DD-slug.ipynb essays
+articles/
+  *.ipynb                 # long-form articles
   index.ipynb             # listing page
   pdf/                    # gitignored rendered PDFs
-learning/
+courses/
   *.ipynb                 # full course notes
   index.ipynb             # listing page
 projects/                 # uv workspaces (each member has its own pyproject.toml)
 src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
-  scaffold.py             # `wt new note|essay|project`
+  scaffold.py             # `wt new note|article|project`
   notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
   inspect.py              # `wt map | find | ls` + resolver
   convert.py              # `wt import` (external ipynb -> tier)
@@ -130,7 +130,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
 | `wt new note <name>`                 | create `notes/<name>.ipynb`                                |
-| `wt new essay <slug>`                | create `essays/<YYYY-MM-DD>-<slug>.ipynb`                  |
+| `wt new article <slug>`                | create `articles/<YYYY-MM-DD>-<slug>.ipynb`                  |
 | `wt new project <name>`              | `uv init projects/<name>` and wire workspace               |
 | `wt import <ipynb> <tier> [<name>]`  | import external notebook (Colab/Kaggle) into a tier        |
 
@@ -139,7 +139,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
 | `wt render notes <name>`             | render one notebook to PDF (`notes/pdf/`), open it        |
-| `wt render essays <name>`            | render one notebook to PDF (`essays/pdf/`)                 |
+| `wt render articles <name>`            | render one notebook to PDF (`articles/pdf/`)                |
 | `wt render <path/to.ipynb>`          | render by full path                                        |
 | `wt resume`                          | render `assets/resume.yaml` -> `assets/resume.tex` + `index.ipynb`, then `pdflatex` -> `assets/resume.pdf` |
 | `wt docs`                            | serve the site (blocking; :4200)                           |

@@ -1,6 +1,6 @@
 """Import an external Jupyter notebook into a content tier.
 
-`wt import <src.ipynb> notes|essays|learning [<name>]` copies a notebook
+`wt import <src.ipynb> notes|articles|courses [<name>]` copies a notebook
 (usually one you ran elsewhere — Colab, Kaggle, a teammate's machine) into
 the chosen tier dir. Outputs are preserved as-is; Quarto renders them
 without re-execution.
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import nbformat
 
-TIERS = ("notes", "essays", "learning")
+TIERS = ("notes", "articles", "courses")
 
 
 def import_notebook(src: str, tier: str, name: str | None = None) -> Path:

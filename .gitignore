@@ -4,7 +4,7 @@ todo.txt
 notes/hello.qmd
 .ipynb_checkpoints/
 notes/pdf/
-essays/pdf/
+articles/pdf/
 _site/
 .jupyter/
 __pycache__/
@@ -16,7 +16,7 @@ __pycache__/
 /.quarto/
 **/*.quarto_ipynb
 
-# Notebook checkpoints (actual notebook ipynbs in notes/essays/learning
+# Notebook checkpoints (actual notebook ipynbs in notes/articles/courses
 # are tracked as canonical content).
 .ipynb_checkpoints/
 

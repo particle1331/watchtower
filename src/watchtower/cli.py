@@ -20,7 +20,7 @@ from . import vault as vault_mod
 
 app = typer.Typer(
     name="wt",
-    help="Personal notes, essays, and projects system.",
+    help="Personal notes, articles, courses, and projects system.",
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
@@ -38,10 +38,10 @@ def new_note(name: str) -> None:
     console.print(f"[green]created {path}[/green]")
 
 
-@new_app.command("essay")
-def new_essay(slug: str) -> None:
-    """Create essays/<YYYY-MM-DD>-<slug>.ipynb."""
-    path = scaffold_mod.new_essay(slug)
+@new_app.command("article")
+def new_article(name: str) -> None:
+    """Create articles/<name>.ipynb with a date and title frontmatter."""
+    path = scaffold_mod.new_article(name)
     console.print(f"[green]created {path}[/green]")
 
 
@@ -157,18 +157,18 @@ def cat(
 
 
 @app.command()
-def ls(tier: str = typer.Argument(..., help="notes | essays | learning | projects")) -> None:
+def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projects")) -> None:
     """List source `.ipynb` notebooks in a tier."""
     if tier == "notes":
         items = inspect_mod.list_ipynb(Path("notes"))
-    elif tier == "essays":
-        items = inspect_mod.list_ipynb(Path("essays"))
-    elif tier == "learning":
-        items = inspect_mod.list_ipynb(Path("learning"))
+    elif tier == "articles":
+        items = inspect_mod.list_ipynb(Path("articles"))
+    elif tier == "courses":
+        items = inspect_mod.list_ipynb(Path("courses"))
     elif tier == "projects":
         items = [p["name"] for p in inspect_mod.list_projects()]
     else:
-        console.print(f"[red]unknown tier: {tier}. try notes|essays|learning|projects.[/red]")
+        console.print(f"[red]unknown tier: {tier}. try notes|articles|courses|projects.[/red]")
         raise typer.Exit(2)
     if not items:
         console.print(f"[yellow]no {tier} yet.[/yellow]")
@@ -180,7 +180,7 @@ def ls(tier: str = typer.Argument(..., help="notes | essays | learning | project
 @app.command(name="import")
 def import_cmd(
     ipynb: str = typer.Argument(..., help="path to source .ipynb to import"),
-    tier: str = typer.Argument(..., help="notes | essays | learning"),
+    tier: str = typer.Argument(..., help="notes | articles | courses"),
     name: str | None = typer.Argument(None, help="destination stem (default: source stem)"),
 ) -> None:
     """Import an external notebook into a content tier (preserves outputs)."""
@@ -302,14 +302,14 @@ def tag(
 
 @app.command()
 def render(
-    tier_or_path: str = typer.Argument(..., help="tier (notes|essays) or ipynb path"),
+    tier_or_path: str = typer.Argument(..., help="tier (notes|articles) or ipynb path"),
     name: str | None = typer.Argument(None, help="source name (omit if path given)"),
 ) -> None:
-    """Render a source .ipynb to PDF (notes/pdf/) and open it.
+    """Render a source .ipynb to PDF (notes/pdf/ or articles/pdf/) and open it.
 
     Usage:
       wt render notes test          -> render notes/test.ipynb
-      wt render essays test         -> render essays/test.ipynb
+      wt render articles test       -> render articles/test.ipynb
       wt render notes/test.ipynb    -> full path
     """
     source = f"{tier_or_path}/{name}.ipynb" if name else tier_or_path

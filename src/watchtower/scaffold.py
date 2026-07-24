@@ -1,6 +1,6 @@
-"""Scaffold new artifacts: notes, essays, projects.
+"""Scaffold new artifacts: notes, articles, projects.
 
-Notes and essays are Jupyter notebooks (`.ipynb`) — sourced as plain cell
+Notes and articles are Jupyter notebooks (`.ipynb`) — sourced as plain cell
 markdown via jupytext for agent reads, edited in JupyterLab as notebooks,
 and rendered by Quarto with inline outputs (no execution). Project
 scaffolding delegates to `uv init`.
@@ -15,11 +15,11 @@ from pathlib import Path
 import nbformat
 
 NOTES_DIR = Path("notes")
-ESSAYS_DIR = Path("essays")
+ARTICLES_DIR = Path("articles")
 PROJECTS = Path("projects")
 
 
-def _write_ipynb(path: Path, title: str, body: str = "") -> None:
+def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = "") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     nb = nbformat.v4.new_notebook()
     nb.metadata["kernelspec"] = {
@@ -27,10 +27,10 @@ def _write_ipynb(path: Path, title: str, body: str = "") -> None:
         "language": "python",
         "name": "python3",
     }
+    date_line = f'date: "{date}"\n' if date else ""
     frontmatter = f"""---
 title: "{title}"
----
-
+{date_line}---
 """
     nb.cells = [nbformat.v4.new_markdown_cell(frontmatter + body)]
     nbformat.write(nb, path)
@@ -43,12 +43,12 @@ def new_note(name: str) -> Path:
     return path
 
 
-def new_essay(slug: str) -> Path:
-    """Create essays/<YYYY-MM-DD>-<slug>.ipynb."""
+def new_article(name: str) -> Path:
+    """Create articles/<name>.ipynb with a date and title frontmatter."""
     date = datetime.now().strftime("%Y-%m-%d")
-    title = slug.replace("-", " ")
-    path = ESSAYS_DIR / f"{date}-{slug}.ipynb"
-    _write_ipynb(path, title)
+    title = name.replace("-", " ")
+    path = ARTICLES_DIR / f"{name}.ipynb"
+    _write_ipynb(path, title, date=date)
     return path
 
 

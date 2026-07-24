@@ -3,8 +3,8 @@
 ## Architecture
 This repo is a personal system with three tiers of content with DIFFERENT visibility:
 - `notes/*.ipynb` — private working notes (personal drafting surface)
-- `essays/*.ipynb` — public essays (promoted from notes, published via Quarto)
-- `learning/*.ipynb` — full course notes
+- `articles/*.ipynb` — public articles (promoted from notes, published via Quarto)
+- `courses/*.ipynb` — full course notes
 - `projects/<name>/` — code projects (each a uv workspace member)
 
 Canonical source files are Jupyter notebooks (`.ipynb`). Authors edit them
@@ -13,7 +13,7 @@ to the website using **inline outputs, no re-execution** — so heavy compute
 done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Knowledge base
-- The canonical knowledge base is `notes/*.ipynb` and `essays/*.ipynb`.
+- The canonical knowledge base is `notes/*.ipynb`, `articles/*.ipynb`, and `courses/*.ipynb`.
 - Raw `.ipynb` JSON is noisy — do NOT `grep`/`read` it directly. Use the
   `wt` wrappers below, which expose cell sources as plain markdown.
 - `.ipynb_checkpoints/` is excluded from listings and resolution.
@@ -24,7 +24,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Navigation
 - Run `wt map` first to get structured repo layout as JSON.
-- Run `wt ls notes|essays|learning|projects` for plain listings of notebooks.
+- Run `wt ls notes|articles|courses|projects` for plain listings of notebooks.
 - `<name>` for any cell command (`cat`, `edit-cell`, `append-cell`, `insert-cell`,
   `remove-cell`, `tag`, `count`, `render`) resolves as: bare stem (`001-testnote`),
   tier-prefixed stem (`notes/001-testnote`), or full path (`notes/001-testnote.ipynb`).
@@ -73,7 +73,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   With neither `--add` nor `--remove`, prints the cell's current tags.
 
 ## Importing notebooks
-- `wt import <path.ipynb> notes|essays|learning [<name>]` — copy a notebook
+- `wt import <path.ipynb> notes|articles|courses [<name>]` — copy a notebook
   produced elsewhere (Colab, Kaggle, a teammate) into a tier dir, preserving
   inline outputs. Quarto will render with those outputs, no re-execution.
 
@@ -81,7 +81,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 - `wt docs` serves the site on :4200 (publishing is handled by the
   `publish.yml` GitHub Action on push to `main`).
 - `wt render <tier> <name> | <path.ipynb>` renders one notebook to PDF
-  (`notes/pdf/` or `essays/pdf/`) using inline outputs.
+  (`notes/pdf/` or `articles/pdf/`) using inline outputs.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
   code at render time — it uses whatever outputs already live in the `.ipynb`.
 
@@ -114,9 +114,9 @@ if present (project-specific rules stack on top of these).
   `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
 ## CLI command reference (for the agent)
-- `wt new note|essay|project <name>` — scaffold new artifact (`.ipynb` stub)
+- `wt new note|article|project <name>` — scaffold new artifact (`.ipynb` stub)
 - `wt map` — JSON repo structure (orientation)
-- `wt ls notes|essays|learning|projects` — list sources in a tier
+- `wt ls notes|articles|courses|projects` — list sources in a tier
 - `wt find <query>` — grep across `.ipynb` cell sources
 - `wt count <name>` — cell count (plan ranges before `--index N:M`)
 - `wt cat <name> [--index N|N:M | --tag foo | --label foo] [--offset O --limit L]
@@ -133,7 +133,7 @@ if present (project-specific rules stack on top of these).
 - `wt remove-cell <name> --index N`
   — delete matching cell; --index only (delete ranges from highest to lowest)
 - `wt tag <name> --index N [--add foo] [--remove bar]` — manage cell tags
-- `wt import <path.ipynb> notes|essays|learning [<name>]`
+- `wt import <path.ipynb> notes|articles|courses [<name>]`
   — import an external notebook (Colab/Kaggle) into a tier
 - `wt render <tier> <name> | <path.ipynb>` — render notebook -> PDF
 - `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.ipynb`

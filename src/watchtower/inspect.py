@@ -13,10 +13,10 @@ import subprocess
 from pathlib import Path
 
 NOTES_DIR = Path("notes")
-ESSAYS_DIR = Path("essays")
-LEARNING_DIR = Path("learning")
+ARTICLES_DIR = Path("articles")
+COURSES_DIR = Path("courses")
 
-CONTENT_DIRS: tuple[Path, ...] = (NOTES_DIR, ESSAYS_DIR, LEARNING_DIR)
+CONTENT_DIRS: tuple[Path, ...] = (ARTICLES_DIR, NOTES_DIR, COURSES_DIR)
 
 
 def list_ipynb(src_dir: Path) -> list[str]:
@@ -48,9 +48,9 @@ def list_projects() -> list[dict]:
 
 def repo_map() -> dict:
     return {
+        "articles": list_ipynb(ARTICLES_DIR),
         "notes": list_ipynb(NOTES_DIR),
-        "essays": list_ipynb(ESSAYS_DIR),
-        "learning": list_ipynb(LEARNING_DIR),
+        "courses": list_ipynb(COURSES_DIR),
         "projects": list_projects(),
         "portfolio": "portfolio.ipynb",
         "rules": "AGENTS.md",
@@ -115,7 +115,7 @@ def resolve_ipynb(name: str) -> Path:
         return maybe.resolve()
     # Tier-prefixed stem: strip the tier dir prefix
     parts = name.split("/", 1)
-    if len(parts) == 2 and parts[0] in {"notes", "essays", "learning"}:
+    if len(parts) == 2 and parts[0] in {"notes", "articles", "courses"}:
         tier, stem = parts
         # Strip optional .ipynb suffix
         if stem.endswith(".ipynb"):
@@ -128,4 +128,4 @@ def resolve_ipynb(name: str) -> Path:
         for p in base.rglob(f"{name}.ipynb"):
             if p.exists() and ".ipynb_checkpoints" not in p.parts:
                 return p
-    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls notes|essays|learning`.")
+    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls notes|articles|courses`.")

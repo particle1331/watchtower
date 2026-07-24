@@ -1,7 +1,7 @@
 [project]
 name = "watchtower"
 version = "0.1.0"
-description = "Personal notes, essays, and projects system."
+description = "A central workspace for personal learning and portfolio projects."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

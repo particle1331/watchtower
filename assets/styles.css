@@ -148,6 +148,33 @@ h2 {
   color: #555;
 }
 
+/* --- Listing toolbar: fill filter input width --- */
+.listing-actions-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.listing-actions-group .quarto-listing-sort {
+  order: 2;
+  flex-shrink: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+.listing-actions-group .quarto-listing-filter {
+  order: 1;
+  flex: 1 1 auto;
+  width: auto !important;
+  margin-left: 0;
+  margin-bottom: 0;
+}
+
+.listing-actions-group .quarto-listing-filter input.form-control {
+  min-width: 0;
+}
+
 /* --- Resume hero banner --- */
 .resume-hero {
   position: relative;

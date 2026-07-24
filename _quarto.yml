@@ -11,10 +11,10 @@ project:
     - portfolio/portfolio.ipynb
     - notes/index.ipynb
     - notes/*.ipynb
-    - essays/index.ipynb
-    - essays/*.ipynb
-    - learning/index.ipynb
-    - learning/**/*.ipynb
+    - articles/index.ipynb
+    - articles/*.ipynb
+    - courses/index.ipynb
+    - courses/**/*.ipynb
     - photos/photos.ipynb
   preview:
     port: 4200
@@ -32,12 +32,12 @@ website:
     left:
       - href: portfolio/portfolio.ipynb
         text: portfolio
-      - href: essays/index.ipynb
-        text: essays
+      - href: articles/index.ipynb
+        text: articles
       - href: notes/index.ipynb
         text: notes
-      - href: learning/index.ipynb
-        text: learning
+      - href: courses/index.ipynb
+        text: courses
       - href: photos/photos.ipynb
         text: photos
 
@@ -48,40 +48,40 @@ website:
       align: left
       contents:
         - section: ""
-          href: learning/mlops/index.ipynb
+          href: courses/mlops/index.ipynb
           contents:
             - text: "01. Overview"
-              href: learning/mlops/01-overview.ipynb
+              href: courses/mlops/01-overview.ipynb
         - section: "Local Stack"
-          href: learning/mlops/02-local-stack.ipynb
+          href: courses/mlops/02-local-stack.ipynb
           contents:
             - text: "02. Docker Compose Local Stack"
-              href: learning/mlops/02-local-stack.ipynb
+              href: courses/mlops/02-local-stack.ipynb
             - text: "03. MLflow 3: Tracking, Registry, Prompts"
-              href: learning/mlops/03-mlflow.ipynb
+              href: courses/mlops/03-mlflow.ipynb
             - text: "04. Data Validation with Pandera"
-              href: learning/mlops/04-data-validation.ipynb
+              href: courses/mlops/04-data-validation.ipynb
             - text: "05. ML Pipeline: Training & Packaging"
-              href: learning/mlops/05-ml-pipeline.ipynb
+              href: courses/mlops/05-ml-pipeline.ipynb
             - text: "06. Celery + Redis: Task Queue"
-              href: learning/mlops/06-celery-redis.ipynb
+              href: courses/mlops/06-celery-redis.ipynb
             - text: "07. The Idempotency Guard"
-              href: learning/mlops/07-idempotency.ipynb
+              href: courses/mlops/07-idempotency.ipynb
             - text: "08. Reconciliation Producer"
-              href: learning/mlops/08-reconciliation.ipynb
+              href: courses/mlops/08-reconciliation.ipynb
         - section: "Azure Deployment"
-          href: learning/mlops/09-azure-iac.ipynb
+          href: courses/mlops/09-azure-iac.ipynb
           contents:
             - text: "09. Bicep: Infrastructure as Code"
-              href: learning/mlops/09-azure-iac.ipynb
+              href: courses/mlops/09-azure-iac.ipynb
             - text: "10. Deploying and Tearing Down"
-              href: learning/mlops/10-azure-deploy.ipynb
+              href: courses/mlops/10-azure-deploy.ipynb
             - text: "11. Observability: Dashboards & Alerts"
-              href: learning/mlops/11-observability.ipynb
+              href: courses/mlops/11-observability.ipynb
             - text: "12. KEDA Scaling"
-              href: learning/mlops/12-keda-scaling.ipynb
+              href: courses/mlops/12-keda-scaling.ipynb
             - text: "13. End-to-End Integration Demo"
-              href: learning/mlops/13-integration-demo.ipynb
+              href: courses/mlops/13-integration-demo.ipynb
 
 format:
   html:
