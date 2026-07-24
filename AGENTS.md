@@ -114,7 +114,7 @@ if present (project-specific rules stack on top of these).
   `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
 ## CLI command reference (for the agent)
-- `wt new note|article|project <name>` — scaffold new artifact (`.ipynb` stub)
+- `wt new note|article|course|project <name>` — scaffold new artifact (`.ipynb` stub or course dir)
 - `wt map` — JSON repo structure (orientation)
 - `wt ls notes|articles|courses|projects` — list sources in a tier
 - `wt find <query>` — grep across `.ipynb` cell sources

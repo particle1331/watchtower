@@ -45,6 +45,16 @@ def new_article(name: str) -> None:
     console.print(f"[green]created {path}[/green]")
 
 
+@new_app.command("course")
+def new_course(
+    name: str = typer.Argument(..., help="course folder name (e.g. llm)"),
+    title: str | None = typer.Argument(None, help="display title (default: derived from name)"),
+) -> None:
+    """Create courses/<name>/ with an index notebook and a first lesson stub."""
+    path = scaffold_mod.new_course(name, title=title)
+    console.print(f"[green]created {path}[/green]")
+
+
 @new_app.command("project")
 def new_project(name: str) -> None:
     """uv init projects/<name> and wire it into the workspace."""

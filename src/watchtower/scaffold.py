@@ -1,8 +1,9 @@
-"""Scaffold new artifacts: notes, articles, projects.
+"""Scaffold new artifacts: notes, articles, courses, projects.
 
 Notes and articles are Jupyter notebooks (`.ipynb`) — sourced as plain cell
 markdown via jupytext for agent reads, edited in JupyterLab as notebooks,
-and rendered by Quarto with inline outputs (no execution). Project
+and rendered by Quarto with inline outputs (no execution). Courses are
+directory trees with an index notebook and sequential lessons. Project
 scaffolding delegates to `uv init`.
 """
 
@@ -16,6 +17,7 @@ import nbformat
 
 NOTES_DIR = Path("notes")
 ARTICLES_DIR = Path("articles")
+COURSES_DIR = Path("courses")
 PROJECTS = Path("projects")
 
 
@@ -50,6 +52,28 @@ def new_article(name: str) -> Path:
     path = ARTICLES_DIR / f"{name}.ipynb"
     _write_ipynb(path, title, date=date)
     return path
+
+
+def new_course(name: str, title: str | None = None) -> Path:
+    """Create courses/<name>/ with an index notebook and a first lesson stub."""
+    if title is None:
+        title = name.replace("-", " ")
+    course_dir = COURSES_DIR / name
+    course_dir.mkdir(parents=True, exist_ok=True)
+
+    # index.ipynb
+    index_path = course_dir / "index.ipynb"
+    _write_ipynb(index_path, title, body=f"\n\n# {title}\n\nTODO: course overview.\n")
+
+    # first lesson
+    lesson_path = course_dir / "01-introduction.ipynb"
+    _write_ipynb(lesson_path, "Introduction", body=f"\n\n# Introduction\n\nTODO: lesson content.\n")
+
+    # metadata
+    metadata_path = course_dir / "_metadata.yml"
+    metadata_path.write_text(f'title: "{title}"\ndescription: ""\nlessons:\n  - 01-introduction\n')
+
+    return course_dir
 
 
 def new_project(name: str) -> Path:
