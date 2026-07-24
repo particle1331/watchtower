@@ -2,9 +2,9 @@
 
 ## Architecture
 This repo is a personal system with three tiers of content with DIFFERENT visibility:
-- `notes/*.ipynb` — private working notes (personal drafting surface)
-- `articles/*.ipynb` — public articles (promoted from notes, published via Quarto)
-- `courses/*.ipynb` — full course notes
+- `notes/*.ipynb` — atomic, focused explorations: a single definition, technique, or concept with a minimal live demo
+- `articles/*.ipynb` — self-contained long-form articles and deep dives
+- `courses/` — full course notes
 - `projects/<name>/` — code projects (each a uv workspace member)
 
 Canonical source files are Jupyter notebooks (`.ipynb`). Authors edit them
@@ -13,7 +13,7 @@ to the website using **inline outputs, no re-execution** — so heavy compute
 done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Knowledge base
-- The canonical knowledge base is `notes/*.ipynb`, `articles/*.ipynb`, and `courses/*.ipynb`.
+- The canonical knowledge base is `notes/*.ipynb`, `articles/*.ipynb`, and `courses/**/*.ipynb`.
 - Raw `.ipynb` JSON is noisy — do NOT `grep`/`read` it directly. Use the
   `wt` wrappers below, which expose cell sources as plain markdown.
 - `.ipynb_checkpoints/` is excluded from listings and resolution.

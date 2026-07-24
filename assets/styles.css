@@ -188,6 +188,10 @@ h2 {
 }
 
 /* --- Active filter pills: orange accent --- */
+.quarto-listing-category-title {
+  margin-top: 10px;
+}
+
 .quarto-listing-category .category {
   font-size: 0.88em;
 }
