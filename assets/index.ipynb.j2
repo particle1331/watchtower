@@ -35,6 +35,9 @@ AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
     var nodes = [];
     var edges = [];
     var layers = [3, 6, 2];
+    var breathDuration = 5.5; // seconds for one calm fade-in / fade-out breath
+    var breathShape = 0.5;  // <1 = stay visible longer, fade faster near ends
+    var lastBreathIndex = -1;
 
     function resize() {
       var w = hero.clientWidth;
@@ -71,9 +74,30 @@ AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
         }
       });
 
-      // Sparse connections between adjacent layers.
+      generateEdges();
+    }
+
+    function generateEdges() {
+      edges = [];
+      var hasInput = {};
+
+      // Input → hidden.
       for (var i = 0; i < nodes.length; i++) {
         var a = nodes[i];
+        if (a.layer !== 0) continue;
+        for (var j = 0; j < nodes.length; j++) {
+          var b = nodes[j];
+          if (b.layer === a.layer + 1 && Math.random() < 0.65) {
+            edges.push({ i: i, j: j, layer: a.layer, phase: Math.random() * 0.8 });
+            hasInput[j] = true;
+          }
+        }
+      }
+
+      // Hidden → output only for hidden nodes that received input.
+      for (var i = 0; i < nodes.length; i++) {
+        var a = nodes[i];
+        if (a.layer !== 1 || !hasInput[i]) continue;
         for (var j = 0; j < nodes.length; j++) {
           var b = nodes[j];
           if (b.layer === a.layer + 1 && Math.random() < 0.65) {
@@ -87,6 +111,16 @@ AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
       var w = hero.clientWidth;
       var h = hero.clientHeight;
       var t = performance.now() / 1000;
+      var breathIndex = Math.floor(t / breathDuration);
+
+      if (breathIndex !== lastBreathIndex) {
+        generateEdges();
+        lastBreathIndex = breathIndex;
+      }
+
+      var breathProgress = (t % breathDuration) / breathDuration;
+      var breath = Math.pow(Math.sin(breathProgress * Math.PI), breathShape);
+
       ctx.clearRect(0, 0, w, h);
 
       var live = nodes.map(function(n) {
@@ -98,13 +132,15 @@ AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
       });
 
       // Animate edge opacity like a signal activating across the network.
+      // The pulse is anchored to the breath cycle so edges fade out cleanly
+      // before the set is re-initialized at the start of the next breath.
       edges.forEach(function(e) {
         var a = live[e.i];
         var b = live[e.j];
-        var pulse = 0.5 + 0.5 * Math.sin(t * 2.8 - e.layer * 1.6 + e.phase);
-        var alpha = 0.25 + 0.5 * pulse;
+        var pulse = 0.5 + 0.5 * Math.sin(breathProgress * Math.PI * 2 * 2 - e.layer * 1.6 + e.phase);
+        var alpha = (0.25 + 0.5 * pulse) * breath;
         ctx.strokeStyle = 'rgba(233, 84, 32, ' + alpha + ')';
-        ctx.lineWidth = 1.2 + pulse * 0.8;
+        ctx.lineWidth = (1.2 + pulse * 0.8) * breath;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
