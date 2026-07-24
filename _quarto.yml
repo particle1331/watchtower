@@ -21,7 +21,7 @@ project:
     browser: false
 
 website:
-  title: "Ron Medina ∷ Resume"
+  title: "Ron Medina ∷ Résumé"
   back-to-top-navigation: true
   page-navigation: true
   bread-crumbs: true

@@ -6,7 +6,7 @@
 name: Ron Medina
 
 contact:
-  phone: (+63) 976 459 2991
+  phone: (+63) 962 831 6730
   email: ron.mdn@gmail.com
   github: particle1331
   linkedin: linkedin.com/in/ron-medina-5a411218a/
@@ -28,7 +28,7 @@ employment:
       - Direct report to the VP of Software Engineering & AI on day-to-day operations and progress
       - Built the core backend models for the hiring platform that evaluates 5,000+ monthly candidates across all PH sites — predictive models for customer and employee retention risk, and ranking/recommender-style models for employee performance across program placements
       - Designed a document analysis pipeline processing up to 30K documents daily with failure tracking, retries, and sufficient throughput; documents are attributed to the organizational hierarchy (employee, coach, manager) supporting RBAC, tagged using NLP and LLM tools, with a monitoring and analytics dashboard that only surfaces results users have access to based on their org hierarchy
-      - Implemented an agentic solution for determining ideal program placement of candidate hires, combining program description/LOB, contractual obligations, headcount fill requirements, candidate history, and interview/assessment scores
+      - Implemented a RecSys-style solution for determining ideal program placement of candidate hires, by combining LOB description, contractual obligations, headcount requirements, candidate history, and interview/assessment scores
       - Designed a repeatable feature engineering, preprocessing, training, and monitoring pipeline with a clean deployment interface for ML models served via Azure Functions; trained per-program per-KPI models, overcoming sparsity through extensive EDA and domain understanding
     tech: "Python, Azure AI Services, Azure ML, LangChain, Docker, CI/CD"
 
