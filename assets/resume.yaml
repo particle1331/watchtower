@@ -1,7 +1,7 @@
 # Canonical résumé source. `wt resume` renders this into:
 #   - assets/resume.tex  (via assets/resume.tex.j2) -> assets/resume.pdf
-#   - index.qmd          (via assets/index.qmd.j2)  -> site home page
-# Edit this file; never hand-edit the generated .tex / .qmd.
+#   - index.ipynb        (via assets/index.ipynb.j2) -> site home page
+# Edit this file; never hand-edit the generated .tex / .ipynb.
 
 name: Ron Medina
 
@@ -12,7 +12,7 @@ contact:
   linkedin: linkedin.com/in/ron-medina-5a411218a/
 
 summary: >
-  Machine Learning Engineer with a mathematics background. I design, build, and ship
+  Senior Machine Learning Engineer with a maths & physics background. I design, build, and ship
   ML and deep learning systems that optimize operations and surface useful
   insight — with attention to the infrastructure and engineering that keeps
   them running in production.
@@ -73,10 +73,10 @@ early_employment:
       - Presented a talk on artificial intelligence and deep learning at the National Youth Congress, UP Diliman School of Economics, Nov 2019
 
   - title: Data Analyst
-    company: "Tita's Groceria"
+    company: "Tita's Groceria (E-commerce)" 
     dates: June 2017 -- June 2019
     bullets:
-      - Helped grow an E-commerce shop's follower count from 30,000 to 100,000+ across hundreds of daily transactions
+      - Helped grow the shop's follower count from 30,000 to 100,000+ w/ hundreds of daily transactions
       - Analyzed frequently-bought-together items using graphs, Markov chains, and correlations, and clustered customers by RFM criteria
 
 skills:
@@ -115,7 +115,7 @@ education:
     major: Mathematics
     dates: "06/13 -- 12/18 (courses), 09/23 -- 01/24 (thesis)"
     awards: "University Scholar, 2nd Semester 2013-2014. GWA: 1.23"
-    thesis: "An Introduction to Finite Frames and a QR Factorization Approach for Constructing MB Frames"
+    thesis: "An Intro. to Finite Frames and a QR Factorization Approach for Constructing MB Frames"
     courses:
       - Intro to Computer Science (Python)
       - Numerical Analysis
