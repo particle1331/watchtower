@@ -175,6 +175,100 @@ h2 {
   min-width: 0;
 }
 
+/* --- Listing table header consistency --- */
+.quarto-listing thead th a.sort {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.quarto-listing thead th a.sort:hover {
+  color: #E95420;
+  text-decoration: none;
+}
+
+/* --- Active filter pills: orange accent --- */
+.quarto-listing-category .category {
+  font-size: 0.88em;
+}
+
+.quarto-listing-category .category.active {
+  color: #E95420;
+  font-weight: 600;
+}
+
+.df-year-pill {
+  font-size: 0.88em;
+}
+
+.df-months .df-month-pill {
+  font-size: 0.78em;
+}
+
+.df-month-pill.df-active {
+  color: #E95420;
+  font-weight: 600;
+}
+
+/* --- Date filter pills (injected by date-pills.lua) --- */
+.df-container {
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.df-title {
+  cursor: default;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.df-year-section {
+  margin-bottom: 0.15rem;
+}
+
+.df-year-pill {
+  cursor: pointer;
+  padding: 0.1rem 0;
+  transition: color 0.1s ease;
+}
+
+.df-year-pill:hover {
+  color: var(--bs-body-color);
+}
+
+.df-year-pill .df-chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  font-size: 0.75em;
+  margin-right: 0.15em;
+}
+
+.df-year-section.df-expanded .df-year-pill .df-chevron {
+  transform: rotate(90deg);
+}
+
+.df-months {
+  display: none;
+  padding-left: 1.25rem;
+}
+
+.df-year-section.df-expanded .df-months {
+  display: block;
+}
+
+.df-month-pill {
+  cursor: pointer;
+  padding: 0.1rem 0;
+  font-size: 0.95em;
+  transition: color 0.1s ease;
+}
+
+.df-month-pill:hover:not(.df-active) {
+  color: var(--bs-body-color);
+}
+
 /* --- Resume hero banner --- */
 .resume-hero {
   position: relative;

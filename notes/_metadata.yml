@@ -2,3 +2,4 @@
 # `wt render notes <name>` passes --to pdf; filters apply to any format.
 filters:
   - ../filters/center-images.lua
+  - ../filters/date-pills.lua
