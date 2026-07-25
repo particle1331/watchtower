@@ -24,10 +24,14 @@ the raw JSON.
 
 ```bash
 make bootstrap                       # uv sync (creates .venv)
-
 wt new note my-note                  # notes/my-note.ipynb
-wt new article my-article             # articles/<YYYY-MM-DD>-my-article.ipynb
-wt new course my-course               # courses/my-course/ (index + first lesson + _metadata.yml)
+wt new note my-note -t "My Note"       # custom display title
+
+wt new article my-article             # articles/my-article.ipynb
+wt new article my-article -t "My Article"  # custom display title
+wt new course llm "Large Language Models"  # courses/llm/ (index + first lesson)
+wt new chapter my-course 02-bar       # courses/my-course/02-bar.ipynb + register in sidebar
+wt new section my-course "My Section" # add section header to course sidebar
 wt new project my-code-project       # uv init projects/my-code-project
 
 wt render notes my-note              # render ipynb -> PDF (notes/pdf/) and open
@@ -50,7 +54,10 @@ For agent reads/edits, never touch the raw `.ipynb` JSON. Use `wt cat`,
 ## Importing notebooks from elsewhere
 
 ```bash
-wt import ~/Downloads/foo.ipynb notes my-foo   # copy + normalize into notes/
+wt import ~/Downloads/foo.ipynb notes my-foo                  # copy + normalize into notes/
+wt import ~/Downloads/foo.ipynb courses llm                    # import as a chapter of llm/ + register in sidebar
+wt import ~/Downloads/foo.ipynb courses llm 02-bar             # chapter stem override
+wt import ~/Downloads/foo.ipynb courses llm 02-bar -s "Setup"  # into a specific section
 ```
 
 Inline outputs are preserved — Colab/Kaggle runs ship with the file, so a
@@ -112,7 +119,7 @@ courses/
 projects/                 # uv workspaces (each member has its own pyproject.toml)
 src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
-  scaffold.py             # `wt new note|article|course|project`
+  scaffold.py             # `wt new note|article|course|chapter|section|project`
   notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
   inspect.py              # `wt map | find | ls` + resolver
   convert.py              # `wt import` (external ipynb -> tier)
@@ -128,13 +135,16 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 
 ### Scaffolding & importing
 
-| Command                              | What it does                                              |
-|--------------------------------------|-----------------------------------------------------------|
-| `wt new note <name>`                 | create `notes/<name>.ipynb`                                |
-| `wt new article <slug>`              | create `articles/<YYYY-MM-DD>-<slug>.ipynb`                |
-| `wt new course <name>`               | create `courses/<name>/` with index, first lesson, metadata |
-| `wt new project <name>`              | `uv init projects/<name>` and wire workspace               |
-| `wt import <ipynb> <tier> [<name>]`  | import external notebook (Colab/Kaggle) into a tier        |
+| Command | What it does |
+| --- | --- |
+| `wt new note <name> [--title <title>]` | create `notes/<name>.ipynb` (title optional; defaults to `<name>`) |
+| `wt new article <name> [--title <title>]` | create `articles/<name>.ipynb` (date injected in frontmatter; title optional; defaults to `<name>` titleized) |
+| `wt new course <name> <title>` | create `courses/<name>/` with index, first lesson, and sidebar (title shown in index frontmatter) |
+| `wt new chapter <course> <name> [--title <title>] [--section <name>]` | create `courses/<course>/<name>.ipynb` and register in sidebar (title optional; sidebar text and notebook frontmatter are independent — edit either or both after scaffolding) |
+| `wt new section <course> <name>` | add a section header to a course's sidebar in `_quarto.yml` |
+| `wt new project <name>` | `uv init projects/<name>` and wire workspace |
+| `wt import <ipynb> notes|articles [<name>]` | import external notebook (Colab/Kaggle) into a flat tier |
+| `wt import <ipynb> courses <course> [<chapter>] [--section <name>]` | import as a chapter of an existing course (copies into the course dir and registers in the course's sidebar) |
 
 ### Rendering & serving
 

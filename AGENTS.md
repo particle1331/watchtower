@@ -73,9 +73,13 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   With neither `--add` nor `--remove`, prints the cell's current tags.
 
 ## Importing notebooks
-- `wt import <path.ipynb> notes|articles|courses [<name>]` — copy a notebook
-  produced elsewhere (Colab, Kaggle, a teammate) into a tier dir, preserving
-  inline outputs. Quarto will render with those outputs, no re-execution.
+- `wt import <path.ipynb> notes|articles [<name>]` — copy a notebook produced
+  elsewhere (Colab, Kaggle, a teammate) into a tier dir, preserving inline
+  outputs. Quarto will render with those outputs, no re-execution.
+- `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]` —
+  import as a chapter of an existing course: copies to
+  `courses/<course>/<chapter>.ipynb` and registers it in the course's sidebar in
+  `_quarto.yml` (last section by default, or the section named by `--section`).
 
 ## Rendering
 - `wt docs` serves the site on :4200 (publishing is handled by the
@@ -114,7 +118,11 @@ if present (project-specific rules stack on top of these).
   `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
 ## CLI command reference (for the agent)
-- `wt new note|article|course|project <name>` — scaffold new artifact (`.ipynb` stub or course dir)
+- `wt new note|article <name> [--title <title>]` — scaffold a notebook stub (note or article); <title> defaults to a placeholder derived from <name>
+- `wt new project <name>` — `uv init` workspace member
+- `wt new course <name> <title>` — scaffold `courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
+- `wt new chapter <course> <name> [--title <title>] [--section <name>]` — scaffold a course chapter (notebook) and register it in the course's sidebar in `_quarto.yml`; <title> defaults to a placeholder derived from <name> (sidebar text and notebook frontmatter are independent surfaces — edit either or both after scaffolding)
+- `wt new section <course> <name>` — add a section header to a course's sidebar in `_quarto.yml`
 - `wt map` — JSON repo structure (orientation)
 - `wt ls notes|articles|courses|projects` — list sources in a tier
 - `wt find <query>` — grep across `.ipynb` cell sources
@@ -133,8 +141,11 @@ if present (project-specific rules stack on top of these).
 - `wt remove-cell <name> --index N`
   — delete matching cell; --index only (delete ranges from highest to lowest)
 - `wt tag <name> --index N [--add foo] [--remove bar]` — manage cell tags
-- `wt import <path.ipynb> notes|articles|courses [<name>]`
-  — import an external notebook (Colab/Kaggle) into a tier
+- `wt import <path.ipynb> notes|articles [<name>]` — import an external notebook
+  (Colab/Kaggle) into a flat tier
+- `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]`
+  — import as a chapter of an existing course (copies into the course dir and
+  registers in the course's sidebar)
 - `wt render <tier> <name> | <path.ipynb>` — render notebook -> PDF
 - `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.ipynb`
   via Jinja2 templates, then `pdflatex` -> `assets/resume.pdf` (builds in a

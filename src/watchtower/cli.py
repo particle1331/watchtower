@@ -10,13 +10,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import convert as convert_mod
-from . import inspect as inspect_mod
-from . import notebook as notebook_mod
-from . import render as render_mod
-from . import resume as resume_mod
-from . import scaffold as scaffold_mod
-from . import vault as vault_mod
+from . import convert
+from . import inspect
+from . import notebook
+from . import render
+from . import resume
+from . import scaffold
+from . import vault
 
 app = typer.Typer(
     name="wt",
@@ -32,34 +32,92 @@ app.add_typer(new_app)
 
 
 @new_app.command("note")
-def new_note(name: str) -> None:
+def new_note(
+    name: str,
+    title: str | None = typer.Option(
+        None,
+        "--title",
+        "-t",
+        help="display title (default: derived from name)",
+    ),
+) -> None:
     """Create notes/<name>.ipynb with a minimal frontmatter stub."""
-    path = scaffold_mod.new_note(name)
+    path = scaffold.new_note(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
 
 @new_app.command("article")
-def new_article(name: str) -> None:
+def new_article(
+    name: str,
+    title: str | None = typer.Option(
+        None,
+        "--title",
+        "-t",
+        help="display title (default: derived from name)",
+    ),
+) -> None:
     """Create articles/<name>.ipynb with a date and title frontmatter."""
-    path = scaffold_mod.new_article(name)
+    path = scaffold.new_article(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
 
 @new_app.command("course")
 def new_course(
     name: str = typer.Argument(..., help="course folder name (e.g. llm)"),
-    title: str | None = typer.Argument(None, help="display title (default: derived from name)"),
+    title: str = typer.Argument(..., help='display title (e.g. "Large Language Models")'),
 ) -> None:
     """Create courses/<name>/ with an index notebook and a first lesson stub."""
-    path = scaffold_mod.new_course(name, title=title)
+    path = scaffold.new_course(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
 
 @new_app.command("project")
 def new_project(name: str) -> None:
     """uv init projects/<name> and wire it into the workspace."""
-    path = scaffold_mod.new_project(name)
+    path = scaffold.new_project(name)
     console.print(f"[green]created {path}[/green]")
+
+
+@new_app.command("chapter")
+def new_chapter(
+    course: str = typer.Argument(..., help="course folder name (e.g. mlops)"),
+    name: str = typer.Argument(..., help="chapter stem (e.g. 02-data-validation)"),
+    title: str | None = typer.Option(
+        None, 
+        "--title",
+        "-t",
+        help="display title (default: derived from name)"
+    ),
+    section: str | None = typer.Option(
+        None,
+        "--section",
+        "-s",
+        help="section name to place this chapter under (default: last section)",
+    ),
+) -> None:
+    """Scaffold courses/<course>/<name>.ipynb and register it in the course sidebar."""
+    try:
+        path = scaffold.new_course_chapter(
+            course, name, title=title, section=section
+        )
+    except (FileNotFoundError, FileExistsError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]created {path}[/green]")
+
+
+@new_app.command("section")
+def new_section(
+    course: str = typer.Argument(..., help="course folder name (e.g. mlops)"),
+    name: str = typer.Argument(..., help="section name (e.g. 'Local Stack')"),
+) -> None:
+    """Add a section header to a course's sidebar in _quarto.yml."""
+    try:
+        scaffold.new_course_section(course, name)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]added section '{name}' to {course}[/green]")
 
 
 vault_app = typer.Typer(name="vault", help="Manage secrets in OS keyring.", no_args_is_help=True)
@@ -69,14 +127,14 @@ app.add_typer(vault_app)
 @vault_app.command("set")
 def vault_set(key: str, value: str) -> None:
     """Store a secret in the OS keyring."""
-    vault_mod.set_secret(key, value)
+    vault.set_secret(key, value)
     console.print(f"[green]stored {key}.[/green]")
 
 
 @vault_app.command("get")
 def vault_get(key: str) -> None:
     """Retrieve a secret value."""
-    val = vault_mod.get_secret(key)
+    val = vault.get_secret(key)
     if val is None:
         console.print(f"[red]{key} not set.[/red]")
         raise typer.Exit(1)
@@ -86,7 +144,7 @@ def vault_get(key: str) -> None:
 @vault_app.command("list")
 def vault_list() -> None:
     """List stored secret keys (no values)."""
-    keys = vault_mod.list_keys()
+    keys = vault.list_keys()
     if not keys:
         console.print("[yellow]no secrets stored.[/yellow]")
         return
@@ -99,20 +157,20 @@ def vault_list() -> None:
 @vault_app.command("export")
 def vault_export() -> None:
     """Emit export lines for all stored secrets. Usage: eval $(wt vault export)."""
-    for k, v in vault_mod.all_secrets().items():
+    for k, v in vault.all_secrets().items():
         print(f"export {k}={shlex.quote(v)}")
 
 
 @app.command(name="map")
 def map_cmd() -> None:
     """Print repo structure as JSON — agent navigation context."""
-    print(inspect_mod.repo_map_json())
+    print(inspect.repo_map_json())
 
 
 @app.command()
 def find(query: str) -> None:
     """Grep across notebook cell sources, reporting cell indices."""
-    out = inspect_mod.find_in_src(query)
+    out = inspect.find_in_src(query)
     if out:
         print(out)
     else:
@@ -123,7 +181,7 @@ def find(query: str) -> None:
 def count(name: str) -> None:
     """Print the number of cells in a notebook."""
     try:
-        n = notebook_mod.count_cells(name)
+        n = notebook.count_cells(name)
         print(f"{n} cells")
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
@@ -150,10 +208,10 @@ def cat(
     elif limit is not None:
         effective_limit = limit
     else:
-        effective_limit = notebook_mod.DEFAULT_READ_LIMIT
+        effective_limit = notebook.DEFAULT_READ_LIMIT
     try:
         print(
-            notebook_mod.cat_notebook(
+            notebook.cat_notebook(
                 name, index=index, tag=tag, label=label,
                 offset=offset, limit=effective_limit,
                 with_outputs=with_outputs,
@@ -170,13 +228,13 @@ def cat(
 def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projects")) -> None:
     """List source `.ipynb` notebooks in a tier."""
     if tier == "notes":
-        items = inspect_mod.list_ipynb(Path("notes"))
+        items = inspect.list_ipynb(Path("notes"))
     elif tier == "articles":
-        items = inspect_mod.list_ipynb(Path("articles"))
+        items = inspect.list_ipynb(Path("articles"))
     elif tier == "courses":
-        items = inspect_mod.list_ipynb(Path("courses"))
+        items = inspect.list_ipynb(Path("courses"))
     elif tier == "projects":
-        items = [p["name"] for p in inspect_mod.list_projects()]
+        items = [p["name"] for p in inspect.list_projects()]
     else:
         console.print(f"[red]unknown tier: {tier}. try notes|articles|courses|projects.[/red]")
         raise typer.Exit(2)
@@ -191,12 +249,54 @@ def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projec
 def import_cmd(
     ipynb: str = typer.Argument(..., help="path to source .ipynb to import"),
     tier: str = typer.Argument(..., help="notes | articles | courses"),
-    name: str | None = typer.Argument(None, help="destination stem (default: source stem)"),
+    name: str | None = typer.Argument(
+        None,
+        help=(
+            "for notes|articles: destination name without .ipynb "
+            "(default: source name); for courses: course slug (required)"
+        ),
+    ),
+    chapter: str | None = typer.Argument(
+        None,
+        help=(
+            "for courses: chapter name without .ipynb "
+            "(default: source name); ignored for flat tiers"
+        ),
+    ),
+    section: str | None = typer.Option(
+        None,
+        "--section",
+        "-s",
+        help="section to place chapter under (default: last section, courses only)",
+    ),
 ) -> None:
-    """Import an external notebook into a content tier (preserves outputs)."""
+    """Import an external notebook into a content tier (preserves outputs).
+
+    For notes/articles: writes to <tier>/<name>.ipynb.
+    For courses: writes to courses/<course>/<chapter>.ipynb and registers
+    in the course's sidebar in _quarto.yml.
+    """
     try:
-        out = convert_mod.import_notebook(ipynb, tier, name)
-    except (FileNotFoundError, ValueError) as e:
+        if tier == "courses":
+            if name is None:
+                raise ValueError(
+                    "tier=courses requires a course slug positional "
+                    "(e.g. `wt import x.ipynb courses llm`)"
+                )
+            out = convert.import_chapter(
+                ipynb, name, chapter=chapter, section=section
+            )
+        else:
+            if section is not None:
+                raise ValueError(
+                    f"--section is only valid when tier=courses, got tier={tier}"
+                )
+            if chapter is not None:
+                raise ValueError(
+                    f"chapter positional is only valid when tier=courses, got tier={tier}"
+                )
+            out = convert.import_notebook(ipynb, tier, name)
+    except (FileNotFoundError, FileExistsError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
     console.print(f"[green]imported -> {out}[/green]")
@@ -218,7 +318,7 @@ def edit_cell(
     """
     src = content if content is not None else sys.stdin.read()
     try:
-        out = notebook_mod.edit_cell(name, src, index=index, tag=tag, label=label)
+        out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
@@ -234,7 +334,7 @@ def append_cell(
     """Append a new cell to the end of the notebook."""
     src = content if content is not None else sys.stdin.read()
     try:
-        out = notebook_mod.append_cell(name, src, cell_type=cell_type)
+        out = notebook.append_cell(name, src, cell_type=cell_type)
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
@@ -258,7 +358,7 @@ def insert_cell(
     """
     src = content if content is not None else sys.stdin.read()
     try:
-        out = notebook_mod.insert_cell(
+        out = notebook.insert_cell(
             name, src, after=after, before=before, tag=tag, label=label,
             cell_type=cell_type,
         )
@@ -277,7 +377,7 @@ def remove_cell(
 ) -> None:
     """Remove cells matching the locator. A tag may remove multiple."""
     try:
-        out = notebook_mod.remove_cell(name, index=index, tag=tag, label=label)
+        out = notebook.remove_cell(name, index=index, tag=tag, label=label)
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
@@ -296,7 +396,7 @@ def tag(
     Without --add or --remove, prints current tags.
     """
     try:
-        out = notebook_mod.tag_cell(name, index=index, add=add or None, remove=remove or None)
+        out = notebook.tag_cell(name, index=index, add=add or None, remove=remove or None)
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
@@ -310,8 +410,8 @@ def tag(
         console.print(f"[green]tagged {out}[/green]")
 
 
-@app.command()
-def render(
+@app.command(name="render")
+def render_cmd(
     tier_or_path: str = typer.Argument(..., help="tier (notes|articles) or ipynb path"),
     name: str | None = typer.Argument(None, help="source name (omit if path given)"),
 ) -> None:
@@ -323,16 +423,16 @@ def render(
       wt render notes/test.ipynb    -> full path
     """
     source = f"{tier_or_path}/{name}.ipynb" if name else tier_or_path
-    pdf = render_mod.render_pdf(source)
+    pdf = render.render_pdf(source)
     console.print(f"[green]rendered {pdf}[/green]")
     _open(pdf)
 
 
-@app.command()
-def resume() -> None:
+@app.command(name="resume")
+def resume_cmd() -> None:
     """Render assets/resume.yaml -> assets/resume.tex + index.ipynb, then pdflatex -> assets/resume.pdf."""
     try:
-        pdf_path, index_path = resume_mod.build_resume()
+        pdf_path, index_path = resume.build_resume()
     except FileNotFoundError as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
@@ -343,7 +443,7 @@ def resume() -> None:
 @app.command()
 def docs() -> None:
     """Serve the Quarto site (blocking — previews in browser)."""
-    render_mod.preview_site()
+    render.preview_site()
 
 
 def _open(path: Path) -> None:

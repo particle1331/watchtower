@@ -3,6 +3,16 @@ bibliography: assets/references.bib
 execute:
   enabled: false
 
+format:
+  html:
+    theme: united
+    lightbox: true
+    html-math-method: katex
+    highlight-annotations: true
+    toc: true
+    toc-location: right
+    css: assets/styles.css
+
 project:
   type: website
   output-dir: _site
@@ -82,13 +92,17 @@ website:
               href: courses/mlops/12-keda-scaling.ipynb
             - text: "13. End-to-End Integration Demo"
               href: courses/mlops/13-integration-demo.ipynb
-
-format:
-  html:
-    theme: united
-    lightbox: true
-    html-math-method: katex
-    highlight-annotations: true
-    toc: true
-    toc-location: right
-    css: assets/styles.css
+    - id: llm
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/llm/index.ipynb
+          contents:
+            - text: Overview
+              href: courses/llm/index.ipynb
+            - text: 01. Introduction
+              href: courses/llm/01-introduction.ipynb
+            - text: Hello, world
+              href: courses/llm/hello-world.ipynb
