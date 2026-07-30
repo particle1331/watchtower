@@ -15,7 +15,7 @@ from pathlib import Path
 
 import nbformat
 
-from . import scaffold as scaffold_mod
+from . import scaffold
 
 TIERS = ("notes", "articles", "courses")
 FLAT_TIERS = ("notes", "articles")
@@ -49,9 +49,9 @@ def import_notebook(src: str, tier: str, name: str | None = None) -> Path:
 
     For flat tiers (notes, articles). For courses, use `import_chapter`.
     """
-    if tier not in FLAT_TIERS:
+    if tier == "courses":
         raise ValueError(
-            f"flat import only supports {FLAT_TIERS}, got: {tier}. "
+            f"flat import only supports (notes, articles), got: courses. "
             f"For courses, use 'wt import <ipynb> courses --course <slug>'."
         )
     source = _validate_source(src)
@@ -79,7 +79,7 @@ def import_chapter(
     or the notebook frontmatter after import — they're independent surfaces.
     """
     source = _validate_source(src)
-    course_dir = scaffold_mod.COURSES_DIR / course
+    course_dir = scaffold.COURSES_DIR / course
     if not course_dir.is_dir():
         raise FileNotFoundError(
             f"course directory {course_dir} does not exist. "
@@ -93,5 +93,5 @@ def import_chapter(
 
     _copy_ipynb(source, dest)
     title = chapter.replace("-", " ").replace("_", " ").title()
-    scaffold_mod._register_chapter_in_sidebar(course, chapter, title, section)
+    scaffold._register_chapter_in_sidebar(course, chapter, title, section)
     return dest

@@ -17,10 +17,7 @@ from typing import Any
 import nbformat
 import ruamel.yaml
 
-NOTES_DIR = Path("notes")
-ARTICLES_DIR = Path("articles")
-COURSES_DIR = Path("courses")
-PROJECTS = Path("projects")
+from .paths import ARTICLES_DIR, COURSES_DIR, NOTES_DIR, PROJECTS_DIR as PROJECTS
 
 _yaml = ruamel.yaml.YAML(typ="rt")
 _yaml.indent(mapping=2, sequence=4, offset=2)

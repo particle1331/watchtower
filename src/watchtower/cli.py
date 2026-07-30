@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shlex
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 import typer
@@ -25,6 +26,16 @@ app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
+
+
+@contextmanager
+def _user_error():
+    """Catch user-facing errors, print in red, and exit with code 1."""
+    try:
+        yield
+    except (FileNotFoundError, FileExistsError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
 
 
 new_app = typer.Typer(name="new", help="Scaffold new artifacts.", no_args_is_help=True)
@@ -96,13 +107,8 @@ def new_chapter(
     ),
 ) -> None:
     """Scaffold courses/<course>/<name>.ipynb and register it in the course sidebar."""
-    try:
-        path = scaffold.new_course_chapter(
-            course, name, title=title, section=section
-        )
-    except (FileNotFoundError, FileExistsError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
+    with _user_error():
+        path = scaffold.new_course_chapter(course, name, title=title, section=section)
     console.print(f"[green]created {path}[/green]")
 
 
@@ -112,11 +118,8 @@ def new_section(
     name: str = typer.Argument(..., help="section name (e.g. 'Local Stack')"),
 ) -> None:
     """Add a section header to a course's sidebar in _quarto.yml."""
-    try:
+    with _user_error():
         scaffold.new_course_section(course, name)
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     console.print(f"[green]added section '{name}' to {course}[/green]")
 
 
@@ -180,12 +183,9 @@ def find(query: str) -> None:
 @app.command()
 def count(name: str) -> None:
     """Print the number of cells in a notebook."""
-    try:
+    with _user_error():
         n = notebook.count_cells(name)
         print(f"{n} cells")
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
 
 
 @app.command()
@@ -209,7 +209,7 @@ def cat(
         effective_limit = limit
     else:
         effective_limit = notebook.DEFAULT_READ_LIMIT
-    try:
+    with _user_error():
         print(
             notebook.cat_notebook(
                 name, index=index, tag=tag, label=label,
@@ -219,9 +219,6 @@ def cat(
             ),
             end="",
         )
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
 
 
 @app.command()
@@ -276,7 +273,7 @@ def import_cmd(
     For courses: writes to courses/<course>/<chapter>.ipynb and registers
     in the course's sidebar in _quarto.yml.
     """
-    try:
+    with _user_error():
         if tier == "courses":
             if name is None:
                 raise ValueError(
@@ -296,9 +293,6 @@ def import_cmd(
                     f"chapter positional is only valid when tier=courses, got tier={tier}"
                 )
             out = convert.import_notebook(ipynb, tier, name)
-    except (FileNotFoundError, FileExistsError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     console.print(f"[green]imported -> {out}[/green]")
 
 
@@ -317,11 +311,8 @@ def edit_cell(
     locator matches zero or multiple cells.
     """
     src = content if content is not None else sys.stdin.read()
-    try:
+    with _user_error():
         out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     console.print(f"[green]updated {out}[/green]")
 
 
@@ -333,11 +324,8 @@ def append_cell(
 ) -> None:
     """Append a new cell to the end of the notebook."""
     src = content if content is not None else sys.stdin.read()
-    try:
+    with _user_error():
         out = notebook.append_cell(name, src, cell_type=cell_type)
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     console.print(f"[green]appended to {out}[/green]")
 
 
@@ -357,14 +345,11 @@ def insert_cell(
     --label insert *below* the matched cell. Source from --content or stdin.
     """
     src = content if content is not None else sys.stdin.read()
-    try:
+    with _user_error():
         out = notebook.insert_cell(
             name, src, after=after, before=before, tag=tag, label=label,
             cell_type=cell_type,
         )
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     console.print(f"[green]inserted into {out}[/green]")
 
 
@@ -376,11 +361,8 @@ def remove_cell(
     label: str | None = typer.Option(None, "--label", "-l", help="remove cell with this Quarto label"),
 ) -> None:
     """Remove cells matching the locator. A tag may remove multiple."""
-    try:
+    with _user_error():
         out = notebook.remove_cell(name, index=index, tag=tag, label=label)
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     console.print(f"[green]removed from {out}[/green]")
 
 
@@ -395,11 +377,8 @@ def tag(
 
     Without --add or --remove, prints current tags.
     """
-    try:
+    with _user_error():
         out = notebook.tag_cell(name, index=index, add=add or None, remove=remove or None)
-    except (FileNotFoundError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
     if isinstance(out, list):
         if out:
             for t in out:
