@@ -1,0 +1,8 @@
+[project]
+name = "ml-platform"
+version = "0.1.0"
+description = "ML Platform MVP — Durable Functions + Container Apps + Blob Storage"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]

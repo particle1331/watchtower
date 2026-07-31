@@ -1,0 +1,9 @@
+# Serving ACA App image dependencies — pinned for reproducible deployments (docs/05).
+# MLflow pinned to the SAME version as the self-hosted registry server.
+mlflow==2.16.2
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==2.1.3
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+azure-identity==1.17.1

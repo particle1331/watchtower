@@ -1,0 +1,49 @@
+# AML command job definition (docs/08).
+# Submitted via `az ml job create -f job.yml` or the AML SDK.
+# Uses our own container image (pinned digest) to preserve implementation freedom.
+# Logs to the self-hosted MLflow — not AML managed MLflow.
+
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+
+display_name: wine-quality-distributed
+experiment_name: wine-quality-aml
+description: >
+  Distributed ElasticNet training on wine-quality data.
+  Logs to the self-hosted MLflow registry (same as ACA training job).
+
+command: >
+  python train_distributed.py
+  --data-source ${{inputs.data_source}}
+  --experiment ${{inputs.experiment}}
+  --registered-name ${{inputs.registered_name}}
+
+inputs:
+  data_source:
+    type: string
+    default: >
+      https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv
+  experiment:
+    type: string
+    default: wine-quality-aml
+  registered_name:
+    type: string
+    default: wine-quality
+
+environment:
+  # Pin to our own image (built and pushed to ACR). Replace <digest> at submit time.
+  image: <acr-login-server>/train-job@<digest>
+
+compute: azureml:<cluster-name>
+
+distribution:
+  type: PyTorch
+  process_count_per_instance: 1
+
+resources:
+  instance_count: 1  # increase for genuine multi-node runs
+
+environment_variables:
+  MLFLOW_TRACKING_URI: ${{azureml://secrets/mlflow-tracking-uri}}
+  PGHOST: ${{azureml://secrets/results-pghost}}
+  PGUSER: id-jobs-train
+  RESULTS_DB: results

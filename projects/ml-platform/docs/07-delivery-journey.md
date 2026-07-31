@@ -1,264 +1,129 @@
 Status: Draft
 Owner: ML platform team
-Canonical for: Golden path and factual MLOps delivery progress register
-Depends on: [production architecture](./00-production-architecture.md), [platform foundation](./01-platform-foundation.md), [reproducible ML](./02-reproducible-ml.md), [GenAI release artifacts](./03-genai-release-artifacts.md), [durable workflows](./04-durable-workflows.md), [online serving](./05-online-serving.md), [release and operations](./06-release-and-operations.md)
-Last reviewed: 2026-07-29
+Canonical for: The golden path and the phased delivery/progress register
+Depends on: all of 00–06, and [08 — Multi-GPU training](./08-multi-gpu-training.md)
+Last reviewed: 2026-07-30
 
 # 07 — Delivery journey
 
 ## Outcome
 
-The target golden path is: explore in a notebook, cross a tested package
-boundary, train reproducibly in an ACA stage, evaluate an immutable artifact,
-deploy an exact release descriptor, serve it via ACA App, process durable
-workflows with stage execution, and operate the deployment. This document is
-also a factual progress register. It distinguishes current code from planned
-production work; examples are development aids, not platform guarantees.
+A single "golden path" a model travels from data to production, and a phased plan
+that builds the platform in an order where each phase is independently useful. The
+plan is sequenced so a small team is never blocked on machinery it does not yet
+need.
 
-## Production decisions
+## The golden path
 
-- Notebooks are for exploration, explanation, and captured evidence. Runtime
-  code lives in the canonical Python package, Durable orchestrators/activities,
-  and ACA stage entry points; notebooks are not imported by serving or batch
-  workers.
-- Container Apps is the default runtime for online serving (Apps) and offline
-  stages (Jobs). No Functions or Azure ML managed online endpoints serving
-  alternatives exist.
-- Durable Functions is the workflow control plane: orchestrators are
-  deterministic, versioned, and registered. They start/observe/cancel ACA Job
-  executions but never deploy or mutate ACA definitions.
-- Durable workflows handle stage execution, checkpoints, retries,
-  external-approval pauses, and recovery as specified in
-  [04 — Durable workflows](./04-durable-workflows.md).
-- All large batch-style work runs as chunked ACA Job stages with bounded
-  concurrency. Direct Durable activities handle only bounded Azure OpenAI calls
-  (≤30–60 seconds). No per-document ACA Jobs.
-- Redis/Celery is a failure-analysis example only. It is not a
-  production-correctness stepping stone, and a local SETNX result does not
-  prove duplicate safety.
-- Every stage produces versioned contracts and evidence that the next stage can
-  consume. A notebook cell, local producer, or Bicep declaration is not an
-  acceptance result by itself.
+```mermaid
+flowchart TD
+    DATA["tracked dataset"]
+    TRAIN["train Job (ACA)"]
+    VER["MLflow run + registered version"]
+    EVAL["eval Job (ACA)<br/>metrics + results-DB record"]
+    PROMOTE["promote version"]
+    BATCH["batch Job (ACA, scheduled/manual)<br/>reads models:/name/version<br/>parent/child result rows"]
+    SERVE["serving App (ACA, optional)<br/>loads models:/name/version<br/>/health reports version"]
+    OBS["dashboard + Grafana + alerts"]
 
-## Shared concepts
-
-The path carries Git SHA, workflow definition digest, orchestration instance ID,
-ACA definition digest, image digest, immutable input/output Blob manifests,
-model-manifest digest, environment-neutral behavior/provider metadata,
-`release_id`, API/stage contract version, environment provider-configuration
-reference/hash, processing-policy hash, operation key, and correlation ID.
-`operation_key` is derived from immutable input identity/hash plus the exact
-processing policy. A provider call may repeat after a crash; durable workflows
-promise at most one committed result manifest per stage attempt, not exactly
-one invocation. External side effects require downstream idempotency.
-
-## Target design/contracts
-
-### Canonical target repository and ownership layout
-
-This is the target ownership boundary; it is not a claim that the current tree
-already has these directories:
-
-```text
-examples/
-├── celery_redis/             # failure-analysis example; archived, never production
-└── compose/                  # current local compose stack; demo only
-infra/
-├── demo/                     # current demo Bicep, explicitly non-production
-└── modules/
-    ├── durable/               # Durable Functions host + task-hub storage
-    ├── aca/                   # ACA environment + versioned Job/App definitions
-    └── azureml/               # optional Azure ML workspace + compute (admission only)
-schemas/
-├── workflows/                 # workflow/stage/checkpoint manifest contracts
-├── api/                       # HTTP API contracts
-└── release/                   # release descriptor, intent, observation contracts
-src/ml_platform/
-├── workflows/                 # Durable orchestrators
-├── activities/                # bounded Durable activities
-├── stages/                    # ACA Job stage entry points (training, evaluation, batch)
-├── online/                    # authenticated Container Apps HTTP runtime
-├── genai/                     # artifact builder, evaluator, provider adapter
-└── training/                  # reusable training adapters
-tests/
-├── unit/                      # pure package behavior
-├── contract/                  # schemas and compatibility
-└── integration/               # provisioned/disposable Azure boundary tests
-.github/
-└── workflows/                 # OIDC CI, build, evaluation, deploy, rollback
+    DATA --> TRAIN --> VER --> EVAL --> PROMOTE
+    PROMOTE --> BATCH
+    PROMOTE --> SERVE
+    BATCH --> OBS
+    SERVE --> OBS
 ```
 
-The platform team owns `infra/modules`, `schemas`, `src/ml_platform`, tests, and
-workflows; the ML/training owner owns training adapters and stage definitions;
-GenAI owners own `genai` artifacts/evaluators; service owners approve `online`
-and workflow contracts. `examples/` and `infra/demo` are owned as
-current demo evidence and must remain visibly non-production.
+Every step is an ACA workload, every model is a registry version, every run is a
+results-DB record, and every human action is audited.
 
-Current files must not be evolved as production by accident: flat
-`src/ml_platform/tasks.py`, `producer.py`, `idempotency.py`, `celeryconfig.py`,
-`docker-compose.yml`, `infra/main.bicep`, and `infra/gpu-training.bicep` remain
-legacy/local baselines until deliberately migrated, tested, and replaced by the
-canonical boundaries above.
+## Phased plan
 
-### Notebook-to-package boundary
+### Phase 0 — Foundation
 
-1. A notebook may explore data, validate an idea, and record exploratory output.
-2. Move selected deterministic logic into the typed package with a CLI/job
-   entry point. It accepts a versioned data manifest, not notebook globals or
-   local paths.
-3. Unit tests cover pure transformations and wrappers. Contract tests cover
-   data, model signatures, API/workflow messages, release records, and durable
-   stage transitions. Integration tests exercise identity and Azure resource
-   boundaries.
-4. A training/evaluation stage records Git SHA, dataset hash, parameters,
-   metrics, environment hash, evaluation evidence, and exact artifact version.
-   A release consumes that artifact without rerunning a notebook.
+Provision the [01](./01-platform-foundation.md) footprint as IaC: registry,
+container-apps environment + Log Analytics, Postgres with `mlflow` + `results`
+databases, storage, Key Vault, Grafana, and per-workload identities. Stand up the
+self-hosted MLflow App. **Useful because:** everything else has a home and an
+identity.
 
-### Golden path
+### Phase 1 — Reproducible training + registry
 
-```text
-notebook exploration
-  -> package + fixture tests
-  -> reproducible ACA Job CPU stage + exact artifact
-  -> GenAI model manifest/evaluation (when applicable)
-  -> Durable release workflow
-  -> hashed deployment intent + deployment-observation events
-  -> Durable stage orchestration + checkpoint manifests
-  -> ACA online serving
-  -> feedback/evaluation and optional approved AML extensions
-```
+Ship the train/eval ACA Jobs ([02](./02-reproducible-ml.md)) logging to MLflow and
+writing results-DB records. **Useful because:** the team gets reproducible models
+with recoverable lineage, independent of serving.
 
-The [release and operations](./06-release-and-operations.md) workflow is
-explicit: build and upload the immutable Blob artifact, run the evaluation
-stage, create the release descriptor, deploy via pinned workflow definition,
-pause for production approval (`waitForExternalEvent`), deploy to production,
-and append observation events. Stage orchestration follows
-[04 — Durable workflows](./04-durable-workflows.md).
+### Phase 2 — Results DB + first scheduled/batch workflow
 
-## Runnable demonstration
+Ship the results-DB module and one scheduled or batch workflow
+([04](./04-periodic-and-batch-workflows.md)) with parent/child rows and the
+continuation rule. **Useful because:** the operational backbone (run state,
+retries, idempotency) exists and is exercised by a real workflow.
 
-The current local path is deliberately a local demo:
+### Phase 3 — Serving (if in scope) + promotion/rollback
 
-```text
-cd projects/ml-platform
-make up
-make train
-make worker
-make beat
-make producer
-make down
-```
+Ship the serving App ([05](./05-online-serving.md)) and the promotion/rollback
+mechanics ([06](./06-release-and-operations.md)). **Useful because:** models reach
+online consumers with safe, version-based rollback. Skip if batch-only.
 
-`make train` uses synthetic data, current Pandera validation, a scikit-learn
-pipeline, and local MLflow. The current producer/worker exercise Redis/Celery;
-unique documents and successful outputs only exercise those paths and do not
-prove Durable orchestration, ACA stage execution, checkpoint recovery, or
-provider call idempotency. SETNX is useful for failure analysis around crashes
-and expiry, not for production correctness. Current Bicep declarations are
-baselines and do not prove a runnable Azure runtime. The proof requires
-`az bicep build`, a Durable orchestration instance ID with stage attempts,
-ACA execution IDs, checkpoint manifests, and integration evidence against the
-provisioned resources.
+### Phase 4 — Observability + dashboard
 
-## Production implementation
+Wire alerts, Grafana dashboards, and the catalog/launcher dashboard
+([06](./06-release-and-operations.md)). **Useful because:** the team can see and
+launch everything, and gets paged on real failures.
 
-### Migration plan
+### Phase 5 — LLM artifacts
 
-1. **Freeze and classify:** inventory the current flat source, local compose
-   stack, and Bicep baseline as current demo evidence. Do not add
-   production features to them. Record the gap against this document.
-2. **Create boundaries:** establish the target directories, schemas, ownership,
-   package entry points, and unit/contract test harness. Move demo code
-   to `examples/` without implying equivalence.
-3. **Build infrastructure:** put reusable production resources in
-   `infra/modules`, including Durable host, ACA environment and versioned
-   Job/App definitions, Blob containers, identities/RBAC, and monitoring.
-   Keep `infra/demo` separate.
-4. **Build execution planes:** add Durable orchestrators, activities, ACA stage
-   entry points (`src/ml_platform/{workflows,activities,stages,online,genai}`),
-   and immutable artifact/release-descriptor/deployment-intent/observation-event
-   validators.
-5. **Add CI/CD:** create `.github/workflows` with federated Entra OIDC,
-   deterministic build/scan, Bicep definition registration, evaluation stage
-   start, test deployment, approval, exact deployment, and rollback.
-6. **Prove and cut over:** run explicit orchestration crash/recovery, checkpoint
-   restore, approval timeout, suspend/resume, direct activity, ACA stage
-   observation, and identity tests; attach deployment and integration evidence;
-   then retire or clearly archive superseded baselines.
+Add pyfunc packaging + evaluator ([03](./03-llm-release-artifacts.md)) reusing
+the same registry, promotion, serving, and batch paths. **Useful because:** an LLM
+ships through the existing machinery, not a new one.
 
-### Phase gates
+### Exception track — Multi-GPU training
 
-**Phase 1 — Reproducible CPU training.** Dependencies are a real or approved
-redacted dataset manifest, Python lock, ACA Job CPU stage definition, Blob
-manifest-driven lineage, and evaluation schema. Exit evidence is a repeatable
-stage with lineage (orchestration instance ID, stage ID, ACA execution ID,
-definition digest, image digest), validation report, exact artifact Blob refs,
-reload test, and signed metrics. The current local training is synthetic and
-scores on training data; it is not this evidence.
+Only if a workload needs distributed/multi-GPU training, add the admission-gated
+Azure ML path ([08](./08-multi-gpu-training.md)), logging to the same MLflow. Not
+on the critical path.
 
-**Phase 2 — Controlled serving.** Use the Phase 1 artifact, exact image,
-ACA App definition, managed identity, API/auth contract, quota profile,
-and release records. Exit evidence includes fail-closed startup, honest
-readiness, authenticated contract tests, load/timeout/throttle results,
-deployment intent/observation evidence, and exact-version rollback. The current
-repository has no online handler; `infra/main.bicep` is only a baseline.
+### Upgrade track — Broker (only if forced)
 
-**Phase 3 — Durable workflows.** Use Blob containers, Durable Functions host,
-ACA Job definitions, Durable orchestrators/activities, checkpoint/result
-manifests, and approval events. Exit evidence includes:
-- ACA stage start/observation/cancel from Durable orchestrator
-- Durable activity for bounded Azure OpenAI call
-- External approval via `waitForExternalEvent` (approved and timeout)
-- Suspend/resume at checkpoint
-- Orchestration crash recovery with idempotent stage commit
-- Checkpoint manifest verification and restore
-- Chunked batch stage with bounded concurrency
-- Deployment intent/observation evidence and provisioned integration evidence
+Only if batch fan-out routinely exceeds a few hundred concurrent units or needs
+queue backpressure, adopt Celery-as-a-library on short-lived KEDA-triggered ACA
+Jobs + managed Redis ([04](./04-periodic-and-batch-workflows.md)). Never
+long-running workers.
 
-At most one result manifest is committed per stage attempt; provider invocation
-count is not exactly one.
+## Progress register
 
-**Phase 4 — Feedback, GPU, and optional AML.** Require privacy-approved samples,
-an evaluation owner, GPU quota/budget (or AML admission evidence for
-exceptional clusters), and a real workload. Exit evidence links redacted
-feedback to prediction/operation IDs, reproduces a quality report, and records
-GPU correctness/utilization/cost and an exact artifact. This phase is optional
-and does not block the previous phases.
-
-## Failure modes/acceptance evidence
-
-The register is complete only when each phase's evidence is attached to the
-immutable release descriptor and the relevant deployment intent/observation
-events. Do not infer claims from the current producer's unique documents, local
-logs, or Bicep resource declarations.
-
-| Claim | Required evidence | Current status |
+| Phase | Scope | State |
 |---|---|---|
-| Reproducible training | Pinned ACA Job CPU stage, immutable Blob manifest, lineage (orchestration instance/stage/execution IDs), reload test | Planned beyond local synthetic run |
-| Controlled serving | ACA App image, startup validation, auth/load/rollback tests, deployment intent/observation evidence | Planned; no serving code |
-| Durable orchestration | Durable host, orchestrator starts/observes ACA Job, bounded activity, checkpoint manifest, approval event, suspend/resume, crash recovery | Planned; local Redis/Celery only |
-| CI/release | OIDC federated Entra identity, scans/digest, artifact Blob refs, Bicep definition digests, immutable release descriptor, deployment intent/observation events, approval pause, exact deploy | Planned; no workflow |
-| IaC/runtime | `az bicep build`, successful deployment, identity/RBAC checks, provisioned integration results | Current Bicep is not runtime proof |
-| Monitoring/SLO | Correlated telemetry, dashboards, alerts, runbooks, restore evidence | Planned; declarations are only a baseline |
-| GPU / AML extension | Quota-approved ACA GPU stage or documented AML admission, utilization/correctness/cost report, exact artifact | Optional and planned |
+| 0 | Foundation + self-hosted MLflow | Not started (local demo only) |
+| 1 | Train/eval Jobs + MLflow lineage | Not started |
+| 2 | Results DB + first workflow | Not started |
+| 3 | Serving + promotion/rollback | Not started |
+| 4 | Observability + dashboard | Mockup only ([`mockups/workflow-dashboard.html`](./mockups/workflow-dashboard.html)) |
+| 5 | LLM artifacts | Not started |
+| Exc. | Multi-GPU (AML) | Not started (exception) |
+| Upg. | Broker (Celery/Redis) | Not started (only if forced) |
+
+Update this register as phases land; a phase is "done" when its document's
+acceptance evidence is demonstrated, not when local code runs.
+
+## Failure modes and acceptance evidence
+
+| Failure mode | Prevented by | Acceptance evidence |
+|---|---|---|
+| Building machinery before it's needed | Phased, independently-useful order | Each phase demonstrable on its own |
+| "Done" claimed from a local demo | Per-document acceptance evidence | Register cites the evidence, not `make up` |
+| Critical path blocked on exceptions | Multi-GPU/broker off the main track | Phases 0–5 ship without them |
 
 ## Open decisions
 
-- Which pilot and acceptance owner provide the real dataset, labels, traffic
-  profile, batch window, and privacy classification?
-- What are the final API/stage compatibility policy, artifact/config registry,
-  Azure OpenAI quotas, SLOs, RPO/RTO, and cost ceiling?
-- Which local demonstrations remain local-only and which require a disposable
-  Azure environment with workload identity and integration evidence?
-- What evidence threshold triggers optional GPU/AML feedback work rather than
-  more CPU, serving, or workflow hardening?
-- Which Durable Functions host plan (Consumption, Flex Consumption, dedicated)
-  matches expected throughput and cold-start requirements?
+The per-document **Open decisions** are **lower priority but required**: none of
+them block *starting* a phase, but each must be resolved before its owning phase
+is considered *done*. Resolve a decision when its phase comes up, not before —
+deciding early is a form of the over-engineering this plan avoids.
+
+- Whether Phase 3 (serving) is in launch scope or deferred (batch-only launch).
 
 ## References
 
-- [Durable workflows](./04-durable-workflows.md)
-- [Online serving](./05-online-serving.md)
-- [Release and operations](./06-release-and-operations.md)
-- [Production architecture](./00-production-architecture.md)
-- [Reproducible ML](./02-reproducible-ml.md)
+- All plane documents [00](./00-production-architecture.md)–[06](./06-release-and-operations.md),
+  [08](./08-multi-gpu-training.md).

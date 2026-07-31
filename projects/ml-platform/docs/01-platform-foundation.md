@@ -1,196 +1,206 @@
 Status: Draft
 Owner: ML platform team
-Canonical for: Production Azure foundation, security, governance, and IaC
+Canonical for: Azure resource inventory, identities, RBAC, IaC, networking
 Depends on: [00 — Production architecture](./00-production-architecture.md)
-Last reviewed: 2026-07-29
+Last reviewed: 2026-07-30
 
 # 01 — Platform foundation
 
 ## Outcome
 
-Provision a least-privilege Azure foundation from Bicep so Durable Functions can
-start ACA Job stages, publish immutable Blob outputs, and deploy exact ACA App
-releases without portal work or long-lived credentials.
+Every plane from [00](./00-production-architecture.md) has a home Azure resource,
+each workload has its own least-privilege managed identity, and the whole
+footprint is described as code so it can be recreated and reviewed. The
+foundation is intentionally small — a container registry, a container-apps
+environment, two Postgres databases, one storage account, a Key Vault, and a
+Log Analytics workspace.
 
 ## Production decisions
 
-- **Durable Functions is the workflow control plane.** Deploy a Durable host
-  (isolated Functions runtime with Durable extension) in a plan that supports
-  the expected orchestration throughput. Task-hub storage is an implementation
-  detail of the Durable extension (Azure Storage queues/tables/blobs by
-  default), not a business broker or application queue.
-- **Azure Container Apps is the default execution plane.** ACA Jobs run offline
-  stages (training, evaluation, chunked batch). ACA Apps run HTTP online
-  serving. Bicep defines every ACA Job/App and deploys them by immutable
-  definition digest. Durable Functions starts, observes, and may cancel ACA Job
-  executions; it never deploys or mutates definitions.
-- **Blob Storage owns all payloads and manifests.** Blob digest/version is the
-  canonical identity for inputs, outputs, checkpoints, and model artifacts.
-  No Azure ML data assets or model assets are required as runtime identity.
-- **No application queue.** Service Bus, Cosmos DB ledger, outbox, KEDA queue
-  scaling, DLQ, producer/worker identities, and reconciliation-as-queue are not
-  in the baseline. Durable task-hub storage is not a business broker.
-- **Azure ML is optional and narrow.** If used, optional managed MLflow tracking
-  and model-catalog references. Optional zero-minimum CPU/GPU clusters only
-  after documented admission evidence showing distributed/RDMA or specialized
-  GPU/capability ACA cannot satisfy. No baseline AML jobs, pipelines, endpoints,
-  or Compute Instances.
-- **A separately queryable business database** is deferred until a proven
-  retention, query, or transactional-side-effect requirement is documented.
-- **Azure OpenAI** is provisioned as an explicit provider dependency with quota
-  controls. Calls ≤30–60 seconds run in bounded Durable activities; larger work
-  uses chunked ACA stages.
-- The current `pyproject.toml` `mlflow>=3.0.0` dependency is local-demo-only.
-  Production needs explicit dependency groups and exact tested pins.
+### Resource inventory
 
-## Existing versus planned
-
-`infra/main.bicep` is a local demo Bicep monolith containing
-self-hosted MLflow 3, PostgreSQL, Redis, a **non-Durable** Function app, and an
-admin-enabled ACR. The Function app is not a Durable Functions host and must
-not be evolved in place — it is a local demo resource that will be replaced by
-the production Durable host. Local Docker uses MLflow 3 and MinIO.
-`infra/gpu-training.bicep` demonstrates a min-zero GPU cluster. These are
-examples of Bicep mechanics, not a working Azure runtime proof or the
-production baseline.
-
-Production modular Bicep for the Durable host + state backend, ACA environments
-and versioned definitions, Blob containers, Azure OpenAI, OIDC, and least-
-privilege identities remains planned, as does the optional Azure ML path.
-
-## Target design/contracts
-
-### Module and deployment order
-
-The orchestrator must call these modules in order. A module may export resource
-IDs to a later module, but may not create an undeclared side-effect resource.
-Identity role assignments are applied only after their target scopes exist and
-before the workload is activated.
-
-1. **Governance and diagnostics:** resource-group tags, policy, locks where
-   approved, budgets, Log Analytics, Application Insights, action groups, and
-   diagnostic settings.
-2. **Identity bootstrap:** GitHub Actions OIDC deploy identity, Durable host
-   managed identity, ACA stage-job identity, ACA online-app identity, and
-   optional Azure ML job identity (only if AML exception is approved).
-3. **Data/security:** Blob input, output, and checkpoint containers with
-   versioning/soft delete; Key Vault; and private endpoints/DNS when the
-   network gate requires them. No Cosmos DB, Service Bus, or application queue.
-4. **Build:** ACR with admin access disabled, scanning/content-trust policy,
-   and CI push identity.
-5. **Durable host:** Function App (isolated process) with Durable extension,
-   storage-account backend for task hub, managed identity, and diagnostic
-   settings. No self-hosted tracking service.
-6. **ACA platform and definitions:** ACA environment, network integration,
-   versioned Job definitions for each stage (training, evaluation, chunked
-   batch), versioned App definition for online serving, and Key Vault references.
-   Bicep exports each definition's digest for release-descriptor pinning.
-7. **Provider:** environment-specific Azure OpenAI provider configuration for
-   the resource/deployment, endpoint, explicit model/API version, quota,
-   network, and invocation policy.
-8. **Optional Azure ML:** workspace, managed identity, storage/Key Vault/ACR
-   connections, and managed tracking. Only after documented admission evidence.
-   No self-hosted MLflow service. No Compute Instances.
-9. **Optional AML compute:** min-zero CPU job cluster/profile; invoke the
-   separate GPU module only after quota and cost approval. Only after documented
-   admission evidence.
-10. **RBAC activation:** bind the identities below at the smallest scopes,
-    run positive/negative authorization tests, then enable job/app triggers.
-
-### Identity and RBAC contract
-
-Identities are separate even when workloads share an ACA environment or Durable
-host. A role is scoped to the named container, deployment, or resource where
-Azure supports that scope.
-
-| Principal | Required access | Must not have |
+| Resource | Purpose | Notes |
 |---|---|---|
-| GitHub Actions deploy identity | Federated OIDC; test/prod-scoped deployment; `AcrPush`; ACA Job/App definition deployment; Durable host management | Client secrets, routine subscription Owner, production payload reads |
-| Durable host identity | Start/read/cancel ACA Job executions; Blob input read; Blob output/checkpoint write; Azure OpenAI invoke (for bounded activities) | ACA definition mutation, broad storage keys, model registration |
-| ACA stage-job identity | ACR pull, Blob input read, Blob output/checkpoint write, Azure OpenAI invoke (if stage makes provider calls) | Durable host management, ACA definition mutation, CI permissions |
-| ACA online-app identity | ACR pull, Blob artifact read (startup artifact loading), named Key Vault secrets, telemetry write | Durable host management, stage-job interference, CI permissions |
-| Optional AML job identity | Submit/read its workspace jobs (AML exception only) | Storage keys, broad Key Vault access, unrelated environment data |
-| Operators | JIT roles and audited read access; break-glass only when approved | Shared admin accounts and routine Owner access |
+| **Azure Container Registry** | Immutable images for Jobs, serving App, MLflow, dashboard | Images referenced by digest, never `latest` |
+| **Container Apps Environment** | Hosts all Jobs and Apps | One environment; Log Analytics attached |
+| **Azure Database for PostgreSQL (flexible server)** | `mlflow` DB (registry/tracking) + `results` DB (run state) | One burstable/small server, two logical databases; separate logins per identity |
+| **Azure Storage (Blob)** | MLflow artifacts, batch outputs, immutable manifests | Separate containers per concern |
+| **Azure Key Vault** | Connection strings and any unavoidable secrets | Accessed via managed identity, never baked into images |
+| **Log Analytics workspace** | Infra telemetry and alert rules | Feeds App Insights and Grafana |
+| **Azure Managed Grafana** | Deep operational dashboards | Reads Log Analytics + Postgres |
+| **Microsoft Entra ID** | Workload identities + dashboard sign-in (Easy Auth) | Per-workload managed identities |
 
-Role assignments are named by environment and tested negatively: a stage job
-cannot deploy ACA definitions, an online app cannot start ACA Jobs, the Durable
-host cannot mutate definitions, and a pull-request identity cannot activate
-production.
+This is the entire baseline. There is **no** Service Bus, Redis, Durable
+Functions storage, or Azure ML workspace in the foundation — those appear only if
+a documented upgrade path (broker) or exception (multi-GPU) is triggered.
 
-### Network, governance, and capacity gates
+### Identities and RBAC
 
-Record the gate result in the environment configuration before production data
-or ingress is enabled.
+Every workload gets its own user-assigned managed identity with the minimum roles
+it needs. No workload shares an identity, and no workload gets broad `Contributor`.
 
-| Gate | Required control |
-|---|---|
-| Confidential/restricted data exists | VNet/private endpoints and private DNS for Blob, Key Vault, ACR, Azure OpenAI, Durable host, and ACA environment; deny public access where supported |
-| Internet-facing API is required | Authenticated ACA ingress plus approved WAF/front door and rate limits; no admin endpoint |
-| Durable host reachable from ACA | Approved network integration (VNet injection or private endpoint) |
-| Private endpoint unavailable | Record data scope, compensating controls, owner, and expiry before exception |
-| Capacity/cost | ACA Jobs min `0` replicas; optional GPU min `0`, initial max `1`; ACA App replicas/concurrency from latency and Azure OpenAI RPM/TPM budgets |
+| Identity | Assigned to | Roles (least privilege) |
+|---|---|---|
+| `id-jobs-train` | Training/eval Jobs | ACR pull; Blob read/write (datasets, artifacts); Postgres access to `mlflow` + `results`; Key Vault secret get |
+| `id-jobs-batch` | Batch inference Jobs | ACR pull; Blob read/write (inputs/outputs); Postgres access to `results`; Blob read of MLflow artifacts (read-only model) |
+| `id-serving` | Serving App | ACR pull; Blob read of MLflow artifacts; Key Vault secret get |
+| `id-mlflow` | MLflow App | Postgres access to `mlflow`; Blob read/write (artifacts) |
+| `id-dashboard` | Dashboard App | ACA execution start (scoped to specific Jobs); Postgres read of `results`; Log Analytics read |
+| `id-ci` (federated / OIDC) | GitHub Actions | ACR push; ACA Job/App definition update; no runtime data access |
 
-Required tags are `application=ml-platform`, `environment`,
-`owner=ml-platform-team`, `costCenter`, `dataClassification`, `managedBy=bicep`,
-`lifecycle`, and `criticality`. Set retention, soft delete, recovery, audit,
-and budget policies per environment; legal hold or stricter data-owner policy
-wins.
+Manual job triggering from the dashboard is gated by a specific role assignment on
+`id-dashboard` scoped to the Jobs it may start; every manual start is audited via
+the results DB `triggered_by` column.
+
+### Human access via Entra groups
+
+The identities above are **machine** identities (workload-to-Azure auth). **Human**
+access is separate: people sign in through the dashboard's Entra Easy Auth, and
+who may do what is controlled by **Entra ID security groups**, not by managed
+identities. Two groups cover the project's scope:
+
+| Group | Grants | Backing role |
+|---|---|---|
+| `ml-platform-operators` | Sign in to the dashboard and trigger manual runs | Scoped trigger role (the same one `id-dashboard` uses to start Jobs) |
+| `ml-platform-viewers` | Read-only visibility into MLflow and Grafana | `Monitoring Reader` / MLflow read |
+
+Ownership splits cleanly: the **identity team owns group membership** (who is an
+operator vs a viewer), the **platform team owns the role assignments** (what a
+group can do). Adding or removing a person is a membership change with no infra
+change; `triggered_by` still records that person's Entra identity on every run
+they start (see [04](./04-periodic-and-batch-workflows.md)).
+
+### Infrastructure as code
+
+The full footprint is defined as IaC (Terraform under `infra/`) and
+applied by CI. IaC covers resources, identities, role assignments, and the ACA
+Job/App **definitions** (image digest, env, schedule, identity binding).
+Human-in-portal changes are not the source of truth.
+
+**Decision:** keep the managed-identity RBAC model in `infra/` as written — the
+demo and prod run the **same** code path, so no key/connection-string fallback is
+introduced. The one prerequisite is a role-assignment grant for the deploying
+principal: `Contributor` (which we hold) can create every resource and the
+managed identities, but **cannot write role assignments**
+(`Microsoft.Authorization/roleAssignments/write` needs `Owner` or
+`User Access Administrator`). The plan is therefore to **request a
+`User Access Administrator` grant scoped to the one resource group** from the
+subscription owner (see [Open decisions](#open-decisions)); with that grant the
+full `terraform apply` succeeds unchanged. This is preferred over a key-based
+demo shortcut, which would fork the application's client-construction code and
+leave demo != prod.
+
+**One deliberate exception: Postgres grants.** Almost everything above is pure
+declarative IaC, including creating the managed identities and every Azure RBAC
+role assignment (`AcrPull`, `Storage Blob Data Contributor`, `Key Vault Secrets
+User`, the dashboard's Job-start role). Postgres access is the exception: adding
+an identity as an Entra principal on the flexible server is IaC, but the per-database
+privileges are **SQL that runs inside the database** and cannot be expressed as a
+Terraform resource. These live in a checked-in, idempotent **`infra/grants.sql`**
+that the deploy pipeline runs (via `psql`) **after** the server and the `mlflow` /
+`results` databases exist:
+
+```sql
+-- infra/grants.sql — idempotent; run post-provision, after DBs exist.
+-- Each workload identity gets least-privilege access to only its database(s).
+
+-- Training/eval Jobs: read/write both mlflow and results.
+GRANT CONNECT ON DATABASE mlflow  TO "id-jobs-train";
+GRANT CONNECT ON DATABASE results TO "id-jobs-train";
+-- Batch Jobs: results only (models are read from Blob, not the DB).
+GRANT CONNECT ON DATABASE results TO "id-jobs-batch";
+-- MLflow app: mlflow only.
+GRANT CONNECT ON DATABASE mlflow  TO "id-mlflow";
+-- Dashboard: read-only on results.
+GRANT CONNECT ON DATABASE results TO "id-dashboard";
+-- (Per-schema/table GRANTs on tables + default privileges follow the same pattern.)
+```
+
+It is still code, still in the repo, still reproducible — just executed by `psql`
+rather than Terraform. The only sequencing rule is that this step runs after
+provisioning, not as part of the main deployment call.
+
+### Networking
+
+Baseline is public endpoints protected by identity (Entra Easy Auth on the
+dashboard, managed-identity auth to Postgres/Blob/Key Vault, ACR pull via
+identity). Private networking (VNet integration, private endpoints) is an
+available hardening step but not required for the baseline to be correct.
+
+**Decision (MVP):** ship the public-endpoint + identity baseline. Everything is
+still gated by managed identity, and it is far less to build and debug. Private
+endpoints are **deferred to the prod hardening phase**, where they are additive
+(attach a private endpoint per resource, flip resources to private, wire private
+DNS) rather than a rewrite. This is viable for us because a work VPN and
+`Contributor` access are already available to reach and build a private VNet
+later. The one thing that would force private-from-day-one instead is an Azure
+Policy at the org level that forbids public endpoints — verify no such policy
+applies before treating this as settled.
+
+### Secrets
+
+Connection strings and any unavoidable secrets live in Key Vault and are read at
+runtime via managed identity. No secret is baked into an image, committed to Git,
+or passed as a plaintext env literal in a Job definition.
+
+## Shared concepts
+
+- **User-assigned managed identity** — the unit of workload authorization; bound
+  to a Job/App definition in IaC.
+- **Job/App definition** — the IaC-owned description of a workload: image digest,
+  identity, env, schedule/trigger.
+- **Two-database Postgres** — `mlflow` and `results` on one flexible server;
+  distinct logins per identity.
+
+## Target design
+
+`infra/` contains modules for: registry, container-apps environment + Log
+Analytics, Postgres server with two databases, storage account with containers,
+Key Vault, Grafana, and per-workload identities with scoped role assignments. A
+`make infra` (or CI job) plans and applies it. Job/App definitions are IaC
+resources so a deploy is a reviewed digest change.
 
 ## Runnable demonstration
 
-```text
-cd projects/ml-platform
-make az-up SUFFIX=demo LOCATION=southeastasia
-make az-status SUFFIX=demo
-make az-down SUFFIX=demo
-```
+The current `infra/` demonstrates local/demo wiring only and does not provision
+the production foundation. Present it as illustrative, not as acceptance.
 
-This runs the existing Bicep demo exercise and teardown. Because it deploys
-legacy/self-hosted MLflow 3 and a non-Durable Function app, success is not
-proof of a working production Azure runtime, Durable host, ACA definitions,
-or the identity contract.
+## Failure modes and acceptance evidence
 
-## Production implementation
-
-1. Add parameter files with no secret values and explicit environment/resource
-   scopes. Use Key Vault references and managed identities.
-2. Implement the modules in the order above: governance, identities, Blob/Key
-   Vault/ACR, Durable host, ACA environment and versioned definitions, Azure
-   OpenAI, optional Azure ML, then RBAC/network.
-3. Bind OIDC and RBAC, then run `az bicep build`, lint, `what-if`, policy,
-   resource-inventory, cost, and negative authorization checks.
-4. In a test environment, start one ACA Job stage, observe its execution from
-   the Durable host, publish one Blob output, deploy one exact ACA App image,
-   and run one bounded Durable activity against Azure OpenAI before requesting
-   production access.
-
-## Failure modes/acceptance evidence
-
-| Acceptance test | Pass condition/evidence |
-|---|---|
-| IaC boundary | Bicep/lint/what-if are repeatable and contain only approved resources; no production Service Bus, Cosmos ledger, legacy Function (non-Durable), or self-hosted MLflow |
-| Required foundation | Durable host, ACA environment/definitions, Blob containers, Azure OpenAI, ACR, and diagnostics are present |
-| Identity separation | Durable host, ACA stage, ACA app, and CI role tests show distinct least-privilege permissions |
-| Durable orchestration | Orchestrator starts an ACA Job, records execution ID in history, observes completion, and reads the result manifest |
-| Scale-to-zero | ACA Jobs report min `0`; no Compute Instance; GPU is blocked without admission evidence |
-| Secret boundary | No secret appears in Git, image, Bicep parameters, deployment output, or logs |
-| Network/governance | Selected private/public gate, tags, retention, diagnostics, budgets, and recovery tests pass |
+| Failure mode | Prevented by | Acceptance evidence |
+|---|---|---|
+| Over-broad access | Per-workload least-privilege identities | Role assignments list shows no shared/broad identity |
+| Secret leakage | Key Vault + managed identity | No secrets in images/Git; runtime reads from Key Vault |
+| Config drift | IaC owns resources and Job/App definitions | Recreate environment from IaC; diff is empty |
+| Unaudited manual runs | Scoped trigger role + `triggered_by` | Manual start shows caller identity in results DB |
 
 ## Open decisions
 
-- Select VNet/private endpoint scope and whether ACA ingress is public behind an
-  approved front door.
-- Confirm retention with data owners and legal/security.
-- Confirm Durable host plan (Consumption, Flex Consumption, or dedicated) based
-  on expected throughput and cold-start tolerance.
-- Approve CPU/GPU SKU, Azure OpenAI RPM/TPM, and environment budgets.
-- Decide whether and when an independently queryable business database is
-  required.
+- **RBAC role-assignment permission — confirmed gap; grant requested.**
+  The foundation's role assignments (`AcrPull`, `Storage Blob Data Contributor`,
+  `Key Vault Secrets User`, the dashboard's Job-start role, etc.) require
+  `Owner` or `User Access Administrator`; writing a role assignment
+  (`Microsoft.Authorization/roleAssignments/write`) is **not** something
+  `Contributor` can do. **Verified 2026-07-30:** the deploying user
+  (objectId `<deployer-object-id>`) has only **`Contributor`** on the target
+  subscription `<subscription-id>` (a Dev/Test subscription) — no
+  `Owner`/`User Access Administrator` anywhere. Creating a personal RG does
+  **not** close this (you inherit subscription-level `Contributor`).
+  - **Decision:** keep the managed-identity RBAC model and **obtain the grant**
+    rather than fork the code for key-based auth. A key-based demo shortcut was
+    rejected because it would rewrite every data-client construction and make
+    demo != prod (see [Infrastructure as code](#infrastructure-as-code)).
+  - **Action:** ask a subscription owner for **`User Access Administrator`
+    scoped to the target resource group** (RG-scoped, not subscription-wide).
+    Ask an owner who also holds root-scope `User Access Administrator`.
+    Microsoft Graph name resolution is blocked for the deploying user, so have
+    them grant by **objectId** (`<deployer-object-id>`), not UPN. Once granted,
+    the full `terraform apply` runs unchanged.
+- Networking baseline — **resolved:** public endpoints + identity for the MVP,
+  private endpoints deferred to prod hardening (see [Networking](#networking)).
 
 ## References
 
-- [Production architecture](./00-production-architecture.md)
-- [Reproducible ML](./02-reproducible-ml.md)
-- [GenAI release artifacts](./03-genai-release-artifacts.md)
-- [Durable workflows](./04-durable-workflows.md)
-- Current demo IaC: `infra/main.bicep` and `infra/gpu-training.bicep`.
+- Planes and identities rationale — [00](./00-production-architecture.md).
+- How identities are used at runtime — [04](./04-periodic-and-batch-workflows.md),
+  [05](./05-online-serving.md), [06](./06-release-and-operations.md).

@@ -1,0 +1,11 @@
+# Training/eval job image dependencies — pinned for reproducible runs (docs/02).
+# MLflow is pinned to the SAME version as the self-hosted server (src/mlflow_app).
+mlflow==2.16.2
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==2.1.3
+pandera==0.20.4
+# Results-DB record (Entra auth) — same stack as the MLflow app entrypoint.
+psycopg[binary]==3.2.3
+azure-identity==1.17.1
+azure-storage-blob==12.22.0

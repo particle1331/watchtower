@@ -62,7 +62,9 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
     mutation — re-run `wt cat` (or `wt count`) to get fresh indices.
 - `wt edit-cell <name> --index N --content "..."` — replace a cell's source
   (outputs + metadata preserved). Source may come from `--content` or stdin
-  (useful for multi-line via heredoc).
+  (useful for multi-line via heredoc). stdin is always decoded as UTF-8, so
+  piping Unicode (box-drawing, arrows, dashes, accents) is safe on any
+  platform — no `PYTHONUTF8`/encoding dance needed.
 - `wt append-cell <name> --type md|code [--content "..."]` — push to end.
 - `wt insert-cell <name> --after N | --before N --type md|code [--content "..."]`
   — insert below/above the cell at index N.

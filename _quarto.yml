@@ -60,38 +60,50 @@ website:
         - section: ""
           href: courses/mlops/index.ipynb
           contents:
-            - text: "01. Overview"
+            - text: "01. Overview & the golden path"
               href: courses/mlops/01-overview.ipynb
-        - section: "Local Stack"
-          href: courses/mlops/02-local-stack.ipynb
+        - section: "Phase 0: Foundation"
+          href: courses/mlops/02-platform-foundation.ipynb
           contents:
-            - text: "02. Docker Compose Local Stack"
-              href: courses/mlops/02-local-stack.ipynb
-            - text: "03. MLflow 3: Tracking, Registry, Prompts"
-              href: courses/mlops/03-mlflow.ipynb
-            - text: "04. Data Validation with Pandera"
-              href: courses/mlops/04-data-validation.ipynb
-            - text: "05. ML Pipeline: Training & Packaging"
-              href: courses/mlops/05-ml-pipeline.ipynb
-            - text: "06. Celery + Redis: Task Queue"
-              href: courses/mlops/06-celery-redis.ipynb
-            - text: "07. The Idempotency Guard"
-              href: courses/mlops/07-idempotency.ipynb
-            - text: "08. Reconciliation Producer"
-              href: courses/mlops/08-reconciliation.ipynb
-        - section: "Azure Deployment"
-          href: courses/mlops/09-azure-iac.ipynb
+            - text: "02. Platform foundation"
+              href: courses/mlops/02-platform-foundation.ipynb
+        - section: "Phase 1: Reproducible ML"
+          href: courses/mlops/03-reproducible-training.ipynb
           contents:
-            - text: "09. Bicep: Infrastructure as Code"
-              href: courses/mlops/09-azure-iac.ipynb
-            - text: "10. Deploying and Tearing Down"
-              href: courses/mlops/10-azure-deploy.ipynb
-            - text: "11. Observability: Dashboards & Alerts"
-              href: courses/mlops/11-observability.ipynb
-            - text: "12. KEDA Scaling"
-              href: courses/mlops/12-keda-scaling.ipynb
-            - text: "13. End-to-End Integration Demo"
-              href: courses/mlops/13-integration-demo.ipynb
+            - text: "03. Reproducible training & registry"
+              href: courses/mlops/03-reproducible-training.ipynb
+        - section: "Phase 2: Batch & scheduling"
+          href: courses/mlops/04-results-db-and-batch.ipynb
+          contents:
+            - text: "04. Results DB & batch workflows"
+              href: courses/mlops/04-results-db-and-batch.ipynb
+        - section: "Phase 3: Serving"
+          href: courses/mlops/05-online-serving.ipynb
+          contents:
+            - text: "05. Online serving & promotion"
+              href: courses/mlops/05-online-serving.ipynb
+        - section: "Phase 4: Operations"
+          href: courses/mlops/06-observability-and-dashboard.ipynb
+          contents:
+            - text: "06. Observability & dashboard"
+              href: courses/mlops/06-observability-and-dashboard.ipynb
+        - section: "Phase 5: LLM apps"
+          href: courses/mlops/07-llm-release-artifacts.ipynb
+          contents:
+            - text: "07. LLM release artifacts"
+              href: courses/mlops/07-llm-release-artifacts.ipynb
+        - section: "Off the critical path"
+          href: courses/mlops/08-multi-gpu-training.ipynb
+          contents:
+            - text: "08. Multi-GPU training (exception)"
+              href: courses/mlops/08-multi-gpu-training.ipynb
+            - text: "09. Broker upgrade (only if forced)"
+              href: courses/mlops/09-broker-upgrade.ipynb
+        - section: "Capstone"
+          href: courses/mlops/10-e2e-integration.ipynb
+          contents:
+            - text: "10. End-to-end integration"
+              href: courses/mlops/10-e2e-integration.ipynb
     - id: llm
       style: floating
       collapse-level: 2

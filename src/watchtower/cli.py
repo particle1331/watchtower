@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import shlex
 import sys
 from contextlib import contextmanager
@@ -11,13 +12,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import convert
-from . import inspect
-from . import notebook
-from . import render
-from . import resume
-from . import scaffold
-from . import vault
+from . import convert, inspect, notebook, render, resume, scaffold, vault
 
 app = typer.Typer(
     name="wt",
@@ -26,6 +21,34 @@ app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
+
+
+def _force_utf8_streams() -> None:
+    """Pin stdio to UTF-8 regardless of the platform locale.
+
+    On Windows the console/pipe encoding defaults to cp1252. Piping Unicode
+    cell content through such a stream silently mangles box-drawing glyphs,
+    dashes, and arrows into mojibake before the notebook is ever written.
+    Reconfiguring the streams (and decoding stdin as UTF-8 in ``_read_stdin``)
+    makes the read/write path deterministic on every platform.
+    """
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            with contextlib.suppress(ValueError, OSError):
+                reconfigure(encoding="utf-8")
+
+
+def _read_stdin() -> str:
+    """Read piped stdin as UTF-8, independent of the platform locale.
+
+    Decoding the raw byte buffer bypasses the platform-default text encoding
+    (cp1252 on Windows), which was the root cause of mojibake in cell writes.
+    """
+    return sys.stdin.buffer.read().decode("utf-8")
+
+
+_force_utf8_streams()
 
 
 @contextmanager
@@ -310,7 +333,7 @@ def edit_cell(
     --content (for one-liners) or stdin (for multi-line). Errors if the
     locator matches zero or multiple cells.
     """
-    src = content if content is not None else sys.stdin.read()
+    src = content if content is not None else _read_stdin()
     with _user_error():
         out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
     console.print(f"[green]updated {out}[/green]")
@@ -323,7 +346,7 @@ def append_cell(
     content: str | None = typer.Option(None, "--content", "-c", help="cell source (if omitted, read from stdin)"),
 ) -> None:
     """Append a new cell to the end of the notebook."""
-    src = content if content is not None else sys.stdin.read()
+    src = content if content is not None else _read_stdin()
     with _user_error():
         out = notebook.append_cell(name, src, cell_type=cell_type)
     console.print(f"[green]appended to {out}[/green]")
@@ -344,7 +367,7 @@ def insert_cell(
     Pass exactly one of --after / --before / --tag / --label. --tag and
     --label insert *below* the matched cell. Source from --content or stdin.
     """
-    src = content if content is not None else sys.stdin.read()
+    src = content if content is not None else _read_stdin()
     with _user_error():
         out = notebook.insert_cell(
             name, src, after=after, before=before, tag=tag, label=label,

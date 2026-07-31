@@ -1,0 +1,9 @@
+# Batch scoring ACA Job image dependencies — pinned for reproducible runs (docs/04).
+# MLflow pinned to the SAME version as the self-hosted server.
+mlflow==2.16.2
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==2.1.3
+# Results-DB store (Entra auth).
+psycopg[binary]==3.2.3
+azure-identity==1.17.1

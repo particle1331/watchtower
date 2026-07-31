@@ -1,254 +1,198 @@
 Status: Draft
 Owner: ML platform team
-Canonical for: Production service boundaries and platform invariants
-Depends on: None
-Last reviewed: 2026-07-29
+Canonical for: Target planes, fixed architecture decisions, cross-document invariants
+Depends on: none (this is the root architecture document)
+Last reviewed: 2026-07-30
 
 # 00 — Production architecture
 
 ## Outcome
 
-Provide one implementable target for training, evaluation, asynchronous work,
-and online release. A production deployment is reproducible from Git,
-immutable Blob manifests, a Durable Functions workflow definition, an ACA
-definition/image digest, and non-secret environment configuration.
+A small ML team can train, evaluate, register, serve, and run scheduled or
+on-demand batch workflows on Azure with a handful of managed building blocks and
+no bespoke control plane. Runs are reproducible, model identity is exact,
+operational state is queryable, and deploying new code can never strand a stale
+worker.
 
 ## Production decisions
 
-1. **Workflow control plane.** Durable Functions is the workflow control plane.
-   Orchestrators are versioned, registered, and deterministic — they never
-   perform network or filesystem I/O, never hold document or model bytes, and
-   never deploy or mutate ACA definitions. Durable history holds compact
-   control state and pointers; task-hub internals are not a business broker.
-2. **Execution plane.** Azure Container Apps is the default execution plane.
-   ACA Jobs run coarse offline container stages (training, evaluation, chunked
-   batch inference). ACA Apps serve HTTP online traffic only. Bicep deploys and
-   version-controls all ACA Job/App definitions. Durable Functions starts,
-   observes, and may cancel executions via Azure management APIs; it never
-   modifies a deployed definition.
-3. **No application queue.** Service Bus, Cosmos-ledger, outbox, KEDA queue
-   scaling, DLQ, producer/worker identities, message locks, and reconciliation-
-   as-queue are removed from the baseline architecture. Durable task-hub
-   internals are not a business broker. An independently queryable business
-   database is deferred until a proven retention, query, or transactional-
-   side-effect requirement is documented.
-4. **Blob is canonical.** Blob Storage owns immutable input, output, and
-   checkpoint manifests. Blob digest/version is the canonical identity for all
-   artifacts and data. No Azure ML data assets or model assets are required as
-   runtime identity; they are optional references only.
-5. **Azure OpenAI call boundary.** Calls that complete within 30–60 seconds run
-   directly in a bounded Durable activity. Larger evaluations or batches use
-   chunked ACA stages with bounded internal concurrency. Never launch an ACA
-   Job per document.
-6. **Azure ML is optional and narrow.** Optional managed MLflow tracking and
-   model-catalog references. Optional zero-minimum CPU clusters and optional GPU
-   clusters only after documented admission evidence showing distributed/RDMA or
-   specialized GPU/capability that ACA cannot satisfy. No baseline AML jobs, AML
-   pipelines, AML endpoints, Compute Instances, data assets, or model assets as
-   runtime identity. ACA Jobs run ordinary training and evaluation. AML
-   exceptions (if approved) are submitted and observed by Durable Functions,
-   never as AML pipeline orchestration.
-7. **Managed MLflow compatibility.** If Azure ML tracking is used, production
-   uses an exact tested `mlflow==2.16.2` patch in the `<=2.16` compatibility
-   line only for tracking and artifact logging. The local `mlflow>=3.0.0`
-   dependency is separate.
-8. **Prompt source and model artifact.** Prompts and templates are reviewed Git
-   content. The releaseable unit is an immutable `mlflow.pyfunc.PythonModel`
-   artifact containing the prompt bundle, schemas, deterministic adapter code,
-   and its model manifest. Runtime never fetches prompt content by a mutable
-   lookup. Evaluation and release approval, not registration, determine whether
-   the candidate is eligible for a release descriptor.
-9. **Identity.** Durable host, ACA stage jobs, ACA online apps, and CI have
-   separate identities and least-privilege RBAC. No workload shares a broad
-   fallback identity or stores a credential in an image or artifact.
+These are fixed. Downstream documents implement them; they do not re-litigate them.
 
-## Shared workflow/stage contract
+### The four planes
 
-Every workflow run and every stage execution carries these identifiers:
+The platform is four planes plus a thin dashboard. Everything else is a
+consequence of these.
 
-| Field | Meaning |
-|---|---|
-| `workflow_id`, `workflow_version`, `workflow_digest` | Registered workflow definition identity |
-| `orchestration_instance_id` | Single Durable orchestration run |
-| `stage_id`, `stage_attempt` | Current stage within the orchestration and its attempt number |
-| `aca_job_execution_id` | ACA Job execution returned by the start-job API |
-| `aca_resource_id`, `aca_definition_digest` | ACA Job/App resource and the deployed template/definition digest |
-| `image_digest` | Immutable ACR image ref for the stage container |
-| `input_blob_refs[]` | Immutable input Blob URIs, version IDs, byte sizes, SHA-256 hashes |
-| `output_destination`, `checkpoint_destination` | Blob paths for stage outputs and checkpoint manifests |
-| `timeout`, `retry_classification`, `resource_profile` | Execution budget, retry policy, and compute profile |
-| `provider_config_digest` | Resolved Azure OpenAI endpoint/deployment/quota config hash |
-| `allowed_overrides` | Explicit set of parameters a caller may override |
+| Plane                       | Responsibility                                                   | Azure building block                                     |
+| --------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------- |
+| **Execution**         | Run every workflow as an ephemeral, image-pinned task            | Azure Container Apps**Jobs**                       |
+| **Model lifecycle**   | Track experiments, register model versions, store artifacts      | **Self-hosted MLflow** (ACA App + Postgres + Blob) |
+| **Operational state** | Record status/output/error for every run, with batch granularity | **Generic results DB** (Postgres)                  |
+| **Serving**           | Optional online HTTP inference at an exact model version         | Azure Container Apps**Apps**                       |
 
-Starting an ACA Job returns an execution ID recorded in Durable history. The
-ACA Job writes a terminal immutable result manifest. ACA execution status alone
-is not valid business-result evidence — only the committed result manifest is.
+The **dashboard** (a lightweight ACA App) is a read-and-launch surface over these
+planes; it holds no authoritative state of its own.
+
+```mermaid
+flowchart TD
+    DASH["Dashboard (ACA App, Entra)<br/>catalog + launcher + links"]
+    JOBS["ACA Jobs (execution)<br/>train / eval / batch / task"]
+    MLF["Self-hosted MLflow<br/>registry + tracking"]
+    RDB["Results DB<br/>run state"]
+    BLOB["Blob<br/>artifacts"]
+    OBS["Grafana / Log Analytics<br/>dashboards"]
+
+    DASH -->|reads status| JOBS
+    DASH -->|deep-links| MLF
+    DASH -->|deep-links| OBS
+    JOBS -->|read model version| MLF
+    JOBS -->|write runs| RDB
+    JOBS -->|large payloads| BLOB
+    MLF --> BLOB
+```
+
+### Execution plane — ACA Jobs, always ephemeral
+
+Every workflow is an ACA Job execution started from a **pinned image digest**.
+When idle, nothing runs (scale to zero). Three trigger types cover all needs:
+
+- **Schedule** — cron-defined periodic runs (nightly retrain, hourly scoring).
+- **Manual** — on-demand runs started via the ACA execution API (from the
+  dashboard or CI), always attributed to a caller for audit.
+- **Event** — started in response to an event source when needed.
+
+Because a Job execution is a fresh container from a fresh image, **a deploy is
+just a Job-definition image bump**: the next execution runs new code, and there
+is no worker process holding old code in memory. This single property is why we
+do not need — and deliberately avoid — a long-running worker fleet.
+
+### No control plane, no default broker
+
+Linear multi-step workflows (extract → transform → score → publish) are an
+ordinary Python script inside one Job. We do **not** run Durable Functions or any
+orchestration engine, and we do **not** stand up a message broker or Celery
+worker fleet in the baseline. Fan-out (batch inference) and "run until done"
+continuation are expressed as **parent/child rows in the results DB plus a small
+stateless rule** (see [04](./04-periodic-and-batch-workflows.md)). This keeps the
+system inspectable with plain SQL and free of orchestration-engine version lock-in.
+
+### Model lifecycle — self-hosted MLflow
+
+We run MLflow ourselves at a pinned version, with a Postgres metadata backend and
+Blob artifact store, on a small ACA App. Training and evaluation jobs log runs
+and register model versions; the **registered version number is the canonical
+model identity** used by serving and batch inference. We deliberately do not use
+Azure ML's managed MLflow, whose server version lags upstream and constrains the
+registry and evaluation features we depend on. Self-hosting keeps us free to pin
+exact MLflow and library versions and to bring our own container images.
+
+### Operational state — one generic results DB
+
+A single Postgres table (Celery-result-backend style) records the state of
+**every** job of every type:
+
+| Column                          | Meaning                                                                              |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `id`                          | UUID, or a deterministic hash for idempotent items                                   |
+| `parent_id`                   | NULL for a top-level run; set to group a run's sub-tasks/chunks                      |
+| `name`                        | Workflow/task type identifier                                                        |
+| `status`                      | `PENDING` \| `STARTED` \| `SUCCESS` \| `RETRY` \| `FAILURE` \| `REVOKED` |
+| `output`                      | JSONB metadata (per-task-type shape; big payloads go to Blob)                        |
+| `error`                       | Text/traceback on failure                                                            |
+| `attempts`                    | Retry counter                                                                        |
+| `triggered_by`                | `'schedule'` or the caller's email (audit)                                         |
+| `created_at` / `updated_at` | Timestamps                                                                           |
+
+Indexed on `(parent_id, status)`. This table is the canonical answer to "what
+ran, what is running, what failed, and why." Batch inference uses a parent row
+per batch and a child row per item/chunk, giving per-item success/failure without
+any bespoke ledger. `RETRY` means transient/retriable; `FAILURE` means permanent.
+
+### Serving — ACA Apps at an exact version
+
+When online inference is needed, it runs as an ACA App whose container loads an
+**exact MLflow model version** at startup (`models:/<name>/<version>`). Bringing
+our own image means no framework/runtime lock-in. Rollback is a version change,
+not a rebuild.
+
+### Delivery lane — GitHub Actions is CI/CD only
+
+GitHub Actions builds, tests, and scans images and updates ACA Job/App
+definitions (image digest, env, schedule). It is **never** a workflow scheduler
+or orchestrator — scheduling lives in ACA Job triggers, orchestration lives in
+the job scripts and the results DB.
+
+### Identity and access
+
+Each workload — every Job, the serving App, the dashboard, MLflow, and CI — has
+its own managed identity (CI via OIDC) with least-privilege roles. There is no
+shared broad identity and no long-lived secret in an image or in Git. Manual
+triggers are gated by a specific permission and audited via `triggered_by`.
+
+### Observability
+
+Three layers, no duplication:
+
+- **Results DB** — canonical run state (what/why), queried by the dashboard.
+- **Log Analytics / App Insights** — infra telemetry and alerting (job failed,
+  run missed, permanent-failures over threshold, batch stalled).
+- **Azure Managed Grafana** — deep operational dashboards. The platform
+  dashboard deep-links to Grafana and MLflow rather than re-implementing charts.
 
 ## Shared concepts
 
-- **Exact reference:** an immutable content hash, Blob version ID, or service
-  asset name/version. Human-friendly aliases may exist in an approval workflow
-  but are never resolved by a production runtime.
-- **Release descriptor:** the post-evaluation deployment input that joins
-  exact workflow definition digest, ACA definition/image digests, model
-  manifest digest, Blob artifact references, data/evidence hashes, source, and
-  config; created only after evaluation and release approval.
-- **Deployment intent:** the 06-owned hashed request to deploy a release
-  descriptor using exact environment configuration references and a desired
-  route. It is not an observation or an attestation that deployment succeeded.
-- **Deployment-observation event:** a 06-owned append-only, individually hashed
-  event recording what was observed for a deployment attempt, including its
-  sequence, timestamp, outcome/health/failure, and revision/digests.
-- **Lineage:** Git SHA → image/environment → workflow definition → Durable
-  orchestration instance → stage attempts → ACA Job executions → Blob
-  input/output manifests → candidate artifact → evaluation evidence → release
-  descriptor → deployment intent → deployment-observation events.
+- **Image digest** — the immutable identity of deployed code; a deploy changes a
+  Job/App definition's digest.
+- **Model version** — the immutable identity of a model in the self-hosted MLflow
+  registry; used verbatim by serving and batch inference.
+- **Run record** — a row in the results DB; the unit of operational truth.
+- **Parent/child batch model** — one parent run row, one child row per item,
+  enabling per-item retry and completion tracking.
 
-## Target boundary
+## Target design
 
-```mermaid
-flowchart TB
-    Git[Git: code, prompts, evaluator, manifests] --> CI[CI: tests, build, approval]
-    CI --> ACR[ACR: immutable image digest]
-    CI --> Bicep[Bicep: ACA Job/App definitions]
+Downstream documents specify each plane:
 
-    subgraph Control[Durable Functions workflow control plane]
-        DF[Durable host]
-        Orch[Versioned orchestrators]
-        Act[Bounded activities]
-        History[Durable history + state]
-    end
-
-    subgraph Execution[Azure Container Apps execution plane]
-        ACAJobs[ACA Jobs: training, evaluation, chunked batch stages]
-        ACAApps[ACA Apps: online HTTP serving]
-    end
-
-    subgraph Storage[Immutable Blob storage]
-        BlobInput[Input manifests]
-        BlobOutput[Output + evidence]
-        Checkpoint[Checkpoint manifests]
-    end
-
-    subgraph Optional[Optional Azure ML services]
-        AMLTrack[Managed MLflow tracking]
-        AMLClusters[Zero-min CPU/GPU clusters<br/>approved exception only]
-    end
-
-    CI -->|registers definitions| Bicep
-    Bicep --> ACAJobs
-    Bicep --> ACAApps
-
-    Orch -->|start / observe / cancel| ACAJobs
-    Orch --> Act
-    Act -->|direct ≤60s call| AOAI[Azure OpenAI]
-    DF --> History
-
-    BlobInput --> ACAJobs
-    ACAJobs --> BlobOutput
-    ACAJobs --> Checkpoint
-    Checkpoint --> DF
-
-    ACAJobs -.->|optional| AMLTrack
-    ACAJobs -.->|exceptional| AMLClusters
-
-    ACR --> ACAJobs
-    ACR --> ACAApps
-
-    CI --> Release[Post-evaluation release descriptor]
-    BlobOutput --> Release
-    Release --> Intent[06-owned deployment intent]
-    Intent --> Deploy[ACA definition deployment]
-    Deploy --> ACAApps
-    Deploy --> Observe[06-owned deployment-observation events]
-```
-
-The resource and identity deployment order is authoritative in
-[01 — Platform foundation](./01-platform-foundation.md). The workflow contract is
-in [04 — Durable workflows](./04-durable-workflows.md).
-
-## Cross-document contract interfaces
-
-`03` owns the model manifest and defines its canonical hash. It defines
-only the required interfaces for the later records; the release descriptor,
-deployment intent, and deployment-observation event schemas are owned by [06 —
-Release and operations](./06-release-and-operations.md).
-
-| Record | Created when | Required downstream interface |
-|---|---|---|
-| GenAI model manifest (owned here) | Model artifact is built | Manifest digest, prompt/model-code hashes, request/response schemas, logical provider behavior, inference parameters, and contract version |
-| Release descriptor (owned by 06) | After candidate evaluation and release approval | Workflow definition digest, ACA definition/image digests, model-manifest digest, dataset and evaluation-evidence IDs/content hashes, source commit, config version |
-| Deployment intent (owned by 06) | When an approved release is requested for an environment | Release-descriptor digest, environment-specific provider/configuration references, and desired route |
-| Deployment-observation event (owned by 06) | For each deployment observation | Event sequence, observed timestamp, outcome/health/failure, and observed revision/digests linked to the deployment intent |
-
-The full model-manifest contract and the non-circular hash rule are in
-[03](./03-genai-release-artifacts.md). A release cannot be created from an
-evaluation result alone, and a deployment cannot replace its release descriptor
-with mutable startup resolution.
-
-## Current implementation versus planned target
-
-**Existing, local demo stack only:** Docker Compose runs MLflow `3.5.0`,
-Redis/Celery, PostgreSQL, and MinIO; `train.py` creates 200 synthetic rows;
-Pandera validates the training data; the scikit-learn pipeline is logged
-locally; and inference is stubbed. `infra/main.bicep` is a demo Bicep stack with
-legacy resources including a non-Durable Function app.
-
-**Planned:** Durable Functions orchestrators and activities, ACA Jobs for
-training/evaluation/batch stages, ACA Apps for online serving, Blob manifest-
-driven lineage, direct Azure OpenAI activities, Bicep-deployed ACA definitions,
-and CI/release workflows. Production Durable host, ACA stages/apps, workflow
-definitions, and CI do not exist yet. `make az-up` and the current Bicep are
-not a working Azure runtime proof or production acceptance evidence.
+- Foundation and identity — [01](./01-platform-foundation.md).
+- Reproducible training/eval and MLflow lineage — [02](./02-reproducible-ml.md).
+- LLM release artifact and evaluation — [03](./03-llm-release-artifacts.md).
+- Scheduling, manual triggers, results DB, batch granularity, continuation —
+  [04](./04-periodic-and-batch-workflows.md).
+- Online serving — [05](./05-online-serving.md).
+- CI/CD, promotion, rollback, observability, dashboard — [06](./06-release-and-operations.md).
+- Golden path and phased plan — [07](./07-delivery-journey.md).
+- Distributed/multi-GPU exception — [08](./08-multi-gpu-training.md).
 
 ## Runnable demonstration
 
-```text
-cd projects/ml-platform
-make up
-make train
-make worker       # separate terminal
-make producer     # separate terminal
-```
+The current repository demonstrates local wiring only (Compose stack, synthetic
+data, stubbed inference). It does **not** demonstrate any production plane. A
+passing `make up` is not evidence for this document.
 
-This demonstrates local container wiring, synthetic Pandera validation, local
-MLflow 3 logging, Celery task semantics, and Redis idempotency only. It does
-not prove Durable Functions, ACA stages/apps, Blob manifest lineage, direct
-AOAI activities, or ACA release behavior.
+## Failure modes and acceptance evidence
 
-## Production implementation
-
-1. Implement the identity, Blob, Durable host, ACA, and Azure OpenAI foundation
-   in [01](./01-platform-foundation.md).
-2. Implement manifest-driven ACA training/evaluation stages, immutable data
-   manifests, and lineage in [02](./02-reproducible-ml.md).
-3. Implement the GenAI model manifest, separate evaluator package, evidence,
-   release inputs, and rollback contract in [03](./03-genai-release-artifacts.md).
-4. Implement [04](./04-durable-workflows.md) and [05](./05-online-serving.md) in
-   parallel, then [06](./06-release-and-operations.md), then [07](./07-delivery-journey.md).
-
-## Failure modes/acceptance evidence
-
-| Failure | Required evidence |
-|---|---|
-| Mutable reference changes behavior | Release descriptor, deployment intent, and observation events contain exact digests/asset versions and re-resolution reproduces their hashes |
-| Wrong execution plane | Inventory contains ACA Jobs/Apps and Durable host; no production AML job/endpoint exists without approved rationale |
-| Work is lost or duplicated | Durable history, checkpoint manifests, and idempotent stage commit tests pass; at most one committed result manifest |
-| Aggregate evaluation hides failures | Durable activity or ACA stage has required aggregate metrics plus row-level evidence from the separately versioned evaluator |
-| Release cannot roll back | Prior release descriptor and deployment intent redeploy the exact ACA definition, image, config, and route; observation events record the result |
-| Demo is mistaken for production | Evidence labels local MLflow 3, Redis/Celery, synthetic data, and demo Bicep as existing only |
+| Failure mode                                | Prevented by                                         | Acceptance evidence                                                                            |
+| ------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Deploy leaves stale worker running old code | No long-running workers; image-pinned Job executions | Show that a digest bump changes the code the next execution runs, with no restart of any fleet |
+| Model identity ambiguity                    | Registered MLflow version as canonical identity      | Serving/batch pins`models:/name/version`; logs show the resolved version                     |
+| Run state scattered across tools            | Single generic results DB                            | Query returns full status/output/error for a run and its children                              |
+| Control-plane version lock-in               | No orchestration engine; SQL-inspectable state       | Continuation logic runs from plain results-DB queries                                          |
+| CI drifting into orchestration              | GitHub Actions restricted to build/deploy            | No schedule/orchestration logic in workflows; schedules live in ACA triggers                   |
 
 ## Open decisions
 
-- Select network/private-endpoint mode, ingress protection, and data retention.
-- Approve Azure OpenAI quotas and the first optional GPU profile.
-- Decide whether and when an independently queryable business database is
-  required beyond Durable history + Blob manifests.
+- *Postgres topology.* Default: **one burstable/small flexible server with two
+  logical databases** (`mlflow` + `results`) — cheapest option that still isolates
+  the two workloads (separate logins per identity, no cross-workload table
+  access). Two databases on one server cost essentially nothing extra, so this is
+  not a collapse-to-one-database decision. **Upgrade trigger:** split `results`
+  onto its own server only if the shared server becomes a reliability bottleneck
+  (resource contention, connection exhaustion, one workload destabilizing the
+  other) — a connection-string change, not a data migration. Do not split
+  preemptively.
+- Whether online serving is needed at launch or batch-only initially.
 
 ## References
 
-- [Platform foundation](./01-platform-foundation.md)
-- [Reproducible ML](./02-reproducible-ml.md)
-- [GenAI release artifacts](./03-genai-release-artifacts.md)
-- [Durable workflows](./04-durable-workflows.md)
-- Current code: `src/ml_platform/`, `docker-compose.yml`, and `infra/`.
+- [`mockups/workflow-dashboard.html`](./mockups/workflow-dashboard.html) — the
+  dashboard surface this architecture feeds.
