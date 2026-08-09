@@ -19,7 +19,6 @@ Identity: id-dashboard — read-only on results DB + ACA execution-start (scoped
 No write access to the registry or training data.
 """
 
-from __future__ import annotations
 
 import logging
 import os

@@ -13,7 +13,6 @@ Status vocabulary (matches schema.sql):
     REVOKED   Cancelled.
 """
 
-from __future__ import annotations
 
 import datetime as dt
 import hashlib

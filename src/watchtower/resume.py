@@ -6,7 +6,6 @@ to produce assets/resume.pdf. Edit the YAML; never hand-edit the generated
 .tex / .ipynb.
 """
 
-from __future__ import annotations
 
 import os
 import re

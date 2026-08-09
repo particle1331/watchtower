@@ -16,7 +16,6 @@ The function returns the registered ``ModelVersion`` object.  Config/prompts
 travel inside the artifact; secrets are never passed here.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 from typing import Any

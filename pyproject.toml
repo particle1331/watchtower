@@ -3,7 +3,7 @@ name = "watchtower"
 version = "0.1.0"
 description = "A central workspace for personal learning and portfolio projects."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "typer>=0.15.0",
     "rich>=14.1.0",
@@ -48,7 +48,7 @@ pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -56,5 +56,5 @@ ignore = ["E501", "B008"]
 
 [tool.pyright]
 include = ["src", "projects"]
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 typeCheckingMode = "basic"

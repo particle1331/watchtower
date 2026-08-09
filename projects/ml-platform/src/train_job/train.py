@@ -14,7 +14,6 @@ dataset's source + digest are logged: same image + same dataset + same params
 => equivalent registered version.
 """
 
-from __future__ import annotations
 
 import argparse
 import os

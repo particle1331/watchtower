@@ -1,6 +1,5 @@
 """Shared pytest fixtures for the watchtower test suite."""
 
-from __future__ import annotations
 
 import shutil
 from pathlib import Path

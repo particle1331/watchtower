@@ -1,6 +1,5 @@
 """Tests for watchtower.convert — import_notebook and import_chapter."""
 
-from __future__ import annotations
 
 import shutil
 from pathlib import Path

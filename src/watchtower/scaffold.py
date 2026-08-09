@@ -7,7 +7,6 @@ directory trees with an index notebook and sequential lessons. Project
 scaffolding delegates to `uv init`.
 """
 
-from __future__ import annotations
 
 import subprocess
 from datetime import datetime
@@ -17,7 +16,8 @@ from typing import Any
 import nbformat
 import ruamel.yaml
 
-from .paths import ARTICLES_DIR, COURSES_DIR, NOTES_DIR, PROJECTS_DIR as PROJECTS
+from .paths import ARTICLES_DIR, COURSES_DIR, NOTES_DIR
+from .paths import PROJECTS_DIR as PROJECTS
 
 _yaml = ruamel.yaml.YAML(typ="rt")
 _yaml.indent(mapping=2, sequence=4, offset=2)

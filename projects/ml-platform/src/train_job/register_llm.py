@@ -12,7 +12,6 @@ it, and writes a results-DB record (``name='register_llm:<registered-name>'``).
 Like train.py it is a no-op results record before Phase 2 (``PGHOST`` unset).
 """
 
-from __future__ import annotations
 
 import argparse
 import os

@@ -13,7 +13,6 @@ Eval JSONL format (one JSON object per line):
   ``expected`` may be omitted if only latency/token metrics are needed.
 """
 
-from __future__ import annotations
 
 import argparse
 import json

@@ -16,7 +16,6 @@ Identity: ``id-serving`` (read-only MLflow artefacts; no write access to the
 registry or training data).  All config is env; no secrets in the image.
 """
 
-from __future__ import annotations
 
 import logging
 import os

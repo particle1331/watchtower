@@ -1,6 +1,5 @@
 """Tests for watchtower.cli helpers — stdin/stdout UTF-8 handling."""
 
-from __future__ import annotations
 
 import io
 

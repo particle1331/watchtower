@@ -7,7 +7,6 @@ stored — no values ever touch disk.
 Projects read secrets via `watchtower.vault.get_secret`.
 """
 
-from __future__ import annotations
 
 import json
 from pathlib import Path

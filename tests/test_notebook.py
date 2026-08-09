@@ -1,12 +1,10 @@
 """Tests for watchtower.notebook — cell read/write operations."""
 
-from __future__ import annotations
 
 import nbformat
 import pytest
 
 from watchtower import notebook
-
 
 # ---------------------------------------------------------------------------
 # count_cells

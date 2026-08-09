@@ -9,7 +9,6 @@ chapter of an existing course, copying it to `courses/<course>/<stem>.ipynb`
 and registering it in the course's sidebar in `_quarto.yml`.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 
@@ -51,8 +50,8 @@ def import_notebook(src: str, tier: str, name: str | None = None) -> Path:
     """
     if tier == "courses":
         raise ValueError(
-            f"flat import only supports (notes, articles), got: courses. "
-            f"For courses, use 'wt import <ipynb> courses --course <slug>'."
+            "flat import only supports (notes, articles), got: courses. "
+            "For courses, use 'wt import <ipynb> courses --course <slug>'."
         )
     source = _validate_source(src)
     stem = name if name is not None else source.stem

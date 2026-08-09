@@ -6,7 +6,6 @@ than silently training on garbage. The wine-quality schema below matches the
 runnable demonstration in docs/02; real workloads swap in their own contract.
 """
 
-from __future__ import annotations
 
 import pandas as pd
 import pandera.pandas as pa

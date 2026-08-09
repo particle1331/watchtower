@@ -6,7 +6,6 @@ rather than an implicit "latest table". This is the platform's data-versioning
 mechanism — no separate DVC/LakeFS is introduced.
 """
 
-from __future__ import annotations
 
 import pandas as pd
 from mlflow.data import from_pandas

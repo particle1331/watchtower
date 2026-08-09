@@ -12,7 +12,6 @@ The script detects the local rank (torch.distributed) and only one process
 (rank 0) writes to MLflow and the results DB, to avoid concurrent writes.
 """
 
-from __future__ import annotations
 
 import argparse
 import os

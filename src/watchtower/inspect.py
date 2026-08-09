@@ -6,7 +6,6 @@ notebooks in the content dirs; cell sources (no JSON noise) are exposed via
 jupytext for low-token agent reads.
 """
 
-from __future__ import annotations
 
 import json
 import shutil

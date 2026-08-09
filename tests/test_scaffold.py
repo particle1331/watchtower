@@ -1,12 +1,10 @@
 """Tests for watchtower.scaffold — filesystem-writing functions."""
 
-from __future__ import annotations
 
 import nbformat
 import pytest
 
 from watchtower import scaffold
-
 
 # ---------------------------------------------------------------------------
 # Notes and articles
@@ -31,7 +29,7 @@ def test_new_note_default_title_is_name(repo):
 
 
 def test_new_article_creates_file(repo):
-    path = scaffold.new_article("svd")
+    scaffold.new_article("svd")
     assert (repo / "articles" / "svd.ipynb").exists()
 
 
@@ -52,7 +50,7 @@ def test_new_article_custom_title(repo):
 # ---------------------------------------------------------------------------
 
 def test_new_course_creates_directory(repo):
-    course_dir = scaffold.new_course("ml", "Machine Learning")
+    scaffold.new_course("ml", "Machine Learning")
     assert (repo / "courses" / "ml").is_dir()
     assert (repo / "courses" / "ml" / "index.ipynb").exists()
     assert (repo / "courses" / "ml" / "01-introduction.ipynb").exists()
@@ -80,7 +78,7 @@ def test_new_course_idempotent_registration(repo):
 
 def test_new_chapter_creates_file(repo):
     scaffold.new_course("ml", "Machine Learning")
-    path = scaffold.new_course_chapter("ml", "02-regression")
+    scaffold.new_course_chapter("ml", "02-regression")
     assert (repo / "courses" / "ml" / "02-regression.ipynb").exists()
 
 

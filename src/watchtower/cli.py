@@ -1,6 +1,5 @@
 """Watchtower CLI — Typer application assembling all subcommands."""
 
-from __future__ import annotations
 
 import contextlib
 import shlex

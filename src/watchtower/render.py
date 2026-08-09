@@ -1,6 +1,5 @@
 """Quarto wrappers: render qmd->PDF for read-back, serve site."""
 
-from __future__ import annotations
 
 import os
 import subprocess

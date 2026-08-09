@@ -14,7 +14,6 @@ identity. If the results DB is not configured (``PGHOST`` unset), recording is a
 no-op so the training logic still runs locally before Phase 2 exists.
 """
 
-from __future__ import annotations
 
 import contextlib
 import datetime as dt

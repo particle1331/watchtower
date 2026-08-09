@@ -17,7 +17,6 @@ Configuration (env vars):
   CELERY_BROKER — override if not Redis URL format.
 """
 
-from __future__ import annotations
 
 import logging
 import os

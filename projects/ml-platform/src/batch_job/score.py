@@ -14,7 +14,6 @@ Invariants (docs/04):
   - All connection info comes from env vars; the image is pinned by digest.
 """
 
-from __future__ import annotations
 
 import argparse
 import os

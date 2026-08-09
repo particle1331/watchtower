@@ -9,7 +9,6 @@ The job **exits non-zero** when the candidate misses the recorded threshold, so
 a downstream promotion step (docs/06) only proceeds on a passing evaluation.
 """
 
-from __future__ import annotations
 
 import argparse
 import sys

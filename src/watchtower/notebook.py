@@ -13,7 +13,6 @@ Commands that *write* require a unique match; `cat` and `remove-cell` may
 match multiple cells and act on all of them.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 

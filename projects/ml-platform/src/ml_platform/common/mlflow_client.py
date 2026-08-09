@@ -7,7 +7,6 @@ enough. MLflow is self-hosted at a pinned version, so this lineage path is under
 our control and not subject to a managed provider's version lag (docs/00, docs/02).
 """
 
-from __future__ import annotations
 
 import os
 
