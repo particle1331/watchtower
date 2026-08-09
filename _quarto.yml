@@ -109,12 +109,242 @@ website:
       collapse-level: 2
       align: left
       contents:
-        - section: ''
+        - section: ""
           href: courses/llm/index.ipynb
           contents:
-            - text: Overview
-              href: courses/llm/index.ipynb
-            - text: 01. Introduction
-              href: courses/llm/01-introduction.ipynb
-            - text: Hello, world
-              href: courses/llm/hello-world.ipynb
+            - text: "01. GPT Architecture"
+              href: courses/llm/01-gpt-architecture.ipynb
+            - text: "02. Tokenization"
+              href: courses/llm/02-tokenization.ipynb
+            - text: "03. Data Pipelines"
+              href: courses/llm/03-data-pipelines.ipynb
+            - text: "04. Training Loop"
+              href: courses/llm/04-training-loop.ipynb
+            - text: "05. Scaling Diagnostics"
+              href: courses/llm/05-scaling-diagnostics.ipynb
+            - text: "06. Pretraining"
+              href: courses/llm/06-pretraining.ipynb
+            - text: "07. Distributed Training"
+              href: courses/llm/07-distributed-training.ipynb
+            - text: "08. SFT & LoRA"
+              href: courses/llm/08-sft-lora.ipynb
+            - text: "09. Preference Optimization"
+              href: courses/llm/09-preference-optimization.ipynb
+            - text: "10. GRPO"
+              href: courses/llm/10-grpo.ipynb
+            - text: "11. Distillation"
+              href: courses/llm/11-distillation.ipynb
+            - text: "12. Quantization"
+              href: courses/llm/12-quantization.ipynb
+            - text: "13. Inference"
+              href: courses/llm/13-inference.ipynb
+            - text: "14. Inference-Time Scaling"
+              href: courses/llm/14-inference-time-scaling.ipynb
+            - text: "15. Reasoning Model"
+              href: courses/llm/15-reasoning-model.ipynb
+    - id: agents
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/agents/index.ipynb
+          contents:
+            - text: "00. Foundations"
+              href: courses/agents/00-foundations.ipynb
+            - text: "01. Tools"
+              href: courses/agents/01-tools.ipynb
+            - text: "02. Reasoning"
+              href: courses/agents/02-reasoning.ipynb
+            - text: "03. Agent Loop"
+              href: courses/agents/03-agent-loop.ipynb
+            - text: "04. Context"
+              href: courses/agents/04-context.ipynb
+            - text: "05. Memory"
+              href: courses/agents/05-memory.ipynb
+            - text: "06. Safety"
+              href: courses/agents/06-safety.ipynb
+            - text: "07. Evaluation"
+              href: courses/agents/07-evaluation.ipynb
+            - text: "08. Patterns"
+              href: courses/agents/08-patterns.ipynb
+            - text: "09. Multi-Agent"
+              href: courses/agents/09-multi-agent.ipynb
+            - text: "10. Extensibility"
+              href: courses/agents/10-extensibility.ipynb
+    - id: app-dev
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/app-dev/index.ipynb
+          contents:
+            - text: "01. Flet: UI Components"
+              href: courses/app-dev/01-flet.ipynb
+            - text: "02. Flet: Advanced UI"
+              href: courses/app-dev/02-flet.ipynb
+            - text: "03. FastAPI"
+              href: courses/app-dev/03-fastapi.ipynb
+            - text: "04. Docker"
+              href: courses/app-dev/04-docker.ipynb
+            - text: "05. Database"
+              href: courses/app-dev/05-database.ipynb
+            - text: "06. S3 Pipeline"
+              href: courses/app-dev/06-s3-pipeline.ipynb
+            - text: "07. Embeddings"
+              href: courses/app-dev/07-embeddings.ipynb
+            - text: "08. Clustering"
+              href: courses/app-dev/08-clustering.ipynb
+            - text: "09. Integration"
+              href: courses/app-dev/09-integration.ipynb
+            - text: "10. Realtime"
+              href: courses/app-dev/10-realtime.ipynb
+            - text: "11. Multimodal"
+              href: courses/app-dev/11-multimodal.ipynb
+            - text: "12. Photo App"
+              href: courses/app-dev/12-photo-app.ipynb
+    - id: classical-ml
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/classical-ml/index.ipynb
+          contents:
+            - text: "01. Bias-Variance"
+              href: courses/classical-ml/01-bias-variance.ipynb
+            - text: "02. Tree Methods"
+              href: courses/classical-ml/02-tree-methods.ipynb
+            - text: "03. Bayesian Thinking"
+              href: courses/classical-ml/03-bayesian-thinking.ipynb
+            - text: "04. Feature Engineering"
+              href: courses/classical-ml/04-feature-engineering.ipynb
+            - text: "05. Evaluation & Causal"
+              href: courses/classical-ml/05-evaluation-causal.ipynb
+            - text: "06. Tabular DL"
+              href: courses/classical-ml/06-tabular-dl.ipynb
+    - id: deep-learning
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: "Core"
+          href: courses/deep-learning/01-softmax-regression.ipynb
+          contents:
+            - text: "01. Softmax Regression"
+              href: courses/deep-learning/01-softmax-regression.ipynb
+            - text: "02. Neural Networks"
+              href: courses/deep-learning/02-neural-networks.ipynb
+            - text: "03. Autodiff"
+              href: courses/deep-learning/03-autodiff.ipynb
+            - text: "04. Optimizers"
+              href: courses/deep-learning/04-optimizers.ipynb
+            - text: "05. Activations & Gradients"
+              href: courses/deep-learning/05-activations-and-gradients.ipynb
+            - text: "06. CNN"
+              href: courses/deep-learning/06-cnn.ipynb
+            - text: "07. Language Modeling"
+              href: courses/deep-learning/07-language-modeling.ipynb
+            - text: "08. RNN"
+              href: courses/deep-learning/08-rnn.ipynb
+            - text: "09. Attention & Transformers"
+              href: courses/deep-learning/09-attention-transformers.ipynb
+        - section: "Appendices"
+          href: courses/deep-learning/11-appendix-expressivity.ipynb
+          contents:
+            - text: "11. Expressivity"
+              href: courses/deep-learning/11-appendix-expressivity.ipynb
+            - text: "12. ResNet"
+              href: courses/deep-learning/12-appendix-resnet.ipynb
+            - text: "18. Double Descent"
+              href: courses/deep-learning/18-appendix-double-descent.ipynb
+        - section: "Advanced Topics"
+          href: courses/deep-learning/advanced/13-translation.ipynb
+          contents:
+            - text: "13. Translation"
+              href: courses/deep-learning/advanced/13-translation.ipynb
+            - text: "14. Generative Models"
+              href: courses/deep-learning/advanced/14-generative-models.ipynb
+            - text: "15. Diffusion"
+              href: courses/deep-learning/advanced/15-diffusion.ipynb
+            - text: "16. Segmentation"
+              href: courses/deep-learning/advanced/16-segmentation.ipynb
+            - text: "17. Captioning"
+              href: courses/deep-learning/advanced/17-captioning.ipynb
+    - id: llm-eng
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/llm-eng/index.ipynb
+          contents:
+            - text: "01. LLM API"
+              href: courses/llm-eng/01-llm-api.ipynb
+            - text: "02. Prompt Engineering"
+              href: courses/llm-eng/02-prompt-engg.ipynb
+            - text: "03. RAG Concepts"
+              href: courses/llm-eng/03-rag-concepts.ipynb
+            - text: "04. Eval Concepts"
+              href: courses/llm-eng/04-eval-concepts.ipynb
+            - text: "05. Agents Foundations"
+              href: courses/llm-eng/05-agents-foundations.ipynb
+            - text: "06. Observability"
+              href: courses/llm-eng/06-observability.ipynb
+            - text: "07. RAG Pipeline"
+              href: courses/llm-eng/07-rag-pipeline.ipynb
+            - text: "08. Agents (LangGraph)"
+              href: courses/llm-eng/08-agents-langgraph.ipynb
+            - text: "09. Fine-Tuning"
+              href: courses/llm-eng/09-fine-tuning.ipynb
+            - text: "10. Model Serving"
+              href: courses/llm-eng/10-model-serving.ipynb
+            - text: "11. Cost Optimization"
+              href: courses/llm-eng/11-cost-optimization.ipynb
+            - text: "12. AI Infra"
+              href: courses/llm-eng/12-ai-infra.ipynb
+            - text: "13. Capstone: Compliance"
+              href: courses/llm-eng/13-capstone-compliance.ipynb
+    - id: recommender-systems
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/recommender-systems/index.ipynb
+          contents:
+            - text: "01. Data"
+              href: courses/recommender-systems/01-data.ipynb
+            - text: "02. Features"
+              href: courses/recommender-systems/02-features.ipynb
+            - text: "03. Classic"
+              href: courses/recommender-systems/03-classic.ipynb
+            - text: "04. Retrieval"
+              href: courses/recommender-systems/04-retrieval.ipynb
+            - text: "05. Ranking"
+              href: courses/recommender-systems/05-ranking.ipynb
+            - text: "06. Sequence & LLM"
+              href: courses/recommender-systems/06-sequence-llm.ipynb
+            - text: "07. Serving"
+              href: courses/recommender-systems/07-serving.ipynb
+            - text: "08. Eval"
+              href: courses/recommender-systems/08-eval.ipynb
+            - text: "09. App"
+              href: courses/recommender-systems/09-app.ipynb
+    - id: reinforcement-learning
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/reinforcement-learning/index.ipynb
+          contents:
+            - text: "01. RL Foundations"
+              href: courses/reinforcement-learning/01-rl-foundations.ipynb
+            - text: "02. Policy Gradients"
+              href: courses/reinforcement-learning/02-policy-gradients.ipynb
+            - text: "03. Proximal Policy Optimization"
+              href: courses/reinforcement-learning/03-ppo.ipynb
+            - text: "04. RL for Language Models"
+              href: courses/reinforcement-learning/04-rl-for-llms.ipynb

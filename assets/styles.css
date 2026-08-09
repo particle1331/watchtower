@@ -68,11 +68,11 @@ table.dataframe th {
   background-color: #666;
 }
 
-#quarto-back-to-top {
+/* #quarto-back-to-top {
   right: 9rem !important;
   left: auto !important;
   bottom: 1.5rem !important;
-}
+} */
 
 /* Fix Quarto tooltip readability in light mode */
 body:not(.quarto-dark) .tippy-box {

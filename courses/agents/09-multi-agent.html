@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="quarto-1.8.27" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+
+
+<title>Coordination and Delegation in Multi-Agent Systems – Ron Medina ∷ Résumé</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+<!-- htmldependencies:E3FAD763 -->
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../assets/styles.css" />
+</head>
+
+<body>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="/index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+  aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation"
+  onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="/articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="/notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="/photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <div id="quarto-toc-target"></div>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Coordination and Delegation in Multi-Agent Systems</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+<nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#single-agent-limitations" id="toc-single-agent-limitations">Single Agent Limitations</a></li>
+  <li><a href="#setup" id="toc-setup">Setup</a></li>
+  <li><a href="#the-subagenttool" id="toc-the-subagenttool">The SubAgentTool</a>
+  <ul>
+  <li><a href="#how-the-tool-works" id="toc-how-the-tool-works">How the tool works</a></li>
+  </ul></li>
+  <li><a href="#sub-agent-delegation" id="toc-sub-agent-delegation">Sub-Agent Delegation</a>
+  <ul>
+  <li><a href="#custom-roles" id="toc-custom-roles">Custom roles</a></li>
+  </ul></li>
+  <li><a href="#sequential-pipeline" id="toc-sequential-pipeline">Sequential Pipeline</a>
+  <ul>
+  <li><a href="#pipeline-implementation" id="toc-pipeline-implementation">Pipeline implementation</a></li>
+  <li><a href="#token-cost-comparison" id="toc-token-cost-comparison">Token cost comparison</a></li>
+  </ul></li>
+  <li><a href="#llm-driven-speaker-selection" id="toc-llm-driven-speaker-selection">LLM-Driven Speaker Selection</a>
+  <ul>
+  <li><a href="#when-to-use-speaker-selection" id="toc-when-to-use-speaker-selection">When to use speaker selection</a></li>
+  </ul></li>
+  <li><a href="#single-vs.-multi-agent" id="toc-single-vs.-multi-agent">Single vs. Multi-Agent</a>
+  <ul>
+  <li><a href="#decision-guidelines" id="toc-decision-guidelines">Decision guidelines</a></li>
+  </ul></li>
+  </ul>
+</nav>
+<p>The orchestrator-worker pattern from NB08 uses raw LLM calls as workers. The next step is making each worker a <em>full agent</em> — its own context window, its own tools, its own reasoning loop. This notebook explores multi-agent systems: why single agents hit a ceiling on complex tasks, how the CDA library’s <code>SubAgentTool</code> handles sub-agent delegation, how to chain agents into sequential pipelines, and how to implement LLM-driven speaker selection for collaborative discussions.</p>
+<p>The guiding question throughout is not “how do we make the system more complicated?” but rather “when does the added complexity actually pay off?” Multi-agent architectures are more expensive, harder to debug, and more likely to fail in unexpected ways than single-agent systems. The goal is to understand exactly which problems justify them.</p>
+<section id="single-agent-limitations" class="level2">
+<h2>Single Agent Limitations</h2>
+<p>A single agent loop handles most tasks well, but it runs into three structural problems on complex, multi-step work:</p>
+<p><strong>Context pollution.</strong> Every tool call appends its output to the conversation. A task that involves investigation, then fixing, then writing tests, then updating documentation fills the context with accumulated output from each phase. By the time the agent reaches documentation, it is reasoning over a window bloated with code diffs, grep results, and test output — signal from earlier phases degrades into noise.</p>
+<p><strong>Role confusion.</strong> A single system prompt cannot simultaneously optimize for careful code review (skeptical, detailed, line-by-line) and creative test writing (generative, coverage-oriented, adversarial). The agent ends up as a generalist when the task demands specialists.</p>
+<p><strong>Skill concentration.</strong> Some tasks require genuinely different competencies: reading and classifying code vs. writing prose vs. auditing security. A single system prompt averages these out.</p>
+<p>Multi-agent architectures address all three: each sub-agent starts with a clean context window, carries a role-specific system prompt, and works on a well-scoped subtask. The parent agent coordinates but does not execute.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class='callout-icon'></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The cost of these benefits is real: more LLM calls, higher total token usage, harder debugging, and more failure modes. Single-agent is the right default. Move to multi-agent only when you have evidence that context pollution or role confusion is actually degrading quality.</p>
+</div>
+</div>
+</section>
+<section id="setup" class="level2">
+<h2>Setup</h2>
+<p><strong>Setup.</strong> Imports and CDA session initialization:</p>
+<div id="a7b8c9d0-e1f2-3456-abcd-456789012306" class="cell">
+<div class="sourceCode" id="cb1"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> asyncio</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> openai <span class="im">import</span> AsyncOpenAI</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.agent.config <span class="im">import</span> Config, ApprovalPolicy</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.agent.session <span class="im">import</span> Session</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.agent.agent <span class="im">import</span> Agent</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.agent.events <span class="im">import</span> AgentEventType</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.agent.tools.subagents <span class="im">import</span> SubAgentTool, BUILTIN_ROLES, SubAgentParams</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>load_dotenv()</span></code></pre></div>
+</div>
+<p>We set up a helper to run an agent and collect its final response and token usage:</p>
+<div id="c9d0e1f2-a3b4-5678-cdef-678901234508" class="cell">
+<div class="sourceCode" id="cb2"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> run_agent(task: <span class="bu">str</span>, config: Config) <span class="op">-&gt;</span> <span class="bu">tuple</span>[<span class="bu">str</span>, <span class="bu">dict</span>]:</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Run a CDA Agent on *task* and return (response, usage).&quot;&quot;&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    session <span class="op">=</span> Session(config)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    agent <span class="op">=</span> Agent(config<span class="op">=</span>config, session<span class="op">=</span>session)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    usage <span class="op">=</span> {}</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="cf">for</span> event <span class="kw">in</span> agent.run(task):</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> event.<span class="bu">type</span> <span class="op">==</span> AgentEventType.AGENT_END:</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>            response <span class="op">=</span> event.data.get(<span class="st">&quot;response&quot;</span>, <span class="st">&quot;&quot;</span>) <span class="kw">or</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>            usage <span class="op">=</span> event.data.get(<span class="st">&quot;usage&quot;</span>) <span class="kw">or</span> {}</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response, usage</span></code></pre></div>
+</div>
+</section>
+<section id="the-subagenttool" class="level2">
+<h2>The SubAgentTool</h2>
+<p>The CDA library implements sub-agent delegation through <code>SubAgentTool</code> in <code>tools/subagents.py</code>. This tool allows a parent agent to spawn a focused child agent as a regular tool call — the parent calls <code>run_sub_agent(task=..., role=...)</code>, the child runs to completion, and the child’s final response is returned as the tool result.</p>
+<p>The child agent is fully isolated: - Starts with a fresh <code>Session</code> (empty conversation history) - Uses a role-specific system prompt from <code>BUILTIN_ROLES</code> - Runs with <code>ApprovalPolicy.YOLO</code> so it operates unattended - Can have its tool set restricted to match the role (e.g., read-only tools for an investigator)</p>
+<p>The five built-in roles are:</p>
+<div id="f2a3b4c5-d6e7-8901-fabc-901234567811" class="cell">
+<div class="sourceCode" id="cb3"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> role, (prompt, tools) <span class="kw">in</span> BUILTIN_ROLES.items():</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    tool_str <span class="op">=</span> <span class="st">&quot;, &quot;</span>.join(tools) <span class="cf">if</span> tools <span class="cf">else</span> <span class="st">&quot;all tools&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;  </span><span class="sc">{</span>role<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;    tools: </span><span class="sc">{</span>tool_str<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;    prompt: </span><span class="sc">{</span>prompt[:<span class="dv">80</span>]<span class="sc">}</span><span class="ss">...&quot;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span></code></pre></div>
+</div>
+<section id="how-the-tool-works" class="level3">
+<h3>How the tool works</h3>
+<p>When the parent agent calls <code>run_sub_agent</code>, <code>SubAgentTool.execute()</code> runs the following steps:</p>
+<ol type="1">
+<li>Resolve the role to a <code>(system_prompt, allowed_tools)</code> pair from <code>BUILTIN_ROLES</code> (or the caller-supplied <code>system_prompt</code> for <code>role="custom"</code>).</li>
+<li>Build a child <code>Config</code> that inherits the parent’s model and working directory but overrides <code>approval=YOLO</code>, <code>max_turns</code>, <code>allowed_tools</code>, and <code>developer_instructions</code>.</li>
+<li>Create a fresh <code>Session(child_config)</code> and replace its system message with the role prompt.</li>
+<li>Create a <code>Agent(config, session)</code> and stream <code>agent.run(task)</code>.</li>
+<li>Collect the child’s final <code>TEXT_COMPLETE</code> event and return it as a <code>ToolResult</code>.</li>
+</ol>
+<p>The result is prefixed with <code>[Sub-agent result | role=&lt;name&gt;]</code> so the parent can clearly see where the output came from.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class='callout-icon'></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>SubAgentTool</code> is registered in the default tool registry only when <code>Config.allowed_tools</code> includes <code>"run_sub_agent"</code> or is <code>None</code> (all tools allowed). This means it is available in a standard <code>Session</code> by default.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sub-agent-delegation" class="level2">
+<h2>Sub-Agent Delegation</h2>
+<p>We run a parent agent on a task that naturally decomposes into investigation followed by documentation. The parent is free to use <code>run_sub_agent</code> to delegate the investigation to a specialized child.</p>
+<p><strong>Config.</strong> The parent runs with <code>ON_REQUEST</code> approval so sub-agent calls are visible:</p>
+<div id="e7f8a9b0-c1d2-3456-efab-456789012316" class="cell">
+<div class="sourceCode" id="cb4"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>parent_config <span class="op">=</span> Config(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    approval<span class="op">=</span>ApprovalPolicy.ON_REQUEST,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    max_turns<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<p><strong>Delegation task.</strong> We ask the parent to investigate the CDA library structure and summarize it. Investigation is well-scoped, read-only work — exactly what the <code>codebase_investigator</code> role is designed for:</p>
+<div id="a9b0c1d2-e3f4-5678-abcd-678901234518" class="cell">
+<div class="sourceCode" id="cb5"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>task <span class="op">=</span> (</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Use a sub-agent to investigate the CDA library at src/notebooks/agent/ &quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;and report: (1) which modules it contains, (2) which classes are exported, &quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;and (3) how many builtin tools are registered by default. &quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Summarize the findings in a short paragraph.&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>response, usage <span class="op">=</span> <span class="cf">await</span> run_agent(task, parent_config)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+</div>
+<p>The annotations below describe the key steps:</p>
+<ol type="1">
+<li>The parent agent decides to call <code>run_sub_agent</code> with <code>role="codebase_investigator"</code> — it does not call any file tools directly.</li>
+<li><code>SubAgentTool.execute()</code> creates a child agent with restricted tools (<code>read_file</code>, <code>list_dir</code>, <code>glob</code>, <code>grep</code>, <code>shell</code>) and runs it.</li>
+<li>The child uses those tools to explore <code>src/notebooks/agent/</code>, collects its findings, and produces a structured report.</li>
+<li>The child’s final text is returned to the parent as the tool result.</li>
+<li>The parent uses that report to write the summary paragraph.</li>
+</ol>
+<section id="custom-roles" class="level3">
+<h3>Custom roles</h3>
+<p>Built-in roles cover the most common patterns, but <code>role="custom"</code> combined with a <code>system_prompt</code> and <code>allowed_tools</code> handles any specialization. We demonstrate with a security auditor role that checks for hardcoded secrets — a common and genuinely useful sub-agent pattern.</p>
+<div id="d2e3f4a5-b6c7-8901-defa-901234567821" class="cell">
+<div class="sourceCode" id="cb6"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>custom_task <span class="op">=</span> (</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Use a sub-agent with role=&#39;custom&#39; to scan the src/notebooks/agent/ directory &quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;for any hardcoded secrets, API keys, or passwords. The sub-agent should only &quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;be allowed to use read_file, glob, and grep. Report what it found.&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>custom_system <span class="op">=</span> (</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;You are a security auditor. Your job is to scan source code for hardcoded &quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;secrets: API keys, passwords, tokens, private keys, or any string that looks &quot;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;like a credential. Search thoroughly. Report each finding with its file path &quot;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;and line number. If nothing is found, explicitly state that. Do NOT modify files.&quot;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Build a config that includes the custom system prompt in the task description</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># so the parent agent passes it through to the sub-agent.</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>audit_task <span class="op">=</span> (</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;Use run_sub_agent with role=&#39;custom&#39;, &quot;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;system_prompt=&#39;</span><span class="sc">{</span>custom_system<span class="sc">}</span><span class="ss">&#39;, &quot;</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;allowed_tools=[&#39;read_file&#39;, &#39;glob&#39;, &#39;grep&#39;], &quot;</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;and task: &#39;Scan src/notebooks/agent/ for hardcoded secrets, API keys, or passwords.&#39;&quot;</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>audit_config <span class="op">=</span> Config(approval<span class="op">=</span>ApprovalPolicy.YOLO, max_turns<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>response, _ <span class="op">=</span> <span class="cf">await</span> run_agent(audit_task, audit_config)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+</div>
+</section>
+</section>
+<section id="sequential-pipeline" class="level2">
+<h2>Sequential Pipeline</h2>
+<p>Sub-agent delegation keeps the parent in the loop — it orchestrates, tools execute. For tasks with a fixed, well-ordered sequence of stages, a <strong>sequential pipeline</strong> is simpler: we run sub-agents explicitly in Python, passing each stage’s output directly to the next.</p>
+<p>The advantage over single-agent delegation is the same — clean context, specialized roles — but the pipeline is deterministic and transparent: the stages, the order, and the data flow are all visible in Python code rather than inferred from LLM reasoning.</p>
+<section id="pipeline-implementation" class="level3">
+<h3>Pipeline implementation</h3>
+<p>We build a two-stage code improvement pipeline: a reviewer identifies issues in a file, then a fixer applies targeted corrections based on the review. Each stage is a standalone sub-agent called from Python rather than from another agent.</p>
+<div id="b6c7d8e9-f0a1-2345-bcde-345678901225" class="cell">
+<div class="sourceCode" id="cb7"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> run_sub_agent_directly(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    task: <span class="bu">str</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    role: <span class="bu">str</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    system_prompt: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    allowed_tools: <span class="bu">list</span>[<span class="bu">str</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    max_turns: <span class="bu">int</span> <span class="op">=</span> <span class="dv">20</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[<span class="bu">str</span>, <span class="bu">dict</span>]:</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Run a sub-agent directly (not via a parent agent) and return (response, usage).&quot;&quot;&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> notebooks.agent.tools.subagents <span class="im">import</span> BUILTIN_ROLES</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> notebooks.agent.tools.registry <span class="im">import</span> create_default_registry</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> role <span class="op">==</span> <span class="st">&quot;custom&quot;</span>:</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> system_prompt:</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;role=&#39;custom&#39; requires a system_prompt&quot;</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        role_prompt <span class="op">=</span> system_prompt</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        role_tools <span class="op">=</span> allowed_tools</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        role_prompt, role_tools <span class="op">=</span> BUILTIN_ROLES[role]</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> allowed_tools <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>            role_tools <span class="op">=</span> allowed_tools  <span class="co"># caller override</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    child_config <span class="op">=</span> Config(</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        approval<span class="op">=</span>ApprovalPolicy.YOLO,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        max_turns<span class="op">=</span>max_turns,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        allowed_tools<span class="op">=</span>role_tools,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>        developer_instructions<span class="op">=</span>role_prompt,</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    child_session <span class="op">=</span> Session(child_config)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    child_session.messages[<span class="dv">0</span>][<span class="st">&quot;content&quot;</span>] <span class="op">=</span> role_prompt</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    child_agent <span class="op">=</span> Agent(config<span class="op">=</span>child_config, session<span class="op">=</span>child_session)</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    usage <span class="op">=</span> {}</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="cf">for</span> event <span class="kw">in</span> child_agent.run(task):</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> event.<span class="bu">type</span> <span class="op">==</span> AgentEventType.AGENT_END:</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>            response <span class="op">=</span> event.data.get(<span class="st">&quot;response&quot;</span>, <span class="st">&quot;&quot;</span>) <span class="kw">or</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>            usage <span class="op">=</span> event.data.get(<span class="st">&quot;usage&quot;</span>) <span class="kw">or</span> {}</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response, usage</span></code></pre></div>
+</div>
+<p><strong>Stage 1 — Review.</strong> The <code>code_reviewer</code> role scans the target file and produces a structured report:</p>
+<div id="d8e9f0a1-b2c3-4567-defa-567890123427" class="cell">
+<div class="sourceCode" id="cb8"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>TARGET_FILE <span class="op">=</span> <span class="st">&quot;src/notebooks/agent/loop_detector.py&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>review_task <span class="op">=</span> (</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;Review </span><span class="sc">{</span>TARGET_FILE<span class="sc">}</span><span class="ss"> for correctness, style, and performance issues. &quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Produce a structured list of issues with file path and line number for each. &quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Focus on actionable problems, not style nits.&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Stage 1: reviewing...&quot;</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>review_report, review_usage <span class="op">=</span> <span class="cf">await</span> run_sub_agent_directly(</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    task<span class="op">=</span>review_task,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    role<span class="op">=</span><span class="st">&quot;code_reviewer&quot;</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    max_turns<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Review tokens: </span><span class="sc">{</span>review_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="st">&#39;N/A&#39;</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(review_report)</span></code></pre></div>
+</div>
+<p><strong>Stage 2 — Fix.</strong> The <code>code_fixer</code> role receives the review report as context and applies targeted fixes:</p>
+<div id="f0a1b2c3-d4e5-6789-fabc-789012345629" class="cell">
+<div class="sourceCode" id="cb9"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fix_task <span class="op">=</span> (</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;The following review was produced for </span><span class="sc">{</span>TARGET_FILE<span class="sc">}</span><span class="ss">:</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;</span><span class="sc">{</span>review_report<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Apply the most important fix from this review. Make a minimal, targeted change. &quot;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Report exactly what you changed and why, including the line numbers affected.&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Stage 2: fixing...&quot;</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>fix_report, fix_usage <span class="op">=</span> <span class="cf">await</span> run_sub_agent_directly(</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    task<span class="op">=</span>fix_task,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    role<span class="op">=</span><span class="st">&quot;code_fixer&quot;</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    max_turns<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Fix tokens: </span><span class="sc">{</span>fix_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="st">&#39;N/A&#39;</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(fix_report)</span></code></pre></div>
+</div>
+<p>The annotations below describe the pipeline data flow:</p>
+<ol type="1">
+<li>Stage 1 runs with restricted tools (read-only) and produces a structured review.</li>
+<li>The review report is embedded verbatim into the Stage 2 task description — this is the stage-to-stage handoff.</li>
+<li>Stage 2 receives the full context it needs in its <em>initial user message</em> rather than accumulating it through tool calls — its context window starts clean.</li>
+<li>Each stage’s <code>usage</code> is tracked independently, so we can see the per-stage cost.</li>
+</ol>
+</section>
+<section id="token-cost-comparison" class="level3">
+<h3>Token cost comparison</h3>
+<p>Pipelines use more total tokens than a single agent doing the same task — each stage pays the overhead of the system prompt and role preamble. The tradeoff is cleaner reasoning per stage:</p>
+<div id="c3d4e5f6-a7b8-9012-cdef-012345678932" class="cell">
+<div class="sourceCode" id="cb10"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>total_pipeline_tokens <span class="op">=</span> (</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    review_usage.get(<span class="st">&quot;total_tokens&quot;</span>, <span class="dv">0</span>) <span class="op">+</span> fix_usage.get(<span class="st">&quot;total_tokens&quot;</span>, <span class="dv">0</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Pipeline total tokens: </span><span class="sc">{</span>total_pipeline_tokens<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  Stage 1 (review):  </span><span class="sc">{</span>review_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="dv">0</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  Stage 2 (fix):     </span><span class="sc">{</span>fix_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="dv">0</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+</div>
+</section>
+</section>
+<section id="llm-driven-speaker-selection" class="level2">
+<h2>LLM-Driven Speaker Selection</h2>
+<p>Pipelines fix the sequence of speakers in advance. An alternative is to let an LLM <em>choose</em> which agent should speak next based on the conversation so far. This is the <strong>speaker selection</strong> pattern — a lightweight form of the approach used in AutoGen and similar frameworks.</p>
+<p>The setup has three components:</p>
+<ul>
+<li><strong>Agents:</strong> Two or more agents with distinct specializations and system prompts</li>
+<li><strong>Shared history:</strong> A list of <code>{role, speaker, content}</code> messages visible to all agents and the moderator</li>
+<li><strong>Moderator:</strong> A lightweight LLM call that reads the history and outputs the name of the next speaker, or <code>"DONE"</code> to terminate</li>
+</ul>
+<p>The conversation runs until the moderator says <code>DONE</code> or a maximum turn limit is reached.</p>
+<p><strong>Agents.</strong> We define two agents with different perspectives on software design — a Python expert who favors simplicity and a performance expert who focuses on efficiency. Both use raw <code>AsyncOpenAI</code> calls since they are single-turn responders, not full agentic loops:</p>
+<div id="a7b8c9d0-e1f2-3456-abcd-234567890136" class="cell">
+<div class="sourceCode" id="cb11"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>oai <span class="op">=</span> AsyncOpenAI(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    api_key<span class="op">=</span>os.environ[<span class="st">&quot;OPENROUTER_API_KEY&quot;</span>],</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    base_url<span class="op">=</span>os.environ.get(<span class="st">&quot;OPENROUTER_BASE_URL&quot;</span>, <span class="st">&quot;https://openrouter.ai/api/v1&quot;</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>MODEL <span class="op">=</span> <span class="st">&quot;anthropic/claude-sonnet-4&quot;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>AGENTS <span class="op">=</span> {</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Python Expert&quot;</span>: (</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;You are a Python expert. You favor clear, idiomatic Python code and &quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;the standard library. You value simplicity and readability. &quot;</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Keep your responses focused and concise — 2-4 sentences.&quot;</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Performance Expert&quot;</span>: (</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;You are a performance engineer. You focus on algorithmic efficiency, &quot;</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;memory usage, and throughput. You challenge solutions that sacrifice &quot;</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;performance for convenience. &quot;</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Keep your responses focused and concise — 2-4 sentences.&quot;</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<p><strong>Moderator.</strong> The moderator sees the full conversation and returns either a speaker name or <code>DONE</code>:</p>
+<div id="c9d0e1f2-a3b4-5678-cdef-456789012338" class="cell">
+<div class="sourceCode" id="cb12"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> select_next_speaker(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    history: <span class="bu">list</span>[<span class="bu">dict</span>],</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    agents: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">str</span>],</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    topic: <span class="bu">str</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Return the name of the next speaker, or &#39;DONE&#39;.&quot;&quot;&quot;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    agent_names <span class="op">=</span> <span class="bu">list</span>(agents.keys())</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    history_text <span class="op">=</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;[</span><span class="sc">{</span>msg[<span class="st">&#39;speaker&#39;</span>]<span class="sc">}</span><span class="ss">]: </span><span class="sc">{</span>msg[<span class="st">&#39;content&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span> <span class="cf">for</span> msg <span class="kw">in</span> history</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> (</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;You are moderating a discussion on: &#39;</span><span class="sc">{</span>topic<span class="sc">}</span><span class="ss">&#39;</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;Participants: </span><span class="sc">{</span><span class="st">&#39;, &#39;</span><span class="sc">.</span>join(agent_names)<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;Conversation so far:</span><span class="ch">\n</span><span class="sc">{</span>history_text<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;Choose who should speak next to advance the discussion, or respond &quot;</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;&#39;DONE&#39; if the discussion has reached a useful conclusion.</span><span class="ch">\n</span><span class="ss">&quot;</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;Respond with ONLY one of: </span><span class="sc">{</span><span class="st">&#39;, &#39;</span><span class="sc">.</span>join(agent_names)<span class="sc">}</span><span class="ss">, or DONE.&quot;</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> <span class="cf">await</span> oai.chat.completions.create(</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>MODEL,</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>[{<span class="st">&quot;role&quot;</span>: <span class="st">&quot;user&quot;</span>, <span class="st">&quot;content&quot;</span>: prompt}],</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="fl">0.0</span>,</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    choice <span class="op">=</span> response.choices[<span class="dv">0</span>].message.content.strip()</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Normalize: accept partial matches</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> name <span class="kw">in</span> agent_names:</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> name.lower() <span class="kw">in</span> choice.lower():</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> name</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;DONE&quot;</span></span></code></pre></div>
+</div>
+<p><strong>Agent response.</strong> Each agent receives the full conversation as context and produces a single response:</p>
+<div id="e1f2a3b4-c5d6-7890-efab-678901234540" class="cell">
+<div class="sourceCode" id="cb13"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> agent_respond(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    speaker: <span class="bu">str</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    agents: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">str</span>],</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    history: <span class="bu">list</span>[<span class="bu">dict</span>],</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    topic: <span class="bu">str</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Generate a response from *speaker* given the conversation history.&quot;&quot;&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    system <span class="op">=</span> agents[speaker]</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    history_text <span class="op">=</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;[</span><span class="sc">{</span>msg[<span class="st">&#39;speaker&#39;</span>]<span class="sc">}</span><span class="ss">]: </span><span class="sc">{</span>msg[<span class="st">&#39;content&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span> <span class="cf">for</span> msg <span class="kw">in</span> history</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    ) <span class="kw">or</span> <span class="st">&quot;(no messages yet)&quot;</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    user <span class="op">=</span> (</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;Topic: </span><span class="sc">{</span>topic<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;Conversation so far:</span><span class="ch">\n</span><span class="sc">{</span>history_text<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Please contribute your perspective.&quot;</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> <span class="cf">await</span> oai.chat.completions.create(</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>MODEL,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>[</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>            {<span class="st">&quot;role&quot;</span>: <span class="st">&quot;system&quot;</span>, <span class="st">&quot;content&quot;</span>: system},</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>            {<span class="st">&quot;role&quot;</span>: <span class="st">&quot;user&quot;</span>, <span class="st">&quot;content&quot;</span>: user},</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>        ],</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="fl">0.7</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response.choices[<span class="dv">0</span>].message.content.strip()</span></code></pre></div>
+</div>
+<p><strong>Discussion loop.</strong> The loop alternates between the moderator selecting a speaker and the selected agent responding:</p>
+<div id="a3b4c5d6-e7f8-9012-abcd-890123456742" class="cell">
+<div class="sourceCode" id="cb14"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> run_discussion(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    topic: <span class="bu">str</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    agents: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">str</span>],</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    max_turns: <span class="bu">int</span> <span class="op">=</span> <span class="dv">6</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>]:</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Run a moderated multi-agent discussion and return the full history.&quot;&quot;&quot;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    history: <span class="bu">list</span>[<span class="bu">dict</span>] <span class="op">=</span> []</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> turn <span class="kw">in</span> <span class="bu">range</span>(max_turns):</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        speaker <span class="op">=</span> <span class="cf">await</span> select_next_speaker(history, agents, topic)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> speaker <span class="op">==</span> <span class="st">&quot;DONE&quot;</span>:</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f&quot;Moderator: DONE (turn </span><span class="sc">{</span>turn <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">)&quot;</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        content <span class="op">=</span> <span class="cf">await</span> agent_respond(speaker, agents, history, topic)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        history.append({<span class="st">&quot;speaker&quot;</span>: speaker, <span class="st">&quot;content&quot;</span>: content})</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f&quot;[</span><span class="sc">{</span>speaker<span class="sc">}</span><span class="ss">]: </span><span class="sc">{</span>content[:<span class="dv">120</span>]<span class="sc">}</span><span class="ss">...&quot;</span> <span class="cf">if</span> <span class="bu">len</span>(content) <span class="op">&gt;</span> <span class="dv">120</span> <span class="cf">else</span> <span class="ss">f&quot;[</span><span class="sc">{</span>speaker<span class="sc">}</span><span class="ss">]: </span><span class="sc">{</span>content<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>()</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> history</span></code></pre></div>
+</div>
+<p><strong>Run.</strong> We pose a design question that benefits from multiple perspectives — caching layer design has both correctness and performance dimensions:</p>
+<div id="c5d6e7f8-a9b0-1234-cdef-012345678944" class="cell">
+<div class="sourceCode" id="cb15"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>topic <span class="op">=</span> <span class="st">&quot;How should we implement a caching layer for a high-read Python web API?&quot;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>history <span class="op">=</span> <span class="cf">await</span> run_discussion(topic, AGENTS, max_turns<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Discussion concluded after </span><span class="sc">{</span><span class="bu">len</span>(history)<span class="sc">}</span><span class="ss"> turns.&quot;</span>)</span></code></pre></div>
+</div>
+<section id="when-to-use-speaker-selection" class="level3">
+<h3>When to use speaker selection</h3>
+<table class="caption-top">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Use it when</th>
+<th>Avoid it when</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Task benefits from multiple viewpoints</td>
+<td>Task has a clear, fixed sequence</td>
+</tr>
+<tr class="even">
+<td>Optimal speaker order is not known in advance</td>
+<td>Moderator overhead is not justified</td>
+</tr>
+<tr class="odd">
+<td>Agents have complementary, not overlapping, expertise</td>
+<td>Simple tasks where one agent suffices</td>
+</tr>
+<tr class="even">
+<td>Emergent discussion is more useful than structured pipeline</td>
+<td>You need deterministic, auditable behavior</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class='callout-icon'></i>
+</div>
+<div class="callout-title-container flex-fill">
+Caution
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Speaker selection adds two LLM calls per turn: one for the moderator and one for the agent. On long discussions this cost compounds quickly. Prefer pipelines when the stage order is fixed.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="single-vs.-multi-agent" class="level2">
+<h2>Single vs. Multi-Agent</h2>
+<p>We compare two approaches on the same code review task: a single agent doing everything in one loop vs. a two-stage pipeline. The comparison measures total tokens (cost proxy) and subjective output quality.</p>
+<p><strong>Single agent.</strong> One agent performs investigation, review, and summary in a single continuous loop:</p>
+<div id="b0c1d2e3-f4a5-6789-bcde-567890123449" class="cell">
+<div class="sourceCode" id="cb16"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>REVIEW_TARGET <span class="op">=</span> <span class="st">&quot;src/notebooks/agent/loop_detector.py&quot;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>single_task <span class="op">=</span> (</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;Thoroughly review </span><span class="sc">{</span>REVIEW_TARGET<span class="sc">}</span><span class="ss">: read it, identify all issues, &quot;</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;and produce a structured report with file path and line number for each issue.&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>single_config <span class="op">=</span> Config(approval<span class="op">=</span>ApprovalPolicy.YOLO, max_turns<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>single_response, single_usage <span class="op">=</span> <span class="cf">await</span> run_agent(single_task, single_config)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Single agent tokens: </span><span class="sc">{</span>single_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="st">&#39;N/A&#39;</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(single_response[:<span class="dv">600</span>])</span></code></pre></div>
+</div>
+<p><strong>Pipeline.</strong> Two specialized agents — investigator then reviewer — each with a clean context:</p>
+<div id="d2e3f4a5-b6c7-8901-defa-789012345651" class="cell">
+<div class="sourceCode" id="cb17"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Stage 1: investigate structure and purpose</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>invest_task <span class="op">=</span> (</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;Read </span><span class="sc">{</span>REVIEW_TARGET<span class="sc">}</span><span class="ss"> and produce a concise summary of: &quot;</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;(1) what the module does, (2) its public API, and (3) any data structures used.&quot;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>invest_report, invest_usage <span class="op">=</span> <span class="cf">await</span> run_sub_agent_directly(</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    task<span class="op">=</span>invest_task,</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    role<span class="op">=</span><span class="st">&quot;codebase_investigator&quot;</span>,</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    max_turns<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Stage 2: review with investigation context already provided</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>pipeline_review_task <span class="op">=</span> (</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;Module summary:</span><span class="ch">\n</span><span class="sc">{</span>invest_report<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">&quot;</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;Now review the full source of </span><span class="sc">{</span>REVIEW_TARGET<span class="sc">}</span><span class="ss"> for correctness, style, and &quot;</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;performance. Produce a structured report with file path and line number.&quot;</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>pipeline_review, pipeline_usage <span class="op">=</span> <span class="cf">await</span> run_sub_agent_directly(</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    task<span class="op">=</span>pipeline_review_task,</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    role<span class="op">=</span><span class="st">&quot;code_reviewer&quot;</span>,</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    max_turns<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>total_pipeline <span class="op">=</span> invest_usage.get(<span class="st">&quot;total_tokens&quot;</span>, <span class="dv">0</span>) <span class="op">+</span> pipeline_usage.get(<span class="st">&quot;total_tokens&quot;</span>, <span class="dv">0</span>)</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Pipeline total tokens: </span><span class="sc">{</span>total_pipeline<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  Stage 1 (investigate): </span><span class="sc">{</span>invest_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="dv">0</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  Stage 2 (review):      </span><span class="sc">{</span>pipeline_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="dv">0</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(pipeline_review[:<span class="dv">600</span>])</span></code></pre></div>
+</div>
+<p><strong>Comparison.</strong></p>
+<div id="f4a5b6c7-d8e9-0123-fabc-901234567853" class="cell">
+<div class="sourceCode" id="cb18"><pre class="sourceCode python cell-code"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Approach              | Total tokens | Notes&quot;</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;-&quot;</span> <span class="op">*</span> <span class="dv">60</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Single agent          | </span><span class="sc">{</span>single_usage<span class="sc">.</span>get(<span class="st">&#39;total_tokens&#39;</span>, <span class="dv">0</span>)<span class="sc">:&gt;12}</span><span class="ss"> | One loop, all roles&quot;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Two-stage pipeline    | </span><span class="sc">{</span>total_pipeline<span class="sc">:&gt;12}</span><span class="ss"> | Investigator + reviewer&quot;</span>)</span></code></pre></div>
+</div>
+<section id="decision-guidelines" class="level3">
+<h3>Decision guidelines</h3>
+<p>The right architecture depends on the task, not on maximizing sophistication:</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Scenario</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Well-scoped task, fits in context</td>
+<td>Single agent</td>
+</tr>
+<tr class="even">
+<td>Task has distinct sequential stages</td>
+<td>Sequential pipeline</td>
+</tr>
+<tr class="odd">
+<td>Subtasks are unknown until the parent reasons</td>
+<td>Sub-agent delegation</td>
+</tr>
+<tr class="even">
+<td>Task benefits from multiple viewpoints</td>
+<td>Speaker selection</td>
+</tr>
+<tr class="odd">
+<td>Simple task, cost-sensitive</td>
+<td>Single agent</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class='callout-icon'></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Multi-agent systems are harder to debug than single-agent ones. When a pipeline fails, you need to identify which stage failed and why — which requires logging each stage’s input and output. Always log the full output of each sub-agent during development.</p>
+</div>
+</div>
+<hr />
+<p>■</p>
+<div id="quarto-navigation-envelope" class="hidden">
+<p><span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1zaWRlYmFyLXRpdGxl">Ron Medina ∷ Résumé</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXItdGl0bGU=">Ron Medina ∷ Résumé</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6cG9ydGZvbGlv">portfolio</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3BvcnRmb2xpby9wb3J0Zm9saW8uaHRtbA==">/portfolio/portfolio.html</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6YXJ0aWNsZXM=">articles</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L2FydGljbGVzL2luZGV4Lmh0bWw=">/articles/index.html</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6bm90ZXM=">notes</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L25vdGVzL2luZGV4Lmh0bWw=">/notes/index.html</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6Y291cnNlcw==">courses</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L2NvdXJzZXMvaW5kZXguaHRtbA==">/courses/index.html</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6cGhvdG9z">photos</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3Bob3Rvcy9waG90b3MuaHRtbA==">/photos/photos.html</span></p>
+</div>
+<div id="quarto-meta-markdown" class="hidden">
+<p><span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGF0aXRsZQ==">Coordination and Delegation in Multi-Agent Systems – Ron Medina ∷ Résumé</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLXR3aXR0ZXJjYXJkdGl0bGU=">Coordination and Delegation in Multi-Agent Systems – Ron Medina ∷ Résumé</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW9nY2FyZHRpdGxl">Coordination and Delegation in Multi-Agent Systems – Ron Medina ∷ Résumé</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGFzaXRlbmFtZQ==">Ron Medina ∷ Résumé</span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLXR3aXR0ZXJjYXJkZGVzYw=="></span> <span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW9nY2FyZGRkZXNj"></span></p>
+</div>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id = "quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+</body>
+
+</html>
