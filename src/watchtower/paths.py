@@ -1,12 +1,14 @@
 """Repo path resolution helpers for workspace projects."""
 
+from __future__ import annotations
 from pathlib import Path
 
 # Tier directories (relative to repo root / cwd).
-NOTES_DIR = Path("notes")
+NOTES_DIR    = Path("notes")
+COURSES_DIR  = Path("courses")
 ARTICLES_DIR = Path("articles")
-COURSES_DIR = Path("courses")
 PROJECTS_DIR = Path("projects")
+
 CONTENT_DIRS: tuple[Path, ...] = (ARTICLES_DIR, NOTES_DIR, COURSES_DIR)
 
 

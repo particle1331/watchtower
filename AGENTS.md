@@ -21,6 +21,9 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 ## Environment
 - All `wt` commands require the venv. Use `.venv/bin/wt` (from repo root)
   or activate the venv first. Never run bare `wt`.
+- Scratch/temp files belong in `tmp/` (repo root, gitignored) — not the
+  system `/tmp`. Use it for any intermediate artifacts, drafts, or scratch
+  docs you'd otherwise write outside the repo.
 
 ## Navigation
 - Run `wt map` first to get structured repo layout as JSON.
