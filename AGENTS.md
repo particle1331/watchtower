@@ -94,6 +94,28 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
   code at render time — it uses whatever outputs already live in the `.ipynb`.
 
+## Implementation tradeoffs
+Pick the mode from the directory you're writing into.
+
+**Tooling code (`src/`, `projects/`).** Write the simplest correct thing.
+This code is mostly I/O-bound notebook/file manipulation, so readability
+almost always beats CPU micro-optimization. Reach for a faster but more
+complex algorithm only when the input can realistically get large enough to
+matter — and when you do, say so in one line. A slightly slower but obviously
+correct implementation beats a clever one that needs a comment to explain why
+it works. Common traps to avoid regardless: `x in some_list` inside a loop
+(use a `set`), repeated string `+=` in a loop (use `join`), and building
+throwaway intermediate lists you iterate once (use a generator).
+
+**Course & note content (`notes/`, `articles/`, `courses/`).** Here the
+algorithm is often the lesson, so the priorities differ. Implement the
+complexity you claim: code in a note about an O(n log n) method must actually
+be that — a stray O(n²) is a teaching bug even if the outputs are right. State
+the complexity when it's the point. Prefer the clearest form that still
+teaches the idea, and note that showing a naive version first and then the
+optimized one is a feature, not a smell — keep both when the contrast is the
+lesson.
+
 ## General
 - Before commit there is no hook; run `make lint` and `make typecheck` if
   you changed Python under `src/` or `projects/`.

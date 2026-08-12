@@ -1,6 +1,7 @@
 """Repo path resolution helpers for workspace projects."""
 
 from __future__ import annotations
+
 from pathlib import Path
 
 # Tier directories (relative to repo root / cwd).

@@ -21,12 +21,13 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .paths import repo_root
 
-RESUME_YAML = Path("assets/resume.yaml")
-RESUME_TEX_J2 = Path("assets/resume.tex.j2")
-RESUME_TEX = Path("assets/resume.tex")
-RESUME_PDF = Path("assets/resume.pdf")
-INDEX_IPYNB_J2 = Path("assets/index.ipynb.j2")
-INDEX_IPYNB = Path("index.ipynb")
+RESUME_YAML     = Path("assets/resume.yaml")
+RESUME_TEX_J2   = Path("assets/resume.tex.j2")
+RESUME_TEX      = Path("assets/resume.tex")
+RESUME_PDF      = Path("assets/resume.pdf")
+INDEX_IPYNB_J2  = Path("assets/index.ipynb.j2")
+INDEX_IPYNB     = Path("index.ipynb")
+
 LATEX_ENGINE = "pdflatex"
 
 _URL_RE = re.compile(r"https?://[^\s)]+")
@@ -123,9 +124,10 @@ def _make_env(root: Path) -> Environment:
         lstrip_blocks=True,
         keep_trailing_newline=True,
     )
-    env.filters["latex_text"] = _latex_text
+
+    env.filters["md_escape"]     = _md_escape
+    env.filters["latex_text"]    = _latex_text
     env.filters["html_entities"] = _html_entities
-    env.filters["md_escape"] = _md_escape
     return env
 
 
