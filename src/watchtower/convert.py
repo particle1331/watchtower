@@ -15,9 +15,12 @@ from pathlib import Path
 import nbformat
 
 from . import scaffold
+from .paths import ARTICLES_DIR, NOTES_DIR
 
 TIERS = ("notes", "articles", "courses")
 FLAT_TIERS = ("notes", "articles")
+
+_FLAT_DIRS = {"notes": NOTES_DIR, "articles": ARTICLES_DIR}
 
 
 def _copy_ipynb(src: Path, dest: Path) -> None:
@@ -51,11 +54,17 @@ def import_notebook(src: str, tier: str, name: str | None = None) -> Path:
     if tier == "courses":
         raise ValueError(
             "flat import only supports (notes, articles), got: courses. "
-            "For courses, use 'wt import <ipynb> courses --course <slug>'."
+            "For courses, use 'wt import <ipynb> courses <course-slug> "
+            "[<chapter>] [--section <name>]'."
+        )
+    tier_dir = _FLAT_DIRS.get(tier)
+    if tier_dir is None:
+        raise ValueError(
+            f"unknown tier: {tier!r}. flat import supports notes|articles."
         )
     source = _validate_source(src)
     stem = name if name is not None else source.stem
-    dest = Path(tier) / f"{stem}.ipynb"
+    dest = tier_dir / f"{stem}.ipynb"
     if dest.exists():
         raise FileExistsError(f"{dest} already exists")
     _copy_ipynb(source, dest)

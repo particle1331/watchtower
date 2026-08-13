@@ -126,6 +126,9 @@ lesson.
   learn the surface area without reading source code.
 - Do NOT commit secret values — secrets live in the OS keyring via
   `wt vault` (see below).
+- Style: avoid excessive em-dash (—) usage. Use em-dashes only when
+  necessary within a paragraph (e.g., one parenthetical aside); prefer
+  commas, colons, or restructured sentences otherwise.
 
 ## Tooling gaps
 If you hit a rough edge the `wt` CLI doesn't cover (a missing command, a parsing error, a

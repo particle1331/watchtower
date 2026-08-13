@@ -16,7 +16,7 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
         with:
-          version: v1.9.35   # check: quarto --version
+          version: 1.10.18   # no "v" prefix: the action prepends it (v1.x would 404)
 
       - name: Render and Publish
         uses: quarto-dev/quarto-actions/publish@v2
