@@ -1,6 +1,5 @@
 """Quarto wrappers: render qmd->PDF for read-back, serve site."""
 
-from __future__ import annotations
 
 import os
 import subprocess
@@ -8,12 +7,12 @@ import sys
 from pathlib import Path
 
 NOTES_PDF_DIR = Path("notes/pdf")
-ESSAYS_PDF_DIR = Path("essays/pdf")
-ESSAYS_DIR = Path("essays").resolve()
+ARTICLES_PDF_DIR = Path("articles/pdf")
+ARTICLES_DIR = Path("articles").resolve()
 
 
 def _pdf_dir_for(qmd: Path) -> Path:
-    return ESSAYS_PDF_DIR if ESSAYS_DIR in qmd.parents else NOTES_PDF_DIR
+    return ARTICLES_PDF_DIR if ARTICLES_DIR in qmd.parents else NOTES_PDF_DIR
 
 
 def _quarto_env() -> dict[str, str]:
@@ -34,7 +33,7 @@ def _find_output_pdf(qmd: Path) -> Path | None:
 
 
 def render_pdf(source: str) -> Path:
-    """Render a .qmd file to PDF under notes/pdf/ or essays/pdf/."""
+    """Render a .qmd file to PDF under notes/pdf/ or articles/pdf/."""
     src = Path(source).resolve()
     if not src.exists():
         raise FileNotFoundError(src)
@@ -57,5 +56,5 @@ def render_pdf(source: str) -> Path:
 
 
 def preview_site() -> None:
-    """Serve the essays+portfolio site (blocking — previews in browser)."""
+    """Serve the site (blocking — previews in browser)."""
     subprocess.run(["quarto", "preview"], check=True, env=_quarto_env())

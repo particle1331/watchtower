@@ -16,7 +16,7 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
         with:
-          version: 1.7.32   # https://github.com/quarto-dev/quarto-cli/releases
+          version: v1.9.35   # check: quarto --version
 
       - name: Render and Publish
         uses: quarto-dev/quarto-actions/publish@v2

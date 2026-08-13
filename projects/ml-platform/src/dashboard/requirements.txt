@@ -1,0 +1,8 @@
+# Dashboard ACA App image dependencies — pinned for reproducible deployments (docs/06).
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+# Results DB read (Entra auth — same stack as other jobs).
+psycopg[binary]==3.2.3
+azure-identity==1.17.1
+# ACA Jobs execution API (trigger manual runs).
+azure-mgmt-appcontainers==3.1.0

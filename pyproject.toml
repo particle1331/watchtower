@@ -1,14 +1,15 @@
 [project]
 name = "watchtower"
 version = "0.1.0"
-description = "Personal notes, essays, and projects system."
+description = "A central workspace for personal learning and portfolio projects."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "typer>=0.15.0",
     "rich>=14.1.0",
     "keyring>=25.6.0",
     "pyyaml>=6.0.3",
+    "ruamel.yaml>=0.18",
     "jinja2>=3.1.0",
     "jupytext>=1.16.0",
     "nbformat>=5.10.0",
@@ -17,6 +18,7 @@ dependencies = [
     "ipykernel>=7.3.0",
     "jupyter>=1.1.1",
     "jupyterlab-quarto>=0.3.5",
+    "openai>=3.0.0",
 ]
 
 [project.scripts]
@@ -47,7 +49,7 @@ pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -55,5 +57,5 @@ ignore = ["E501", "B008"]
 
 [tool.pyright]
 include = ["src", "projects"]
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 typeCheckingMode = "basic"

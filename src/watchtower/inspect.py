@@ -6,17 +6,13 @@ notebooks in the content dirs; cell sources (no JSON noise) are exposed via
 jupytext for low-token agent reads.
 """
 
-from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
-NOTES_DIR = Path("notes")
-ESSAYS_DIR = Path("essays")
-LEARNING_DIR = Path("learning")
-
-CONTENT_DIRS: tuple[Path, ...] = (NOTES_DIR, ESSAYS_DIR, LEARNING_DIR)
+from .paths import ARTICLES_DIR, CONTENT_DIRS, COURSES_DIR, NOTES_DIR
 
 
 def list_ipynb(src_dir: Path) -> list[str]:
@@ -48,9 +44,9 @@ def list_projects() -> list[dict]:
 
 def repo_map() -> dict:
     return {
+        "articles": list_ipynb(ARTICLES_DIR),
         "notes": list_ipynb(NOTES_DIR),
-        "essays": list_ipynb(ESSAYS_DIR),
-        "learning": list_ipynb(LEARNING_DIR),
+        "courses": list_ipynb(COURSES_DIR),
         "projects": list_projects(),
         "portfolio": "portfolio.ipynb",
         "rules": "AGENTS.md",
@@ -61,29 +57,47 @@ def repo_map_json() -> str:
     return json.dumps(repo_map(), indent=2)
 
 
+def _candidate_ipynb_files(query: str) -> list[Path]:
+    """Return .ipynb paths that may contain *query*.
+
+    Uses ripgrep as a fast pre-filter when available (skips parsing files
+    that can't possibly match). Falls back to a full rglob walk otherwise.
+    Both paths exclude index notebooks and checkpoint dirs.
+    """
+    if shutil.which("rg"):
+        result = subprocess.run(
+            ["rg", "-i", "-l", query, *[str(d) for d in CONTENT_DIRS], "-g", "*.ipynb"],
+            capture_output=True,
+            text=True,
+        )
+        return sorted(
+            Path(ln)
+            for ln in result.stdout.splitlines()
+            if ln and ".ipynb_checkpoints" not in ln
+        )
+    return sorted(
+        p
+        for base in CONTENT_DIRS
+        if base.exists()
+        for p in base.rglob("*.ipynb")
+        if ".ipynb_checkpoints" not in p.parts
+    )
+
+
 def find_in_src(query: str) -> str:
     """Search `.ipynb` cell sources across all content dirs.
 
-    Uses ripgrep to cheaply list notebooks whose raw JSON contains the
-    query, then parses each hit file once with ``json.load`` to report
-    matches keyed by cell index. Output is always:
+    Uses ripgrep as a fast pre-filter when available (O(n) raw-text scan to
+    narrow candidates), then parses only matching files with ``json.load``.
+    Falls back to a pure-Python rglob scan if rg is not installed. Output:
 
         path [cell N]: matching text
 
     so agents can follow up directly with ``wt cat <path> --index N``.
     """
     q = query.lower()
-    rg = subprocess.run(
-        ["rg", "-i", "-l", query, *[str(d) for d in CONTENT_DIRS],
-         "-g", "*.ipynb"],
-        capture_output=True,
-        text=True,
-    )
-    files = [Path(ln) for ln in rg.stdout.splitlines() if ln]
     results: list[str] = []
-    for p in sorted(files):
-        if ".ipynb_checkpoints" in p.parts:
-            continue
+    for p in _candidate_ipynb_files(query):
         try:
             with open(p, encoding="utf-8") as f:
                 nb = json.load(f)
@@ -115,7 +129,7 @@ def resolve_ipynb(name: str) -> Path:
         return maybe.resolve()
     # Tier-prefixed stem: strip the tier dir prefix
     parts = name.split("/", 1)
-    if len(parts) == 2 and parts[0] in {"notes", "essays", "learning"}:
+    if len(parts) == 2 and parts[0] in {"notes", "articles", "courses"}:
         tier, stem = parts
         # Strip optional .ipynb suffix
         if stem.endswith(".ipynb"):
@@ -128,4 +142,4 @@ def resolve_ipynb(name: str) -> Path:
         for p in base.rglob(f"{name}.ipynb"):
             if p.exists() and ".ipynb_checkpoints" not in p.parts:
                 return p
-    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls notes|essays|learning`.")
+    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls notes|articles|courses`.")

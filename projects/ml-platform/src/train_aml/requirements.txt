@@ -1,0 +1,11 @@
+# AML distributed training image dependencies — pinned for reproducible runs (docs/08).
+# Same version pins as train_job/requirements.txt for registry compatibility.
+mlflow==2.16.2
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==2.1.3
+pandera==0.20.4
+psycopg[binary]==3.2.3
+azure-identity==1.17.1
+# AML sets up torch/mpi for distributed; pin here to match the cluster image.
+torch==2.4.1

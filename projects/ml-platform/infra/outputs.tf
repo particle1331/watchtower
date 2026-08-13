@@ -1,0 +1,65 @@
+output "resource_group_name" {
+  value = module.foundation.resource_group_name
+}
+
+output "acr_login_server" {
+  value = module.foundation.acr_login_server
+}
+
+output "acr_name" {
+  value = module.foundation.acr_name
+}
+
+output "storage_account_name" {
+  value = module.foundation.storage_account_name
+}
+
+output "key_vault_name" {
+  value = module.foundation.key_vault_name
+}
+
+output "postgres_fqdn" {
+  value = module.foundation.postgres_fqdn
+}
+
+output "postgres_server_name" {
+  value = module.foundation.postgres_server_name
+}
+
+output "grafana_endpoint" {
+  value = module.foundation.grafana_endpoint
+}
+
+output "identity_client_ids" {
+  value = module.foundation.identity_client_ids
+}
+
+output "identity_principal_ids" {
+  value       = module.foundation.identity_principal_ids
+  description = "Managed-identity objectIds, injected into grants.sql to map Postgres principals."
+}
+
+output "mlflow_url" {
+  value       = length(module.mlflow_app) > 0 ? module.mlflow_app[0].mlflow_url : ""
+  description = "Empty until the second (MLflow) apply pass runs."
+}
+
+output "train_job_name" {
+  value       = length(module.train_job) > 0 ? module.train_job[0].train_job_name : ""
+  description = "Empty until the training image is built and applied."
+}
+
+output "batch_job_name" {
+  value       = length(module.batch_job) > 0 ? module.batch_job[0].batch_job_name : ""
+  description = "Empty until the batch image is built and applied."
+}
+
+output "serving_url" {
+  value       = length(module.serving_app) > 0 ? module.serving_app[0].serving_url : ""
+  description = "Empty until the serving image and model version are set."
+}
+
+output "dashboard_url" {
+  value       = length(module.dashboard) > 0 ? module.dashboard[0].dashboard_url : ""
+  description = "Empty until the dashboard image is built and applied."
+}

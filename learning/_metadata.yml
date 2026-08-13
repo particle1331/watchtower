@@ -1,3 +1,0 @@
-# Applied to all .qmd files in this directory when rendered.
-filters:
-  - ../filters/center-images.lua

@@ -1,0 +1,112 @@
+"""Tests for watchtower.convert — import_notebook and import_chapter."""
+
+
+import shutil
+from pathlib import Path
+
+import nbformat
+import pytest
+
+from watchtower import convert, scaffold
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture
+def external_nb(tmp_path):
+    """A standalone .ipynb outside the repo (absolute path)."""
+    path = tmp_path / "external.ipynb"
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_markdown_cell("# External")]
+    nbformat.write(nb, path)
+    return path
+
+
+@pytest.fixture
+def repo_with_course(tmp_path, monkeypatch):
+    """Isolated repo with a pre-created 'ml' course."""
+    monkeypatch.chdir(tmp_path)
+    shutil.copy(FIXTURES_DIR / "quarto.yml", tmp_path / "_quarto.yml")
+    scaffold.new_course("ml", "Machine Learning")
+    return tmp_path
+
+
+# ---------------------------------------------------------------------------
+# import_notebook (flat tiers)
+# ---------------------------------------------------------------------------
+
+def test_import_notebook_to_notes(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    dest = convert.import_notebook(str(external_nb), "notes")
+    assert dest.exists()
+    assert dest == Path("notes") / "external.ipynb"
+
+
+def test_import_notebook_to_articles(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    dest = convert.import_notebook(str(external_nb), "articles")
+    assert dest.exists()
+    assert dest == Path("articles") / "external.ipynb"
+
+
+def test_import_notebook_custom_name(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    dest = convert.import_notebook(str(external_nb), "notes", "my-note")
+    assert dest == Path("notes") / "my-note.ipynb"
+
+
+def test_import_notebook_preserves_cells(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    dest = convert.import_notebook(str(external_nb), "notes")
+    nb = nbformat.read(dest, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[0].source == "# External"
+
+
+def test_import_notebook_duplicate_raises(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    convert.import_notebook(str(external_nb), "notes")
+    with pytest.raises(FileExistsError):
+        convert.import_notebook(str(external_nb), "notes")
+
+
+def test_import_notebook_courses_raises(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match="courses"):
+        convert.import_notebook(str(external_nb), "courses")
+
+
+def test_import_notebook_missing_source_raises(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        convert.import_notebook("/nonexistent/path.ipynb", "notes")
+
+
+# ---------------------------------------------------------------------------
+# import_chapter (courses — nested one level deeper)
+# ---------------------------------------------------------------------------
+
+def test_import_chapter_default_name(repo_with_course, external_nb):
+    dest = convert.import_chapter(str(external_nb), "ml")
+    # result is at courses/ml/<stem>.ipynb
+    assert dest.exists()
+    assert dest.parent.name == "ml"
+    assert dest.name == "external.ipynb"
+
+
+def test_import_chapter_custom_name(repo_with_course, external_nb):
+    dest = convert.import_chapter(str(external_nb), "ml", chapter="02-regression")
+    assert dest == Path("courses") / "ml" / "02-regression.ipynb"
+    assert dest.exists()
+
+
+def test_import_chapter_missing_course_raises(tmp_path, monkeypatch, external_nb):
+    monkeypatch.chdir(tmp_path)
+    shutil.copy(FIXTURES_DIR / "quarto.yml", tmp_path / "_quarto.yml")
+    with pytest.raises(FileNotFoundError, match="course directory"):
+        convert.import_chapter(str(external_nb), "nonexistent")
+
+
+def test_import_chapter_duplicate_raises(repo_with_course, external_nb):
+    convert.import_chapter(str(external_nb), "ml")
+    with pytest.raises(FileExistsError):
+        convert.import_chapter(str(external_nb), "ml")

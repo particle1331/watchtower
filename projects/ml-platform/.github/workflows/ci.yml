@@ -1,0 +1,135 @@
+name: CI — build, scan, and deploy images
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write   # OIDC for Azure login as id-ci
+  contents: read
+
+env:
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Lint + unit tests (no cloud resources needed)
+  # -------------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dev dependencies
+        working-directory: projects/ml-platform
+        run: pip install -r src/train_job/requirements.txt ruff pytest
+
+      - name: Lint
+        working-directory: projects/ml-platform
+        run: ruff check src/
+
+      - name: Unit tests
+        working-directory: projects/ml-platform
+        run: pytest tests/ -q --tb=short || true   # non-blocking until tests are added
+
+  # -------------------------------------------------------------------------
+  # Build images, run Trivy security scan, push to ACR on main
+  # -------------------------------------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    strategy:
+      matrix:
+        include:
+          - name: mlflow-app
+            context: projects/ml-platform
+            dockerfile: projects/ml-platform/src/mlflow_app/Dockerfile
+          - name: train-job
+            context: projects/ml-platform
+            dockerfile: projects/ml-platform/src/train_job/Dockerfile
+          - name: batch-job
+            context: projects/ml-platform
+            dockerfile: projects/ml-platform/src/batch_job/Dockerfile
+          - name: serving-app
+            context: projects/ml-platform
+            dockerfile: projects/ml-platform/src/serving_app/Dockerfile
+          - name: dashboard
+            context: projects/ml-platform
+            dockerfile: projects/ml-platform/src/dashboard/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC — id-ci)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build image
+        id: build
+        run: |
+          TAG="${{ env.ACR_LOGIN_SERVER }}/${{ matrix.name }}:${{ github.sha }}"
+          docker build -t "$TAG" -f "${{ matrix.dockerfile }}" "${{ matrix.context }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build.outputs.tag }}
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+
+      - name: Push image and capture digest
+        id: push
+        run: |
+          docker push "${{ steps.build.outputs.tag }}"
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${{ steps.build.outputs.tag }}" | cut -d@ -f2)
+          PINNED="${{ env.ACR_LOGIN_SERVER }}/${{ matrix.name }}@$DIGEST"
+          echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
+          echo "Pushed: $PINNED"
+
+      - name: Update ACA Job/App definition with pinned digest
+        # Only update if the ACA resource exists (second-pass deploys).
+        run: |
+          case "${{ matrix.name }}" in
+            train-job)
+              az containerapp job update \
+                --name "${{ vars.TRAIN_JOB_NAME }}" \
+                --resource-group "${{ env.RESOURCE_GROUP }}" \
+                --image "${{ steps.push.outputs.pinned }}" 2>/dev/null || true
+              ;;
+            batch-job)
+              az containerapp job update \
+                --name "${{ vars.BATCH_JOB_NAME }}" \
+                --resource-group "${{ env.RESOURCE_GROUP }}" \
+                --image "${{ steps.push.outputs.pinned }}" 2>/dev/null || true
+              ;;
+            serving-app)
+              az containerapp update \
+                --name "${{ vars.SERVING_APP_NAME }}" \
+                --resource-group "${{ env.RESOURCE_GROUP }}" \
+                --image "${{ steps.push.outputs.pinned }}" 2>/dev/null || true
+              ;;
+            dashboard)
+              az containerapp update \
+                --name "${{ vars.DASHBOARD_APP_NAME }}" \
+                --resource-group "${{ env.RESOURCE_GROUP }}" \
+                --image "${{ steps.push.outputs.pinned }}" 2>/dev/null || true
+              ;;
+          esac

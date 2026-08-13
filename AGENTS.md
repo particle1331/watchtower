@@ -2,9 +2,9 @@
 
 ## Architecture
 This repo is a personal system with three tiers of content with DIFFERENT visibility:
-- `notes/*.ipynb` — private working notes (personal drafting surface)
-- `essays/*.ipynb` — public essays (promoted from notes, published via Quarto)
-- `learning/*.ipynb` — full course notes
+- `notes/*.ipynb` — atomic, focused explorations: a single definition, technique, or concept with a minimal live demo
+- `articles/*.ipynb` — self-contained long-form articles and deep dives
+- `courses/` — full course notes
 - `projects/<name>/` — code projects (each a uv workspace member)
 
 Canonical source files are Jupyter notebooks (`.ipynb`). Authors edit them
@@ -13,14 +13,21 @@ to the website using **inline outputs, no re-execution** — so heavy compute
 done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Knowledge base
-- The canonical knowledge base is `notes/*.ipynb` and `essays/*.ipynb`.
+- The canonical knowledge base is `notes/*.ipynb`, `articles/*.ipynb`, and `courses/**/*.ipynb`.
 - Raw `.ipynb` JSON is noisy — do NOT `grep`/`read` it directly. Use the
   `wt` wrappers below, which expose cell sources as plain markdown.
 - `.ipynb_checkpoints/` is excluded from listings and resolution.
 
+## Environment
+- All `wt` commands require the venv. Use `.venv/bin/wt` (from repo root)
+  or activate the venv first. Never run bare `wt`.
+- Scratch/temp files belong in `tmp/` (repo root, gitignored) — not the
+  system `/tmp`. Use it for any intermediate artifacts, drafts, or scratch
+  docs you'd otherwise write outside the repo.
+
 ## Navigation
 - Run `wt map` first to get structured repo layout as JSON.
-- Run `wt ls notes|essays|learning|projects` for plain listings of notebooks.
+- Run `wt ls notes|articles|courses|projects` for plain listings of notebooks.
 - `<name>` for any cell command (`cat`, `edit-cell`, `append-cell`, `insert-cell`,
   `remove-cell`, `tag`, `count`, `render`) resolves as: bare stem (`001-testnote`),
   tier-prefixed stem (`notes/001-testnote`), or full path (`notes/001-testnote.ipynb`).
@@ -58,7 +65,9 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
     mutation — re-run `wt cat` (or `wt count`) to get fresh indices.
 - `wt edit-cell <name> --index N --content "..."` — replace a cell's source
   (outputs + metadata preserved). Source may come from `--content` or stdin
-  (useful for multi-line via heredoc).
+  (useful for multi-line via heredoc). stdin is always decoded as UTF-8, so
+  piping Unicode (box-drawing, arrows, dashes, accents) is safe on any
+  platform — no `PYTHONUTF8`/encoding dance needed.
 - `wt append-cell <name> --type md|code [--content "..."]` — push to end.
 - `wt insert-cell <name> --after N | --before N --type md|code [--content "..."]`
   — insert below/above the cell at index N.
@@ -69,17 +78,43 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   With neither `--add` nor `--remove`, prints the cell's current tags.
 
 ## Importing notebooks
-- `wt import <path.ipynb> notes|essays|learning [<name>]` — copy a notebook
-  produced elsewhere (Colab, Kaggle, a teammate) into a tier dir, preserving
-  inline outputs. Quarto will render with those outputs, no re-execution.
+- `wt import <path.ipynb> notes|articles [<name>]` — copy a notebook produced
+  elsewhere (Colab, Kaggle, a teammate) into a tier dir, preserving inline
+  outputs. Quarto will render with those outputs, no re-execution.
+- `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]` —
+  import as a chapter of an existing course: copies to
+  `courses/<course>/<chapter>.ipynb` and registers it in the course's sidebar in
+  `_quarto.yml` (last section by default, or the section named by `--section`).
 
 ## Rendering
 - `wt docs` serves the site on :4200 (publishing is handled by the
   `publish.yml` GitHub Action on push to `main`).
 - `wt render <tier> <name> | <path.ipynb>` renders one notebook to PDF
-  (`notes/pdf/` or `essays/pdf/`) using inline outputs.
+  (`notes/pdf/` or `articles/pdf/`) using inline outputs.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
   code at render time — it uses whatever outputs already live in the `.ipynb`.
+
+## Implementation tradeoffs
+Pick the mode from the directory you're writing into.
+
+**Tooling code (`src/`, `projects/`).** Write the simplest correct thing.
+This code is mostly I/O-bound notebook/file manipulation, so readability
+almost always beats CPU micro-optimization. Reach for a faster but more
+complex algorithm only when the input can realistically get large enough to
+matter — and when you do, say so in one line. A slightly slower but obviously
+correct implementation beats a clever one that needs a comment to explain why
+it works. Common traps to avoid regardless: `x in some_list` inside a loop
+(use a `set`), repeated string `+=` in a loop (use `join`), and building
+throwaway intermediate lists you iterate once (use a generator).
+
+**Course & note content (`notes/`, `articles/`, `courses/`).** Here the
+algorithm is often the lesson, so the priorities differ. Implement the
+complexity you claim: code in a note about an O(n log n) method must actually
+be that — a stray O(n²) is a teaching bug even if the outputs are right. State
+the complexity when it's the point. Prefer the clearest form that still
+teaches the idea, and note that showing a naive version first and then the
+optimized one is a feature, not a smell — keep both when the contrast is the
+lesson.
 
 ## General
 - Before commit there is no hook; run `make lint` and `make typecheck` if
@@ -110,9 +145,13 @@ if present (project-specific rules stack on top of these).
   `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
 ## CLI command reference (for the agent)
-- `wt new note|essay|project <name>` — scaffold new artifact (`.ipynb` stub)
+- `wt new note|article <name> [--title <title>]` — scaffold a notebook stub (note or article); <title> defaults to a placeholder derived from <name>
+- `wt new project <name>` — `uv init` workspace member
+- `wt new course <name> <title>` — scaffold `courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
+- `wt new chapter <course> <name> [--title <title>] [--section <name>]` — scaffold a course chapter (notebook) and register it in the course's sidebar in `_quarto.yml`; <title> defaults to a placeholder derived from <name> (sidebar text and notebook frontmatter are independent surfaces — edit either or both after scaffolding)
+- `wt new section <course> <name>` — add a section header to a course's sidebar in `_quarto.yml`
 - `wt map` — JSON repo structure (orientation)
-- `wt ls notes|essays|learning|projects` — list sources in a tier
+- `wt ls notes|articles|courses|projects` — list sources in a tier
 - `wt find <query>` — grep across `.ipynb` cell sources
 - `wt count <name>` — cell count (plan ranges before `--index N:M`)
 - `wt cat <name> [--index N|N:M | --tag foo | --label foo] [--offset O --limit L]
@@ -129,8 +168,11 @@ if present (project-specific rules stack on top of these).
 - `wt remove-cell <name> --index N`
   — delete matching cell; --index only (delete ranges from highest to lowest)
 - `wt tag <name> --index N [--add foo] [--remove bar]` — manage cell tags
-- `wt import <path.ipynb> notes|essays|learning [<name>]`
-  — import an external notebook (Colab/Kaggle) into a tier
+- `wt import <path.ipynb> notes|articles [<name>]` — import an external notebook
+  (Colab/Kaggle) into a flat tier
+- `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]`
+  — import as a chapter of an existing course (copies into the course dir and
+  registers in the course's sidebar)
 - `wt render <tier> <name> | <path.ipynb>` — render notebook -> PDF
 - `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.ipynb`
   via Jinja2 templates, then `pdflatex` -> `assets/resume.pdf` (builds in a

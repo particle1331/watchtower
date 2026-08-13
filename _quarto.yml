@@ -3,6 +3,16 @@ bibliography: assets/references.bib
 execute:
   enabled: false
 
+format:
+  html:
+    theme: united
+    lightbox: true
+    html-math-method: katex
+    highlight-annotations: true
+    toc: true
+    toc-location: right
+    css: assets/styles.css
+
 project:
   type: website
   output-dir: _site
@@ -11,17 +21,17 @@ project:
     - portfolio/portfolio.ipynb
     - notes/index.ipynb
     - notes/*.ipynb
-    - essays/index.ipynb
-    - essays/*.ipynb
-    - learning/index.ipynb
-    - learning/*.ipynb
+    - articles/index.ipynb
+    - articles/*.ipynb
+    - courses/index.ipynb
+    - courses/**/*.ipynb
     - photos/photos.ipynb
   preview:
     port: 4200
     browser: false
 
 website:
-  title: "Ron Medina &mdash; Resume"
+  title: "Ron Medina ∷ Résumé"
   back-to-top-navigation: true
   page-navigation: true
   bread-crumbs: true
@@ -32,21 +42,79 @@ website:
     left:
       - href: portfolio/portfolio.ipynb
         text: portfolio
-      - href: essays/index.ipynb
-        text: essays
-      - href: learning/index.ipynb
-        text: learning
+      - href: articles/index.ipynb
+        text: articles
       - href: notes/index.ipynb
         text: notes
+      - href: courses/index.ipynb
+        text: courses
       - href: photos/photos.ipynb
         text: photos
 
-format:
-  html:
-    theme: united
-    lightbox: true
-    html-math-method: katex
-    highlight-annotations: true
-    toc: true
-    toc-location: right
-    css: assets/styles.css
+  sidebar:
+    - id: mlops
+      style: "floating"
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ""
+          href: courses/mlops/index.ipynb
+          contents:
+            - text: "01. Overview & the golden path"
+              href: courses/mlops/01-overview.ipynb
+        - section: "Phase 0: Foundation"
+          href: courses/mlops/02-platform-foundation.ipynb
+          contents:
+            - text: "02. Platform foundation"
+              href: courses/mlops/02-platform-foundation.ipynb
+        - section: "Phase 1: Reproducible ML"
+          href: courses/mlops/03-reproducible-training.ipynb
+          contents:
+            - text: "03. Reproducible training & registry"
+              href: courses/mlops/03-reproducible-training.ipynb
+        - section: "Phase 2: Batch & scheduling"
+          href: courses/mlops/04-results-db-and-batch.ipynb
+          contents:
+            - text: "04. Results DB & batch workflows"
+              href: courses/mlops/04-results-db-and-batch.ipynb
+        - section: "Phase 3: Serving"
+          href: courses/mlops/05-online-serving.ipynb
+          contents:
+            - text: "05. Online serving & promotion"
+              href: courses/mlops/05-online-serving.ipynb
+        - section: "Phase 4: Operations"
+          href: courses/mlops/06-observability-and-dashboard.ipynb
+          contents:
+            - text: "06. Observability & dashboard"
+              href: courses/mlops/06-observability-and-dashboard.ipynb
+        - section: "Phase 5: LLM apps"
+          href: courses/mlops/07-llm-release-artifacts.ipynb
+          contents:
+            - text: "07. LLM release artifacts"
+              href: courses/mlops/07-llm-release-artifacts.ipynb
+        - section: "Off the critical path"
+          href: courses/mlops/08-multi-gpu-training.ipynb
+          contents:
+            - text: "08. Multi-GPU training (exception)"
+              href: courses/mlops/08-multi-gpu-training.ipynb
+            - text: "09. Broker upgrade (only if forced)"
+              href: courses/mlops/09-broker-upgrade.ipynb
+        - section: "Capstone"
+          href: courses/mlops/10-e2e-integration.ipynb
+          contents:
+            - text: "10. End-to-end integration"
+              href: courses/mlops/10-e2e-integration.ipynb
+    - id: llm
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/llm/index.ipynb
+          contents:
+            - text: Overview
+              href: courses/llm/index.ipynb
+            - text: 01. Introduction
+              href: courses/llm/01-introduction.ipynb
+            - text: Hello, world
+              href: courses/llm/hello-world.ipynb

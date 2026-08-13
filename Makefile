@@ -1,4 +1,4 @@
-.PHONY: bootstrap test lint typecheck
+.PHONY: bootstrap test lint typecheck review
 
 bootstrap:
 	uv sync
@@ -12,3 +12,10 @@ lint:
 
 typecheck:
 	uv run pyright
+
+review:
+	@uv run ruff check .
+	@uv run pyright
+	@uv run pytest
+	@echo "--- diff shape ---"
+	@git diff --stat

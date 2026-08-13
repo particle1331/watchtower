@@ -1,0 +1,6 @@
+# Pinned MLflow + drivers for the self-hosted tracking/registry server.
+# Exact pins are the whole point of self-hosting (docs/00); bump deliberately.
+mlflow==2.16.2
+psycopg2-binary==2.9.9
+azure-identity==1.17.1
+azure-storage-blob==12.22.0

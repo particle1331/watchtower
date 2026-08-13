@@ -13,7 +13,6 @@ Commands that *write* require a unique match; `cat` and `remove-cell` may
 match multiple cells and act on all of them.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 
@@ -261,7 +260,7 @@ def _matching_indices(
         return [index]
     out: list[int] = []
     for i, c in enumerate(nb["cells"]):
-        if tag is not None and tag in _cell_tags(c) or label is not None and _cell_label(c) == label:
+        if (tag is not None and tag in _cell_tags(c)) or (label is not None and _cell_label(c) == label):
             out.append(i)
     return out
 
@@ -455,7 +454,7 @@ def tag_cell(
     index: int,
     add: list[str] | None = None,
     remove: list[str] | None = None,
-) -> Path:
+) -> Path | list[str]:
     """Add and/or remove tags from a single cell (by index).
 
     If neither `add` nor `remove` is given, returns current tags without
@@ -471,7 +470,7 @@ def tag_cell(
     cell = nb["cells"][index]
     existing = list(cell.get("metadata", {}).get("tags", []))
     if not add and not remove:
-        return existing  # type: ignore[return-value]  # read-only
+        return existing
     s = set(existing)
     for t in (remove or []):
         s.discard(t)
