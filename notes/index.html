@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.32">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Notes – Ron Medina — Resume</title>
+<title>Notes – Ron Medina ∷ Résumé</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -39,10 +45,10 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-0b6cbec27b0fe562bbe517483856fd9e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-b215a52183078dda259cabb566bb9921.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -80,9 +86,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-title','listing-date','listing-reading-time','listing-author',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-categories','listing-reading-time',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-title-sort'] }],
       
-      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+      searchColumns: ["listing-date","listing-title","listing-author"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -128,7 +134,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -155,7 +161,7 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="../index.html">
-    <span class="navbar-title">Ron Medina — Resume</span>
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -169,16 +175,16 @@ window.Quarto = {
 <span class="menu-text">portfolio</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../essays/index.html"> 
-<span class="menu-text">essays</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../learning/index.html"> 
-<span class="menu-text">learning</span></a>
+    <a class="nav-link" href="../articles/index.html"> 
+<span class="menu-text">articles</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link active" href="../notes/index.html" aria-current="page"> 
 <span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../courses/index.html"> 
+<span class="menu-text">courses</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../photos/photos.html"> 
@@ -197,14 +203,14 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    </div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(3)</span></div><div class="category" data-category="ZGVlcC1sZWFybmluZw==">deep-learning <span class="quarto-category-count">(2)</span></div><div class="category" data-category="dGVzdA==">test <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
+<main class="content column-page-left" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -213,7 +219,7 @@ window.Quarto = {
 
 
 
-<div class="quarto-title-meta">
+<div class="quarto-title-meta column-page-left">
 
     
   
@@ -229,22 +235,321 @@ window.Quarto = {
 
 
 
+<script>
+(function() {
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var activeYear = null, activeMonth = null;
+  var origSetHash = null;
 
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1784750297516" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../notes/001-testnote.html" class="no-external">Test</a>
-</h3>
+  function initDateFilter() {
+    var list = window["quarto-listings"] && window["quarto-listings"]["listing-listing"];
+    if (!list) return;
+    var sidebar = document.getElementById("quarto-margin-sidebar");
+    if (!sidebar) return;
+
+    var yearMap = {};
+    list.items.forEach(function(item) {
+      var ms = parseInt(item.elm.getAttribute("data-listing-date-sort"));
+      if (isNaN(ms)) return;
+      var d = new Date(ms);
+      var y = d.getFullYear();
+      var m = d.getMonth();
+      if (!yearMap[y]) yearMap[y] = {};
+      if (!yearMap[y][m]) yearMap[y][m] = 0;
+      yearMap[y][m]++;
+    });
+
+    var yearNums = Object.keys(yearMap).map(Number).sort(function(a,b){return b-a;});
+    if (!yearNums.length) return;
+
+    var container = document.createElement("div");
+    container.className = "df-container";
+
+    var hdr = document.createElement("h5");
+    hdr.className = "df-title";
+    hdr.textContent = "Dates";
+    container.appendChild(hdr);
+
+    yearNums.forEach(function(year) {
+      var monthNums = Object.keys(yearMap[year]).map(Number).sort(function(a,b){return a-b;});
+      var yearTotal = 0;
+      monthNums.forEach(function(m){ yearTotal += yearMap[year][m]; });
+
+      var sec = document.createElement("div");
+      sec.className = "df-year-section";
+      sec.setAttribute("data-year", year);
+
+      var yp = document.createElement("div");
+      yp.className = "df-year-pill category";
+      yp.innerHTML = '<span class="df-chevron">&#9656;</span> ' + year + ' <span class="quarto-category-count">(' + yearTotal + ')</span>';
+
+      var mc = document.createElement("div");
+      mc.className = "df-months";
+
+      var allM = document.createElement("div");
+      allM.className = "df-month-pill category";
+      allM.setAttribute("data-month", "all");
+      allM.innerHTML = 'All <span class="quarto-category-count">(' + yearTotal + ')</span>';
+      mc.appendChild(allM);
+
+      monthNums.forEach(function(m) {
+        var mp = document.createElement("div");
+        mp.className = "df-month-pill category";
+        mp.setAttribute("data-month", m);
+        mp.innerHTML = MONTHS[m] + ' <span class="quarto-category-count">(' + yearMap[year][m] + ')</span>';
+        mc.appendChild(mp);
+      });
+
+      yp.addEventListener("click", function() {
+        var wasExpanded = sec.classList.contains("df-expanded");
+        document.querySelectorAll(".df-year-section").forEach(function(s) {
+          s.classList.remove("df-expanded");
+        });
+        document.querySelectorAll(".df-month-pill").forEach(function(p) {
+          p.classList.remove("df-active");
+        });
+        if (wasExpanded) {
+          activeYear = null;
+          activeMonth = null;
+        } else {
+          sec.classList.add("df-expanded");
+          activeYear = year;
+          activeMonth = "all";
+          allM.classList.add("df-active");
+        }
+        updateHash();
+        applyAllFilters();
+      });
+
+      allM.addEventListener("click", function() {
+        document.querySelectorAll(".df-month-pill").forEach(function(p) {
+          p.classList.remove("df-active");
+        });
+        allM.classList.add("df-active");
+        activeYear = year;
+        activeMonth = "all";
+        updateHash();
+        applyAllFilters();
+      });
+
+      monthNums.forEach(function(m) {
+        var pills = mc.querySelectorAll(".df-month-pill[data-month]");
+        for (var i = 0; i < pills.length; i++) {
+          if (parseInt(pills[i].getAttribute("data-month")) === m) {
+            (function(pill, monthVal) {
+              pill.addEventListener("click", function() {
+                document.querySelectorAll(".df-month-pill").forEach(function(p) {
+                  p.classList.remove("df-active");
+                });
+                pill.classList.add("df-active");
+                activeYear = year;
+                activeMonth = monthVal;
+                updateHash();
+                applyAllFilters();
+              });
+            })(pills[i], m);
+            break;
+          }
+        }
+      });
+
+      sec.appendChild(yp);
+      sec.appendChild(mc);
+      container.appendChild(sec);
+    });
+
+    sidebar.appendChild(container);
+    overrideFilterFns();
+    restoreFromHash();
+  }
+
+  function applyAllFilters() {
+    var cat = getActiveCategory();
+    var listingIds = Object.keys(window["quarto-listings"]);
+    for (var i = 0; i < listingIds.length; i++) {
+      var list = window["quarto-listings"][listingIds[i]];
+      if (!list) continue;
+      if (!cat && activeYear === null) {
+        list.filter();
+        continue;
+      }
+      list.filter(function(item) {
+        if (cat) {
+          var cats = decodeURIComponent(atob(item.values().categories)).split(",");
+          if (!cats.includes(cat)) return false;
+        }
+        if (activeYear !== null) {
+          var ms = parseInt(item.elm.getAttribute("data-listing-date-sort"));
+          if (isNaN(ms)) return false;
+          var d = new Date(ms);
+          if (d.getFullYear() !== activeYear) return false;
+          if (activeMonth !== null && activeMonth !== "all" && d.getMonth() !== activeMonth) return false;
+        }
+        return true;
+      });
+    }
+  }
+
+  function getActiveCategory() {
+    var el = document.querySelector(".quarto-listing-category .category.active");
+    if (!el) return null;
+    var v = el.getAttribute("data-category");
+    if (!v || v === "") return null;
+    return decodeURIComponent(atob(v));
+  }
+
+  function overrideFilterFns() {
+    origSetHash = window.setHash;
+    window.setHash = function(obj) {
+      var h = (typeof window.getHash === "function") ? (window.getHash() || {}) : {};
+      for (var k in obj) { h[k] = obj[k]; }
+      origSetHash(h);
+    };
+    window.filterListingCategory = function() {
+      applyAllFilters();
+    };
+  }
+
+  function updateHash() {
+    var h = (typeof window.getHash === "function") ? (window.getHash() || {}) : {};
+    if (activeYear !== null) { h.year = activeYear; } else { delete h.year; }
+    if (activeMonth !== null && activeMonth !== "all") { h.month = activeMonth; } else { delete h.month; }
+    var hash = Object.keys(h).map(function(k){return k+"="+h[k];}).join("&");
+    window.history.pushState(null, null, hash ? "#"+hash : window.location.pathname);
+  }
+
+  function restoreFromHash() {
+    var h = (typeof window.getHash === "function") ? window.getHash() : null;
+    if (!h || !h.year) return;
+    activeYear = parseInt(h.year);
+    activeMonth = h.month !== undefined ? parseInt(h.month) : "all";
+    var sec = document.querySelector(".df-year-section[data-year=\"" + activeYear + "\"]");
+    if (sec) {
+      sec.classList.add("df-expanded");
+      if (activeMonth !== "all") {
+        var pill = sec.querySelector(".df-month-pill[data-month=\"" + activeMonth + "\"]");
+        if (pill) pill.classList.add("df-active");
+      } else {
+        var allPill = sec.querySelector(".df-month-pill[data-month=\"all\"]");
+        if (allPill) allPill.classList.add("df-active");
+      }
+    }
+    applyAllFilters();
+  }
+
+  function boot() {
+    if (window["quarto-listings"] && window["quarto-listings"]["listing-listing"]) {
+      initDateFilter();
+    } else {
+      setTimeout(boot, 50);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() { boot(); });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<div class="quarto-listing quarto-listing-container-table" id="listing-listing">
+<div class="listing-actions-group">
+   <div class="input-group input-group-sm quarto-listing-sort">
+    <span class="input-group-text"><i class="bi bi-sort-down"></i></span>
+    <select id="listing-listing-sort" class="form-select" aria-label="Order By" onchange="window['quarto-listings']['listing-listing'].sort(this.options[this.selectedIndex].value, { order: this.options[this.selectedIndex].getAttribute('data-direction')})">
+      <option value="" disabled="" selected="" hidden="">Order By</option>
+      <option value="index" data-direction="asc">Default</option>
+      <option value="listing-date-sort" data-direction="asc">
+        Date - Oldest
+      </option>
+      <option value="listing-date-sort" data-direction="desc">
+        Date - Newest
+      </option>
+      <option value="listing-title-sort" data-direction="asc">
+        Title
+      </option>
+    </select>
+  </div>
+    <div class="input-group input-group-sm quarto-listing-filter">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="search form-control" placeholder="Filter">
+    </div>
 </div>
-<div class="metadata">
-<a href="../notes/001-testnote.html" class="no-external">
-<div class="listing-reading-time">1 min</div>
-</a>
-</div>
-</div>
-</div>
+<table class="quarto-listing-table table">
+<thead>
+<tr>
+
+<th>
+<a class="sort" data-sort="listing-date-sort" onclick="if (this.classList.contains('sort-asc')) { this.classList.add('sort-desc'); this.classList.remove('sort-asc') } else { this.classList.add('sort-asc'); this.classList.remove('sort-desc')} return false;">Date</a>
+</th>
+
+<th>
+<a class="sort" data-sort="listing-title-sort" onclick="if (this.classList.contains('sort-asc')) { this.classList.add('sort-desc'); this.classList.remove('sort-asc') } else { this.classList.add('sort-asc'); this.classList.remove('sort-desc')} return false;">Title</a>
+</th>
+
+<th>
+Categories
+</th>
+
+<th>
+Reading Time
+</th>
+
+</tr>
+</thead>
+<tbody class="list">
+
+<tr data-index="0" data-categories="dGVzdA==" data-listing-date-sort="1784937600000" data-listing-file-modified-sort="1786661511158" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="7" data-listing-title-sort="001-testnote" data-listing-filename-sort="001-testnote.ipynb">
+<td>
+<span class="listing-date">Jul 25, 2026</span>
+</td>
+<td>
+<a href="../notes/001-testnote.html" class="title listing-title">001-testnote</a>
+</td>
+<td>
+<span class="listing-categories">test</span>
+</td>
+<td>
+<span class="listing-reading-time">1 min</span>
+</td>
+
+</tr>
+
+<tr data-index="1" data-categories="ZGVlcC1sZWFybmluZw==" data-listing-date-sort="1767571200000" data-listing-file-modified-sort="1786661511158" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="15" data-listing-title-sort="CNNs Stubs" data-listing-filename-sort="004-cnns-stub.ipynb">
+<td>
+<span class="listing-date">Jan 5, 2026</span>
+</td>
+<td>
+<a href="../notes/004-cnns-stub.html" class="title listing-title">CNNs Stubs</a>
+</td>
+<td>
+<span class="listing-categories">deep-learning</span>
+</td>
+<td>
+<span class="listing-reading-time">1 min</span>
+</td>
+
+</tr>
+
+<tr data-index="2" data-categories="ZGVlcC1sZWFybmluZw==" data-listing-date-sort="1765324800000" data-listing-file-modified-sort="1786661511158" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="16" data-listing-title-sort="Transformers Stubs" data-listing-filename-sort="003-transformers-stub.ipynb">
+<td>
+<span class="listing-date">Dec 10, 2025</span>
+</td>
+<td>
+<a href="../notes/003-transformers-stub.html" class="title listing-title">Transformers Stubs</a>
+</td>
+<td>
+<span class="listing-categories">deep-learning</span>
+</td>
+<td>
+<span class="listing-reading-time">1 min</span>
+</td>
+
+</tr>
+
+</tbody>
+</table>
 <div class="listing-no-matching d-none">No matching items</div>
 </div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -298,13 +603,14 @@ window.Quarto = {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy

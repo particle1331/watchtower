@@ -1,16 +1,26 @@
 [
   {
-    "listing": "/essays/index.html",
-    "items": []
+    "listing": "/articles/index.html",
+    "items": [
+      "/articles/attention-mechanism.html",
+      "/articles/weak-supervision.html",
+      "/articles/singular-value-decomposition.html",
+      "/articles/knowledge-distillation.html"
+    ]
   },
   {
     "listing": "/notes/index.html",
     "items": [
-      "/notes/001-testnote.html"
+      "/notes/001-testnote.html",
+      "/notes/004-cnns-stub.html",
+      "/notes/003-transformers-stub.html"
     ]
   },
   {
-    "listing": "/learning/index.html",
-    "items": []
+    "listing": "/courses/index.html",
+    "items": [
+      "/courses/llm/index.html",
+      "/courses/mlops/index.html"
+    ]
   }
 ]

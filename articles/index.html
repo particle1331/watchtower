@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Portfolio – Ron Medina ∷ Résumé</title>
+<title>Articles – Ron Medina ∷ Résumé</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -37,6 +37,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../site_libs/quarto-listing/list.min.js"></script>
+<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -47,9 +49,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-b215a52183078dda259cabb566bb9921.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script src="../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
-<link href="../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
-<link href="../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -77,7 +76,79 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script>
 
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-date','listing-title','listing-categories','listing-reading-time',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-title-sort'] }],
+      
+      searchColumns: ["listing-date","listing-title","listing-author"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -100,11 +171,11 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="../portfolio/portfolio.html" aria-current="page"> 
+    <a class="nav-link" href="../portfolio/portfolio.html"> 
 <span class="menu-text">portfolio</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../articles/index.html"> 
+    <a class="nav-link active" href="../articles/index.html" aria-current="page"> 
 <span class="menu-text">articles</span></a>
   </li>  
   <li class="nav-item">
@@ -132,30 +203,23 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#project-name" id="toc-project-name" class="nav-link active" data-scroll-target="#project-name">Project name</a></li>
-  <li><a href="#another-project" id="toc-another-project" class="nav-link" data-scroll-target="#another-project">Another project</a></li>
-  </ul>
-</nav>
-    </div>
+        
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="YXR0ZW50aW9u">attention <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZGF0YS1sYWJlbGluZw==">data-labeling <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZGVlcC1sZWFybmluZw==">deep-learning <span class="quarto-category-count">(2)</span></div><div class="category" data-category="bGluZWFyLWFsZ2VicmE=">linear-algebra <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bWFjaGluZS1sZWFybmluZw==">machine-learning <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bWF0aA==">math <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bW9kZWwtY29tcHJlc3Npb24=">model-compression <span class="quarto-category-count">(1)</span></div><div class="category" data-category="dGhlb3J5">theory <span class="quarto-category-count">(1)</span></div><div class="category" data-category="dHJhbnNmb3JtZXJz">transformers <span class="quarto-category-count">(1)</span></div><div class="category" data-category="d2Vhay1zdXBlcnZpc2lvbg==">weak-supervision <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
+<main class="content column-page-left" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Portfolio</h1>
+<h1 class="title">Articles</h1>
 </div>
 
 
 
-<div class="quarto-title-meta">
+<div class="quarto-title-meta column-page-left">
 
     
   
@@ -167,41 +231,343 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<div id="portfolio">
-<section id="project-name" class="level2">
-<h2 class="anchored" data-anchor-id="project-name">Project name</h2>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="https://placehold.co/400x250?text=thumbnail.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Thumbnail"><img src="https://placehold.co/400x250?text=thumbnail.png" class="img-fluid figure-img" alt="Thumbnail"></a></p>
-<figcaption>Thumbnail</figcaption>
-</figure>
-</div>
-<p>Short summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.</p>
-<ul>
-<li><a href="https://github.com/you/foo">Repo</a></li>
-<li><a href="https://example.com">Blog post</a></li>
-</ul>
-</section>
-</div>
-<div id="portfolio">
-<section id="another-project" class="level2">
-<h2 class="anchored" data-anchor-id="another-project">Another project</h2>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="https://placehold.co/400x250?text=thumbnail.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Thumbnail"><img src="https://placehold.co/400x250?text=thumbnail.png" class="img-fluid figure-img" alt="Thumbnail"></a></p>
-<figcaption>Thumbnail</figcaption>
-</figure>
-</div>
-<p>Another short summary. The portfolio page is hand-maintained — this is the one file you edit on the rare occasion a project is worth showcasing.</p>
-<ul>
-<li><a href="https://github.com/you/bar">Repo</a></li>
-</ul>
-</section>
-</div>
+<p>Self-contained long-form articles and deep dives. Newest first.</p>
 
 
 
-<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script>
+(function() {
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var activeYear = null, activeMonth = null;
+  var origSetHash = null;
+
+  function initDateFilter() {
+    var list = window["quarto-listings"] && window["quarto-listings"]["listing-listing"];
+    if (!list) return;
+    var sidebar = document.getElementById("quarto-margin-sidebar");
+    if (!sidebar) return;
+
+    var yearMap = {};
+    list.items.forEach(function(item) {
+      var ms = parseInt(item.elm.getAttribute("data-listing-date-sort"));
+      if (isNaN(ms)) return;
+      var d = new Date(ms);
+      var y = d.getFullYear();
+      var m = d.getMonth();
+      if (!yearMap[y]) yearMap[y] = {};
+      if (!yearMap[y][m]) yearMap[y][m] = 0;
+      yearMap[y][m]++;
+    });
+
+    var yearNums = Object.keys(yearMap).map(Number).sort(function(a,b){return b-a;});
+    if (!yearNums.length) return;
+
+    var container = document.createElement("div");
+    container.className = "df-container";
+
+    var hdr = document.createElement("h5");
+    hdr.className = "df-title";
+    hdr.textContent = "Dates";
+    container.appendChild(hdr);
+
+    yearNums.forEach(function(year) {
+      var monthNums = Object.keys(yearMap[year]).map(Number).sort(function(a,b){return a-b;});
+      var yearTotal = 0;
+      monthNums.forEach(function(m){ yearTotal += yearMap[year][m]; });
+
+      var sec = document.createElement("div");
+      sec.className = "df-year-section";
+      sec.setAttribute("data-year", year);
+
+      var yp = document.createElement("div");
+      yp.className = "df-year-pill category";
+      yp.innerHTML = '<span class="df-chevron">&#9656;</span> ' + year + ' <span class="quarto-category-count">(' + yearTotal + ')</span>';
+
+      var mc = document.createElement("div");
+      mc.className = "df-months";
+
+      var allM = document.createElement("div");
+      allM.className = "df-month-pill category";
+      allM.setAttribute("data-month", "all");
+      allM.innerHTML = 'All <span class="quarto-category-count">(' + yearTotal + ')</span>';
+      mc.appendChild(allM);
+
+      monthNums.forEach(function(m) {
+        var mp = document.createElement("div");
+        mp.className = "df-month-pill category";
+        mp.setAttribute("data-month", m);
+        mp.innerHTML = MONTHS[m] + ' <span class="quarto-category-count">(' + yearMap[year][m] + ')</span>';
+        mc.appendChild(mp);
+      });
+
+      yp.addEventListener("click", function() {
+        var wasExpanded = sec.classList.contains("df-expanded");
+        document.querySelectorAll(".df-year-section").forEach(function(s) {
+          s.classList.remove("df-expanded");
+        });
+        document.querySelectorAll(".df-month-pill").forEach(function(p) {
+          p.classList.remove("df-active");
+        });
+        if (wasExpanded) {
+          activeYear = null;
+          activeMonth = null;
+        } else {
+          sec.classList.add("df-expanded");
+          activeYear = year;
+          activeMonth = "all";
+          allM.classList.add("df-active");
+        }
+        updateHash();
+        applyAllFilters();
+      });
+
+      allM.addEventListener("click", function() {
+        document.querySelectorAll(".df-month-pill").forEach(function(p) {
+          p.classList.remove("df-active");
+        });
+        allM.classList.add("df-active");
+        activeYear = year;
+        activeMonth = "all";
+        updateHash();
+        applyAllFilters();
+      });
+
+      monthNums.forEach(function(m) {
+        var pills = mc.querySelectorAll(".df-month-pill[data-month]");
+        for (var i = 0; i < pills.length; i++) {
+          if (parseInt(pills[i].getAttribute("data-month")) === m) {
+            (function(pill, monthVal) {
+              pill.addEventListener("click", function() {
+                document.querySelectorAll(".df-month-pill").forEach(function(p) {
+                  p.classList.remove("df-active");
+                });
+                pill.classList.add("df-active");
+                activeYear = year;
+                activeMonth = monthVal;
+                updateHash();
+                applyAllFilters();
+              });
+            })(pills[i], m);
+            break;
+          }
+        }
+      });
+
+      sec.appendChild(yp);
+      sec.appendChild(mc);
+      container.appendChild(sec);
+    });
+
+    sidebar.appendChild(container);
+    overrideFilterFns();
+    restoreFromHash();
+  }
+
+  function applyAllFilters() {
+    var cat = getActiveCategory();
+    var listingIds = Object.keys(window["quarto-listings"]);
+    for (var i = 0; i < listingIds.length; i++) {
+      var list = window["quarto-listings"][listingIds[i]];
+      if (!list) continue;
+      if (!cat && activeYear === null) {
+        list.filter();
+        continue;
+      }
+      list.filter(function(item) {
+        if (cat) {
+          var cats = decodeURIComponent(atob(item.values().categories)).split(",");
+          if (!cats.includes(cat)) return false;
+        }
+        if (activeYear !== null) {
+          var ms = parseInt(item.elm.getAttribute("data-listing-date-sort"));
+          if (isNaN(ms)) return false;
+          var d = new Date(ms);
+          if (d.getFullYear() !== activeYear) return false;
+          if (activeMonth !== null && activeMonth !== "all" && d.getMonth() !== activeMonth) return false;
+        }
+        return true;
+      });
+    }
+  }
+
+  function getActiveCategory() {
+    var el = document.querySelector(".quarto-listing-category .category.active");
+    if (!el) return null;
+    var v = el.getAttribute("data-category");
+    if (!v || v === "") return null;
+    return decodeURIComponent(atob(v));
+  }
+
+  function overrideFilterFns() {
+    origSetHash = window.setHash;
+    window.setHash = function(obj) {
+      var h = (typeof window.getHash === "function") ? (window.getHash() || {}) : {};
+      for (var k in obj) { h[k] = obj[k]; }
+      origSetHash(h);
+    };
+    window.filterListingCategory = function() {
+      applyAllFilters();
+    };
+  }
+
+  function updateHash() {
+    var h = (typeof window.getHash === "function") ? (window.getHash() || {}) : {};
+    if (activeYear !== null) { h.year = activeYear; } else { delete h.year; }
+    if (activeMonth !== null && activeMonth !== "all") { h.month = activeMonth; } else { delete h.month; }
+    var hash = Object.keys(h).map(function(k){return k+"="+h[k];}).join("&");
+    window.history.pushState(null, null, hash ? "#"+hash : window.location.pathname);
+  }
+
+  function restoreFromHash() {
+    var h = (typeof window.getHash === "function") ? window.getHash() : null;
+    if (!h || !h.year) return;
+    activeYear = parseInt(h.year);
+    activeMonth = h.month !== undefined ? parseInt(h.month) : "all";
+    var sec = document.querySelector(".df-year-section[data-year=\"" + activeYear + "\"]");
+    if (sec) {
+      sec.classList.add("df-expanded");
+      if (activeMonth !== "all") {
+        var pill = sec.querySelector(".df-month-pill[data-month=\"" + activeMonth + "\"]");
+        if (pill) pill.classList.add("df-active");
+      } else {
+        var allPill = sec.querySelector(".df-month-pill[data-month=\"all\"]");
+        if (allPill) allPill.classList.add("df-active");
+      }
+    }
+    applyAllFilters();
+  }
+
+  function boot() {
+    if (window["quarto-listings"] && window["quarto-listings"]["listing-listing"]) {
+      initDateFilter();
+    } else {
+      setTimeout(boot, 50);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() { boot(); });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<div class="quarto-listing quarto-listing-container-table" id="listing-listing">
+<div class="listing-actions-group">
+   <div class="input-group input-group-sm quarto-listing-sort">
+    <span class="input-group-text"><i class="bi bi-sort-down"></i></span>
+    <select id="listing-listing-sort" class="form-select" aria-label="Order By" onchange="window['quarto-listings']['listing-listing'].sort(this.options[this.selectedIndex].value, { order: this.options[this.selectedIndex].getAttribute('data-direction')})">
+      <option value="" disabled="" selected="" hidden="">Order By</option>
+      <option value="index" data-direction="asc">Default</option>
+      <option value="listing-date-sort" data-direction="asc">
+        Date - Oldest
+      </option>
+      <option value="listing-date-sort" data-direction="desc">
+        Date - Newest
+      </option>
+      <option value="listing-title-sort" data-direction="asc">
+        Title
+      </option>
+    </select>
+  </div>
+    <div class="input-group input-group-sm quarto-listing-filter">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="search form-control" placeholder="Filter">
+    </div>
+</div>
+<table class="quarto-listing-table table">
+<thead>
+<tr>
+
+<th>
+<a class="sort" data-sort="listing-date-sort" onclick="if (this.classList.contains('sort-asc')) { this.classList.add('sort-desc'); this.classList.remove('sort-asc') } else { this.classList.add('sort-asc'); this.classList.remove('sort-desc')} return false;">Date</a>
+</th>
+
+<th>
+<a class="sort" data-sort="listing-title-sort" onclick="if (this.classList.contains('sort-asc')) { this.classList.add('sort-desc'); this.classList.remove('sort-asc') } else { this.classList.add('sort-asc'); this.classList.remove('sort-desc')} return false;">Title</a>
+</th>
+
+<th>
+Categories
+</th>
+
+<th>
+Reading Time
+</th>
+
+</tr>
+</thead>
+<tbody class="list">
+
+<tr data-index="0" data-categories="ZGVlcC1sZWFybmluZyUyQ3RyYW5zZm9ybWVycyUyQ3RoZW9yeSUyQ2F0dGVudGlvbg==" data-listing-date-sort="1784851200000" data-listing-file-modified-sort="1786661511143" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="144" data-listing-title-sort="Attention Mechanism" data-listing-filename-sort="attention-mechanism.ipynb">
+<td>
+<span class="listing-date">Jul 24, 2026</span>
+</td>
+<td>
+<a href="../articles/attention-mechanism.html" class="title listing-title">Attention Mechanism</a>
+</td>
+<td>
+<span class="listing-categories">deep-learning, transformers, theory, attention</span>
+</td>
+<td>
+<span class="listing-reading-time">1 min</span>
+</td>
+
+</tr>
+
+<tr data-index="1" data-categories="d2Vhay1zdXBlcnZpc2lvbiUyQ21hY2hpbmUtbGVhcm5pbmclMkNkYXRhLWxhYmVsaW5n" data-listing-date-sort="1777507200000" data-listing-file-modified-sort="1786661511153" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="37" data-listing-word-count-sort="7321" data-listing-title-sort="Weak Supervision" data-listing-filename-sort="weak-supervision.ipynb">
+<td>
+<span class="listing-date">Apr 30, 2026</span>
+</td>
+<td>
+<a href="../articles/weak-supervision.html" class="title listing-title">Weak Supervision</a>
+</td>
+<td>
+<span class="listing-categories">weak-supervision, machine-learning, data-labeling</span>
+</td>
+<td>
+<span class="listing-reading-time">37 min</span>
+</td>
+
+</tr>
+
+<tr data-index="2" data-categories="bGluZWFyLWFsZ2VicmElMkNtYXRo" data-listing-date-sort="1768003200000" data-listing-file-modified-sort="1786661511143" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="94" data-listing-title-sort="Singular Value Decomposition" data-listing-filename-sort="singular-value-decomposition.ipynb">
+<td>
+<span class="listing-date">Jan 10, 2026</span>
+</td>
+<td>
+<a href="../articles/singular-value-decomposition.html" class="title listing-title">Singular Value Decomposition</a>
+</td>
+<td>
+<span class="listing-categories">linear-algebra, math</span>
+</td>
+<td>
+<span class="listing-reading-time">1 min</span>
+</td>
+
+</tr>
+
+<tr data-index="3" data-categories="ZGVlcC1sZWFybmluZyUyQ21vZGVsLWNvbXByZXNzaW9u" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1786661511143" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="85" data-listing-title-sort="Knowledge Distillation" data-listing-filename-sort="knowledge-distillation.ipynb">
+<td>
+<span class="listing-date">Dec 20, 2025</span>
+</td>
+<td>
+<a href="../articles/knowledge-distillation.html" class="title listing-title">Knowledge Distillation</a>
+</td>
+<td>
+<span class="listing-categories">deep-learning, model-compression</span>
+</td>
+<td>
+<span class="listing-reading-time">1 min</span>
+</td>
+
+</tr>
+
+</tbody>
+</table>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -603,38 +969,6 @@ ul.task-list li input[type="checkbox"] {
   });
   </script>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
-(function() {
-  let previousOnload = window.onload;
-  window.onload = () => {
-    if (previousOnload) {
-      previousOnload();
-    }
-    lightboxQuarto.on('slide_before_load', (data) => {
-      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
-      const href = trigger.getAttribute('href');
-      if (href !== null) {
-        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
-        if (imgEl !== null) {
-          const srcAttr = imgEl.getAttribute("src");
-          if (srcAttr && srcAttr.startsWith("data:")) {
-            slideConfig.href = srcAttr;
-          }
-        }
-      } 
-    });
-  
-    lightboxQuarto.on('slide_after_load', (data) => {
-      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
-      if (window.Quarto?.typesetMath) {
-        window.Quarto.typesetMath(slideNode);
-      }
-    });
-  
-  };
-  
-})();
-          </script>
 
 
 
