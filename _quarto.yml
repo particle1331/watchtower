@@ -50,6 +50,11 @@ website:
         text: courses
       - href: photos/photos.ipynb
         text: photos
+    right:
+      - icon: github
+        href: 
+          https://github.com/particle1331/watchtower/tree/main/src/watchtower/core
+        aria-label: watchtower source on GitHub
 
   sidebar:
     - id: mlops

@@ -85,6 +85,10 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   import as a chapter of an existing course: copies to
   `courses/<course>/<chapter>.ipynb` and registers it in the course's sidebar in
   `_quarto.yml` (last section by default, or the section named by `--section`).
+- Import strips a leading `# Title` heading that duplicates the frontmatter
+  `title` (Quarto renders that title as the page's H1), so the imported
+  notebook has one H1, not two. It only runs when the notebook has frontmatter;
+  a bare `# Title` with no frontmatter is kept as-is.
 
 ## Rendering
 - `wt docs` serves the site on :4200 (publishing is handled by the

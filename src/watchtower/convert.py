@@ -10,6 +10,7 @@ and registering it in the course's sidebar in `_quarto.yml`.
 """
 
 
+import re
 from pathlib import Path
 
 import nbformat
@@ -22,9 +23,74 @@ FLAT_TIERS = ("notes", "articles")
 
 _FLAT_DIRS = {"notes": NOTES_DIR, "articles": ARTICLES_DIR}
 
+_FRONTMATTER_RE = re.compile(
+    r"^---[ \t]*\r?\n.*?\r?\n(?:---|\.\.\.)[ \t]*\r?\n?", re.DOTALL
+)
+_H1_RE = re.compile(r"^#\s")
+
+
+def _strip_leading_h1(text: str) -> tuple[str, bool]:
+    """Remove a single leading `# ...` heading from *text*.
+
+    Skips blank lines first, so the heading may sit right after the closing
+    frontmatter delimiter. Returns `(rest, removed)`; only a top-level `#`
+    heading is removed — `##` sections and body text are left untouched.
+    """
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i < len(lines) and _H1_RE.match(lines[i].lstrip()):
+        i += 1
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        return "\n".join(lines[i:]), True
+    return text, False
+
+
+def _strip_duplicate_title(nb) -> None:
+    """Drop a leading `# Title` heading that duplicates the frontmatter title.
+
+    Watchtower renders the frontmatter `title` as the page's H1, so an
+    imported notebook that keeps its own `# Title` heading right after the
+    frontmatter would render two H1s. Remove that heading — whether it sits in
+    the same cell as the frontmatter or in the immediately following cell.
+    """
+    cells = nb.cells
+    if not cells:
+        return
+    first = cells[0]
+    if first.cell_type != "markdown":
+        return
+    match = _FRONTMATTER_RE.match(first.source)
+    if match is None:
+        return  # no frontmatter -> no separate title H1 to strip
+    frontmatter = match.group(0)
+    body = first.source[match.end():]
+
+    new_body, removed = _strip_leading_h1(body)
+    if removed:
+        first.source = frontmatter + new_body
+        return
+
+    # Frontmatter is the only content of this cell; look at the next cell.
+    if body.strip() == "" and len(cells) > 1:
+        nxt = cells[1]
+        if nxt.cell_type == "markdown":
+            new_src, removed = _strip_leading_h1(nxt.source)
+            if removed:
+                if new_src.strip() == "":
+                    del cells[1]
+                else:
+                    nxt.source = new_src
+
 
 def _copy_ipynb(src: Path, dest: Path) -> None:
-    """Copy `src` to `dest` via nbformat, normalizing kernelspec if missing."""
+    """Copy `src` to `dest` via nbformat, normalizing kernelspec if missing.
+
+    Also strips a leading `# Title` heading that would duplicate the
+    frontmatter title once Quarto renders it (see `_strip_duplicate_title`).
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
     nb = nbformat.read(src, as_version=nbformat.NO_CONVERT)
     if "kernelspec" not in nb.metadata:
@@ -33,6 +99,7 @@ def _copy_ipynb(src: Path, dest: Path) -> None:
             "language": "python",
             "name": "python3",
         }
+    _strip_duplicate_title(nb)
     nbformat.write(nb, dest)
 
 

@@ -62,6 +62,9 @@ wt import ~/Downloads/foo.ipynb courses llm 02-bar -s "Setup"  # into a specific
 
 Inline outputs are preserved — Colab/Kaggle runs ship with the file, so a
 heavy-training notebook renders with its figures intact, no re-execution.
+A leading `# Title` heading that duplicates the frontmatter `title` is
+stripped (Quarto renders that title as the H1), so imported notebooks get one
+H1, not two.
 
 ## Rendering
 
