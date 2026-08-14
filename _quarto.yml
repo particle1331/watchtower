@@ -53,7 +53,7 @@ website:
     right:
       - icon: github
         href: 
-          https://github.com/particle1331/watchtower/tree/main/src/watchtower/core
+          https://github.com/particle1331/watchtower/tree/main/src/watchtower
         aria-label: watchtower source on GitHub
 
   sidebar:
