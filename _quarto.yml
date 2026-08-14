@@ -118,3 +118,45 @@ website:
               href: courses/llm/01-introduction.ipynb
             - text: Hello, world
               href: courses/llm/hello-world.ipynb
+    - id: computational-linear-algebra
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/computational-linear-algebra/index.ipynb
+          contents:
+            - text: Overview
+              href: courses/computational-linear-algebra/index.ipynb
+            - text: 01. Foundations
+              href: courses/computational-linear-algebra/01-foundations.ipynb
+        - section: "The SVD and its proof"
+          href: courses/computational-linear-algebra/02-spectral-theorem.ipynb
+          contents:
+            - text: "02. The spectral theorem"
+              href: courses/computational-linear-algebra/02-spectral-theorem.ipynb
+            - text: "03. The singular value decomposition"
+              href: courses/computational-linear-algebra/03-svd.ipynb
+        - section: "Structure"
+          href: courses/computational-linear-algebra/04-rank-and-four-subspaces.ipynb
+          contents:
+            - text: "04. Rank & the four fundamental subspaces"
+              href: courses/computational-linear-algebra/04-rank-and-four-subspaces.ipynb
+            - text: "05. Determinant"
+              href: courses/computational-linear-algebra/05-determinant.ipynb
+            - text: "06. Inverse & pseudoinverse"
+              href: courses/computational-linear-algebra/06-inverse-and-pseudoinverse.ipynb
+        - section: "Computation"
+          href: courses/computational-linear-algebra/07-projection-and-orthogonalization.ipynb
+          contents:
+            - text: "07. Projection & orthogonalization"
+              href: courses/computational-linear-algebra/07-projection-and-orthogonalization.ipynb
+            - text: "08. Least squares"
+              href: courses/computational-linear-algebra/08-least-squares.ipynb
+        - section: "The eigenworld"
+          href: courses/computational-linear-algebra/09-eigendecomposition.ipynb
+          contents:
+            - text: "09. Eigendecomposition"
+              href: courses/computational-linear-algebra/09-eigendecomposition.ipynb
+            - text: "10. Quadratic forms"
+              href: courses/computational-linear-algebra/10-quadratic-forms.ipynb
