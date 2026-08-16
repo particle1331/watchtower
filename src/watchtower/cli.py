@@ -11,7 +11,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import convert, inspect, notebook, render, resume, scaffold, vault
+from . import convert, execute, inspect, notebook, render, resume, scaffold, vault
 
 app = typer.Typer(
     name="wt",
@@ -389,18 +389,45 @@ def remove_cell(
 
 
 @app.command()
+def clear_outputs(
+    name: str,
+    index: int | None = typer.Option(None, "--index", "-i", help="0-based cell index"),
+    tag: str | None = typer.Option(None, "--tag", "-t", help="clear outputs of all cells with this tag"),
+    label: str | None = typer.Option(None, "--label", "-l", help="clear outputs of cell with this Quarto label"),
+    from_index: int | None = typer.Option(None, "--from", "-f", help="clear outputs of all code cells from this index to the end"),
+) -> None:
+    """Clear stored outputs of code cells.
+
+    Locator precedence: --from N clears every code cell from index N to the
+    end (handy for a trailing section like a problem set); --index / --tag /
+    --label clear the matching cells; with no locator, every code cell in the
+    notebook is cleared. Markdown cells are skipped.
+    """
+    with _user_error():
+        out = notebook.clear_outputs(
+            name, index=index, tag=tag, label=label, from_index=from_index
+        )
+    console.print(f"[green]cleared outputs in {out}[/green]")
+
+
+@app.command()
 def tag(
     name: str,
-    index: int = typer.Option(..., "--index", "-i", help="0-based cell index"),
+    index: int | None = typer.Option(None, "--index", "-i", help="0-based cell index"),
+    tag: str | None = typer.Option(None, "--tag", "-t", help="cell tag to match (must be unique)"),
+    label: str | None = typer.Option(None, "--label", "-l", help="Quarto `#| label:` to match (must be unique)"),
     add: list[str] = typer.Option([], "--add", "-a", help="tag to add (may be repeated)"),
     remove: list[str] = typer.Option([], "--remove", "-r", help="tag to remove (may be repeated)"),
 ) -> None:
-    """Add and/or remove tags on a single cell (by index).
+    """Add and/or remove tags on a single cell.
 
-    Without --add or --remove, prints current tags.
+    Exactly one of --index / --tag / --label is required. Without --add or
+    --remove, prints current tags.
     """
     with _user_error():
-        out = notebook.tag_cell(name, index=index, add=add or None, remove=remove or None)
+        out = notebook.tag_cell(
+            name, index=index, tag=tag, label=label, add=add or None, remove=remove or None
+        )
     if isinstance(out, list):
         if out:
             for t in out:
@@ -409,6 +436,36 @@ def tag(
             console.print("[yellow](no tags)[/yellow]")
     else:
         console.print(f"[green]tagged {out}[/green]")
+
+
+@app.command()
+def run(
+    name: str,
+    index: int | None = typer.Option(None, "--index", "-i", help="run only this cell in a fresh kernel"),
+    timeout: int = typer.Option(300, "--timeout", help="per-cell timeout in seconds"),
+    kernel: str | None = typer.Option(None, "--kernel", "-k", help="kernel name (default: python3)"),
+) -> None:
+    """Execute a notebook's code cells in-place, writing outputs back.
+
+    Quarto renders inline outputs without re-running; wt run is the explicit
+    re-execution path. Single-cell runs (--index) start a fresh kernel, so
+    state from other cells does not carry over.
+    """
+    with _user_error():
+        result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout)
+    if result["ran"] == 0 and index is None:
+        console.print("[green]no code cells to run[/green]")
+    else:
+        console.print(
+            f"[green]executed {result['ran']} cells ({len(result['errors'])} errors)[/green]"
+        )
+    for err in result["errors"]:
+        evalue = err["evalue"]
+        if len(evalue) > 300:
+            evalue = f"{evalue[:300]}..."
+        console.print(f"[red]cell {err['index']} [{err['ename']}]: {evalue}[/red]")
+    if result["errors"]:
+        raise typer.Exit(1)
 
 
 @app.command(name="render")

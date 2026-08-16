@@ -9,8 +9,8 @@ Cell locators (--index / --tag / --label):
   --tag foo    matches a cell whose Jupyter tags include `foo`
   --label foo  matches a cell whose first nonblank line is `#| label: foo`
 
-Commands that *write* require a unique match; `cat` and `remove-cell` may
-match multiple cells and act on all of them.
+Commands that *write* (including `tag`) require a unique match; `cat` and
+`remove-cell` may match multiple cells and act on all of them.
 """
 
 
@@ -448,26 +448,66 @@ def remove_cell(
     return path
 
 
-def tag_cell(
+def clear_outputs(
     name: str,
     *,
-    index: int,
-    add: list[str] | None = None,
-    remove: list[str] | None = None,
-) -> Path | list[str]:
-    """Add and/or remove tags from a single cell (by index).
+    index: int | None = None,
+    tag: str | None = None,
+    label: str | None = None,
+    from_index: int | None = None,
+) -> Path:
+    """Clear stored outputs of code cells matching the locator.
 
-    If neither `add` nor `remove` is given, returns current tags without
-    modifying the notebook.
+    Locator precedence: --from N clears every code cell from index N to the
+    end (useful for a trailing section like a problem set); --index / --tag /
+    --label clear the matching cells (a tag may match multiple); with no
+    locator, every code cell in the notebook is cleared. Errors if no code
+    cell matched. Markdown cells are skipped.
     """
     path = resolve_ipynb(name)
     nb = _read_notebook(path)
-    if index < 0 or index >= len(nb["cells"]):
+    if from_index is not None:
+        if not (0 <= from_index < len(nb["cells"])):
+            raise ValueError(
+                f"from-index {from_index} out of bounds "
+                f"(notebook has {len(nb['cells'])} cells)."
+            )
+        idxs = list(range(from_index, len(nb["cells"])))
+    elif index is not None or tag is not None or label is not None:
+        idxs = _matching_indices(nb, index=index, tag=tag, label=label)
+    else:
+        idxs = list(range(len(nb["cells"])))
+    code_idxs = [i for i in idxs if nb["cells"][i]["cell_type"] == "code"]
+    if not code_idxs:
         raise ValueError(
-            f"index {index} out of range (notebook has "
-            f"{len(nb['cells'])} cells)."
+            f"no code cell matched (index={index}, tag={tag}, label={label}, "
+            f"from_index={from_index})."
         )
-    cell = nb["cells"][index]
+    for i in code_idxs:
+        nb["cells"][i]["outputs"] = []
+    nbformat.write(nb, path)
+    return path
+
+
+def tag_cell(
+    name: str,
+    *,
+    index: int | None = None,
+    tag: str | None = None,
+    label: str | None = None,
+    add: list[str] | None = None,
+    remove: list[str] | None = None,
+) -> Path | list[str]:
+    """Add and/or remove tags from a single cell.
+
+    Exactly one of --index/--tag/--label is required (must match a unique
+    cell). If neither `add` nor `remove` is given, returns current tags
+    without modifying the notebook.
+    """
+    path = resolve_ipynb(name)
+    nb = _read_notebook(path)
+    i = _resolve_unique_cell(nb, index=index, tag=tag, label=label)
+    cell = nb["cells"][i]
     existing = list(cell.get("metadata", {}).get("tags", []))
     if not add and not remove:
         return existing

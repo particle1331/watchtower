@@ -185,3 +185,105 @@ def test_tag_cell_read_only_does_not_write(nb_file):
     mtime_before = os.path.getmtime(nb_file)
     notebook.tag_cell("test", index=0)
     assert os.path.getmtime(nb_file) == mtime_before
+
+
+def test_tag_cell_by_tag_locator(nb_file):
+    notebook.tag_cell("test", index=0, add=["important"])
+    notebook.tag_cell("test", tag="important", add=["second"])
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert set(nb.cells[0].metadata["tags"]) == {"important", "second"}
+
+
+def test_tag_cell_by_label_locator(nb_file):
+    notebook.edit_cell("test", "#| label: fig-intro\n\nSome text", index=0)
+    notebook.tag_cell("test", label="fig-intro", add=["figure"])
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert "figure" in nb.cells[0].metadata.get("tags", [])
+
+
+def test_tag_cell_read_only_by_tag(nb_file):
+    notebook.tag_cell("test", index=0, add=["focus"])
+    assert notebook.tag_cell("test", tag="focus") == ["focus"]
+
+
+def test_tag_cell_no_locator_raises(nb_file):
+    with pytest.raises(ValueError, match="exactly one"):
+        notebook.tag_cell("test", add=["x"])
+
+
+def test_tag_cell_ambiguous_locator_raises(nb_file):
+    notebook.tag_cell("test", index=0, add=["dup"])
+    notebook.tag_cell("test", index=2, add=["dup"])
+    with pytest.raises(ValueError, match="ambiguous"):
+        notebook.tag_cell("test", tag="dup")
+
+
+def test_tag_cell_index_locator_still_works(nb_file):
+    notebook.tag_cell("test", index=1, add=["code-tag"])
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].metadata.get("tags") == ["code-tag"]
+
+
+# ---------------------------------------------------------------------------
+# clear_outputs
+# ---------------------------------------------------------------------------
+
+def _with_outputs(nb_file):
+    """Give the notebook's code cells some stored outputs."""
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    for c in nb.cells:
+        if c.cell_type == "code":
+            c.outputs = [nbformat.v4.new_output("stream", name="stdout", text="x")]
+    nbformat.write(nb, nb_file)
+
+
+def test_clear_outputs_by_index(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test", index=1)
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_by_tag(nb_file):
+    _with_outputs(nb_file)
+    notebook.tag_cell("test", index=1, add=["starter"])
+    notebook.clear_outputs("test", tag="starter")
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_from_index(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test", from_index=1)
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_all(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test")
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert all(c.outputs == [] for c in nb.cells if c.cell_type == "code")
+
+
+def test_clear_outputs_from_index_skips_markdown(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test", from_index=0)
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[0].cell_type == "markdown"
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_markdown_index_raises(nb_file):
+    with pytest.raises(ValueError, match="no code cell matched"):
+        notebook.clear_outputs("test", index=0)
+
+
+def test_clear_outputs_no_code_matched_raises(nb_file):
+    with pytest.raises(ValueError, match="no code cell matched"):
+        notebook.clear_outputs("test", index=0)
+
+
+def test_clear_outputs_from_index_out_of_bounds(nb_file):
+    with pytest.raises(ValueError, match="out of bounds"):
+        notebook.clear_outputs("test", from_index=99)
