@@ -10,16 +10,7 @@ from typer.testing import CliRunner
 
 from watchtower import cli
 
-UNICODE_SAMPLE = "Box: ├── │ └──  Arrow: →  Dash: —  Bullet: •  Check: ✓  café"
-
 runner = CliRunner()
-
-
-class _FakeStdin:
-    """Minimal stand-in exposing a binary ``buffer`` like ``sys.stdin``."""
-
-    def __init__(self, raw: bytes) -> None:
-        self.buffer = io.BytesIO(raw)
 
 
 @pytest.fixture
@@ -37,14 +28,6 @@ def _write_code_notebook(path, sources):
     nb.cells = [nbformat.v4.new_code_cell(s) for s in sources]
     nbformat.write(nb, path)
     return path
-
-
-def test_read_stdin_decodes_utf8_regardless_of_locale(monkeypatch):
-    # Bytes are UTF-8; decoding them as cp1252 (the old Windows default)
-    # would mangle every non-ASCII glyph into mojibake. _read_stdin must
-    # decode as UTF-8 from the raw buffer.
-    monkeypatch.setattr(cli.sys, "stdin", _FakeStdin(UNICODE_SAMPLE.encode("utf-8")))
-    assert cli._read_stdin() == UNICODE_SAMPLE
 
 
 # ---------------------------------------------------------------------------

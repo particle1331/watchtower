@@ -27,15 +27,6 @@ app = typer.Typer(
 console = Console()
 
 
-def _read_stdin() -> str:
-    """Read piped stdin as UTF-8, independent of the platform locale.
-
-    Decoding the raw byte buffer bypasses the platform-default text encoding
-    (cp1252 on Windows), which was the root cause of mojibake in cell writes.
-    """
-    return sys.stdin.buffer.read().decode("utf-8")
-
-
 new_app = typer.Typer(name="new", help="Scaffold new artifacts.", no_args_is_help=True)
 app.add_typer(new_app)
 
@@ -305,8 +296,8 @@ def add_exercise(
         raise ValueError(
             "pass --statement or --solution; stdin can feed only one of them."
         )
-    src_stmt = _read_stdin() if statement is None else statement
-    src_sol = solution if solution is not None else _read_stdin()
+    src_stmt = sys.stdin.read() if statement is None else statement
+    src_sol = solution if solution is not None else sys.stdin.read()
     pid, out = problems.add_exercise(
         course, locator, src_stmt, src_sol,
         starter=starter, number=number,
@@ -331,7 +322,7 @@ def solution_set(
     """
     from . import problems
 
-    src = content if content is not None else _read_stdin()
+    src = content if content is not None else sys.stdin.read()
     out = problems.set_solution(course, locator, src)
     console.print(f"[green]set solution in {out}[/green]")
 
@@ -512,7 +503,7 @@ def edit_cell(
     """
     from . import notebook
 
-    src = content if content is not None else _read_stdin()
+    src = content if content is not None else sys.stdin.read()
     out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
     console.print(f"[green]updated {out}[/green]")
 
@@ -526,7 +517,7 @@ def append_cell(
     """Append a new cell to the end of the notebook."""
     from . import notebook
 
-    src = content if content is not None else _read_stdin()
+    src = content if content is not None else sys.stdin.read()
     out = notebook.append_cell(name, src, cell_type=cell_type)
     console.print(f"[green]appended to {out}[/green]")
 
@@ -548,7 +539,7 @@ def insert_cell(
     """
     from . import notebook
 
-    src = content if content is not None else _read_stdin()
+    src = content if content is not None else sys.stdin.read()
     out = notebook.insert_cell(
         name, src, after=after, before=before, tag=tag, label=label,
         cell_type=cell_type,
