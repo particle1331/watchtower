@@ -4,8 +4,8 @@
 elsewhere — Colab, Kaggle, a teammate's machine) into the chosen tier dir.
 Outputs are preserved as-is; Quarto renders them without re-execution.
 
-`wt import <src.ipynb> courses --course <slug>` imports a notebook as a
-chapter of an existing course, copying it to `courses/<course>/<stem>.ipynb`
+`wt import <src.ipynb> courses <course> [<chapter>]` imports a notebook as
+a chapter of an existing course, copying it to `courses/<course>/<stem>.ipynb`
 and registering it in the course's sidebar in `_quarto.yml`.
 """
 

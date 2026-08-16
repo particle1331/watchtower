@@ -1,10 +1,10 @@
 """Scaffold new artifacts: notes, articles, courses, projects.
 
-Notes and articles are Jupyter notebooks (`.ipynb`) — sourced as plain cell
-markdown via jupytext for agent reads, edited in JupyterLab as notebooks,
-and rendered by Quarto with inline outputs (no execution). Courses are
-directory trees with an index notebook and sequential lessons. Project
-scaffolding delegates to `uv init`.
+Notes and articles are Jupyter notebooks (`.ipynb`) — edited in JupyterLab
+as notebooks (agents read them through the `wt` CLI), and rendered by
+Quarto with inline outputs (no execution). Courses are directory trees with
+an index notebook and sequential lessons. Project scaffolding delegates to
+`uv init`.
 """
 
 
@@ -44,12 +44,11 @@ def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = ""
         "language": "python",
         "name": "python3",
     }
-    date_line = f'date: "{date}"\n' if date else ""
-    frontmatter = f"""---
-title: "{title}"
-{date_line}categories: []
----"""
-    nb.cells = [nbformat.v4.new_markdown_cell(frontmatter + body)]
+    lines = ["---", f'title: "{title}"']
+    if date:
+        lines.append(f'date: "{date}"')
+    lines += ["categories: []", "---"]
+    nb.cells = [nbformat.v4.new_markdown_cell("\n".join(lines) + body)]
     nbformat.write(nb, path)
 
 
@@ -60,6 +59,8 @@ def new_note(name: str, title: str | None = None) -> Path:
     """
     date = datetime.now().strftime("%Y-%m-%d")
     path = NOTES_DIR / f"{name}.ipynb"
+    if path.exists():
+        raise FileExistsError(f"{path} already exists")
     _write_ipynb(path, title if title is not None else name, date=date)
     return path
 
@@ -72,6 +73,8 @@ def new_article(name: str, title: str | None = None) -> Path:
     """
     date = datetime.now().strftime("%Y-%m-%d")
     path = ARTICLES_DIR / f"{name}.ipynb"
+    if path.exists():
+        raise FileExistsError(f"{path} already exists")
     if title is None:
         title = name.replace("-", " ").title()
     _write_ipynb(path, title, date=date)
@@ -123,13 +126,15 @@ def new_course(name: str, title: str) -> Path:
     course_dir = COURSES_DIR / name
     course_dir.mkdir(parents=True, exist_ok=True)
 
-    # index.ipynb — no H1 in body; Quarto renders the frontmatter `title` as the H1.
+    # Stub files are written only when missing, so re-running 'wt new course'
+    # never clobbers content. No H1 in the body: Quarto renders the
+    # frontmatter `title` as the H1.
     index_path = course_dir / "index.ipynb"
-    _write_ipynb(index_path, title, body="\n\nTODO: course overview.\n")
-
-    # first lesson — same: frontmatter `title` becomes the H1.
+    if not index_path.exists():
+        _write_ipynb(index_path, title, body="\n\nTODO: course overview.\n")
     lesson_path = course_dir / "01-introduction.ipynb"
-    _write_ipynb(lesson_path, "Introduction", body="\n\nTODO: lesson content.\n")
+    if not lesson_path.exists():
+        _write_ipynb(lesson_path, "Introduction", body="\n\nTODO: lesson content.\n")
 
     # register in _quarto.yml sidebar
     _register_course(name)

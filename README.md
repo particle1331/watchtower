@@ -177,6 +177,9 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt cat <name> --index N --offset O [--limit L]` | slice chars `O:O+L` of cell N (default limit 4096; 0 = unlimited) |
 | `wt cat <name> --with-outputs` | also print each code cell's outputs (stream/error/etc.) |
 | `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
+| `wt cat <name> --index N --context K` | print cells N-K..N+K (surrounding context, marked `context`) |
+| `wt cat <name> --tag solution --decode` | print solution cells decoded to plaintext (spoiler opt-in) |
+| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, solutions decoded) |
 
 ### Editing notebooks
 | Command                              | What it does                                              |
@@ -202,19 +205,26 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 
 ### Problems
 
-Course problem sets live in `courses/<course>/problems.json` (statements,
-starter code, and solutions). Problems are tagged `problem` in the chapter
-notebooks, which are the source of truth: `wt problem` / `wt solution` print
-from the JSON without opening a notebook, and `wt sync-problems` re-extracts
-the statements and starter code from the notebooks into the JSON after you
-edit problems in JupyterLab. If a sync warning says a statement or starter
-changed, also update that problem's solution in `problems.json`.
+Course problems and solutions live entirely in the chapter notebooks — there
+is no `problems.json`. A problem is a markdown cell tagged `problem` + its id
+(e.g. `07-3`), headed by `### [PNN.N] title` (chapter from the notebook
+filename, number per-chapter, e.g. `### [P11.4] Energy retention in
+practice`), optionally followed by a starter code cell; the solution is
+the code cell tagged `solution` + the same id right after it. Its source is a
+`#| echo: false` / `#| eval: false` / `#| output: false` Quarto cell-options
+header followed by the ROT18-obfuscated body, each non-empty line prefixed
+`# ` (blank lines stay blank). The `#|` options hide the cell entirely on the
+rendered site, so solutions stay in the notebook for self-grading but never
+spoil the rendered chapters.
 
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
 | `wt problem <course> <locator>`      | print a problem statement (plus starter code)             |
-| `wt solution <course> <locator>`     | print a problem's solution (worked answer, checks, reference code) |
-| `wt sync-problems <course>`          | re-extract statements/starter code from the notebooks into `problems.json` (preserves solutions, warns on changes) |
+| `wt solution <course> <locator>`     | print a problem's decoded solution (worked text, answer, checks, reference code) |
+| `wt hint <course> <locator> [--level 1\|2]` | progressive hint (checks without expected values, worked-text excerpt) |
+| `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X [--number N]` | append a new problem + solution pair (solution encoded on write) |
+| `wt solution-set <course> <locator> --content X` | create/replace a solution cell (plaintext in, encoded stored) |
+| `wt check <course>`                  | validate tagging, pairing, and encoding across all chapters |
 
 Locator forms: `7.3`, `07-3`, `07 3`, `07-projection-and-orthogonalization 3`,
 or a fuzzy chapter name like `projection 3`.

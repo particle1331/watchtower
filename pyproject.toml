@@ -23,8 +23,8 @@ dependencies = [
 ]
 
 [project.scripts]
-watchtower = "watchtower.cli:app"
-wt = "watchtower.cli:app"
+watchtower = "watchtower.cli:main"
+wt = "watchtower.cli:main"
 
 [tool.uv.workspace]
 members = ["projects/*"]

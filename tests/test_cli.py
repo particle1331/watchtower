@@ -66,9 +66,9 @@ def test_cli_tag_accepts_tag_locator(nb_file):
     assert "focus" in r2.output
 
 
-def test_cli_tag_requires_locator(nb_file, cli_console):
-    result = runner.invoke(cli.app, ["tag", "test", "--add", "focus"])
-    assert result.exit_code == 1
+def test_cli_tag_requires_locator(nb_file, cli_console, invoke):
+    # Error handling lives in cli.main(), so go through it.
+    assert invoke("tag", "test", "--add", "focus") == 1
     assert "exactly one" in cli_console.getvalue()
 
 

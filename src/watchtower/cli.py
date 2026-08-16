@@ -1,17 +1,23 @@
-"""Watchtower CLI — Typer application assembling all subcommands."""
+"""Watchtower CLI — Typer application assembling all subcommands.
+
+Submodules are imported inside each command body, not at module level:
+nbformat (pulled in by notebook/problems/convert/...) costs ~1.1s of
+jsonschema import on startup, and most commands never touch a notebook.
+Function-level imports keep commands like `wt vault list` / `wt map` at
+~0.1s instead of ~1.5s.
+"""
 
 
 import contextlib
 import shlex
+import shutil
+import subprocess
 import sys
-from contextlib import contextmanager
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.table import Table
-
-from . import convert, execute, inspect, notebook, problems, render, resume, scaffold, vault
 
 app = typer.Typer(
     name="wt",
@@ -50,16 +56,6 @@ def _read_stdin() -> str:
 _force_utf8_streams()
 
 
-@contextmanager
-def _user_error():
-    """Catch user-facing errors, print in red, and exit with code 1."""
-    try:
-        yield
-    except (FileNotFoundError, FileExistsError, ValueError) as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
-
-
 new_app = typer.Typer(name="new", help="Scaffold new artifacts.", no_args_is_help=True)
 app.add_typer(new_app)
 
@@ -75,6 +71,8 @@ def new_note(
     ),
 ) -> None:
     """Create notes/<name>.ipynb with a minimal frontmatter stub."""
+    from . import scaffold
+
     path = scaffold.new_note(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
@@ -90,6 +88,8 @@ def new_article(
     ),
 ) -> None:
     """Create articles/<name>.ipynb with a date and title frontmatter."""
+    from . import scaffold
+
     path = scaffold.new_article(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
@@ -100,6 +100,8 @@ def new_course(
     title: str = typer.Argument(..., help='display title (e.g. "Large Language Models")'),
 ) -> None:
     """Create courses/<name>/ with an index notebook and a first lesson stub."""
+    from . import scaffold
+
     path = scaffold.new_course(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
@@ -107,6 +109,8 @@ def new_course(
 @new_app.command("project")
 def new_project(name: str) -> None:
     """uv init projects/<name> and wire it into the workspace."""
+    from . import scaffold
+
     path = scaffold.new_project(name)
     console.print(f"[green]created {path}[/green]")
 
@@ -129,8 +133,9 @@ def new_chapter(
     ),
 ) -> None:
     """Scaffold courses/<course>/<name>.ipynb and register it in the course sidebar."""
-    with _user_error():
-        path = scaffold.new_course_chapter(course, name, title=title, section=section)
+    from . import scaffold
+
+    path = scaffold.new_course_chapter(course, name, title=title, section=section)
     console.print(f"[green]created {path}[/green]")
 
 
@@ -140,8 +145,9 @@ def new_section(
     name: str = typer.Argument(..., help="section name (e.g. 'Local Stack')"),
 ) -> None:
     """Add a section header to a course's sidebar in _quarto.yml."""
-    with _user_error():
-        scaffold.new_course_section(course, name)
+    from . import scaffold
+
+    scaffold.new_course_section(course, name)
     console.print(f"[green]added section '{name}' to {course}[/green]")
 
 
@@ -152,6 +158,8 @@ app.add_typer(vault_app)
 @vault_app.command("set")
 def vault_set(key: str, value: str) -> None:
     """Store a secret in the OS keyring."""
+    from . import vault
+
     vault.set_secret(key, value)
     console.print(f"[green]stored {key}.[/green]")
 
@@ -159,6 +167,8 @@ def vault_set(key: str, value: str) -> None:
 @vault_app.command("get")
 def vault_get(key: str) -> None:
     """Retrieve a secret value."""
+    from . import vault
+
     val = vault.get_secret(key)
     if val is None:
         console.print(f"[red]{key} not set.[/red]")
@@ -169,6 +179,8 @@ def vault_get(key: str) -> None:
 @vault_app.command("list")
 def vault_list() -> None:
     """List stored secret keys (no values)."""
+    from . import vault
+
     keys = vault.list_keys()
     if not keys:
         console.print("[yellow]no secrets stored.[/yellow]")
@@ -182,6 +194,8 @@ def vault_list() -> None:
 @vault_app.command("export")
 def vault_export() -> None:
     """Emit export lines for all stored secrets. Usage: eval $(wt vault export)."""
+    from . import vault
+
     for k, v in vault.all_secrets().items():
         print(f"export {k}={shlex.quote(v)}")
 
@@ -189,12 +203,16 @@ def vault_export() -> None:
 @app.command(name="map")
 def map_cmd() -> None:
     """Print repo structure as JSON — agent navigation context."""
+    from . import inspect
+
     print(inspect.repo_map_json())
 
 
 @app.command()
 def find(query: str) -> None:
     """Grep across notebook cell sources, reporting cell indices."""
+    from . import inspect
+
     out = inspect.find_in_src(query)
     if out:
         print(out)
@@ -205,49 +223,161 @@ def find(query: str) -> None:
 @app.command()
 def count(name: str) -> None:
     """Print the number of cells in a notebook."""
-    with _user_error():
-        n = notebook.count_cells(name)
-        print(f"{n} cells")
+    from . import notebook
+
+    n = notebook.count_cells(name)
+    print(f"{n} cells")
 
 
 @app.command()
 def problem(course: str, locator: str) -> None:
-    """Print a problem statement from a course's problems.json.
+    """Print a problem statement (plus starter code) from the course notebooks.
 
-    Locator forms: '7.3', '07-3', '07 3', '07-projection-and-orthogonalization 3',
-    or a fuzzy chapter name like 'projection 3'.
+    Problems live in the chapter notebooks as `problem`-tagged cells with an
+    id tag like '07-3'. Locator forms: '7.3', '07-3', '07 3',
+    '07-projection-and-orthogonalization 3', or a fuzzy chapter name like
+    'projection 3'.
     """
-    with _user_error():
-        data = problems.load_problems(course)
-        print(problems.format_problem(problems.resolve_problem(data, locator)))
+    from . import problems
+
+    print(problems.format_problem(problems.resolve_problem(course, locator)))
 
 
 @app.command()
-def solution(course: str, locator: str) -> None:
-    """Print a problem's solution from a course's problems.json."""
-    with _user_error():
-        data = problems.load_problems(course)
-        print(problems.format_solution(problems.resolve_problem(data, locator)))
+def solution(
+    course: str,
+    locator: str,
+    raw: bool = typer.Option(
+        False,
+        "--raw",
+        help="print the stored encoded cell source instead of the decoded solution",
+    ),
+) -> None:
+    """Print a problem's decoded solution from the course notebooks.
+
+    Solutions are code cells tagged `solution` + the problem id, hidden from
+    the rendered site by `#| echo: false / eval: false / output: false`
+    options and ROT18-obfuscated; this command decodes them (--raw prints
+    the stored source as-is).
+    """
+    from . import problems
+
+    prob = problems.resolve_problem(course, locator)
+    if raw:
+        if prob["solution_source"] is None:
+            console.print(
+                f"[red]no solution cell for {prob['id']} — create one with "
+                f"`wt solution-set {course} {locator}`[/red]"
+            )
+            raise typer.Exit(1)
+        print(prob["solution_source"], end="")
+        return
+    body = problems.solution_plaintext(prob)
+    title = prob["title"]
+    chapter = int(prob["id"].rsplit("-", 1)[0])
+    heading = f"### [P{chapter}.{prob['number']}]"
+    if title:
+        heading += f" {title}"
+    print(f"{heading}\n\n{body}")
 
 
 @app.command()
-def sync_problems(course: str) -> None:
-    """Re-extract problem statements and starter code from chapter notebooks
-    into the course's problems.json, preserving solutions.
+def hint(
+    course: str,
+    locator: str,
+    level: int = typer.Option(1, "--level", help="hint level: 1 = checks + first sentence, 2 = full worked text"),
+) -> None:
+    """Print a progressive hint for a problem, derived from its solution.
 
-    The notebooks are the source of truth; problems.json is a derived copy.
-    Warnings flag problems whose statement or starter changed (the solution
-    may be stale) and problems that exist on only one side.
+    Level 1 shows the checks to satisfy (descriptions only, no expected
+    values) and the first sentence of the worked solution; level 2 shows
+    the full worked solution text. Never reveals the answer.
     """
-    with _user_error():
-        warnings = problems.sync_problems(course)
-        data = problems.load_problems(course)
-    for w in warnings:
-        console.print(f"[yellow]{w}[/yellow]")
-    changed = sum(1 for w in warnings if "statement/starter changed" in w)
+    from . import problems
+
+    prob = problems.resolve_problem(course, locator)
+    print(problems.hint_text(prob, level=level))
+
+
+@app.command(name="add-exercise")
+def add_exercise(
+    course: str,
+    locator: str,
+    statement: str | None = typer.Option(None, "--statement", "-s", help="plaintext problem statement (markdown; a `### [PNN.N]` heading is added if missing)"),
+    starter: str | None = typer.Option(None, "--starter", help="optional starter code cell"),
+    solution: str | None = typer.Option(None, "--solution", help="plaintext solution body (encoded on write)"),
+    number: int | None = typer.Option(None, "--number", "-n", help="problem number (default: next after the chapter's last problem)"),
+) -> None:
+    """Append a problem + solution pair to a chapter notebook (encodes on write).
+
+    The statement goes in plaintext (tagged `problem` + id); the solution is
+    ROT18-obfuscated into a code cell tagged `solution` + id, with a
+    `#| echo: false / eval: false / output: false` header that hides it from
+    the rendered site, so plaintext solutions never reach the notebook
+    through this path. The problem number defaults to the next one in the
+    chapter; `--starter` adds a code cell between statement and solution.
+    If exactly one of --statement / --solution is omitted, it is read from
+    stdin.
+    """
+    from . import problems
+
+    if statement is None and solution is None:
+        raise ValueError(
+            "pass --statement or --solution; stdin can feed only one of them."
+        )
+    src_stmt = _read_stdin() if statement is None else statement
+    src_sol = solution if solution is not None else _read_stdin()
+    pid, out = problems.add_exercise(
+        course, locator, src_stmt, src_sol,
+        starter=starter, number=number,
+    )
+    console.print(f"[green]added {pid} to {out}[/green]")
+
+
+@app.command(name="solution-set")
+def solution_set(
+    course: str,
+    locator: str,
+    content: str | None = typer.Option(None, "--content", "-c", help="plaintext markdown solution body (if omitted, read from stdin)"),
+) -> None:
+    """Create or replace a problem's solution cell (encodes on write).
+
+    Takes the *plaintext* solution body (Solution./Answer:/Checks:/Reference
+    code. sections) and stores it ROT18-obfuscated in a code cell tagged
+    `solution` + the problem id, with a `#| echo: false / eval: false /
+    output: false` header that hides it from the rendered site. Agents
+    writing a chapter use this command so plaintext solutions never reach
+    the notebook.
+    """
+    from . import problems
+
+    src = content if content is not None else _read_stdin()
+    out = problems.set_solution(course, locator, src)
+    console.print(f"[green]set solution in {out}[/green]")
+
+
+@app.command()
+def check(course: str) -> None:
+    """Validate a course's problem/solution tagging, pairing, and encoding.
+
+    Warns on: problem cells that are not markdown, solution cells that are
+    not code, missing or duplicated id tags, solutions without a problem
+    pair (and vice versa), solution cells not wrapped in the `#| echo:
+    false / eval: false / output: false` header, empty solution bodies,
+    and solutions stored in plaintext instead of ROT18-obfuscated. Exits 1
+    when anything is wrong.
+    """
+    from . import problems
+
+    warnings = problems.check_course(course)
+    if warnings:
+        for w in warnings:
+            console.print(f"[yellow]{w}[/yellow]")
+        raise typer.Exit(1)
+    n_problems, n_solutions = problems.problem_counts(course)
     console.print(
-        f"[green]synced problems for {course} "
-        f"({len(data['problems'])} problems, {changed} changed)[/green]"
+        f"[green]checked {course}: {n_problems} problems, "
+        f"{n_solutions} solutions — all tagged and encoded.[/green]"
     )
 
 
@@ -262,8 +392,12 @@ def cat(
     with_outputs: bool = typer.Option(False, "--with-outputs", help="also show each code cell's outputs"),
     out_offset: int = typer.Option(0, "--out-offset", help="char offset into each output's text body"),
     out_limit: int | None = typer.Option(None, "--out-limit", help="max chars per output body"),
+    context: int = typer.Option(0, "--context", "-C", help="include N cells before the first match and after the last (marked `context` in headers)"),
+    decode: bool = typer.Option(False, "--decode", help="decode solution-tagged cells to plaintext (spoiler opt-in)"),
 ) -> None:
     """Print notebook cell sources as markdown (JSON-stripped)."""
+    from . import notebook
+
     # Default read limit protects agent context windows; 0 = no limit.
     effective_limit: int | None = None
     if limit == 0:
@@ -272,21 +406,43 @@ def cat(
         effective_limit = limit
     else:
         effective_limit = notebook.DEFAULT_READ_LIMIT
-    with _user_error():
-        print(
-            notebook.cat_notebook(
-                name, index=index, tag=tag, label=label,
-                offset=offset, limit=effective_limit,
-                with_outputs=with_outputs,
-                out_offset=out_offset, out_limit=out_limit,
-            ),
-            end="",
-        )
+    print(
+        notebook.cat_notebook(
+            name, index=index, tag=tag, label=label,
+            offset=offset, limit=effective_limit,
+            with_outputs=with_outputs,
+            out_offset=out_offset, out_limit=out_limit,
+            context=context, decode_solutions=decode,
+        ),
+        end="",
+    )
+
+
+@app.command(name="diff")
+def diff_cmd(
+    name: str,
+    base: str = typer.Option("HEAD", "--base", "-b", help="git ref to diff against (default: HEAD)"),
+) -> None:
+    """Show a notebook's changes as a markdown diff vs a git ref.
+
+    Both sides are rendered like `wt cat` (JSON-stripped, no outputs;
+    solution cells decoded), so the diff shows content changes instead of
+    `.ipynb` JSON noise. Prints nothing extra when unchanged.
+    """
+    from . import notebook
+
+    out = notebook.diff_notebook(name, base=base)
+    if out is None:
+        console.print("[green]no changes[/green]")
+    else:
+        print(out)
 
 
 @app.command()
 def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projects")) -> None:
     """List source `.ipynb` notebooks in a tier."""
+    from . import inspect
+
     if tier == "notes":
         items = inspect.list_ipynb(Path("notes"))
     elif tier == "articles":
@@ -336,26 +492,27 @@ def import_cmd(
     For courses: writes to courses/<course>/<chapter>.ipynb and registers
     in the course's sidebar in _quarto.yml.
     """
-    with _user_error():
-        if tier == "courses":
-            if name is None:
-                raise ValueError(
-                    "tier=courses requires a course slug positional "
-                    "(e.g. `wt import x.ipynb courses llm`)"
-                )
-            out = convert.import_chapter(
-                ipynb, name, chapter=chapter, section=section
+    from . import convert
+
+    if tier == "courses":
+        if name is None:
+            raise ValueError(
+                "tier=courses requires a course slug positional "
+                "(e.g. `wt import x.ipynb courses llm`)"
             )
-        else:
-            if section is not None:
-                raise ValueError(
-                    f"--section is only valid when tier=courses, got tier={tier}"
-                )
-            if chapter is not None:
-                raise ValueError(
-                    f"chapter positional is only valid when tier=courses, got tier={tier}"
-                )
-            out = convert.import_notebook(ipynb, tier, name)
+        out = convert.import_chapter(
+            ipynb, name, chapter=chapter, section=section
+        )
+    else:
+        if section is not None:
+            raise ValueError(
+                f"--section is only valid when tier=courses, got tier={tier}"
+            )
+        if chapter is not None:
+            raise ValueError(
+                f"chapter positional is only valid when tier=courses, got tier={tier}"
+            )
+        out = convert.import_notebook(ipynb, tier, name)
     console.print(f"[green]imported -> {out}[/green]")
 
 
@@ -373,9 +530,10 @@ def edit_cell(
     --content (for one-liners) or stdin (for multi-line). Errors if the
     locator matches zero or multiple cells.
     """
+    from . import notebook
+
     src = content if content is not None else _read_stdin()
-    with _user_error():
-        out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
+    out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
     console.print(f"[green]updated {out}[/green]")
 
 
@@ -386,9 +544,10 @@ def append_cell(
     content: str | None = typer.Option(None, "--content", "-c", help="cell source (if omitted, read from stdin)"),
 ) -> None:
     """Append a new cell to the end of the notebook."""
+    from . import notebook
+
     src = content if content is not None else _read_stdin()
-    with _user_error():
-        out = notebook.append_cell(name, src, cell_type=cell_type)
+    out = notebook.append_cell(name, src, cell_type=cell_type)
     console.print(f"[green]appended to {out}[/green]")
 
 
@@ -407,12 +566,13 @@ def insert_cell(
     Pass exactly one of --after / --before / --tag / --label. --tag and
     --label insert *below* the matched cell. Source from --content or stdin.
     """
+    from . import notebook
+
     src = content if content is not None else _read_stdin()
-    with _user_error():
-        out = notebook.insert_cell(
-            name, src, after=after, before=before, tag=tag, label=label,
-            cell_type=cell_type,
-        )
+    out = notebook.insert_cell(
+        name, src, after=after, before=before, tag=tag, label=label,
+        cell_type=cell_type,
+    )
     console.print(f"[green]inserted into {out}[/green]")
 
 
@@ -424,8 +584,9 @@ def remove_cell(
     label: str | None = typer.Option(None, "--label", "-l", help="remove cell with this Quarto label"),
 ) -> None:
     """Remove cells matching the locator. A tag may remove multiple."""
-    with _user_error():
-        out = notebook.remove_cell(name, index=index, tag=tag, label=label)
+    from . import notebook
+
+    out = notebook.remove_cell(name, index=index, tag=tag, label=label)
     console.print(f"[green]removed from {out}[/green]")
 
 
@@ -444,10 +605,11 @@ def clear_outputs(
     --label clear the matching cells; with no locator, every code cell in the
     notebook is cleared. Markdown cells are skipped.
     """
-    with _user_error():
-        out = notebook.clear_outputs(
-            name, index=index, tag=tag, label=label, from_index=from_index
-        )
+    from . import notebook
+
+    out = notebook.clear_outputs(
+        name, index=index, tag=tag, label=label, from_index=from_index
+    )
     console.print(f"[green]cleared outputs in {out}[/green]")
 
 
@@ -465,10 +627,11 @@ def tag(
     Exactly one of --index / --tag / --label is required. Without --add or
     --remove, prints current tags.
     """
-    with _user_error():
-        out = notebook.tag_cell(
-            name, index=index, tag=tag, label=label, add=add or None, remove=remove or None
-        )
+    from . import notebook
+
+    out = notebook.tag_cell(
+        name, index=index, tag=tag, label=label, add=add or None, remove=remove or None
+    )
     if isinstance(out, list):
         if out:
             for t in out:
@@ -492,8 +655,9 @@ def run(
     re-execution path. Single-cell runs (--index) start a fresh kernel, so
     state from other cells does not carry over.
     """
-    with _user_error():
-        result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout)
+    from . import execute
+
+    result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout)
     if result["ran"] == 0 and index is None:
         console.print("[green]no code cells to run[/green]")
     else:
@@ -521,6 +685,8 @@ def render_cmd(
       wt render articles test       -> render articles/test.ipynb
       wt render notes/test.ipynb    -> full path
     """
+    from . import render
+
     source = f"{tier_or_path}/{name}.ipynb" if name else tier_or_path
     pdf = render.render_pdf(source)
     console.print(f"[green]rendered {pdf}[/green]")
@@ -530,11 +696,9 @@ def render_cmd(
 @app.command(name="resume")
 def resume_cmd() -> None:
     """Render assets/resume.yaml -> assets/resume.tex + index.ipynb, then pdflatex -> assets/resume.pdf."""
-    try:
-        pdf_path, index_path = resume.build_resume()
-    except FileNotFoundError as e:
-        console.print(f"[red]{e}[/red]")
-        raise typer.Exit(1) from e
+    from . import resume
+
+    pdf_path, index_path = resume.build_resume()
     console.print(f"[green]resume PDF: {pdf_path}[/green]")
     console.print(f"[green]home page: {index_path}[/green]")
 
@@ -542,16 +706,32 @@ def resume_cmd() -> None:
 @app.command()
 def docs() -> None:
     """Serve the Quarto site (blocking — previews in browser)."""
+    from . import render
+
     render.preview_site()
 
 
 def _open(path: Path) -> None:
-    import shutil
     opener = shutil.which("open") or shutil.which("xdg-open")
     if opener:
-        import subprocess
         subprocess.run([opener, str(path)], check=False)
 
 
+def main() -> None:
+    """Run the CLI. User-facing errors print as one red line and exit 1.
+
+    Every command raises ValueError/FileNotFoundError/FileExistsError on
+    bad input; catching them here keeps the command bodies free of
+    try/except noise.
+    """
+    try:
+        app()
+    except (FileNotFoundError, FileExistsError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        # SystemExit, not typer.Exit: outside click's standalone mode,
+        # typer.Exit would print a traceback.
+        raise SystemExit(1) from e
+
+
 if __name__ == "__main__":  # pragma: no cover
-    sys.exit(app())
+    sys.exit(main())

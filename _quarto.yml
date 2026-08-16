@@ -161,13 +161,13 @@ website:
                 courses/cla/10-quadratic-forms.ipynb
         - section: Applications
           contents:
-            - text: Topic modeling with SVD and NMF
+            - text: 11. Topic modeling with SVD and NMF
               href: courses/cla/11-topic-modeling.ipynb
-            - text: PageRank
+            - text: 12. PageRank
               href: courses/cla/12-pagerank.ipynb
-            - text: Robust PCA
+            - text: 13. Robust PCA
               href: courses/cla/13-robust-pca.ipynb
-            - text: Compressed sensing
+            - text: 14. Compressed sensing
               href: 
                 courses/cla/14-compressed-sensing.ipynb
           href: courses/cla/11-topic-modeling.ipynb

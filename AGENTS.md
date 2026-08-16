@@ -45,6 +45,27 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   Use `--out-offset` / `--out-limit` to slice each output's body the same
   way `--offset` / `--limit` slice the source. Image/base64 payloads are
   summarized (`[image/png, N chars — not shown]`), not dumped.
+- `wt cat <name> --index N --context 3` — render cells N-3..N+3; context
+  cells are marked `context` in their header. The standard way to see a cell
+  with its surroundings before editing.
+- `wt cat <name> --tag solution --decode` — decode solution-tagged cells to
+  plaintext (spoiler opt-in; default `wt cat` shows the stored encoded
+  source). `wt solution <course> <locator>` is the normal way to read one.
+
+## Agent editing workflow (any coding agent)
+
+The notebook ops are the agent contract for every coding agent (Copilot,
+opencode, Claude Code, ...). The loop:
+
+1. `wt ls <tier>` / `wt map` — orient.
+2. `wt find <query>` — locate the text; it prints `path [cell N]: line`.
+3. `wt cat <path> --index N --context 3` — read the cell with its
+   surroundings (or `--tag`/`--label` when the cell has stable tags).
+4. `wt edit-cell <path> --index N --content "..."` — edit (or
+   insert/append/remove per the rules below).
+5. `wt diff <path>` — review the change as a markdown diff vs HEAD (never
+   read `.ipynb` JSON directly; `wt diff` renders both sides for you).
+6. `wt run <path> --index N` — re-execute the edited cell in a fresh kernel.
 
 ## Editing notebooks
 - Cell writes (`edit-cell`, `append-cell`, `insert-cell`) are hard-capped at
@@ -166,6 +187,48 @@ if present (project-specific rules stack on top of these).
 - `wt vault export` emits export lines — projects use it via
   `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
+## Course problems & solutions
+
+Problems and solutions live entirely in the course chapter notebooks — there
+is no `problems.json`. The identification layer is cell tags:
+
+- **Problem statement** — markdown cell tagged `problem` + the problem id
+  (e.g. `07-3`); the heading `### [PNN.N] title` is the statement title
+  (chapter from the notebook filename, number per-chapter, e.g.
+  `### [P11.4] Energy retention in practice`).
+- **Starter code** — the code cell immediately after the statement (optional;
+  theory problems have none).
+- **Solution** — code cell tagged `solution` + the same id, right after the
+  starter (or the statement). Its source is a `#| echo: false` /
+  `#| eval: false` / `#| output: false` Quarto cell-options header followed by
+  the ROT18-obfuscated body (letters shifted by 13, digits by 5), with each
+  non-empty line prefixed `# ` (blank lines stay blank). The `#|` options hide
+  the cell entirely on the rendered site (echo:false hides input, eval:false
+  prevents execution, output:false hides output), so solutions stay in the
+  notebook for self-grading but never spoil the rendered chapters. ROT18 keeps
+  solutions unreadable at a glance in JupyterLab. Obfuscation is a spoiler
+  guard, not security.
+
+The id doubles as the locator (`7.3`, `07-3`, `07 3`, `projection 3` all
+resolve to the same problem). Pairing is by the shared id tag, never by
+position.
+
+**Authoring rules for agents:**
+
+- Adding a problem: `wt add-exercise <course> <chapter> --statement ... 
+  [--starter ...] --solution ...` — the only sanctioned way to create a
+  problem + solution pair. It numbers the problem automatically (next in the
+  chapter) and encodes the solution on write as a hidden code cell (tags
+  `solution` + id), so plaintext never reaches the notebook through this path.
+- Updating a solution: `wt solution-set <course> <locator> --content X`
+  (plaintext in, encoded stored). Reading: `wt solution` (decodes),
+  `wt hint` (progressive hint). 
+- NEVER hand-write a solution cell with `edit-cell`/`insert-cell` in
+  plaintext — a plaintext solution fails `wt check <course>`. If you must
+  edit an existing solution cell directly, read it decoded first
+  (`wt cat --tag <id> --decode`), then re-encode via `wt solution-set`.
+- Run `wt check <course>` after any problem/solution work.
+
 ## CLI command reference (for the agent)
 - `wt new note|article <name> [--title <title>]` — scaffold a notebook stub (note or article); <title> defaults to a placeholder derived from <name>
 - `wt new project <name>` — `uv init` workspace member
@@ -177,10 +240,12 @@ if present (project-specific rules stack on top of these).
 - `wt find <query>` — grep across `.ipynb` cell sources
 - `wt count <name>` — cell count (plan ranges before `--index N:M`)
 - `wt cat <name> [--index N|N:M | --tag foo | --label foo] [--offset O --limit L]
-  [--with-outputs] [--out-offset O --out-limit L]`
+  [--with-outputs] [--out-offset O --out-limit L] [--context N] [--decode]`
   — read notebook cells as markdown. `--index` accepts a single 0-based index
   or a Python-style slice (`N:M`, `:M`, `N:`) to scan a range of cells quickly.
   Default per-cell limit is 4096 chars (`--limit 0` = unlimited).
+  `--context N` also renders the N cells around each match (marked
+  `context`); `--decode` decodes solution-tagged cells to plaintext.
 - `wt edit-cell <name> --index N | --tag foo | --label foo [--content X]`
   — replace a cell's source (outputs + metadata preserved); locator must match one cell
 - `wt append-cell <name> --type md|code [--content X]`
@@ -198,17 +263,31 @@ if present (project-specific rules stack on top of these).
   clears every code cell from index N to the end (handy for a trailing
   section like a problem set); with no locator, all code cells are cleared.
 - `wt problem <course> <locator>` — print a problem statement (plus starter
-  code) from `courses/<course>/problems.json`. Locator forms: `7.3`, `07-3`,
-  `07 3`, `07-projection-and-orthogonalization 3`, `projection 3`.
-- `wt solution <course> <locator>` — print a problem's solution (worked
-  answer, final answer, checks, reference code) from the same file.
-- `wt sync-problems <course>` — re-extract problem statements and starter
-  code from the chapter notebooks (tagged `problem` cells) into
-  `courses/<course>/problems.json`, preserving solutions. The notebooks are
-  the source of truth; run this after editing problems in JupyterLab. Warnings
-  are printed for problems whose statement/starter changed (the solution in
-  `problems.json` may need updating too) and for problems that exist on only
-  one side.
+  code) from the chapter notebooks. Locator forms: `7.3`, `07-3`, `07 3`,
+  `07-projection-and-orthogonalization 3`, `projection 3`.
+- `wt solution <course> <locator> [--raw]` — print a problem's decoded
+  solution (worked text, answer, checks, reference code). `--raw` prints the
+  stored ROT18-encoded cell source instead.
+- `wt hint <course> <locator> [--level 1|2]` — progressive hint from the
+  solution: level 1 = checks descriptions (no expected values) + first
+  sentence of the worked text; level 2 = full worked text. Never the answer.
+- `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X
+  [--number N]` — append a new problem + solution pair to a chapter. The
+  statement is stored plaintext (tags `problem` + id); the solution is
+  ROT18-encoded into a hidden code cell (tags `solution` + id, `#| echo:
+  false` / `eval: false` / `output: false` header), so plaintext never reaches
+  the notebook through this path. Number defaults to
+  the next one in the chapter. This is the ONLY sanctioned way to add a new
+  exercise, besides `wt solution-set` for updating an existing solution.
+- `wt solution-set <course> <locator> --content X` — create or replace a
+  problem's solution cell (encodes on write; plaintext in, encoded stored).
+- `wt check <course>` — validate every chapter: problem cells are markdown and
+  solution cells are hidden code cells, both with unique id tags matching
+  `<chapter>-<n>`; each problem has a solution pair (and vice versa), solutions
+  are wrapped and encoded. Exit 1 on any warning.
+- `wt diff <name> [--base REF]` — markdown diff of a notebook vs a git ref
+  (default HEAD): both sides rendered like `wt cat` (JSON-stripped, no
+  outputs; solutions decoded), so the diff shows content, not `.ipynb` JSON.
 - `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code cells
   in-place via nbclient, writing outputs back; exit code 1 if any cell errored.
   `--index N` runs only that cell in a fresh kernel (no state carries).

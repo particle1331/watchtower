@@ -2,8 +2,8 @@
 
 These produce plain stdout (JSON or text) suitable for an AI agent calling
 `wt map`, `wt find`, or `wt cat` via bash. The canonical source is `.ipynb`
-notebooks in the content dirs; cell sources (no JSON noise) are exposed via
-jupytext for low-token agent reads.
+notebooks in the content dirs; cell sources (no JSON noise) are exposed
+through the `wt` CLI for low-token agent reads.
 """
 
 
@@ -66,7 +66,7 @@ def _candidate_ipynb_files(query: str) -> list[Path]:
     """
     if shutil.which("rg"):
         result = subprocess.run(
-            ["rg", "-i", "-l", query, *[str(d) for d in CONTENT_DIRS], "-g", "*.ipynb"],
+            ["rg", "-i", "-l", "-F", query, *[str(d) for d in CONTENT_DIRS], "-g", "*.ipynb"],
             capture_output=True,
             text=True,
         )

@@ -18,10 +18,7 @@ import nbformat
 from nbclient import NotebookClient
 
 from .inspect import resolve_ipynb
-
-
-def _read_notebook(path: Path) -> nbformat.NotebookNode:
-    return nbformat.read(path, as_version=nbformat.NO_CONVERT)
+from .notebook import read_notebook
 
 
 def _cell_error_summary(
@@ -66,10 +63,7 @@ def _execute(nb: nbformat.NotebookNode, *, kernel: str, timeout: int) -> None:
     try:
         client.execute()
     except Exception as e:
-        raise ValueError(
-            f"kernel '{kernel}' failed to run: {e}. "
-            f"is ipykernel installed / kernel '{kernel}' available?"
-        ) from e
+        raise ValueError(f"kernel '{kernel}' failed to run: {e}") from e
 
 
 def run_notebook(
@@ -90,7 +84,7 @@ def run_notebook(
     execute all code cells; if there are none, no kernel is launched.
     """
     path = resolve_ipynb(name)
-    nb = _read_notebook(path)
+    nb = read_notebook(path)
     kernel = kernel or "python3"
     if index is not None:
         return _run_single_cell(nb, path, index, kernel, timeout)
