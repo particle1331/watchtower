@@ -11,7 +11,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import convert, execute, inspect, notebook, render, resume, scaffold, vault
+from . import convert, execute, inspect, notebook, problems, render, resume, scaffold, vault
 
 app = typer.Typer(
     name="wt",
@@ -208,6 +208,47 @@ def count(name: str) -> None:
     with _user_error():
         n = notebook.count_cells(name)
         print(f"{n} cells")
+
+
+@app.command()
+def problem(course: str, locator: str) -> None:
+    """Print a problem statement from a course's problems.json.
+
+    Locator forms: '7.3', '07-3', '07 3', '07-projection-and-orthogonalization 3',
+    or a fuzzy chapter name like 'projection 3'.
+    """
+    with _user_error():
+        data = problems.load_problems(course)
+        print(problems.format_problem(problems.resolve_problem(data, locator)))
+
+
+@app.command()
+def solution(course: str, locator: str) -> None:
+    """Print a problem's solution from a course's problems.json."""
+    with _user_error():
+        data = problems.load_problems(course)
+        print(problems.format_solution(problems.resolve_problem(data, locator)))
+
+
+@app.command()
+def sync_problems(course: str) -> None:
+    """Re-extract problem statements and starter code from chapter notebooks
+    into the course's problems.json, preserving solutions.
+
+    The notebooks are the source of truth; problems.json is a derived copy.
+    Warnings flag problems whose statement or starter changed (the solution
+    may be stale) and problems that exist on only one side.
+    """
+    with _user_error():
+        warnings = problems.sync_problems(course)
+        data = problems.load_problems(course)
+    for w in warnings:
+        console.print(f"[yellow]{w}[/yellow]")
+    changed = sum(1 for w in warnings if "statement/starter changed" in w)
+    console.print(
+        f"[green]synced problems for {course} "
+        f"({len(data['problems'])} problems, {changed} changed)[/green]"
+    )
 
 
 @app.command()

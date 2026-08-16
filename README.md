@@ -51,6 +51,9 @@ false` in `_quarto.yml`).
 For agent reads/edits, never touch the raw `.ipynb` JSON. Use `wt cat`,
 `wt edit-cell`, etc. (see `AGENTS.md` for the full reference).
 
+To re-run code without opening JupyterLab, use `wt run <name>`: it executes
+the notebook in place and saves the outputs, which Quarto then renders as-is.
+
 ## Importing notebooks from elsewhere
 
 ```bash
@@ -178,14 +181,43 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 ### Editing notebooks
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
-| `wt edit-cell <name> --index N [--content X]` | replace cell N source (outputs preserved)         |
+| `wt edit-cell <name> --index N \| --tag foo \| --label foo [--content X]` | replace a cell's source (outputs preserved) |
 | `wt append-cell <name> [--type md\|code] [--content X]` | append a new cell (default: md)          |
 | `wt insert-cell <name> --after N [--type] [--content X]` | insert a new cell below index N            |
 | `wt insert-cell <name> --before N ...`           | insert above index N                                    |
-| `wt remove-cell <name> --index N`     | delete cell N                                             |
-| `wt tag <name> --index N [--add foo] [--remove bar]` | list tags on cell N (no flags), or add/remove |
+| `wt remove-cell <name> --index N \| --tag foo \| --label foo` | delete matching cell(s); a tag may remove multiple |
+| `wt tag <name> --index N \| --tag foo \| --label foo [--add foo] [--remove bar]` | list tags (no flags), or add/remove |
+| `wt clear-outputs <name> [--index N \| --tag foo \| --label foo \| --from N]` | clear stored outputs of code cells (markdown skipped); `--from N` clears every code cell from N to the end; no locator clears all |
 > `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
 > the new source is read from stdin (useful for multi-line contents via heredoc).
+> Write locators (`--index` / `--tag` / `--label`) must match exactly one cell,
+> except `remove-cell --tag foo`, which removes every matching cell.
+
+### Executing notebooks
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt run <name> [--index N] [--timeout S] [--kernel K]` | execute code cells in place, writing outputs back to the `.ipynb` (exit 1 if any cell errored) |
+| `wt run <name> --index N`            | run only that cell in a fresh kernel (no state carries over) |
+
+### Problems
+
+Course problem sets live in `courses/<course>/problems.json` (statements,
+starter code, and solutions). Problems are tagged `problem` in the chapter
+notebooks, which are the source of truth: `wt problem` / `wt solution` print
+from the JSON without opening a notebook, and `wt sync-problems` re-extracts
+the statements and starter code from the notebooks into the JSON after you
+edit problems in JupyterLab. If a sync warning says a statement or starter
+changed, also update that problem's solution in `problems.json`.
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt problem <course> <locator>`      | print a problem statement (plus starter code)             |
+| `wt solution <course> <locator>`     | print a problem's solution (worked answer, checks, reference code) |
+| `wt sync-problems <course>`          | re-extract statements/starter code from the notebooks into `problems.json` (preserves solutions, warns on changes) |
+
+Locator forms: `7.3`, `07-3`, `07 3`, `07-projection-and-orthogonalization 3`,
+or a fuzzy chapter name like `projection 3`.
 
 
 ### Secrets (vault)

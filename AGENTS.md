@@ -49,13 +49,13 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 ## Editing notebooks
 - Cell writes (`edit-cell`, `append-cell`, `insert-cell`) are hard-capped at
   20k chars per source — break large content into smaller cells.
-- **Cell mutations (`edit-cell`, `insert-cell`, `remove-cell`) take a numeric
-  `--index` only.** Tags and labels are read-only locators, usable with
-  `wt cat` to *find* a cell — they are not accepted on writes. To target a
-  cell by tag or label, first run `wt cat <name> --tag foo` or
-  `wt cat <name> --label foo` to read the `> cell N ...` index from the
-  output, then pass that `N` to the mutation. One cell, one index, one
-  auditable locator.
+- **Cell mutations (`edit-cell`, `insert-cell`, `remove-cell`, `tag`) take
+  exactly one locator: `--index N`, `--tag foo`, or `--label foo`.**
+  `--tag`/`--label` must match a unique cell (writes error on zero or
+  multiple matches); prefer them over positional `--index` when the cell has
+  a stable tag or Quarto label. Exception: `remove-cell --tag foo` removes
+  every matching cell. To target a cell without stable tags, run `wt cat`
+  and read the `> cell N ...` index from its header.
 - **Indices shift after insert/remove.** Any `insert-cell` or `remove-cell`
   bumps the index of every cell that comes after the anchor by ±1. So:
   - When planning multiple mutations, do them right-to-left (highest index
@@ -63,19 +63,34 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
     anything — it only rewrites the source of cell N.
   - After an insert/remove, do NOT reuse indices you resolved before that
     mutation — re-run `wt cat` (or `wt count`) to get fresh indices.
-- `wt edit-cell <name> --index N --content "..."` — replace a cell's source
-  (outputs + metadata preserved). Source may come from `--content` or stdin
-  (useful for multi-line via heredoc). stdin is always decoded as UTF-8, so
-  piping Unicode (box-drawing, arrows, dashes, accents) is safe on any
-  platform — no `PYTHONUTF8`/encoding dance needed.
+- `wt edit-cell <name> --index N | --tag foo | --label foo --content "..."`
+  — replace a cell's source (outputs + metadata preserved). Source may come
+  from `--content` or stdin (useful for multi-line via heredoc). stdin is
+  always decoded as UTF-8, so piping Unicode (box-drawing, arrows, dashes,
+  accents) is safe on any platform — no `PYTHONUTF8`/encoding dance needed.
 - `wt append-cell <name> --type md|code [--content "..."]` — push to end.
-- `wt insert-cell <name> --after N | --before N --type md|code [--content "..."]`
-  — insert below/above the cell at index N.
-- `wt remove-cell <name> --index N` — delete the cell at index N. To remove a
-  range, resolve each index via `wt cat --tag/--label` (or `wt count` for a
-  tail) and delete from highest to lowest (see index-shift rule above).
-- `wt tag <name> --index N --add foo --remove bar` — manage Jupyter cell tags.
-  With neither `--add` nor `--remove`, prints the cell's current tags.
+- `wt insert-cell <name> --after N | --before N | --tag foo | --label foo
+  --type md|code [--content "..."]` — insert a new cell below/above the
+  located cell; `--tag`/`--label` insert *below* the matched cell.
+- `wt remove-cell <name> --index N | --tag foo | --label foo` — delete the
+  matching cell(s); a tag may remove multiple. To remove a range, resolve
+  each index via `wt cat --tag/--label` (or `wt count` for a tail) and
+  delete from highest to lowest (see index-shift rule above).
+- `wt tag <name> --index N | --tag foo | --label foo --add foo --remove bar`
+  — manage Jupyter cell tags (unique match required). With neither `--add`
+  nor `--remove`, prints the cell's current tags.
+
+## Executing notebooks
+- `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code
+  cells in-place via nbclient, writing outputs back to the `.ipynb`. Quarto
+  renders inline outputs without re-running; `wt run` is the explicit
+  re-execution path. Execution is JupyterLab-like: a cell error is stored as
+  an inline output and execution continues; exit code is 1 if any cell
+  errored (agents can use it to verify notebook code).
+- `--index N` runs only that cell in a *fresh* kernel, so state from other
+  cells does not carry over; a dependent cell failing is the useful signal.
+- A notebook with no code cells prints "no code cells to run" and never
+  launches a kernel.
 
 ## Importing notebooks
 - `wt import <path.ipynb> notes|articles [<name>]` — copy a notebook produced
@@ -166,15 +181,37 @@ if present (project-specific rules stack on top of these).
   — read notebook cells as markdown. `--index` accepts a single 0-based index
   or a Python-style slice (`N:M`, `:M`, `N:`) to scan a range of cells quickly.
   Default per-cell limit is 4096 chars (`--limit 0` = unlimited).
-- `wt edit-cell <name> --index N [--content X]`
-  — replace a cell's source (outputs preserved); --index only
+- `wt edit-cell <name> --index N | --tag foo | --label foo [--content X]`
+  — replace a cell's source (outputs + metadata preserved); locator must match one cell
 - `wt append-cell <name> --type md|code [--content X]`
   — append a new cell
-- `wt insert-cell <name> --after N | --before N --type md|code [--content X]`
-  — insert a new cell; --index only
-- `wt remove-cell <name> --index N`
-  — delete matching cell; --index only (delete ranges from highest to lowest)
-- `wt tag <name> --index N [--add foo] [--remove bar]` — manage cell tags
+- `wt insert-cell <name> --after N | --before N | --tag foo | --label foo
+  --type md|code [--content X]` — insert a new cell; `--tag`/`--label` insert
+  below the matched cell (must be unique)
+- `wt remove-cell <name> --index N | --tag foo | --label foo`
+  — delete matching cell(s); a tag may remove multiple (delete ranges from
+  highest to lowest)
+- `wt tag <name> --index N | --tag foo | --label foo [--add foo] [--remove bar]`
+  — manage cell tags (unique match required)
+- `wt clear-outputs <name> [--index N | --tag foo | --label foo | --from N]`
+  — clear stored outputs of code cells (markdown cells skipped). `--from N`
+  clears every code cell from index N to the end (handy for a trailing
+  section like a problem set); with no locator, all code cells are cleared.
+- `wt problem <course> <locator>` — print a problem statement (plus starter
+  code) from `courses/<course>/problems.json`. Locator forms: `7.3`, `07-3`,
+  `07 3`, `07-projection-and-orthogonalization 3`, `projection 3`.
+- `wt solution <course> <locator>` — print a problem's solution (worked
+  answer, final answer, checks, reference code) from the same file.
+- `wt sync-problems <course>` — re-extract problem statements and starter
+  code from the chapter notebooks (tagged `problem` cells) into
+  `courses/<course>/problems.json`, preserving solutions. The notebooks are
+  the source of truth; run this after editing problems in JupyterLab. Warnings
+  are printed for problems whose statement/starter changed (the solution in
+  `problems.json` may need updating too) and for problems that exist on only
+  one side.
+- `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code cells
+  in-place via nbclient, writing outputs back; exit code 1 if any cell errored.
+  `--index N` runs only that cell in a fresh kernel (no state carries).
 - `wt import <path.ipynb> notes|articles [<name>]` — import an external notebook
   (Colab/Kaggle) into a flat tier
 - `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]`
