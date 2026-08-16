@@ -8,7 +8,6 @@ Function-level imports keep commands like `wt vault list` / `wt map` at
 """
 
 
-import contextlib
 import shlex
 import shutil
 import subprocess
@@ -28,22 +27,6 @@ app = typer.Typer(
 console = Console()
 
 
-def _force_utf8_streams() -> None:
-    """Pin stdio to UTF-8 regardless of the platform locale.
-
-    On Windows the console/pipe encoding defaults to cp1252. Piping Unicode
-    cell content through such a stream silently mangles box-drawing glyphs,
-    dashes, and arrows into mojibake before the notebook is ever written.
-    Reconfiguring the streams (and decoding stdin as UTF-8 in ``_read_stdin``)
-    makes the read/write path deterministic on every platform.
-    """
-    for stream in (sys.stdin, sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, "reconfigure", None)
-        if reconfigure is not None:
-            with contextlib.suppress(ValueError, OSError):
-                reconfigure(encoding="utf-8")
-
-
 def _read_stdin() -> str:
     """Read piped stdin as UTF-8, independent of the platform locale.
 
@@ -51,9 +34,6 @@ def _read_stdin() -> str:
     (cp1252 on Windows), which was the root cause of mojibake in cell writes.
     """
     return sys.stdin.buffer.read().decode("utf-8")
-
-
-_force_utf8_streams()
 
 
 new_app = typer.Typer(name="new", help="Scaffold new artifacts.", no_args_is_help=True)

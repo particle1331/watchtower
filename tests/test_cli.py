@@ -47,13 +47,6 @@ def test_read_stdin_decodes_utf8_regardless_of_locale(monkeypatch):
     assert cli._read_stdin() == UNICODE_SAMPLE
 
 
-def test_force_utf8_streams_is_idempotent_and_safe():
-    # Should never raise, even when called repeatedly or when streams lack
-    # a reconfigure method (guarded by getattr).
-    cli._force_utf8_streams()
-    cli._force_utf8_streams()
-
-
 # ---------------------------------------------------------------------------
 # wt tag with --tag locator
 # ---------------------------------------------------------------------------
