@@ -147,6 +147,17 @@ def vault_get(key: str) -> None:
     console.print(val)
 
 
+@vault_app.command("delete")
+def vault_delete(key: str) -> None:
+    """Delete a secret from the OS keyring."""
+    from . import vault
+
+    if not vault.delete_secret(key):
+        console.print(f"[red]{key} not set.[/red]")
+        raise typer.Exit(1)
+    console.print(f"[green]deleted {key}.[/green]")
+
+
 @vault_app.command("list")
 def vault_list() -> None:
     """List stored secret keys (no values)."""

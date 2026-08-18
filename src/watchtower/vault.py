@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import keyring
+from keyring.errors import PasswordDeleteError
 
 SERVICE = "watchtower"
 VAULT_DIR = Path(".watchtower")
@@ -33,6 +34,25 @@ def set_secret(key: str, value: str) -> None:
     keys = _load_keys()
     keys.add(key)
     _save_keys(keys)
+
+
+def delete_secret(key: str) -> bool:
+    """Delete a secret and its keyring index entry.
+
+    Return whether a keyring secret was deleted. A stale index entry is
+    removed as cleanup, but does not count as a deleted secret.
+    """
+    keys = _load_keys()
+    deleted = True
+    try:
+        keyring.delete_password(SERVICE, key)
+    except PasswordDeleteError:
+        deleted = False
+
+    if key in keys:
+        keys.remove(key)
+        _save_keys(keys)
+    return deleted
 
 
 def get_secret(key: str) -> str | None:
