@@ -44,12 +44,23 @@ def test_delete_secret_cleans_stale_index_entry(tmp_path, monkeypatch):
     assert vault.list_keys() == []
 
 
-def test_cli_vault_delete_reports_success(monkeypatch):
+def test_cli_vault_rm_reports_success(monkeypatch):
     delete_secret = Mock(return_value=True)
     monkeypatch.setattr(vault, "delete_secret", delete_secret)
 
-    result = runner.invoke(cli.app, ["vault", "delete", "API_KEY"])
+    result = runner.invoke(cli.app, ["vault", "rm", "API_KEY"])
 
     assert result.exit_code == 0
     assert "deleted API_KEY." in result.output
     delete_secret.assert_called_once_with("API_KEY")
+
+
+def test_cli_vault_ls_lists_keys(monkeypatch):
+    list_keys = Mock(return_value=["API_KEY"])
+    monkeypatch.setattr(vault, "list_keys", list_keys)
+
+    result = runner.invoke(cli.app, ["vault", "ls"])
+
+    assert result.exit_code == 0
+    assert "API_KEY" in result.output
+    list_keys.assert_called_once_with()

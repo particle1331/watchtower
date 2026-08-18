@@ -302,4 +302,4 @@ position.
   temp dir). The YAML is the single source; edit it, never the generated
   `.tex`/`.ipynb`.
 - `wt docs` — serve the site (blocking; :4200)
-- `wt vault get|set|delete <key>` / `wt vault list` — secret management
+- `wt vault get|set|rm <key>` / `wt vault ls` — secret management

@@ -3,7 +3,7 @@
 Submodules are imported inside each command body, not at module level:
 nbformat (pulled in by notebook/problems/convert/...) costs ~1.1s of
 jsonschema import on startup, and most commands never touch a notebook.
-Function-level imports keep commands like `wt vault list` / `wt map` at
+Function-level imports keep commands like `wt vault ls` / `wt map` at
 ~0.1s instead of ~1.5s.
 """
 
@@ -147,8 +147,8 @@ def vault_get(key: str) -> None:
     console.print(val)
 
 
-@vault_app.command("delete")
-def vault_delete(key: str) -> None:
+@vault_app.command("rm")
+def vault_rm(key: str) -> None:
     """Delete a secret from the OS keyring."""
     from . import vault
 
@@ -158,8 +158,8 @@ def vault_delete(key: str) -> None:
     console.print(f"[green]deleted {key}.[/green]")
 
 
-@vault_app.command("list")
-def vault_list() -> None:
+@vault_app.command("ls")
+def vault_ls() -> None:
     """List stored secret keys (no values)."""
     from . import vault
 

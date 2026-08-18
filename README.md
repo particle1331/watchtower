@@ -83,8 +83,8 @@ QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
 
 ```bash
 wt vault set OPENAI_API_KEY sk-...
-wt vault delete OPENAI_API_KEY
-wt vault list
+wt vault rm OPENAI_API_KEY
+wt vault ls
 eval $(wt vault export)        # export lines for current shell
 ```
 
@@ -237,8 +237,8 @@ or a fuzzy chapter name like `projection 3`.
 |--------------------------------------|-----------------------------------------------------------|
 | `wt vault set <key> <value>`          | store secret                                              |
 | `wt vault get <key>`                 | print secret value                                        |
-| `wt vault delete <key>`              | delete secret                                             |
-| `wt vault list`                      | list stored secret keys                                   |
+| `wt vault rm <key>`                  | delete secret                                             |
+| `wt vault ls`                        | list stored secret keys                                   |
 | `wt vault export`                       | emit `export` lines for all secrets                       |
 
 ## Make targets

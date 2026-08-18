@@ -1,0 +1,181 @@
+name: ml-platform-demo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mlplatform
+      POSTGRES_PASSWORD: demo-password
+      POSTGRES_DB: mlflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init/01-create-results.sql:/docker-entrypoint-initdb.d/01-create-results.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlplatform -d mlflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio-password
+    volumes:
+      - minio-data:/data
+    ports:
+      - "${DEMO_MINIO_PORT:-19001}:9001"
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "/minio-init.sh"]
+    volumes:
+      - ./minio-init.sh:/minio-init.sh:ro
+
+  mlflow:
+    build:
+      context: ..
+      dockerfile: demo/mlflow/Dockerfile
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: mlflow
+      PGUSER: mlplatform
+      PGPASSWORD: demo-password
+      PGSSLMODE: disable
+      MLFLOW_HOST: 0.0.0.0
+      MLFLOW_PORT: "5000"
+      MLFLOW_ARTIFACTS_DESTINATION: s3://mlflow/artifacts
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      MLFLOW_ALLOWED_HOSTS: "*"
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio-password
+      AWS_DEFAULT_REGION: us-east-1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "${DEMO_MLFLOW_PORT:-15000}:5000"
+
+  train:
+    build:
+      context: ..
+      dockerfile: src/train_job/Dockerfile
+    environment: &job-environment
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: mlplatform
+      PGPASSWORD: demo-password
+      PGSSLMODE: disable
+      RESULTS_DB: results
+      TRIGGERED_BY: demo-bootstrap
+      IMAGE_DIGEST: demo-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    command:
+      - --data-source
+      - https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv
+      - --delimiter
+      - ";"
+
+  batch:
+    build:
+      context: ..
+      dockerfile: src/batch_job/Dockerfile
+    environment:
+      <<: *job-environment
+      MODEL_NAME: wine-quality
+    depends_on:
+      train:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_healthy
+    command:
+      - --data-source
+      - https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv
+      - --delimiter
+      - ";"
+      - --model-version
+      - "1"
+      - --triggered-by
+      - demo-bootstrap
+
+  serving:
+    build:
+      context: ..
+      dockerfile: src/serving_app/Dockerfile
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODEL_NAME: wine-quality
+      MODEL_VERSION: "1"
+      PORT: "8080"
+    depends_on:
+      train:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_healthy
+    ports:
+      - "${DEMO_SERVING_PORT:-18080}:8080"
+
+  runner:
+    build:
+      context: ..
+      dockerfile: demo/runner/Dockerfile
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: mlplatform
+      PGPASSWORD: demo-password
+      PGSSLMODE: disable
+      RESULTS_DB: results
+      MODEL_NAME: wine-quality
+      MODEL_VERSION: "1"
+    depends_on:
+      train:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/healthz')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: src/dashboard/Dockerfile
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: mlplatform
+      PGPASSWORD: demo-password
+      PGSSLMODE: disable
+      RESULTS_DB: results
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_UI_URL: http://localhost:${DEMO_MLFLOW_PORT:-15000}
+      GRAFANA_URL: ""
+      TRIGGER_BACKEND: local
+      RUNNER_URL: http://runner:8090
+      PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      runner:
+        condition: service_healthy
+    ports:
+      - "${DEMO_DASHBOARD_PORT:-18000}:8080"
+
+volumes:
+  postgres-data:
+  minio-data:

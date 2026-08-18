@@ -94,7 +94,7 @@ def build_and_register(
 
         # Log and register the pyfunc.
         mlflow.pyfunc.log_model(
-            artifact_path="model",
+            name="model",
             python_model=LLMPyfunc(),
             artifacts=artifacts,
             signature=make_signature(),
