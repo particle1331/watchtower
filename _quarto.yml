@@ -32,6 +32,7 @@ project:
 
 website:
   title: "Ron Medina ∷ Résumé"
+  draft-mode: visible
   back-to-top-navigation: true
   page-navigation: true
   bread-crumbs: true
