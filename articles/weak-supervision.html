@@ -92,8 +92,6 @@ div.csl-indent {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../assets/favicon.jpg" rel="icon" type="image/jpeg">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -134,35 +132,6 @@ div.csl-indent {
     "search-label": "Search"
   }
 }</script>
-<script>
-
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
 <script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
@@ -3708,78 +3677,10 @@ Tip
 
 
 
-
 </section>
 
 
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1787425121725" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
-<div class="thumbnail"><a href="../articles/index.html" class="no-external">
-
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../articles/index.html" class="no-external">Articles</a>
-</h3>
-<div class="delink listing-description"><a href="../articles/index.html" class="no-external">
-Self-contained long-form articles and deep dives. Newest first.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../articles/index.html" class="no-external">
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-categories="ZGVlcC1sZWFybmluZyUyQ3RyYW5zZm9ybWVycyUyQ3RoZW9yeSUyQ2F0dGVudGlvbiUyQ3Rlc3Q=" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1787425121722" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="144">
-<div class="thumbnail"><a href="../articles/attention-mechanism.html" class="no-external">
-
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../articles/attention-mechanism.html" class="no-external">Attention Mechanism</a>
-</h3>
-<div class="delink listing-description"><a href="../articles/attention-mechanism.html" class="no-external">
-The attention mechanism allows a model to dynamically focus on relevant parts of its input when producing each element of its output. At its core, scaled dot-product…
-</a></div>
-</div>
-<div class="metadata">
-<a href="../articles/attention-mechanism.html" class="no-external">
-<div class="listing-date">
-Jan 24, 2026
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-categories="ZGVlcC1sZWFybmluZyUyQ21vZGVsLWNvbXByZXNzaW9uJTJDdGVzdA==" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1787425121725" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="85">
-<div class="thumbnail"><a href="../articles/knowledge-distillation.html" class="no-external">
-
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../articles/knowledge-distillation.html" class="no-external">Knowledge Distillation</a>
-</h3>
-<div class="delink listing-description"><a href="../articles/knowledge-distillation.html" class="no-external">
-Knowledge distillation article.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../articles/knowledge-distillation.html" class="no-external">
-<div class="listing-date">
-Dec 20, 2025
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
 <div id="ref-astra2021" class="csl-entry" role="listitem">
 Karamanolakis, Giannis, Subhabrata Mukherjee, Guoqing Zheng, and Ahmed Hassan Awadallah. 2021. <span>“Self-Training with Weak Supervision.”</span> <em>CoRR</em> abs/2104.05514. <a href="https://arxiv.org/abs/2104.05514">https://arxiv.org/abs/2104.05514</a>.
 </div>

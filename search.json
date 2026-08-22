@@ -1150,27 +1150,6 @@
     "text": "Footnotes\n\n\nSee Text-to-LoRA. Also the ProgramAsWeights project which compiles an LLM into task-specific runnable local functions.↩︎\nWhile we need p_{\\hat{\\Phi}}(y \\mid  \\lambda_\\textbf{\\textsf{x}}) for training, what we have access to is the reverse: p_{\\hat{\\Phi}}(\\lambda_\\textbf{\\textsf{x}} \\mid y) which we estimate by performing MLE on the LF outputs based on all targets (since we don’t know which is the real one).↩︎\nRecall that the five simulated LFs have F1 ranging from 0.66 to 0.90, with coverages of 20–50%. In particular, LF5 has the highest F1 at 0.92, but fires on only 25% of examples.↩︎\nRetraining GenModel on the larger set actually hurts performance, our guess is that the additional data dilutes the LF statistics the model was optimized on (we have too few parameters for 6000 data points).↩︎\nFor instance, lf_rating_mention is highly reliable when a reviewer writes “10/10” sincerely, but misleading when the same pattern appears in a dismissive context (e.g. “the poster said 10/10 but this was garbage”) — the generative model treats the LF identically in both cases.↩︎\nDrifts from our above discussion of pure co-evolution, but is necessary to get good performance.↩︎\nFor a BERT-based student \\textbf{\\textsf{h}}_i is the penultimate hidden layer output; for simpler models it is the raw input embedding — exactly as in our TF-IDF setup. In our simplified implementation we use raw TF-IDF features rather than student hidden states, since the shallow MLP student provides limited representation quality.↩︎\nThat is, we generally have \\Deltapp Valid \\geq \\Deltapp Oracle. The former is the observed improvements in the experiments, while the latter is the latent or “true” improvement that we don’t have access to.↩︎\nSame params epochs=5000, lr=0.01 and datasets L_train, L_valid.↩︎\nA 95% confidence interval means that if you repeated this sampling-and-estimation procedure many times, about 95% of the resulting intervals would contain the true parameter. Operationally, if you collect 100 labeled samples and compute the interval, you can act as if the true prior lies within it — accepting a 1-in-20 chance of being wrong. Note that the prior affects both training and inference, so errors compound: if your LFs are already somewhat positive-biased, an overestimated prior amplifies that bias further through training, then again at inference.↩︎"
   },
   {
-    "objectID": "articles/attention-mechanism.html",
-    "href": "articles/attention-mechanism.html",
-    "title": "Attention Mechanism",
-    "section": "",
-    "text": "The attention mechanism allows a model to dynamically focus on relevant parts of its input when producing each element of its output. At its core, scaled dot-product attention computes a weighted sum of values, where the weights are derived from a compatibility function between queries and keys."
-  },
-  {
-    "objectID": "articles/attention-mechanism.html#motivation",
-    "href": "articles/attention-mechanism.html#motivation",
-    "title": "Attention Mechanism",
-    "section": "Motivation",
-    "text": "Motivation\nBefore attention, sequence models (RNNs, LSTMs) processed tokens sequentially, creating a bottleneck for long-range dependencies. Attention removes this sequential constraint: every output position can directly attend to every input position, enabling parallel computation and better gradient flow.\n\nimport numpy as np\n\ndef scaled_dot_product_attention(Q, K, V, mask=None):\n    d_k = Q.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)      # (seq_len, seq_len)\n    if mask is not None:\n        scores = np.where(mask == 0, -1e9, scores)\n    weights = np.exp(scores) / np.exp(scores).sum(axis=-1, keepdims=True)\n    return weights @ V\n\n# Demo: 3 tokens, 4-dim embeddings\nQ = K = V = np.random.randn(3, 4)\nout = scaled_dot_product_attention(Q, K, V)\nprint(f\"Output shape: {out.shape}\")  # (3, 4)"
-  },
-  {
-    "objectID": "articles/attention-mechanism.html#multi-head-attention",
-    "href": "articles/attention-mechanism.html#multi-head-attention",
-    "title": "Attention Mechanism",
-    "section": "Multi-Head Attention",
-    "text": "Multi-Head Attention\nInstead of a single attention function, multi-head attention runs several attention operations in parallel on different learned linear projections of Q, K, and V. Each head can attend to different aspects of the input (syntax, semantics, positional relationships), and the results are concatenated and projected:\n\\text{MultiHead}(Q, K, V) = \\text{Concat}(\\text{head}_1, \\ldots, \\text{head}_h) W^O\nwhere \\text{head}_i = \\text{Attention}(Q W_i^Q, K W_i^K, V W_i^V)."
-  },
-  {
     "objectID": "notes/006-maximum-likelihood-estimation.html",
     "href": "notes/006-maximum-likelihood-estimation.html",
     "title": "Maximum Likelihood Estimation",
@@ -1192,11 +1171,25 @@
     "text": "Takeaways\nMaximum likelihood turns a probabilistic model into an estimation procedure:\n\nWrite the joint density as a function of the unknown parameter.\nIdentify the parameter values allowed by the support of the observations.\nMaximize the likelihood, usually through its log.\nCheck the result for bias, consistency, and other finite-sample properties.\n\nFor the uniform upper-bound model, the support constraint forces \\theta \\geq \\max_i x_i, while the likelihood decreases as \\theta increases. The maximum therefore occurs at the sample maximum:\n\n\\boxed{\\widehat{\\theta}_{\\mathrm{MLE}} = \\max_i x_i}.\n\nThe same logic applies to more complicated models. The main difference is that the final maximization may require algebra, numerical optimization, or a specialized algorithm."
   },
   {
-    "objectID": "notes/index.html",
-    "href": "notes/index.html",
-    "title": "Notes",
+    "objectID": "portfolio/portfolio.html",
+    "href": "portfolio/portfolio.html",
+    "title": "Portfolio",
     "section": "",
-    "text": "Random working drafts and low-effort notes. Newest first.\n\n\n\n\n\n\n\n   \n    \n    \n      Order By\n      Default\n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Title\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\nDate\n\n\n\nTitle\n\n\n\nCategories\n\n\n\nReading Time\n\n\n\n\n\n\n\n\nAug 22, 2026\n\n\nReading the wt CLI from the outside in\n\n\nmeta, dev\n\n\n11 min\n\n\n\n\n\n\nAug 22, 2026\n\n\nMaximum Likelihood Estimation\n\n\nstatistics, probability, machine-learning\n\n\n4 min\n\n\n\n\n\n\nNo matching items\n Back to top"
+    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
+  },
+  {
+    "objectID": "portfolio/portfolio.html#project-name",
+    "href": "portfolio/portfolio.html#project-name",
+    "title": "Portfolio",
+    "section": "",
+    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
+  },
+  {
+    "objectID": "portfolio/portfolio.html#another-project",
+    "href": "portfolio/portfolio.html#another-project",
+    "title": "Portfolio",
+    "section": "Another project",
+    "text": "Another project\n\n\n\nThumbnail\n\n\nAnother short summary. The portfolio page is hand-maintained — this is the one file you edit on the rare occasion a project is worth showcasing.\n\nRepo"
   },
   {
     "objectID": "index.html",
@@ -1227,25 +1220,11 @@
     "text": "Education\n\nUniversity of the Philippines - Diliman\nBachelor of Science, Major in Mathematics   ·   06/13 – 12/18 (courses), 09/23 – 01/24 (thesis).\n\nAwards: University Scholar, 2nd Semester 2013-2014. GWA: 1.23\nThesis: An Intro. to Finite Frames and a QR Factorization Approach for Constructing MB Frames\nRelevant courses: Intro to Computer Science (Python), Numerical Analysis, General Relativity (MS / PhD level), Linear Algebra, Advanced Calculus\n\n\n\nEskwelabs\nData Science Bootcamp   ·   July 2019 – Oct 2019\nAttended a 10-week bootcamp which included 160 hours of in-class learning in addition to coursework. At the end of the bootcamp, I presented my capstone project about modeling nonlinear chaotic systems using neural networks implemented in TensorFlow 1.x to industry leaders in Makati City, Philippines."
   },
   {
-    "objectID": "portfolio/portfolio.html",
-    "href": "portfolio/portfolio.html",
-    "title": "Portfolio",
+    "objectID": "notes/index.html",
+    "href": "notes/index.html",
+    "title": "Notes",
     "section": "",
-    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
-  },
-  {
-    "objectID": "portfolio/portfolio.html#project-name",
-    "href": "portfolio/portfolio.html#project-name",
-    "title": "Portfolio",
-    "section": "",
-    "text": "Thumbnail\n\n\nShort summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.\n\nRepo\nBlog post"
-  },
-  {
-    "objectID": "portfolio/portfolio.html#another-project",
-    "href": "portfolio/portfolio.html#another-project",
-    "title": "Portfolio",
-    "section": "Another project",
-    "text": "Another project\n\n\n\nThumbnail\n\n\nAnother short summary. The portfolio page is hand-maintained — this is the one file you edit on the rare occasion a project is worth showcasing.\n\nRepo"
+    "text": "Random working drafts and low-effort notes. Newest first.\n\n\n\n\n\n\n\n   \n    \n    \n      Order By\n      Default\n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Title\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\nDate\n\n\n\nTitle\n\n\n\nCategories\n\n\n\nReading Time\n\n\n\n\n\n\n\n\nAug 22, 2026\n\n\nReading the wt CLI from the outside in\n\n\nmeta, dev\n\n\n11 min\n\n\n\n\n\n\nAug 22, 2026\n\n\nMaximum Likelihood Estimation\n\n\nstatistics, probability, machine-learning\n\n\n4 min\n\n\n\n\n\n\nNo matching items\n Back to top"
   },
   {
     "objectID": "notes/005-wt-src-walkthrough.html",
@@ -1329,28 +1308,7 @@
     "href": "articles/index.html",
     "title": "Articles",
     "section": "",
-    "text": "Self-contained long-form articles and deep dives. Newest first.\n\n\n\n\n\n\n\n   \n    \n    \n      Order By\n      Default\n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Title\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\nDate\n\n\n\nTitle\n\n\n\nCategories\n\n\n\nReading Time\n\n\n\n\n\n\n\n\nApr 30, 2026\n\n\nWeak Supervision\n\n\nweak-supervision, machine-learning, data-labeling, data-centric, attention\n\n\n38 min\n\n\n\n\n\n\nJan 24, 2026\n\n\nAttention Mechanism\n\n\ndeep-learning, transformers, theory, attention, test\n\n\n1 min\n\n\n\n\n\n\nDec 20, 2025\n\n\nKnowledge Distillation\n\n\ndeep-learning, model-compression, test\n\n\n1 min\n\n\n\n\n\n\nNo matching items\n Back to top"
-  },
-  {
-    "objectID": "articles/knowledge-distillation.html",
-    "href": "articles/knowledge-distillation.html",
-    "title": "Knowledge Distillation",
-    "section": "",
-    "text": "Knowledge distillation article."
-  },
-  {
-    "objectID": "articles/knowledge-distillation.html#motivation",
-    "href": "articles/knowledge-distillation.html#motivation",
-    "title": "Knowledge Distillation",
-    "section": "Motivation",
-    "text": "Motivation\nLarge models (ensembles, billion-parameter transformers) achieve state-of-the-art results but are expensive to deploy. Distillation lets you train a compact model that retains much of the large models accuracy, making it practical for edge devices, mobile, and low-latency serving.\n\nimport torch\nimport torch.nn.functional as F\n\ndef distillation_loss(student_logits, teacher_logits, labels, T=4.0, alpha=0.7):\n    \"\"\"Hinton distillation: weighted sum of hard and soft targets.\"\"\"\n    soft_targets = F.softmax(teacher_logits / T, dim=-1)\n    student_soft = F.log_softmax(student_logits / T, dim=-1)\n\n    soft_loss = F.kl_div(student_soft, soft_targets, reduction=\"batchmean\") * (T * T)\n    hard_loss = F.cross_entropy(student_logits, labels)\n\n    return alpha * soft_loss + (1 - alpha) * hard_loss"
-  },
-  {
-    "objectID": "articles/knowledge-distillation.html#temperature-scaling",
-    "href": "articles/knowledge-distillation.html#temperature-scaling",
-    "title": "Knowledge Distillation",
-    "section": "Temperature Scaling",
-    "text": "Temperature Scaling\nThe temperature T controls how soft the teachers output distribution is. At T=1, its the normal softmax. As T \\to \\infty, the distribution approaches uniform, revealing the relative similarities the teacher has learned between classes. Higher T means the student learns finer-grained inter-class structure."
+    "text": "Self-contained long-form articles and deep dives. Newest first.\n\n\n\n\n\n\n\n   \n    \n    \n      Order By\n      Default\n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Title\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\nDate\n\n\n\nTitle\n\n\n\nCategories\n\n\n\nReading Time\n\n\n\n\n\n\n\n\nApr 30, 2026\n\n\nWeak Supervision\n\n\nweak-supervision, machine-learning, data-labeling, data-centric, attention\n\n\n38 min\n\n\n\n\n\n\nNo matching items\n Back to top"
   },
   {
     "objectID": "courses/index.html",

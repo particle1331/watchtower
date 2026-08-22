@@ -2,150 +2,142 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ron-medina.site/photos/photos.html</loc>
-    <lastmod>2026-08-22T18:58:41.758Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.734Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/10-e2e-integration.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/08-multi-gpu-training.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/06-observability-and-dashboard.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/04-results-db-and-batch.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/02-platform-foundation.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/index.html</loc>
-    <lastmod>2026-08-22T18:58:41.755Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.731Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/13-robust-pca.html</loc>
-    <lastmod>2026-08-22T18:58:41.754Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.729Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/11-topic-modeling.html</loc>
-    <lastmod>2026-08-22T18:58:41.753Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.728Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/09-eigendecomposition.html</loc>
-    <lastmod>2026-08-22T18:58:41.752Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.727Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/07-projection-and-orthogonalization.html</loc>
-    <lastmod>2026-08-22T18:58:41.745Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.720Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/05-determinant.html</loc>
-    <lastmod>2026-08-22T18:58:41.743Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.718Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/03-svd.html</loc>
-    <lastmod>2026-08-22T18:58:41.739Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.714Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/01-foundations.html</loc>
-    <lastmod>2026-08-22T18:58:41.738Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.713Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/articles/weak-supervision.html</loc>
-    <lastmod>2026-08-22T18:58:41.736Z</lastmod>
-  </url>
-  <url>
-    <loc>https://ron-medina.site/articles/attention-mechanism.html</loc>
-    <lastmod>2026-08-22T18:58:41.722Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.710Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/notes/006-maximum-likelihood-estimation.html</loc>
-    <lastmod>2026-08-22T18:58:41.758Z</lastmod>
-  </url>
-  <url>
-    <loc>https://ron-medina.site/notes/index.html</loc>
-    <lastmod>2026-08-22T18:58:41.758Z</lastmod>
-  </url>
-  <url>
-    <loc>https://ron-medina.site/index.html</loc>
-    <lastmod>2026-08-22T18:58:41.757Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.734Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/portfolio/portfolio.html</loc>
-    <lastmod>2026-08-22T18:58:41.758Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.734Z</lastmod>
+  </url>
+  <url>
+    <loc>https://ron-medina.site/index.html</loc>
+    <lastmod>2026-08-22T20:17:59.734Z</lastmod>
+  </url>
+  <url>
+    <loc>https://ron-medina.site/notes/index.html</loc>
+    <lastmod>2026-08-22T20:17:59.734Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/notes/005-wt-src-walkthrough.html</loc>
-    <lastmod>2026-08-22T18:58:41.758Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.734Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/articles/index.html</loc>
-    <lastmod>2026-08-22T18:58:41.725Z</lastmod>
-  </url>
-  <url>
-    <loc>https://ron-medina.site/articles/knowledge-distillation.html</loc>
-    <lastmod>2026-08-22T18:58:41.725Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.698Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/index.html</loc>
-    <lastmod>2026-08-22T18:58:41.755Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.731Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/02-spectral-theorem.html</loc>
-    <lastmod>2026-08-22T18:58:41.739Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.714Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/04-rank-and-four-subspaces.html</loc>
-    <lastmod>2026-08-22T18:58:41.743Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.717Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/06-inverse-and-pseudoinverse.html</loc>
-    <lastmod>2026-08-22T18:58:41.743Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.718Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/08-least-squares.html</loc>
-    <lastmod>2026-08-22T18:58:41.751Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.726Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/10-quadratic-forms.html</loc>
-    <lastmod>2026-08-22T18:58:41.753Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.728Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/12-pagerank.html</loc>
-    <lastmod>2026-08-22T18:58:41.753Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.729Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/cla/14-compressed-sensing.html</loc>
-    <lastmod>2026-08-22T18:58:41.755Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.731Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/01-overview.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.731Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/03-reproducible-training.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/05-online-serving.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/07-llm-release-artifacts.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/09-broker-upgrade.html</loc>
-    <lastmod>2026-08-22T18:58:41.756Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
   <url>
     <loc>https://ron-medina.site/courses/mlops/index.html</loc>
-    <lastmod>2026-08-22T18:58:41.757Z</lastmod>
+    <lastmod>2026-08-22T20:17:59.732Z</lastmod>
   </url>
 </urlset>
