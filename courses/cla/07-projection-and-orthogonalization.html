@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Projection &amp; orthogonalization – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../courses/cla/08-least-squares.html" rel="next">
+<link href="../../courses/cla/06-inverse-and-pseudoinverse.html" rel="prev">
+<link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/07-projection-and-orthogonalization.html">Computation</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational Linear Algebra</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/01-foundations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Foundations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SVD and its proof</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. The spectral theorem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/03-svd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. The singular value decomposition</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Structure</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Rank &amp; the four fundamental subspaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/05-determinant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Determinant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Inverse &amp; pseudoinverse</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Computation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">07. Projection &amp; orthogonalization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/08-least-squares.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Least squares</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The eigenworld</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Eigendecomposition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/10-quadratic-forms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Quadratic forms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Applications</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Topic modeling with SVD and NMF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/12-pagerank.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. PageRank</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/13-robust-pca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Robust PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/14-compressed-sensing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Compressed sensing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#orthogonal-projection-definition-and-uniqueness" id="toc-orthogonal-projection-definition-and-uniqueness" class="nav-link active" data-scroll-target="#orthogonal-projection-definition-and-uniqueness">Orthogonal projection: definition and uniqueness</a></li>
+  <li><a href="#projection-via-the-svd" id="toc-projection-via-the-svd" class="nav-link" data-scroll-target="#projection-via-the-svd">Projection via the SVD</a></li>
+  <li><a href="#the-projector-matrix" id="toc-the-projector-matrix" class="nav-link" data-scroll-target="#the-projector-matrix">The projector matrix</a></li>
+  <li><a href="#orthonormal-columns" id="toc-orthonormal-columns" class="nav-link" data-scroll-target="#orthonormal-columns">Orthonormal columns</a></li>
+  <li><a href="#the-gram-schmidt-process" id="toc-the-gram-schmidt-process" class="nav-link" data-scroll-target="#the-gram-schmidt-process">The Gram-Schmidt process</a></li>
+  <li><a href="#modified-gram-schmidt-and-numerical-stability" id="toc-modified-gram-schmidt-and-numerical-stability" class="nav-link" data-scroll-target="#modified-gram-schmidt-and-numerical-stability">Modified Gram-Schmidt and numerical stability</a></li>
+  <li><a href="#the-qr-decomposition" id="toc-the-qr-decomposition" class="nav-link" data-scroll-target="#the-qr-decomposition">The QR decomposition</a></li>
+  <li><a href="#solving-and-inverting-with-qr" id="toc-solving-and-inverting-with-qr" class="nav-link" data-scroll-target="#solving-and-inverting-with-qr">Solving and inverting with QR</a></li>
+  <li><a href="#the-sherman-morrison-formula" id="toc-the-sherman-morrison-formula" class="nav-link" data-scroll-target="#the-sherman-morrison-formula">The Sherman-Morrison formula</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#problems" id="toc-problems" class="nav-link" data-scroll-target="#problems">Problems</a>
+  <ul class="collapse">
+  <li><a href="#p7.1-the-projector-and-its-complement" id="toc-p7.1-the-projector-and-its-complement" class="nav-link" data-scroll-target="#p7.1-the-projector-and-its-complement">[P7.1] The projector and its complement</a></li>
+  <li><a href="#p7.2-the-closest-point-on-a-line" id="toc-p7.2-the-closest-point-on-a-line" class="nav-link" data-scroll-target="#p7.2-the-closest-point-on-a-line">[P7.2] The closest point on a line</a></li>
+  <li><a href="#p7.3-three-routes-to-the-projector" id="toc-p7.3-three-routes-to-the-projector" class="nav-link" data-scroll-target="#p7.3-three-routes-to-the-projector">[P7.3] Three routes to the projector</a></li>
+  <li><a href="#p7.4-gram-schmidt-in-floating-point" id="toc-p7.4-gram-schmidt-in-floating-point" class="nav-link" data-scroll-target="#p7.4-gram-schmidt-in-floating-point">[P7.4] Gram-Schmidt in floating point</a></li>
+  <li><a href="#p7.5-sherman-morrison-verify-invert-and-break" id="toc-p7.5-sherman-morrison-verify-invert-and-break" class="nav-link" data-scroll-target="#p7.5-sherman-morrison-verify-invert-and-break">[P7.5] Sherman-Morrison: verify, invert, and break</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Projection &amp; orthogonalization</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf A\mathbf A^+</span> and <span class="math inline">\mathbf A^+\mathbf A</span> of the pseudoinverse (Chapter 6) are projectors. This chapter develops orthogonal projection from first principles, then turns to the computational question it raises: how to build an orthonormal basis for a subspace (Gram-Schmidt, QR) and how to exploit one.</p>
+<section id="orthogonal-projection-definition-and-uniqueness" class="level2">
+<h2 class="anchored" data-anchor-id="orthogonal-projection-definition-and-uniqueness">Orthogonal projection: definition and uniqueness</h2>
+<p>Let <span class="math inline">S \subseteq \mathbb R^m</span> be a subspace and <span class="math inline">\mathbf y \in \mathbb R^m</span> an arbitrary vector. The <mark>orthogonal projection</mark> of <span class="math inline">\mathbf y</span> onto <span class="math inline">S</span> is the vector <span class="math inline">\hat{\mathbf y}\in S</span> that makes the residual <span class="math inline">\mathbf y-\hat{\mathbf y}</span> orthogonal to <em>every</em> vector of <span class="math inline">S</span>, written <span class="math inline">\mathbf y-\hat{\mathbf y}\perp S</span>.</p>
+<p>Two things are not obvious and must be checked: that such a vector is unique, and that it is the <em>closest</em> point of <span class="math inline">S</span> to <span class="math inline">\mathbf y</span>. Uniqueness is a one-liner. If <span class="math inline">\hat{\mathbf y}_1,\hat{\mathbf y}_2</span> both satisfy the definition, then their difference is</p>
+<p><span class="math display">\hat{\mathbf y}_1-\hat{\mathbf y}_2 \;\in\; S \qquad\text{and}\qquad \hat{\mathbf y}_1-\hat{\mathbf y}_2 = (\mathbf y-\hat{\mathbf y}_2)-(\mathbf y-\hat{\mathbf y}_1) \;\perp\; S .</span></p>
+<p>A vector that lies both in <span class="math inline">S</span> and in its orthogonal complement must be zero, so <span class="math inline">\hat{\mathbf y}_1=\hat{\mathbf y}_2</span>.</p>
+<p>Closeness follows from the Pythagorean identity. For any <span class="math inline">\mathbf s\in S</span>, write <span class="math inline">\mathbf y-\mathbf s = (\mathbf y-\hat{\mathbf y}) + (\hat{\mathbf y}-\mathbf s)</span>. The two terms are orthogonal because <span class="math inline">\mathbf y-\hat{\mathbf y}\perp S</span> while <span class="math inline">\hat{\mathbf y}-\mathbf s\in S</span>, hence</p>
+<p><span class="math display">\lVert\mathbf y-\mathbf s\rVert^2 = \lVert\mathbf y-\hat{\mathbf y}\rVert^2 + \lVert\hat{\mathbf y}-\mathbf s\rVert^2 \;\ge\; \lVert\mathbf y-\hat{\mathbf y}\rVert^2 .</span></p>
+<p>So <span class="math inline">\hat{\mathbf y}</span> is the nearest point of <span class="math inline">S</span> to <span class="math inline">\mathbf y</span>, and equality holds only at <span class="math inline">\mathbf s=\hat{\mathbf y}</span>. Projection and best approximation are the same operation.</p>
+</section>
+<section id="projection-via-the-svd" class="level2">
+<h2 class="anchored" data-anchor-id="projection-via-the-svd">Projection via the SVD</h2>
+<p>Uniqueness settled, existence comes from the singular value decomposition. Let <span class="math inline">\mathbf A\in\mathbb R^{m\times n}</span> have SVD <span class="math inline">\mathbf A = \mathbf U\boldsymbol\Sigma\mathbf V^{\mathsf T}</span> with <span class="math inline">\operatorname{rank}\mathbf A = r</span>. From Chapter 3, <span class="math inline">\{\mathbf u_1,\dots,\mathbf u_r\}</span> is an orthonormal basis of <span class="math inline">\mathsf C(\mathbf A)</span>; complete it to an orthonormal basis <span class="math inline">\mathbf u_1,\dots,\mathbf u_m</span> of <span class="math inline">\mathbb R^m</span>. Decompose <span class="math inline">\mathbf y</span> against this basis:</p>
+<p><span class="math display">\mathbf y = \underbrace{\sum_{i=1}^{r}\mathbf u_i\mathbf u_i^{\mathsf T}\mathbf y}_{\in\,\mathsf C(\mathbf A)} + \underbrace{\sum_{i=r+1}^{m}\mathbf u_i\mathbf u_i^{\mathsf T}\mathbf y}_{\perp\,\mathsf C(\mathbf A)} .</span></p>
+<p>The first sum lands in <span class="math inline">\mathsf C(\mathbf A)</span>; the second is orthogonal to it, since each <span class="math inline">\mathbf u_i</span> with <span class="math inline">i&gt;r</span> is orthogonal to every <span class="math inline">\mathbf u_j</span> with <span class="math inline">j\le r</span>. This split is exactly the projection definition, so</p>
+<p><span class="math display">\hat{\mathbf y} = \sum_{i=1}^{r}\mathbf u_i\mathbf u_i^{\mathsf T}\mathbf y = \mathbf U_r\mathbf U_r^{\mathsf T}\mathbf y .</span></p>
+<p>But <span class="math inline">\mathbf U_r\mathbf U_r^{\mathsf T} = \mathbf A\mathbf A^+</span> by the pseudoinverse identity <span class="math inline">\mathbf A\mathbf A^+ = \mathbf U\boldsymbol\Sigma\boldsymbol\Sigma^+\mathbf U^{\mathsf T} = \mathbf U_r\mathbf U_r^{\mathsf T}</span> from Chapter 6. The projector onto the column space is therefore</p>
+<p><span class="math display">\boxed{\,P_{\mathbf A} = \mathbf A\mathbf A^+ = \mathbf U_r\mathbf U_r^{\mathsf T} = \sum_{i=1}^{r}\mathbf u_i\mathbf u_i^{\mathsf T}\,}</span></p>
+<p>Projection onto <span class="math inline">\mathsf C(\mathbf A)</span> is the sum of the first <span class="math inline">r</span> rank-one outer products — the same pieces that assemble <span class="math inline">\mathbf A</span> itself.</p>
+</section>
+<section id="the-projector-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="the-projector-matrix">The projector matrix</h2>
+<p>The projector <span class="math inline">P = P_{\mathbf A}</span> has a short list of structural properties, each worth internalizing.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Statement</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Idempotent</strong></td>
+<td><span class="math inline">P^2 = P</span></td>
+<td>projecting twice equals projecting once</td>
+</tr>
+<tr class="even">
+<td><strong>Symmetric</strong></td>
+<td><span class="math inline">P^{\mathsf T} = P</span></td>
+<td>the projector is an <em>orthogonal</em> projector</td>
+</tr>
+<tr class="odd">
+<td><strong>Spectrum</strong></td>
+<td>eigenvalues in <span class="math inline">\{0,1\}</span></td>
+<td><span class="math inline">P\mathbf v=\mathbf v</span> on <span class="math inline">\mathsf C(\mathbf A)</span>, <span class="math inline">P\mathbf v=\mathbf 0</span> on <span class="math inline">\mathsf C(\mathbf A)^{\perp}</span></td>
+</tr>
+<tr class="even">
+<td><strong>Complement</strong></td>
+<td><span class="math inline">\mathbf I - P</span> projects onto <span class="math inline">\mathsf C(\mathbf A)^{\perp}=\mathsf N(\mathbf A^{\mathsf T})</span></td>
+<td>the orthogonal split <span class="math inline">\mathbf y = P\mathbf y + (\mathbf I-P)\mathbf y</span></td>
+</tr>
+</tbody>
+</table>
+<p>The complement is the four-subspace split of Chapter 4 in action: <span class="math inline">P</span> is the identity on the column space and annihilates the left null space, and every <span class="math inline">\mathbf y</span> splits uniquely into the two pieces. Idempotence alone forces the eigenvalues into <span class="math inline">\{0,1\}</span>: if <span class="math inline">P\mathbf v = \lambda\mathbf v</span> then <span class="math inline">\lambda\mathbf v = P\mathbf v = P^2\mathbf v = \lambda^2\mathbf v</span>, so <span class="math inline">\lambda = \lambda^2</span>. Symmetry adds that the two eigenspaces are orthogonal — exactly the orthogonality of the projection.</p>
+<p>When the columns of <span class="math inline">\mathbf A</span> are independent, <span class="math inline">\mathbf A^{\mathsf T}\mathbf A</span> is invertible and the projector takes the familiar form <span class="math inline">P = \mathbf A(\mathbf A^{\mathsf T}\mathbf A)^{-1}\mathbf A^{\mathsf T}</span>, with unique weights <span class="math inline">\mathbf x = (\mathbf A^{\mathsf T}\mathbf A)^{-1}\mathbf A^{\mathsf T}\mathbf y</span>. When they are dependent, the weights are not unique, but the projection still is.</p>
+<p>In the one-dimensional case <span class="math inline">S = \operatorname{span}\{\mathbf a\}</span>, the formula reduces to a clean geometric statement:</p>
+<p><span class="math display">P_{\mathbf a}\,\mathbf y = \mathbf a(\mathbf a^{\mathsf T}\mathbf a)^{-1}\mathbf a^{\mathsf T}\mathbf y = \lVert\mathbf y\rVert\cos\theta\;\hat{\mathbf a},</span></p>
+<p>where <span class="math inline">\theta</span> is the angle between <span class="math inline">\mathbf a</span> and <span class="math inline">\mathbf y</span> and <span class="math inline">\hat{\mathbf a}</span> is the unit vector along <span class="math inline">\mathbf a</span>. The projection is the component of <span class="math inline">\mathbf y</span> in the direction of <span class="math inline">\mathbf a</span>.</p>
+<p><strong>Projecting onto a plane.</strong> The figure below projects a test vector <span class="math inline">\mathbf b</span> onto the column space of a random <span class="math inline">3\times 2</span> matrix (a plane through the origin) and verifies that the residual is perpendicular to the plane.</p>
+<div id="69266585" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:29:51.744161Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:29:51.743782Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:29:55.137585Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:29:55.136550Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_format</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>set_format(<span class="st">"svg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-fig-projection-3d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:29:55.141461Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:29:55.141102Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:29:55.391906Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:29:55.391259Z&quot;}}" data-cap="**Projection onto a plane.** The test vector $\mathbf{b}$ (red), its projection $\mathbf{A}\mathbf{x}$ onto $\mathrm{C}(\mathbf{A})$ (blue), and the residual $\mathbf{A}\mathbf{x}-\mathbf{b}$ (green), which is orthogonal to the plane." data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-2"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-2-1"><a href="#annotated-cell-2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-2-2"><a href="#annotated-cell-2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="annotated-cell-2-3"><a href="#annotated-cell-2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-4"><a href="#annotated-cell-2-4" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">18</span>)</span>
+<span id="annotated-cell-2-5"><a href="#annotated-cell-2-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.random.randn(<span class="dv">3</span>, <span class="dv">2</span>)</span>
+<span id="annotated-cell-2-6"><a href="#annotated-cell-2-6" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> np.cross(A[:, <span class="dv">0</span>], A[:, <span class="dv">1</span>])      <span class="co"># normal to the plane C(A)</span></span>
+<span id="annotated-cell-2-7"><a href="#annotated-cell-2-7" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> np.array([<span class="fl">0.9</span>, <span class="fl">0.8</span>, <span class="fl">0.2</span>])       <span class="co"># test vector</span></span>
+<span id="annotated-cell-2-8"><a href="#annotated-cell-2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-9"><a href="#annotated-cell-2-9" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linalg.solve(A.T <span class="op">@</span> A, A.T <span class="op">@</span> b)   <span class="co"># weights via normal equations</span></span>
+<span id="annotated-cell-2-10"><a href="#annotated-cell-2-10" aria-hidden="true" tabindex="-1"></a>Ax <span class="op">=</span> A <span class="op">@</span> x                           <span class="co"># the projection</span></span>
+<span id="annotated-cell-2-11"><a href="#annotated-cell-2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-12"><a href="#annotated-cell-2-12" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>plt.figaspect(<span class="dv">1</span>))</span>
+<span id="annotated-cell-2-13"><a href="#annotated-cell-2-13" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> fig.add_subplot(projection<span class="op">=</span><span class="st">'3d'</span>)</span>
+<span id="annotated-cell-2-14"><a href="#annotated-cell-2-14" aria-hidden="true" tabindex="-1"></a>xx, yy <span class="op">=</span> np.meshgrid(np.linspace(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>), np.linspace(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="annotated-cell-2-15"><a href="#annotated-cell-2-15" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> <span class="op">-</span>(c[<span class="dv">0</span>] <span class="op">*</span> xx <span class="op">+</span> c[<span class="dv">1</span>] <span class="op">*</span> yy) <span class="op">/</span> c[<span class="dv">2</span>]</span>
+<span id="annotated-cell-2-16"><a href="#annotated-cell-2-16" aria-hidden="true" tabindex="-1"></a>ax.plot_surface(xx, yy, z, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="annotated-cell-2-17"><a href="#annotated-cell-2-17" aria-hidden="true" tabindex="-1"></a>ax.plot([<span class="dv">0</span>, b[<span class="dv">0</span>]], [<span class="dv">0</span>, b[<span class="dv">1</span>]], [<span class="dv">0</span>, b[<span class="dv">2</span>]], <span class="st">'r'</span>, label<span class="op">=</span><span class="st">'b (test)'</span>)</span>
+<span id="annotated-cell-2-18"><a href="#annotated-cell-2-18" aria-hidden="true" tabindex="-1"></a>ax.plot([<span class="dv">0</span>, Ax[<span class="dv">0</span>]], [<span class="dv">0</span>, Ax[<span class="dv">1</span>]], [<span class="dv">0</span>, Ax[<span class="dv">2</span>]], <span class="st">'b'</span>, label<span class="op">=</span><span class="st">'Ax (projection)'</span>)</span>
+<span id="annotated-cell-2-19"><a href="#annotated-cell-2-19" aria-hidden="true" tabindex="-1"></a>ax.plot([Ax[<span class="dv">0</span>], b[<span class="dv">0</span>]], [Ax[<span class="dv">1</span>], b[<span class="dv">1</span>]], [Ax[<span class="dv">2</span>], b[<span class="dv">2</span>]], <span class="st">'g'</span>, label<span class="op">=</span><span class="st">'Ax - b (residual)'</span>)</span>
+<span id="annotated-cell-2-20"><a href="#annotated-cell-2-20" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">'upper left'</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="annotated-cell-2-21"><a href="#annotated-cell-2-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'(Ax - b) . Ax ='</span>, (Ax <span class="op">-</span> b) <span class="op">@</span> Ax)</span>
+<span id="annotated-cell-2-22"><a href="#annotated-cell-2-22" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Ax - b) . Ax = 1.5178830414797062e-17</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-projection-3d" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-projection-3d-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="07-projection-and-orthogonalization_files/figure-html/fig-projection-3d-output-2.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Figure&nbsp;1: "><img src="07-projection-and-orthogonalization_files/figure-html/fig-projection-3d-output-2.svg" id="fig-projection-3d" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-projection-3d-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>&lt;1&gt; The normal vector <span class="math inline">c</span> is the cross product of the two columns, which defines the plane as <span class="math inline">\{\mathbf z : \mathbf z^{\mathsf T}c = 0\}</span>; the surface is plotted from that equation.</p>
+<p>&lt;2&gt; The weights solve the normal equations <span class="math inline">\mathbf A^{\mathsf T}\mathbf A\mathbf x = \mathbf A^{\mathsf T}\mathbf b</span>, which is exactly <span class="math inline">\mathbf A^{\mathsf T}(\mathbf b-\mathbf A\mathbf x)=\mathbf 0</span> — the residual is orthogonal to both columns of <span class="math inline">\mathbf A</span>, hence to the whole plane. The printed dot product confirms it is numerically zero.</p>
+</section>
+<section id="orthonormal-columns" class="level2">
+<h2 class="anchored" data-anchor-id="orthonormal-columns">Orthonormal columns</h2>
+<p>The factor <span class="math inline">(\mathbf A^{\mathsf T}\mathbf A)^{-1}</span> in <span class="math inline">P = \mathbf A(\mathbf A^{\mathsf T}\mathbf A)^{-1}\mathbf A^{\mathsf T}</span> exists only to correct for redundancy among the columns. When the columns are already orthonormal, <span class="math inline">\mathbf U^{\mathsf T}\mathbf U = \mathbf I_n</span>, the correction is the identity, and the projector simplifies to</p>
+<p><span class="math display">\boxed{\,P_{\mathbf U} = \mathbf U\mathbf U^{\mathsf T} = \sum_{j=1}^{n}\mathbf u_j\mathbf u_j^{\mathsf T}\,}</span></p>
+<p>Projecting onto orthonormal directions is <em>additive</em>: project onto each <span class="math inline">\mathbf u_j</span> independently and sum, with no cross-talk to remove. This is the payoff of orthonormal bases, and it motivates the next question — how to produce one from arbitrary columns.</p>
+</section>
+<section id="the-gram-schmidt-process" class="level2">
+<h2 class="anchored" data-anchor-id="the-gram-schmidt-process">The Gram-Schmidt process</h2>
+<p>Given columns <span class="math inline">\mathbf a_1,\dots,\mathbf a_n</span> spanning a subspace, the <mark>Gram-Schmidt process</mark> builds an orthonormal basis <span class="math inline">\mathbf q_1,\dots,\mathbf q_r</span> of that span one vector at a time. It is the constructive form of the projection theory above: to make <span class="math inline">\mathbf a_k</span> orthogonal to everything already built, subtract its projection onto the span of the earlier vectors, then normalize.</p>
+<ol type="1">
+<li><span class="math inline">\mathbf q_1 = \mathbf a_1/\lVert\mathbf a_1\rVert</span>.</li>
+<li><span class="math inline">\mathbf q_k = \dfrac{\mathbf a_k - \sum_{j=1}^{k-1}\mathbf q_j\mathbf q_j^{\mathsf T}\mathbf a_k}{\left\lVert\mathbf a_k - \sum_{j=1}^{k-1}\mathbf q_j\mathbf q_j^{\mathsf T}\mathbf a_k\right\rVert}</span>, for <span class="math inline">k=2,\dots,n</span>.</li>
+</ol>
+<p>The numerator <span class="math inline">\mathbf a_k - \sum_{j&lt;k}\mathbf q_j\mathbf q_j^{\mathsf T}\mathbf a_k</span> is <span class="math inline">\mathbf a_k</span> with its components along <span class="math inline">\mathbf q_1,\dots,\mathbf q_{k-1}</span> removed, so it is orthogonal to each of them; normalization then makes it a unit vector. Any column that ends up in the span of earlier columns produces a zero numerator and is discarded, which is how the process lands on exactly <span class="math inline">r</span> vectors.</p>
+</section>
+<section id="modified-gram-schmidt-and-numerical-stability" class="level2">
+<h2 class="anchored" data-anchor-id="modified-gram-schmidt-and-numerical-stability">Modified Gram-Schmidt and numerical stability</h2>
+<p>Classical Gram-Schmidt has a subtle floating-point flaw. Step 2 computes every inner product <span class="math inline">\mathbf q_j^{\mathsf T}\mathbf a_k</span> against the <em>original</em> <span class="math inline">\mathbf a_k</span>, accumulating a sum of projections all at once. The <mark>modified Gram-Schmidt</mark> variant instead updates a working copy of <span class="math inline">\mathbf a_k</span> in place, projecting away each <span class="math inline">\mathbf q_j</span> component as soon as <span class="math inline">\mathbf q_j</span> is formed:</p>
+<ol type="1">
+<li>Copy <span class="math inline">\mathbf v_k = \mathbf a_k</span> for all <span class="math inline">k</span>.</li>
+<li>For <span class="math inline">k=1,\dots,n</span>: set <span class="math inline">\mathbf q_k = \mathbf v_k/\lVert\mathbf v_k\rVert</span>, then for <span class="math inline">j&gt;k</span> set <span class="math inline">\mathbf v_j \leftarrow \mathbf v_j - \mathbf q_k\mathbf q_k^{\mathsf T}\mathbf v_j</span>.</li>
+</ol>
+<p>In exact arithmetic the two are identical. In floating point they are not, and the difference is largest exactly when it matters most: columns that are nearly parallel. The next cell sweeps a parameter <span class="math inline">\varepsilon</span> over many decades and measures how far the computed <span class="math inline">\mathbf Q</span> is from orthonormal.</p>
+<div id="cell-fig-gs-stability" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:29:55.398751Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:29:55.398543Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:29:55.728079Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:29:55.727481Z&quot;}}" data-cap="**Numerical stability of Gram-Schmidt.** Orthonormality error $\lVert\mathbf{Q}^{\mathsf{T}}\mathbf{Q}-\mathbf{I}\rVert_1$ versus $\varepsilon$ for classical (circles) and modified (squares) Gram-Schmidt on the matrix with columns $(1,\varepsilon,0,0)$, $(1,0,\varepsilon,0)$, $(1,0,0,\varepsilon)$." data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cgs(A):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    U <span class="op">=</span> np.zeros_like(A)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    U[:, <span class="dv">0</span>] <span class="op">=</span> A[:, <span class="dv">0</span>] <span class="op">/</span> np.linalg.norm(A[:, <span class="dv">0</span>])</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, A.shape[<span class="dv">1</span>]):</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> A[:, k] <span class="op">-</span> U[:, :k] <span class="op">@</span> (U[:, :k].T <span class="op">@</span> A[:, k])   <span class="co"># project against originals</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        U[:, k] <span class="op">=</span> u <span class="op">/</span> np.linalg.norm(u)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> U</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mgs(A):</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    U <span class="op">=</span> np.copy(A)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(A.shape[<span class="dv">1</span>]):</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        U[:, k] <span class="op">=</span> U[:, k] <span class="op">/</span> np.linalg.norm(U[:, k])</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(k <span class="op">+</span> <span class="dv">1</span>, A.shape[<span class="dv">1</span>]):</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            U[:, j] <span class="op">=</span> U[:, j] <span class="op">-</span> U[:, k] <span class="op">*</span> (U[:, k].T <span class="op">@</span> U[:, j])   <span class="co"># update in place</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> U</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>epsilons <span class="op">=</span> np.logspace(<span class="op">-</span><span class="dv">14</span>, <span class="op">-</span><span class="dv">1</span>, <span class="dv">14</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>err_cgs, err_mgs <span class="op">=</span> [], []</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> eps <span class="kw">in</span> epsilons:</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>], [eps, <span class="dv">0</span>, <span class="dv">0</span>], [<span class="dv">0</span>, eps, <span class="dv">0</span>], [<span class="dv">0</span>, <span class="dv">0</span>, eps]], dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> A.shape[<span class="dv">1</span>]</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    err_cgs.append(np.<span class="bu">abs</span>((cgs(A).T <span class="op">@</span> cgs(A)) <span class="op">-</span> np.eye(n)).<span class="bu">sum</span>())</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    err_mgs.append(np.<span class="bu">abs</span>((mgs(A).T <span class="op">@</span> mgs(A)) <span class="op">-</span> np.eye(n)).<span class="bu">sum</span>())</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">4</span>))</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>ax.loglog(epsilons, err_cgs, <span class="st">'o-'</span>, label<span class="op">=</span><span class="st">'classical Gram-Schmidt'</span>)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>ax.loglog(epsilons, err_mgs, <span class="st">'s-'</span>, label<span class="op">=</span><span class="st">'modified Gram-Schmidt'</span>)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="vs">r'</span><span class="dv">$</span><span class="ch">\v</span><span class="vs">arepsilon</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="vs">r'</span><span class="dv">$</span><span class="ch">\|</span><span class="dv">\m</span><span class="vs">athbf{Q}</span><span class="dv">^</span><span class="vs">{</span><span class="dv">\m</span><span class="vs">athsf{T}}</span><span class="dv">\m</span><span class="vs">athbf{Q}-</span><span class="dv">\m</span><span class="vs">athbf{I}</span><span class="ch">\|</span><span class="vs">_1</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-gs-stability" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-gs-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="07-projection-and-orthogonalization_files/figure-html/fig-gs-stability-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Figure&nbsp;2: "><img src="07-projection-and-orthogonalization_files/figure-html/fig-gs-stability-output-1.svg" id="fig-gs-stability" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-gs-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The classical variant loses orthogonality like <span class="math inline">u\kappa^2 \sim 1/\varepsilon^2</span> until it saturates at <span class="math inline">O(1)</span> once <span class="math inline">\varepsilon \lesssim \sqrt{u} \approx 10^{-8}</span> — at the smallest <span class="math inline">\varepsilon</span> the error is total. The mechanism is visible in the third column: classical Gram-Schmidt forms <span class="math inline">r_{23} = \mathbf q_2^{\mathsf T}\mathbf a_3</span> against the <em>original</em> column, before the inexact <span class="math inline">\mathbf q_1</span>-update has introduced a <span class="math inline">\mathbf q_2</span>-component of size <span class="math inline">\varepsilon/\sqrt 2</span> into the residual, so the subtraction <span class="math inline">\mathbf a_3 - \mathbf q_1(\mathbf q_1^{\mathsf T}\mathbf a_3) - \mathbf q_2 r_{23}</span> misses it. Modified Gram-Schmidt avoids this because each inner product is formed against the <em>current</em> residual — the <span class="math inline">\mathbf q_2</span>-component is removed from <span class="math inline">\mathbf a_3</span> before the <span class="math inline">r_{23}</span> coefficient is computed — so its error stays at <span class="math inline">O(\varepsilon)</span>.</p>
+</section>
+<section id="the-qr-decomposition" class="level2">
+<h2 class="anchored" data-anchor-id="the-qr-decomposition">The QR decomposition</h2>
+<p>Gram-Schmidt is more than an algorithm for producing orthonormal bases; it is a <em>factorization</em>. At step <span class="math inline">k</span> the recurrence is <span class="math inline">\mathbf a_k = \lVert\mathbf v_k\rVert\,\mathbf q_k + \sum_{j&lt;k}(\mathbf q_j^{\mathsf T}\mathbf a_k)\mathbf q_j</span>, so each <span class="math inline">\mathbf a_k</span> is a combination of <span class="math inline">\mathbf q_1,\dots,\mathbf q_k</span> only. Stacking these relations for <span class="math inline">k=1,\dots,n</span> gives</p>
+<p><span class="math display">\mathbf A = \mathbf Q\mathbf R,</span></p>
+<p>where <span class="math inline">\mathbf Q</span> has orthonormal columns and <span class="math inline">\mathbf R</span> is upper triangular with <span class="math inline">r_{jk} = \mathbf q_j^{\mathsf T}\mathbf a_k</span> for <span class="math inline">j\le k</span> (and <span class="math inline">r_{jk}=0</span> for <span class="math inline">j&gt;k</span>). The <mark>QR decomposition</mark> of a full-rank matrix is unique up to signs of the diagonal of <span class="math inline">\mathbf R</span>. NumPy computes it with Householder reflections rather than Gram-Schmidt, which keeps the orthonormality at machine precision regardless of the conditioning.</p>
+<div id="692978ba" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:29:55.729933Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:29:55.729783Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:29:55.734331Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:29:55.733717Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.random.randn(<span class="dv">20</span>, <span class="dv">20</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>Q, R <span class="op">=</span> np.linalg.qr(A)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'A - QR residual          :'</span>, np.<span class="bu">abs</span>(A <span class="op">-</span> Q <span class="op">@</span> R).<span class="bu">max</span>())</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Q^T Q - I (orthonormal)  :'</span>, np.<span class="bu">abs</span>(Q.T <span class="op">@</span> Q <span class="op">-</span> np.eye(<span class="dv">20</span>)).<span class="bu">max</span>())</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'R is upper triangular    :'</span>, np.allclose(R, np.triu(R)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>A - QR residual          : 3.774758283725532e-15
+Q^T Q - I (orthonormal)  : 1.1102230246251565e-15
+R is upper triangular    : True</code></pre>
+</div>
+</div>
+<p>The residual <span class="math inline">\lVert\mathbf A-\mathbf Q\mathbf R\rVert</span> is at machine precision and <span class="math inline">\mathbf Q^{\mathsf T}\mathbf Q</span> is exactly the identity to within roundoff — the two guarantees a QR factorization must deliver. Every entry strictly below the diagonal of <span class="math inline">\mathbf R</span> is zero, confirming the upper-triangular structure.</p>
+</section>
+<section id="solving-and-inverting-with-qr" class="level2">
+<h2 class="anchored" data-anchor-id="solving-and-inverting-with-qr">Solving and inverting with QR</h2>
+<p>For a square invertible <span class="math inline">\mathbf A</span>, the QR decomposition gives the inverse almost for free:</p>
+<p><span class="math display">\boxed{\,\mathbf A^{-1} = \mathbf R^{-1}\mathbf Q^{\mathsf T}\,}</span></p>
+<p>The gain is that a single system <span class="math inline">\mathbf A\mathbf x = \mathbf b</span> costs <span class="math inline">O(n^2)</span> once the factorization is known: solve <span class="math inline">\mathbf R\mathbf x = \mathbf Q^{\mathsf T}\mathbf b</span> by back substitution, instead of a general <span class="math inline">O(n^3)</span> elimination on <span class="math inline">\mathbf A</span>. Forming <span class="math inline">\mathbf R^{-1}</span> explicitly is still an <span class="math inline">O(n^3)</span> operation (one back substitution per column), so the cheap path is to <em>solve</em>, never to invert. The next cell times both a general inverse and a triangular solve across sizes.</p>
+<div id="cell-fig-qr-timing" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:29:55.735847Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:29:55.735719Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:29:57.207311Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:29:57.206475Z&quot;}}" data-cap="**Triangular solves are fast.** Wall time for a general inverse versus a triangular solve as the matrix size $n$ doubles." data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.linalg <span class="im">import</span> solve_triangular</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>inv_times, tri_times <span class="op">=</span> [], []</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>sizes <span class="op">=</span> [<span class="dv">2</span><span class="op">**</span>j <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">12</span>)]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> sizes:</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> np.random.randn(n, n)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    t0 <span class="op">=</span> time.perf_counter()<span class="op">;</span> np.linalg.inv(A)<span class="op">;</span> inv_times.append(time.perf_counter() <span class="op">-</span> t0)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    T <span class="op">=</span> np.triu(A)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    t0 <span class="op">=</span> time.perf_counter()<span class="op">;</span> solve_triangular(T, np.eye(n), lower<span class="op">=</span><span class="va">False</span>)<span class="op">;</span> tri_times.append(time.perf_counter() <span class="op">-</span> t0)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">4</span>))</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>ax.loglog(sizes, inv_times, <span class="st">'o-'</span>, label<span class="op">=</span><span class="st">'np.linalg.inv'</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>ax.loglog(sizes, tri_times, <span class="st">'s-'</span>, label<span class="op">=</span><span class="st">'solve_triangular'</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="vs">r'</span><span class="dv">$</span><span class="vs">n</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'wall time (s)'</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-qr-timing" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-qr-timing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="07-projection-and-orthogonalization_files/figure-html/fig-qr-timing-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-3" title="Figure&nbsp;3: "><img src="07-projection-and-orthogonalization_files/figure-html/fig-qr-timing-output-1.svg" id="fig-qr-timing" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-qr-timing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Both curves are cubic in <span class="math inline">n</span>, but the triangular solve sits a constant factor lower — the constant that back substitution saves by never touching the zero entries. For a single linear system the right operation is <code>solve</code>, not an inverse at all; QR matters when the <em>same</em> <span class="math inline">\mathbf A</span> is inverted against many right-hand sides, or when a triangular structure is handed to a solver that can exploit it.</p>
+</section>
+<section id="the-sherman-morrison-formula" class="level2">
+<h2 class="anchored" data-anchor-id="the-sherman-morrison-formula">The Sherman-Morrison formula</h2>
+<p>A rank-one perturbation of the identity has an explicit inverse. First note <span class="math inline">\det(\mathbf I + \mathbf u\mathbf v^{\mathsf T}) = 1 + \mathbf v^{\mathsf T}\mathbf u</span>: expanding <span class="math inline">\det(\mathbf e_1 + v_1\mathbf u, \dots, \mathbf e_n + v_n\mathbf u)</span> by multilinearity, the only nonzero terms are the identity term <span class="math inline">1</span> and the <span class="math inline">n</span> terms with exactly one column replaced by <span class="math inline">\mathbf u</span>, each contributing <span class="math inline">v_j u_j</span> — terms with two or more <span class="math inline">\mathbf u</span>’s repeat a column and vanish. So <span class="math inline">\mathbf I+\mathbf u\mathbf v^{\mathsf T}</span> is invertible precisely when <span class="math inline">1+\mathbf v^{\mathsf T}\mathbf u\neq 0</span>. In that case</p>
+<p><span class="math display">\boxed{\,\left(\mathbf I + \mathbf u\mathbf v^{\mathsf T}\right)^{-1} = \mathbf I - \frac{\mathbf u\mathbf v^{\mathsf T}}{1+\mathbf v^{\mathsf T}\mathbf u}\,}</span></p>
+<p>The <mark>Sherman-Morrison formula</mark> is verified by multiplying out: <span class="math inline">(\mathbf I+\mathbf u\mathbf v^{\mathsf T})(\mathbf I - \frac{\mathbf u\mathbf v^{\mathsf T}}{1+\mathbf v^{\mathsf T}\mathbf u})</span> telescopes to <span class="math inline">\mathbf I</span> because the cross terms <span class="math inline">\mathbf u\mathbf v^{\mathsf T}\mathbf u\mathbf v^{\mathsf T} = (\mathbf v^{\mathsf T}\mathbf u)\,\mathbf u\mathbf v^{\mathsf T}</span> collapse against the denominator.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<div id="5134b880" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:29:57.208833Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:29:57.208629Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:29:57.212125Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:29:57.211465Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">1</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.random.randn(<span class="dv">5</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>v <span class="op">=</span> np.random.randn(<span class="dv">5</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>I <span class="op">=</span> np.eye(<span class="dv">5</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> I <span class="op">+</span> np.outer(u, v)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>explicit <span class="op">=</span> np.linalg.inv(M)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>sherman <span class="op">=</span> I <span class="op">-</span> np.outer(u, v) <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> v <span class="op">@</span> u)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Sherman-Morrison residual:'</span>, np.<span class="bu">abs</span>(explicit <span class="op">-</span> sherman).<span class="bu">max</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Sherman-Morrison residual: 5.551115123125783e-16</code></pre>
+</div>
+</div>
+<p>The formula replaces an <span class="math inline">O(n^3)</span> inverse with <span class="math inline">O(n^2)</span> outer products. This is the workhorse of <a href="https://en.wikipedia.org/wiki/Quasi-Newton_method">quasi-Newton</a> optimizers and of online linear solvers, where a solution is updated cheaply as new rank-one data arrives instead of being recomputed from scratch.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>Projection onto a subspace is the unique nearest-point map, and its matrix is the sum of rank-one outer products <span class="math inline">P = \mathbf U_r\mathbf U_r^{\mathsf T} = \mathbf A\mathbf A^+</span> supplied directly by the SVD. The projector is idempotent and symmetric, with eigenvalues in <span class="math inline">\{0,1\}</span> and complement <span class="math inline">\mathbf I-P</span> on the orthogonal subspace. Gram-Schmidt turns arbitrary columns into an orthonormal basis and simultaneously yields the QR factorization <span class="math inline">\mathbf A=\mathbf Q\mathbf R</span>; its modified variant is numerically stable where the classical one is not. QR gives cheap triangular solves via back substitution, and the Sherman-Morrison formula gives closed-form inverses for rank-one updates of the identity.</p>
+</section>
+<section id="problems" class="level2">
+<h2 class="anchored" data-anchor-id="problems">Problems</h2>
+<p>The problems below exercise the projection theory, the Gram-Schmidt process, and the Sherman-Morrison formula. Problems 1-2 are derivations, Problems 3-4 are numerical, and Problem 5 is a challenge experiment.</p>
+<section id="p7.1-the-projector-and-its-complement" class="level3">
+<h3 class="anchored" data-anchor-id="p7.1-the-projector-and-its-complement">[P7.1] The projector and its complement</h3>
+<p>Let <span class="math inline">S\subseteq\mathbb R^m</span> be a subspace and <span class="math inline">P</span> the orthogonal projector onto <span class="math inline">S</span>, so <span class="math inline">P\mathbf y\in S</span> and <span class="math inline">\mathbf y-P\mathbf y\perp S</span> for every <span class="math inline">\mathbf y\in\mathbb R^m</span>.</p>
+<ol type="a">
+<li><p>Show that <span class="math inline">\mathbf I-P</span> is the orthogonal projector onto <span class="math inline">S^{\perp}</span>: it is symmetric, idempotent, and satisfies <span class="math inline">(\mathbf I-P)\mathbf y\in S^{\perp}</span> with <span class="math inline">\mathbf y-(\mathbf I-P)\mathbf y\perp S^{\perp}</span>.</p></li>
+<li><p>Show that <span class="math inline">\lVert\mathbf y\rVert^2=\lVert P\mathbf y\rVert^2+\lVert(\mathbf I-P)\mathbf y\rVert^2</span> for every <span class="math inline">\mathbf y</span>.</p></li>
+<li><p>Show that <span class="math inline">\operatorname{tr}P=\dim S</span>. <em>Hint:</em> the projector table’s eigenvalue argument gives the spectrum of <span class="math inline">P</span>; the trace is the sum of the eigenvalues.</p></li>
+</ol>
+</section>
+<section id="p7.2-the-closest-point-on-a-line" class="level3">
+<h3 class="anchored" data-anchor-id="p7.2-the-closest-point-on-a-line">[P7.2] The closest point on a line</h3>
+<p>Let <span class="math inline">\mathbf a,\mathbf y\in\mathbb R^m</span> with <span class="math inline">\mathbf a\neq\mathbf 0</span>, and let <span class="math inline">S=\operatorname{span}\{\mathbf a\}</span>.</p>
+<ol type="a">
+<li>Expand <span class="math inline">\lVert\mathbf y-\alpha\mathbf a\rVert^2</span> as a quadratic in <span class="math inline">\alpha</span> and minimize it by calculus. Show that the minimizer is <span class="math inline">\alpha^*=\mathbf a^{\mathsf T}\mathbf y/\mathbf a^{\mathsf T}\mathbf a</span> and that the squared distance from <span class="math inline">\mathbf y</span> to <span class="math inline">S</span> is</li>
+</ol>
+<p><span class="math display">\lVert\mathbf y-\alpha^*\mathbf a\rVert^2=\lVert\mathbf y\rVert^2-\frac{(\mathbf a^{\mathsf T}\mathbf y)^2}{\mathbf a^{\mathsf T}\mathbf a}.</span></p>
+<ol start="2" type="a">
+<li><p>Show that the minimizer satisfies the orthogonality condition <span class="math inline">(\mathbf y-\alpha^*\mathbf a)^{\mathsf T}\mathbf a=0</span>, so <span class="math inline">\alpha^*\mathbf a</span> is exactly the orthogonal projection of <span class="math inline">\mathbf y</span> onto <span class="math inline">S</span>.</p></li>
+<li><p>Let <span class="math inline">\theta</span> be the angle between <span class="math inline">\mathbf a</span> and <span class="math inline">\mathbf y</span>. Show that <span class="math inline">\alpha^*\lVert\mathbf a\rVert=\lVert\mathbf y\rVert\cos\theta</span>, recovering the one-dimensional projection formula <span class="math inline">P_{\mathbf a}\mathbf y=\mathbf a(\mathbf a^{\mathsf T}\mathbf a)^{-1}\mathbf a^{\mathsf T}\mathbf y</span> from the chapter.</p></li>
+</ol>
+</section>
+<section id="p7.3-three-routes-to-the-projector" class="level3">
+<h3 class="anchored" data-anchor-id="p7.3-three-routes-to-the-projector">[P7.3] Three routes to the projector</h3>
+<p>For a full-rank <span class="math inline">\mathbf A\in\mathbb R^{m\times n}</span> with <span class="math inline">m&gt;n</span>, the projector onto <span class="math inline">\mathsf C(\mathbf A)</span> can be built three ways: <span class="math inline">P_1=\mathbf A(\mathbf A^{\mathsf T}\mathbf A)^{-1}\mathbf A^{\mathsf T}</span> from the normal equations, <span class="math inline">P_2=\mathbf Q\mathbf Q^{\mathsf T}</span> from the QR decomposition, and <span class="math inline">P_3=\mathbf U_r\mathbf U_r^{\mathsf T}</span> from the SVD. The three formulas are algebraically identical; the task is to confirm that they agree in floating point.</p>
+<ol type="a">
+<li><p>Compute <span class="math inline">P_1,P_2,P_3</span> for a random <span class="math inline">8\times 3</span> matrix and a test vector <span class="math inline">\mathbf y</span>, and report the pairwise differences <span class="math inline">\lVert P_i-P_j\rVert_1</span> and the idempotence residual <span class="math inline">\lVert P^2-P\rVert_1</span>.</p></li>
+<li><p>Verify the projection properties: the residual orthogonality <span class="math inline">\lVert(\mathbf y-P\mathbf y)^{\mathsf T}\mathbf A\rVert_\infty</span> and the Pythagorean identity <span class="math inline">\lVert P\mathbf y\rVert^2+\lVert\mathbf y-P\mathbf y\rVert^2=\lVert\mathbf y\rVert^2</span>.</p></li>
+</ol>
+<p>The starter code builds the data; fill in the three projectors and the checks.</p>
+<div id="e1254d40" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:41.372742Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:41.372329Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:41.472965Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:41.471770Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">7</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>m, n <span class="op">=</span> <span class="dv">8</span>, <span class="dv">3</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.standard_normal((m, n))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> rng.standard_normal(m)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># P1 = A @ np.linalg.inv(A.T @ A) @ A.T          # normal equations</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># P2 = Q @ Q.T                                   # from np.linalg.qr(A)</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># P3 = U[:, :n] @ U[:, :n].T                     # from np.linalg.svd(A, full_matrices=False)</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) pairwise differences max |P_i - P_j| and idempotence residual max |P @ P - P|</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) residual orthogonality max |(y - P @ y) @ A| and the Pythagorean identity</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="p7.4-gram-schmidt-in-floating-point" class="level3">
+<h3 class="anchored" data-anchor-id="p7.4-gram-schmidt-in-floating-point">[P7.4] Gram-Schmidt in floating point</h3>
+<p>The chapter’s stability demo compares classical and modified Gram-Schmidt on the matrix with columns <span class="math inline">(1,\varepsilon,0,0)</span>, <span class="math inline">(1,0,\varepsilon,0)</span>, <span class="math inline">(1,0,0,\varepsilon)</span>. This problem repeats the comparison at the fixed value <span class="math inline">\varepsilon=10^{-10}</span> and adds the Householder QR from <code>np.linalg.qr</code> as a third contestant.</p>
+<ol type="a">
+<li><p>Implement <code>cgs</code> and <code>mgs</code> as in the chapter, and compute the orthonormality error <span class="math inline">\lVert\mathbf Q^{\mathsf T}\mathbf Q-\mathbf I\rVert_1</span> for all three methods.</p></li>
+<li><p>Verify the factorization residual <span class="math inline">\lVert\mathbf A-\mathbf Q\mathbf R\rVert_\infty</span> is small for all three methods: Gram-Schmidt is backward stable even where it loses orthogonality.</p></li>
+</ol>
+<p>The starter code provides the data and the two function stubs.</p>
+<div id="44e340f8" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:53.333026Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:53.332530Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:53.474266Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:53.471358Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cgs(A):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Classical Gram-Schmidt: project each column against the originals."""</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    ...</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mgs(A):</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Modified Gram-Schmidt: update a working copy in place."""</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    ...</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>eps <span class="op">=</span> <span class="fl">1e-10</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>], [eps, <span class="dv">0</span>, <span class="dv">0</span>], [<span class="dv">0</span>, eps, <span class="dv">0</span>], [<span class="dv">0</span>, <span class="dv">0</span>, eps]], dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> A.shape[<span class="dv">1</span>]</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) orthonormality error ||Q^T Q - I||_1 for cgs, mgs, and np.linalg.qr</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) factorization residual ||A - Q R||_inf for each</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="p7.5-sherman-morrison-verify-invert-and-break" class="level3">
+<h3 class="anchored" data-anchor-id="p7.5-sherman-morrison-verify-invert-and-break">[P7.5] Sherman-Morrison: verify, invert, and break</h3>
+<p><strong>Challenge.</strong> The Sherman-Morrison formula gives <span class="math inline">(\mathbf I+\mathbf u\mathbf v^{\mathsf T})^{-1}=\mathbf I-\mathbf u\mathbf v^{\mathsf T}/(1+\mathbf v^{\mathsf T}\mathbf u)</span> whenever <span class="math inline">1+\mathbf v^{\mathsf T}\mathbf u\neq 0</span>. This experiment verifies the formula, checks the determinant identity, and probes its behavior as the matrix approaches singularity.</p>
+<ol type="a">
+<li><p>For <span class="math inline">n\in\{4,16,64\}</span>, compare the formula against <code>np.linalg.inv</code> on random draws and report the relative error <span class="math inline">\lVert M_{\text{inv}}^{-1}-M_{\text{sm}}^{-1}\rVert_\infty/\lVert M_{\text{inv}}^{-1}\rVert_\infty</span>. It should stay at machine precision.</p></li>
+<li><p>Verify the determinant identity <span class="math inline">\det(\mathbf I+\mathbf u\mathbf v^{\mathsf T})=1+\mathbf v^{\mathsf T}\mathbf u</span> numerically on the same draws.</p></li>
+<li><p>Approach singularity: fix <span class="math inline">\mathbf u</span>, set <span class="math inline">\mathbf v=-\mathbf u/(\mathbf u^{\mathsf T}\mathbf u)+\delta\mathbf w</span> for <span class="math inline">\delta\in\{10^{-2},10^{-7},10^{-12}\}</span>, so that <span class="math inline">1+\mathbf v^{\mathsf T}\mathbf u=\delta\,\mathbf w^{\mathsf T}\mathbf u</span> shrinks with <span class="math inline">\delta</span>. The formula is exact algebraically, but the inverse itself becomes ill-conditioned with <span class="math inline">\kappa(\mathbf I+\mathbf u\mathbf v^{\mathsf T})\approx 1/\delta</span>. Measure the relative error and the condition number as functions of <span class="math inline">\delta</span>, and confirm that the error grows like <span class="math inline">1/\delta</span>: the product of the error and <span class="math inline">\delta</span> stays roughly constant.</p></li>
+</ol>
+<p>The starter code sets up the draws; fill in the measurements.</p>
+<div id="fbbc29e4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:04:05.204341Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:04:05.203919Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:04:05.348161Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:04:05.346728Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">11</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) for n in [4, 16, 64]: draw u, v; M = I + outer(u, v);</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     relative error of I - outer(u, v) / (1 + v @ u) vs np.linalg.inv(M)</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> [<span class="dv">4</span>, <span class="dv">16</span>, <span class="dv">64</span>]:</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> rng.standard_normal(n)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    v <span class="op">=</span> rng.standard_normal(n)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> np.eye(n) <span class="op">+</span> np.outer(u, v)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># rel_err = ...</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(n, rel_err)</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) determinant identity: np.linalg.det(M) vs 1 + v @ u</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) near-singular scaling</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">8</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> rng.standard_normal(n)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>w <span class="op">=</span> rng.standard_normal(n)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> delta <span class="kw">in</span> [<span class="fl">1e-2</span>, <span class="fl">1e-7</span>, <span class="fl">1e-12</span>]:</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    v <span class="op">=</span> <span class="op">-</span>u <span class="op">/</span> (u <span class="op">@</span> u) <span class="op">+</span> delta <span class="op">*</span> w</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> np.eye(n) <span class="op">+</span> np.outer(u, v)</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(delta, 1 + v @ u, np.linalg.cond(M), rel_err)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+
+</section>
+</section>
+
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="16" data-listing-word-count-sort="3187">
+<div class="thumbnail"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">Compressed sensing</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of…<span class="math inline"></span><mark></mark><span class="math inline"></span><span class="math inline"></span><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="5" data-listing-word-count-sort="905">
+<div class="thumbnail"><a href="../../courses/cla/index.html" class="no-external">
+
+<img loading="lazy" src="../../courses/cla/img/cla-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/index.html" class="no-external">Computational Linear Algebra</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/index.html" class="no-external">
+<p>A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="../../courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="" data-listing-file-modified-sort="1787425121752" data-listing-reading-time-sort="13" data-listing-word-count-sort="2595">
+<div class="thumbnail"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">Eigendecomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix…<mark></mark><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="../../courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="18" data-listing-word-count-sort="3568">
+<div class="thumbnail"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">PageRank</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+The World Wide Web is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="13" data-listing-word-count-sort="2596">
+<div class="thumbnail"><a href="../../courses/cla/03-svd.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/03-svd.html" class="no-external">The singular value decomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/03-svd.html" class="no-external">
+The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathb…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/03-svd.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>The <a href="https://en.wikipedia.org/wiki/Woodbury_matrix_identity">Woodbury identity</a> generalizes this to a rank-<span class="math inline">k</span> update, <span class="math inline">(\mathbf A+\mathbf U\mathbf C\mathbf V^{\mathsf T})^{-1}</span>, at the cost of inverting a <span class="math inline">k\times k</span> matrix. Sherman-Morrison is its <span class="math inline">k=1</span> case.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="pagination-link" aria-label="06. Inverse &amp; pseudoinverse">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">06. Inverse &amp; pseudoinverse</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../courses/cla/08-least-squares.html" class="pagination-link" aria-label="08. Least squares">
+        <span class="nav-page-text">08. Least squares</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>

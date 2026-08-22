@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Compressed sensing – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../courses/cla/13-robust-pca.html" rel="prev">
+<link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/11-topic-modeling.html">Applications</a></li><li class="breadcrumb-item"><a href="../../courses/cla/14-compressed-sensing.html">14. Compressed sensing</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational Linear Algebra</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/01-foundations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Foundations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SVD and its proof</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. The spectral theorem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/03-svd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. The singular value decomposition</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Structure</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Rank &amp; the four fundamental subspaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/05-determinant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Determinant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Inverse &amp; pseudoinverse</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Projection &amp; orthogonalization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/08-least-squares.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Least squares</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The eigenworld</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Eigendecomposition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/10-quadratic-forms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Quadratic forms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Applications</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Topic modeling with SVD and NMF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/12-pagerank.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. PageRank</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/13-robust-pca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Robust PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/14-compressed-sensing.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">14. Compressed sensing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-counter-example-minimum-norm-fails" id="toc-the-counter-example-minimum-norm-fails" class="nav-link active" data-scroll-target="#the-counter-example-minimum-norm-fails">The counter-example: minimum-norm fails</a></li>
+  <li><a href="#l1-versus-l2-the-geometry-of-sparsity" id="toc-l1-versus-l2-the-geometry-of-sparsity" class="nav-link" data-scroll-target="#l1-versus-l2-the-geometry-of-sparsity">L1 versus L2: the geometry of sparsity</a></li>
+  <li><a href="#the-l1-experiment-lasso" id="toc-the-l1-experiment-lasso" class="nav-link" data-scroll-target="#the-l1-experiment-lasso">The L1 experiment: Lasso</a></li>
+  <li><a href="#how-many-measurements-the-restricted-isometry-property" id="toc-how-many-measurements-the-restricted-isometry-property" class="nav-link" data-scroll-target="#how-many-measurements-the-restricted-isometry-property">How many measurements? The restricted isometry property</a></li>
+  <li><a href="#a-ct-style-phantom" id="toc-a-ct-style-phantom" class="nav-link" data-scroll-target="#a-ct-style-phantom">A CT-style phantom</a></li>
+  <li><a href="#reconstruction-l2-smears-l1-concentrates" id="toc-reconstruction-l2-smears-l1-concentrates" class="nav-link" data-scroll-target="#reconstruction-l2-smears-l1-concentrates">Reconstruction: L2 smears, L1 concentrates</a></li>
+  <li><a href="#l1-versus-l2-at-a-glance" id="toc-l1-versus-l2-at-a-glance" class="nav-link" data-scroll-target="#l1-versus-l2-at-a-glance">L1 versus L2 at a glance</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#problems" id="toc-problems" class="nav-link" data-scroll-target="#problems">Problems</a>
+  <ul class="collapse">
+  <li><a href="#p14.1-the-energy-identity-for-the-minimum-norm-solution" id="toc-p14.1-the-energy-identity-for-the-minimum-norm-solution" class="nav-link" data-scroll-target="#p14.1-the-energy-identity-for-the-minimum-norm-solution">[P14.1] The energy identity for the minimum-norm solution</a></li>
+  <li><a href="#p14.2-sparsity-of-the-minimum-ell_1-solution" id="toc-p14.2-sparsity-of-the-minimum-ell_1-solution" class="nav-link" data-scroll-target="#p14.2-sparsity-of-the-minimum-ell_1-solution">[P14.2] Sparsity of the minimum-<span class="math inline">\ell_1</span> solution</a></li>
+  <li><a href="#p14.3-verifying-the-energy-identity-numerically" id="toc-p14.3-verifying-the-energy-identity-numerically" class="nav-link" data-scroll-target="#p14.3-verifying-the-energy-identity-numerically">[P14.3] Verifying the energy identity numerically</a></li>
+  <li><a href="#p14.4-estimating-the-restricted-isometry-constant" id="toc-p14.4-estimating-the-restricted-isometry-constant" class="nav-link" data-scroll-target="#p14.4-estimating-the-restricted-isometry-constant">[P14.4] Estimating the restricted isometry constant</a></li>
+  <li><a href="#p14.5-the-phase-transition-in-the-number-of-measurements" id="toc-p14.5-the-phase-transition-in-the-number-of-measurements" class="nav-link" data-scroll-target="#p14.5-the-phase-transition-in-the-number-of-measurements">[P14.5] The phase transition in the number of measurements</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/11-topic-modeling.html">Applications</a></li><li class="breadcrumb-item"><a href="../../courses/cla/14-compressed-sensing.html">14. Compressed sensing</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Compressed sensing</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of acquisition scales with <span class="math inline">n</span>. <mark>Compressed sensing</mark> instead asks whether an <span class="math inline">n</span>-dimensional signal can be recovered from only <span class="math inline">m \ll n</span> <strong>linear measurements</strong></p>
+<p><span class="math display">
+\mathbf{b} = \mathbf{A}\mathbf{x}, \qquad \mathbf{A}\in\mathbb{R}^{m\times n},\quad m &lt; n,
+</span></p>
+<p>taken through a measurement matrix <span class="math inline">\mathbf{A}</span> that is known in advance. As written, the problem is underdetermined: Chapter 8 showed that the least-squares solutions of such a system form an affine subspace, and Chapter 6 singled out the <strong>minimum-norm solution</strong> <span class="math inline">\mathbf{x} = \mathbf{A}^{+}\mathbf{b}</span> among them. That solution exists for every <span class="math inline">\mathbf{A}</span> and <span class="math inline">\mathbf{b}</span>, but for a generic signal it is badly wrong, and the first experiment below makes the failure visible.</p>
+<p>The twist that rescues the problem is <strong>sparsity</strong>: when <span class="math inline">\mathbf{x}</span> has only <span class="math inline">K \ll n</span> nonzero entries, exact recovery becomes possible, and the required number of measurements scales like</p>
+<p><span class="math display">
+m \sim K\log(n/K).
+</span></p>
+<p>The acquisition does not change — the same linear operator <span class="math inline">\mathbf{A}</span> is used — only the recovery rule changes, from <span class="math inline">\mathbf{A}^{+}\mathbf{b}</span> to a <em>minimum-<span class="math inline">\ell_1</span></em> solution.</p>
+<p>The setting is not academic. A CT scanner estimates a tissue-density image from a few <mark>line integrals</mark>: each X-ray projection is one linear measurement, and fewer projections means less radiation dose. MRI acquires Fourier samples of an image, and fewer samples means a shorter scan. Sensor networks, radar, and genomics face the same arithmetic: acquisition cost is set by the number of measurements, so a recovery theory that works with <span class="math inline">m \ll n</span> measurements is directly a theory of cheaper and faster acquisition. This chapter develops that theory in two steps: a one-dimensional experiment that isolates the geometry of sparsity, and a two-dimensional computed-tomography-style reconstruction that exercises the full pipeline.</p>
+<div id="34eeb02c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:43.578515Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:43.578349Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:46.163079Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:46.162306Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_format</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>set_format(<span class="st">"svg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="the-counter-example-minimum-norm-fails" class="level2">
+<h2 class="anchored" data-anchor-id="the-counter-example-minimum-norm-fails">The counter-example: minimum-norm fails</h2>
+<p><strong>The setup.</strong> A sparse signal <span class="math inline">\mathbf{x}\in\mathbb{R}^{128}</span> with <span class="math inline">K = 5</span> nonzero entries is measured through a random Gaussian matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{40\times 128}</span> with independent standard-normal entries, giving <span class="math inline">\mathbf{b} = \mathbf{A}\mathbf{x}</span>. With <span class="math inline">m = 40 &lt; n = 128</span> the system is underdetermined, and the canonical recovery from Chapters 6 and 8 is the minimum-norm solution <span class="math inline">\hat{\mathbf{x}} = \mathbf{A}^{+}\mathbf{b}</span>, computed with <code>np.linalg.pinv</code>. The cell records how far that solution sits from the truth.</p>
+<div id="cell-fig-minnorm" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:46.165193Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:46.164961Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:46.471118Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:46.470348Z&quot;}}" data-cap="**Minimum-norm recovery of a sparse signal.** The true 5-sparse signal $\mathbf{x}$ (blue) and the minimum-norm solution $\mathbf{A}^{+}\mathbf{b}$ (red). The reconstruction spreads energy over all 128 coordinates instead of concentrating it on the five nonzero ones." data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-2"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-2-1"><a href="#annotated-cell-2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-2-2"><a href="#annotated-cell-2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="annotated-cell-2-3"><a href="#annotated-cell-2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-4"><a href="#annotated-cell-2-4" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
+<span id="annotated-cell-2-5"><a href="#annotated-cell-2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-6"><a href="#annotated-cell-2-6" aria-hidden="true" tabindex="-1"></a>n, m, K <span class="op">=</span> <span class="dv">128</span>, <span class="dv">40</span>, <span class="dv">5</span></span>
+<span id="annotated-cell-2-7"><a href="#annotated-cell-2-7" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.zeros(n)</span>
+<span id="annotated-cell-2-8"><a href="#annotated-cell-2-8" aria-hidden="true" tabindex="-1"></a>x[rng.choice(n, size<span class="op">=</span>K, replace<span class="op">=</span><span class="va">False</span>)] <span class="op">=</span> rng.uniform(<span class="fl">0.5</span>, <span class="fl">1.0</span>, size<span class="op">=</span>K)</span>
+<span id="annotated-cell-2-9"><a href="#annotated-cell-2-9" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.standard_normal((m, n))</span>
+<span id="annotated-cell-2-10"><a href="#annotated-cell-2-10" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> A <span class="op">@</span> x</span>
+<span id="annotated-cell-2-11"><a href="#annotated-cell-2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-12"><a href="#annotated-cell-2-12" aria-hidden="true" tabindex="-1"></a>x_pinv <span class="op">=</span> np.linalg.pinv(A) <span class="op">@</span> b</span>
+<span id="annotated-cell-2-13"><a href="#annotated-cell-2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-14"><a href="#annotated-cell-2-14" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">3.2</span>))</span>
+<span id="annotated-cell-2-15"><a href="#annotated-cell-2-15" aria-hidden="true" tabindex="-1"></a>s1 <span class="op">=</span> ax.stem(x, linefmt<span class="op">=</span><span class="st">'C0-'</span>, markerfmt<span class="op">=</span><span class="st">'C0o'</span>, basefmt<span class="op">=</span><span class="st">' '</span>, label<span class="op">=</span><span class="st">'true $</span><span class="ch">\\</span><span class="st">mathbf</span><span class="sc">{x}</span><span class="st">$'</span>)</span>
+<span id="annotated-cell-2-16"><a href="#annotated-cell-2-16" aria-hidden="true" tabindex="-1"></a>s1.markerline.set_markersize(<span class="dv">4</span>)</span>
+<span id="annotated-cell-2-17"><a href="#annotated-cell-2-17" aria-hidden="true" tabindex="-1"></a>s2 <span class="op">=</span> ax.stem(x_pinv, linefmt<span class="op">=</span><span class="st">'C3-'</span>, markerfmt<span class="op">=</span><span class="st">'C3o'</span>, basefmt<span class="op">=</span><span class="st">' '</span>, label<span class="op">=</span><span class="st">'$</span><span class="ch">\\</span><span class="st">mathbf</span><span class="sc">{A}</span><span class="st">^{+}</span><span class="ch">\\</span><span class="st">mathbf</span><span class="sc">{b}</span><span class="st">$'</span>)</span>
+<span id="annotated-cell-2-18"><a href="#annotated-cell-2-18" aria-hidden="true" tabindex="-1"></a>s2.markerline.set_markersize(<span class="fl">2.5</span>)</span>
+<span id="annotated-cell-2-19"><a href="#annotated-cell-2-19" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'coordinate'</span>)</span>
+<span id="annotated-cell-2-20"><a href="#annotated-cell-2-20" aria-hidden="true" tabindex="-1"></a>ax.legend(ncol<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="annotated-cell-2-21"><a href="#annotated-cell-2-21" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="annotated-cell-2-22"><a href="#annotated-cell-2-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-23"><a href="#annotated-cell-2-23" aria-hidden="true" tabindex="-1"></a>err_pinv <span class="op">=</span> np.linalg.norm(x <span class="op">-</span> x_pinv) <span class="op">/</span> np.linalg.norm(x)</span>
+<span id="annotated-cell-2-24"><a href="#annotated-cell-2-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'relative error ||x - A^+ b|| / ||x|| = </span><span class="sc">{</span>err_pinv<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-2-25"><a href="#annotated-cell-2-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'sqrt(1 - m/n) = </span><span class="sc">{</span>np<span class="sc">.</span>sqrt(<span class="dv">1</span> <span class="op">-</span> m <span class="op">/</span> n)<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-2-26"><a href="#annotated-cell-2-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'||A^+ b||^2 = </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(x_pinv) <span class="op">**</span> <span class="dv">2</span><span class="sc">:.3f}</span><span class="ss">,'</span></span>
+<span id="annotated-cell-2-27"><a href="#annotated-cell-2-27" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f'  (m/n)||x||^2 = </span><span class="sc">{</span>m <span class="op">/</span> n <span class="op">*</span> np<span class="sc">.</span>linalg<span class="sc">.</span>norm(x) <span class="op">**</span> <span class="dv">2</span><span class="sc">:.3f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-minnorm" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-minnorm-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="14-compressed-sensing_files/figure-html/fig-minnorm-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Figure&nbsp;1: "><img src="14-compressed-sensing_files/figure-html/fig-minnorm-output-1.svg" id="fig-minnorm" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-minnorm-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>relative error ||x - A^+ b|| / ||x|| = 0.823
+sqrt(1 - m/n) = 0.829
+||A^+ b||^2 = 0.782,  (m/n)||x||^2 = 0.758</code></pre>
+</div>
+</div>
+<p><strong>The minimum-norm solution spreads the energy.</strong> The annotations: <code>&lt;1&gt;</code> selects the support — five coordinates at random, each with a uniform magnitude in <span class="math inline">[0.5, 1]</span>; <code>&lt;2&gt;</code> computes the pseudoinverse solution. Two observations deserve comment.</p>
+<p>First, the reconstruction is dense: every one of the 128 coordinates carries some mass, and the printed error is 0.82. This is forced. For a Gaussian <span class="math inline">\mathbf{A}</span> with <span class="math inline">m &lt; n</span>, the rows are independent with probability one, and then <span class="math inline">\mathbf{A}^{+}\mathbf{A} = \mathbf{P}_{\mathsf{C}(\mathbf{A}^{\mathsf T})}</span> is the orthogonal projection onto the <span class="math inline">m</span>-dimensional row space (Chapter 6). The minimum-norm solution is therefore the projection of the true signal onto a <em>random</em> <span class="math inline">m</span>-dimensional subspace,</p>
+<p><span class="math display">
+\hat{\mathbf{x}} = \mathbf{A}^{+}\mathbf{A}\mathbf{x} = \mathbf{P}_{\mathsf{C}(\mathbf{A}^{\mathsf T})}\mathbf{x},
+</span></p>
+<p>and a random subspace is aligned with no coordinate in particular: it keeps the expected fraction <span class="math inline">m/n</span> of the energy, so the relative error is <span class="math inline">\sqrt{1 - m/n} = 0.829</span>, matching the printed 0.823 and the printed energy identity <span class="math inline">\lVert\hat{\mathbf{x}}\rVert^2 \approx (m/n)\lVert\mathbf{x}\rVert^2</span>.</p>
+<p>Second, the failure has nothing to do with noise — <span class="math inline">\mathbf{b}</span> is exact. It is the recovery rule that fails. The minimum-norm solution is the smallest-energy explanation of the measurements, and the true signal is the opposite of small-energy: it is <em>concentrated</em> on five coordinates. Minimizing energy and finding sparsity are different objectives, and the <span class="math inline">\ell_2</span> ball simply has no way to express the second one.</p>
+</section>
+<section id="l1-versus-l2-the-geometry-of-sparsity" class="level2">
+<h2 class="anchored" data-anchor-id="l1-versus-l2-the-geometry-of-sparsity">L1 versus L2: the geometry of sparsity</h2>
+<p>The minimum-norm solution minimizes the <span class="math inline">\ell_2</span> norm over the feasible set <span class="math inline">\{\mathbf{x} : \mathbf{A}\mathbf{x} = \mathbf{b}\}</span>: it is the point of that affine set closest to the origin. The failure above suggests minimizing a different measure of size. For any norm, the solution of <span class="math inline">\min \lVert\mathbf{x}\rVert</span> over an affine set is the point where the <em>smallest</em> norm ball around the origin touches the set, and the shape of the ball decides the outcome. The <span class="math inline">\ell_1</span> unit ball is the diamond with vertices on the coordinate axes — the same unit balls drawn in Chapter 1 — and an affine set touching the smallest <span class="math inline">\ell_1</span> ball generically touches it at a vertex, that is, at a point with some coordinates exactly zero. The <span class="math inline">\ell_2</span> ball has no vertices, so its touching point is generic: all coordinates nonzero. The figure below puts both balls against the same feasible line.</p>
+<div id="cell-fig-l1l2-balls" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:46.473732Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:46.473513Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:46.587281Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:46.586486Z&quot;}}" data-cap="**The corner is the sparse point.** The feasible line $x_1 + 2x_2 = 3$ with the smallest $\ell_1$ ball (left) and the smallest $\ell_2$ ball (right) that reach it. The $\ell_1$ ball touches at the vertex $(0, 1.5)$ — a point with a zero coordinate — while the $\ell_2$ ball touches tangentially at $(0.6, 1.2)$, where both coordinates are nonzero." data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">500</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>rho <span class="op">=</span> np.maximum(np.<span class="bu">abs</span>(np.cos(t)), np.<span class="bu">abs</span>(np.sin(t)))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>r1, r2 <span class="op">=</span> <span class="fl">1.5</span>, <span class="dv">3</span> <span class="op">/</span> np.sqrt(<span class="dv">5</span>)                    <span class="co"># smallest L1 radius; L2 radius</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>ball1 <span class="op">=</span> r1 <span class="op">*</span> np.c_[np.cos(t), np.sin(t)] <span class="op">/</span> rho[:, <span class="va">None</span>]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>ball2 <span class="op">=</span> r2 <span class="op">*</span> np.c_[np.cos(t), np.sin(t)]</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>x1s <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">2.2</span>, <span class="fl">3.8</span>, <span class="dv">200</span>)               <span class="co"># feasible line: x1 + 2 x2 = 3</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>x2s <span class="op">=</span> (<span class="dv">3</span> <span class="op">-</span> x1s) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="fl">9.5</span>, <span class="fl">4.2</span>))</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, ball, sol, title <span class="kw">in</span> [</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    (ax[<span class="dv">0</span>], ball1, (<span class="fl">0.0</span>, <span class="fl">1.5</span>), <span class="st">'smallest $</span><span class="ch">\\</span><span class="st">ell_1$ ball: corner'</span>),</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    (ax[<span class="dv">1</span>], ball2, (<span class="fl">0.6</span>, <span class="fl">1.2</span>), <span class="st">'smallest $</span><span class="ch">\\</span><span class="st">ell_2$ ball: tangent'</span>),</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    a.plot(ball[:, <span class="dv">0</span>], ball[:, <span class="dv">1</span>], <span class="st">'C0-'</span>, lw<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    a.plot(x1s, x2s, <span class="st">'k-'</span>, lw<span class="op">=</span><span class="fl">1.2</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    a.plot(<span class="op">*</span>sol, <span class="st">'C3*'</span>, ms<span class="op">=</span><span class="dv">18</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    a.set_xlim(<span class="op">-</span><span class="fl">2.2</span>, <span class="fl">3.8</span>)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    a.set_ylim(<span class="op">-</span><span class="fl">1.8</span>, <span class="fl">3.0</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    a.set_aspect(<span class="st">'equal'</span>)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    a.set_xlabel(<span class="st">'$x_1$'</span>)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    a.set_ylabel(<span class="st">'$x_2$'</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-l1l2-balls" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-l1l2-balls-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="14-compressed-sensing_files/figure-html/fig-l1l2-balls-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Figure&nbsp;2: "><img src="14-compressed-sensing_files/figure-html/fig-l1l2-balls-output-1.svg" id="fig-l1l2-balls" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-l1l2-balls-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>The corner is the sparse point.</strong> In the left panel the smallest <span class="math inline">\ell_1</span> ball reaching the line touches it at the vertex <span class="math inline">(0, 1.5)</span>, where <span class="math inline">x_1 = 0</span>; in the right panel the smallest <span class="math inline">\ell_2</span> ball touches tangentially at <span class="math inline">(0.6, 1.2)</span>, where both coordinates are nonzero. The pattern generalizes. The <span class="math inline">\ell_1</span> ball in <span class="math inline">\mathbb{R}^n</span> has <span class="math inline">2^n</span> vertices, all lying on the coordinate axes, so the minimum-<span class="math inline">\ell_1</span> solution of a generic underdetermined system has at most <span class="math inline">m</span> nonzero entries — exactly the sparse structure the measurements alone cannot reveal. This is why the recovery rule is <mark>basis pursuit</mark>: minimize <span class="math inline">\lVert\mathbf{x}\rVert_1</span> subject to <span class="math inline">\mathbf{A}\mathbf{x} = \mathbf{b}</span>. The objective is convex (Chapter 10), so the minimizer is global and reachable by simple iterative algorithms; no combinatorial search over which <span class="math inline">K</span> coordinates are nonzero is needed. The noisy version of basis pursuit, with the constraint moved into the objective, is the Lasso.</p>
+</section>
+<section id="the-l1-experiment-lasso" class="level2">
+<h2 class="anchored" data-anchor-id="the-l1-experiment-lasso">The L1 experiment: Lasso</h2>
+<p><strong>The model.</strong> The <mark>Lasso</mark> replaces the <span class="math inline">\ell_2</span> penalty of ridge regression (Chapter 10) by the <span class="math inline">\ell_1</span> penalty,</p>
+<p><span class="math display">
+\boxed{\ \hat{\mathbf{x}} = \operatorname*{arg\,min}_{\mathbf{x}\in\mathbb{R}^n}\ \tfrac{1}{2}\lVert \mathbf{A}\mathbf{x} - \mathbf{b}\rVert_2^2 + \alpha\lVert\mathbf{x}\rVert_1\ }
+</span></p>
+<p>with <span class="math inline">\alpha \ge 0</span> trading fit against sparsity; basis pursuit is the limit <span class="math inline">\alpha \to 0</span>. Re-running the warm-up on the same <span class="math inline">\mathbf{A}</span> and <span class="math inline">\mathbf{b}</span>: tune <code>alpha</code> for the Lasso on a coarse grid, then compare the best Lasso against the Ridge solution.</p>
+<div id="cell-fig-l1-recovery" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:46.589347Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:46.589150Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:49.212051Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:49.211273Z&quot;}}" data-cap="**L1 recovers the support, L2 does not.** The true signal with the Lasso reconstruction ($\ell_1$, left) and the Ridge reconstruction ($\ell_2$, right) on the same measurements. The Lasso concentrates on the five true coordinates; the Ridge solution is dense, just like the minimum-norm solution." data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-4"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-4-1"><a href="#annotated-cell-4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> Lasso, Ridge</span>
+<span id="annotated-cell-4-2"><a href="#annotated-cell-4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-3"><a href="#annotated-cell-4-3" aria-hidden="true" tabindex="-1"></a>alphas <span class="op">=</span> [<span class="fl">1e-3</span>, <span class="fl">1e-2</span>, <span class="fl">1e-1</span>, <span class="fl">1.0</span>, <span class="fl">10.0</span>]</span>
+<span id="annotated-cell-4-4"><a href="#annotated-cell-4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Lasso, tuning alpha:'</span>)</span>
+<span id="annotated-cell-4-5"><a href="#annotated-cell-4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'</span><span class="sc">{</span><span class="st">"alpha"</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">"rel. error"</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">"# nonzero"</span><span class="sc">:&gt;9}</span><span class="ss"> </span><span class="sc">{</span><span class="st">"support ok"</span><span class="sc">:&gt;10}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-4-6"><a href="#annotated-cell-4-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> alpha <span class="kw">in</span> alphas:</span>
+<span id="annotated-cell-4-7"><a href="#annotated-cell-4-7" aria-hidden="true" tabindex="-1"></a>    lasso <span class="op">=</span> Lasso(alpha<span class="op">=</span>alpha, fit_intercept<span class="op">=</span><span class="va">False</span>, max_iter<span class="op">=</span><span class="dv">20000</span>).fit(A, b)</span>
+<span id="annotated-cell-4-8"><a href="#annotated-cell-4-8" aria-hidden="true" tabindex="-1"></a>    x_l1 <span class="op">=</span> lasso.coef_</span>
+<span id="annotated-cell-4-9"><a href="#annotated-cell-4-9" aria-hidden="true" tabindex="-1"></a>    supp <span class="op">=</span> np.<span class="bu">abs</span>(x_l1) <span class="op">&gt;</span> <span class="fl">1e-4</span></span>
+<span id="annotated-cell-4-10"><a href="#annotated-cell-4-10" aria-hidden="true" tabindex="-1"></a>    ok <span class="op">=</span> np.array_equal(np.sort(np.nonzero(x)[<span class="dv">0</span>]), np.sort(np.nonzero(supp)[<span class="dv">0</span>]))</span>
+<span id="annotated-cell-4-11"><a href="#annotated-cell-4-11" aria-hidden="true" tabindex="-1"></a>    err <span class="op">=</span> np.linalg.norm(x <span class="op">-</span> x_l1) <span class="op">/</span> np.linalg.norm(x)</span>
+<span id="annotated-cell-4-12"><a href="#annotated-cell-4-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'</span><span class="sc">{</span>alpha<span class="sc">:8.1e}</span><span class="ss"> </span><span class="sc">{</span>err<span class="sc">:10.4f}</span><span class="ss"> </span><span class="sc">{</span>np<span class="sc">.</span>count_nonzero(supp)<span class="sc">:9d}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">str</span>(ok)<span class="sc">:&gt;10}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-4-13"><a href="#annotated-cell-4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-14"><a href="#annotated-cell-4-14" aria-hidden="true" tabindex="-1"></a>alpha_l1 <span class="op">=</span> <span class="fl">1e-2</span></span>
+<span id="annotated-cell-4-15"><a href="#annotated-cell-4-15" aria-hidden="true" tabindex="-1"></a>x_l1 <span class="op">=</span> Lasso(alpha<span class="op">=</span>alpha_l1, fit_intercept<span class="op">=</span><span class="va">False</span>, max_iter<span class="op">=</span><span class="dv">20000</span>).fit(A, b).coef_</span>
+<span id="annotated-cell-4-16"><a href="#annotated-cell-4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-17"><a href="#annotated-cell-4-17" aria-hidden="true" tabindex="-1"></a>x_l2 <span class="op">=</span> Ridge(alpha<span class="op">=</span><span class="fl">1e-1</span>, fit_intercept<span class="op">=</span><span class="va">False</span>).fit(A, b).coef_</span>
+<span id="annotated-cell-4-18"><a href="#annotated-cell-4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-19"><a href="#annotated-cell-4-19" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.2</span>), sharey<span class="op">=</span><span class="va">True</span>)</span>
+<span id="annotated-cell-4-20"><a href="#annotated-cell-4-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, xh, lab, col <span class="kw">in</span> [</span>
+<span id="annotated-cell-4-21"><a href="#annotated-cell-4-21" aria-hidden="true" tabindex="-1"></a>    (ax[<span class="dv">0</span>], x_l1, <span class="st">'Lasso ($</span><span class="ch">\\</span><span class="st">ell_1$)'</span>, <span class="st">'C2'</span>),</span>
+<span id="annotated-cell-4-22"><a href="#annotated-cell-4-22" aria-hidden="true" tabindex="-1"></a>    (ax[<span class="dv">1</span>], x_l2, <span class="st">'Ridge ($</span><span class="ch">\\</span><span class="st">ell_2$)'</span>, <span class="st">'C1'</span>),</span>
+<span id="annotated-cell-4-23"><a href="#annotated-cell-4-23" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="annotated-cell-4-24"><a href="#annotated-cell-4-24" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> a.stem(x, linefmt<span class="op">=</span><span class="st">'C0-'</span>, markerfmt<span class="op">=</span><span class="st">'C0o'</span>, basefmt<span class="op">=</span><span class="st">' '</span>, label<span class="op">=</span><span class="st">'true $</span><span class="ch">\\</span><span class="st">mathbf</span><span class="sc">{x}</span><span class="st">$'</span>)</span>
+<span id="annotated-cell-4-25"><a href="#annotated-cell-4-25" aria-hidden="true" tabindex="-1"></a>    s.markerline.set_markersize(<span class="dv">4</span>)</span>
+<span id="annotated-cell-4-26"><a href="#annotated-cell-4-26" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> a.stem(xh, linefmt<span class="op">=</span>col <span class="op">+</span> <span class="st">'-'</span>, markerfmt<span class="op">=</span>col <span class="op">+</span> <span class="st">'o'</span>, basefmt<span class="op">=</span><span class="st">' '</span>, label<span class="op">=</span>lab)</span>
+<span id="annotated-cell-4-27"><a href="#annotated-cell-4-27" aria-hidden="true" tabindex="-1"></a>    s.markerline.set_markersize(<span class="fl">2.5</span>)</span>
+<span id="annotated-cell-4-28"><a href="#annotated-cell-4-28" aria-hidden="true" tabindex="-1"></a>    a.set_xlabel(<span class="st">'coordinate'</span>)</span>
+<span id="annotated-cell-4-29"><a href="#annotated-cell-4-29" aria-hidden="true" tabindex="-1"></a>    a.legend()</span>
+<span id="annotated-cell-4-30"><a href="#annotated-cell-4-30" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_title(<span class="st">'Lasso reconstruction'</span>)</span>
+<span id="annotated-cell-4-31"><a href="#annotated-cell-4-31" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_title(<span class="st">'Ridge reconstruction'</span>)</span>
+<span id="annotated-cell-4-32"><a href="#annotated-cell-4-32" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="annotated-cell-4-33"><a href="#annotated-cell-4-33" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="annotated-cell-4-34"><a href="#annotated-cell-4-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-35"><a href="#annotated-cell-4-35" aria-hidden="true" tabindex="-1"></a>err_l1 <span class="op">=</span> np.linalg.norm(x <span class="op">-</span> x_l1) <span class="op">/</span> np.linalg.norm(x)</span>
+<span id="annotated-cell-4-36"><a href="#annotated-cell-4-36" aria-hidden="true" tabindex="-1"></a>err_l2 <span class="op">=</span> np.linalg.norm(x <span class="op">-</span> x_l2) <span class="op">/</span> np.linalg.norm(x)</span>
+<span id="annotated-cell-4-37"><a href="#annotated-cell-4-37" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'pinv  rel. error = </span><span class="sc">{</span>err_pinv<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-4-38"><a href="#annotated-cell-4-38" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'ridge rel. error = </span><span class="sc">{</span>err_l2<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-4-39"><a href="#annotated-cell-4-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'lasso rel. error = </span><span class="sc">{</span>err_l1<span class="sc">:.3f}</span><span class="ss">  (alpha = </span><span class="sc">{</span>alpha_l1<span class="sc">}</span><span class="ss">)'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Lasso, tuning alpha:
+   alpha rel. error # nonzero support ok
+ 1.0e-03     0.0019         5       True
+ 1.0e-02     0.0185         5       True
+ 1.0e-01     0.1847         5       True
+ 1.0e+00     0.9802         1      False
+ 1.0e+01     1.0000         0      False</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-l1-recovery" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-l1-recovery-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-3" title="Figure&nbsp;3: "><img src="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg" id="fig-l1-recovery" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-l1-recovery-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>pinv  rel. error = 0.823
+ridge rel. error = 0.823
+lasso rel. error = 0.018  (alpha = 0.01)</code></pre>
+</div>
+</div>
+<p><strong>L1 recovers the support, L2 does not.</strong> The annotations: <code>&lt;1&gt;</code> fits the Lasso by coordinate descent with no intercept — the model is exactly <span class="math inline">\mathbf{b} = \mathbf{A}\mathbf{x}</span>; <code>&lt;2&gt;</code> fits the Ridge by a direct linear solve, the same ridge regression as Chapter 10. Three observations.</p>
+<p>First, the tuning table: for <code>alpha</code> between <span class="math inline">10^{-3}</span> and <span class="math inline">10^{-1}</span> the Lasso finds exactly the five true coordinates — the column “support ok” reads <code>True</code> — and the error shrinks as <code>alpha</code> shrinks (<span class="math inline">1.9\%</span> at <span class="math inline">\alpha = 10^{-2}</span>). A too-large penalty (<span class="math inline">\alpha = 1</span>) forces the whole vector to zero, with only the largest coefficient surviving; that is the shrinkage bias of <span class="math inline">\ell_1</span>, not a failure of the geometry.</p>
+<p>Second, the left stem plot: the Lasso reconstruction sits on the true support with nearly exact values. The right stem plot: Ridge is dense, with small mass on every coordinate, and its error of 0.82 matches the minimum-norm solution. This is forced: <span class="math inline">\hat{\mathbf{x}}_{\text{ridge}} = (\mathbf{A}^{\mathsf T}\mathbf{A} + \alpha\mathbf{I})^{-1}\mathbf{A}^{\mathsf T}\mathbf{b} \to \mathbf{A}^{+}\mathbf{b}</span> as <span class="math inline">\alpha \to 0</span>, so no choice of <code>alpha</code> can make Ridge sparse. The two penalties solve two different problems, and the data are generated by the one the <span class="math inline">\ell_1</span> penalty encodes.</p>
+</section>
+<section id="how-many-measurements-the-restricted-isometry-property" class="level2">
+<h2 class="anchored" data-anchor-id="how-many-measurements-the-restricted-isometry-property">How many measurements? The restricted isometry property</h2>
+<p>The experiment raises a quantitative question: for which pairs <span class="math inline">(m, K)</span> does <span class="math inline">\ell_1</span> recovery work? The answer is a property of the measurement matrix, the <mark>restricted isometry property</mark> (RIP): <span class="math inline">\mathbf{A}</span> acts like an isometry on the set of <span class="math inline">K</span>-sparse vectors. Concretely, <span class="math inline">\mathbf{A}</span> has RIP constant <span class="math inline">\delta_K</span> if</p>
+<p><span class="math display">
+(1 - \delta_K)\lVert\mathbf{x}\rVert_2^2 \le \lVert\mathbf{A}\mathbf{x}\rVert_2^2 \le (1 + \delta_K)\lVert\mathbf{x}\rVert_2^2
+\qquad \text{for every } K\text{-sparse } \mathbf{x}.
+</span></p>
+<p>If <span class="math inline">\delta_{2K}</span> is small — the standard sufficient condition is <span class="math inline">\delta_{2K} &lt; \sqrt{2} - 1</span> — then the minimum-<span class="math inline">\ell_1</span> solution of <span class="math inline">\mathbf{A}\mathbf{x} = \mathbf{b}</span> recovers every <span class="math inline">K</span>-sparse signal exactly. The intuition: a small <span class="math inline">\delta_{2K}</span> means no <span class="math inline">K</span>-sparse vector lies near the null space of <span class="math inline">\mathbf{A}</span>, so the measurements separate all <span class="math inline">K</span>-sparse candidates, and the <span class="math inline">\ell_1</span> minimizer is the sparsest one consistent with <span class="math inline">\mathbf{b}</span>. The proof is a convexity argument comparing the <span class="math inline">\ell_1</span> and <span class="math inline">\ell_2</span> norms on <span class="math inline">2K</span>-sparse vectors, not reproduced here.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>The RIP is a property of random matrices. A Gaussian <span class="math inline">\mathbf{A}</span> with</p>
+<p><span class="math display">
+\boxed{\ m \gtrsim K\log(n/K)\ }
+</span></p>
+<p>rows satisfies the RIP with <span class="math inline">\delta_{2K} &lt; \sqrt{2} - 1</span> with high probability, and the constant hidden in <span class="math inline">\gtrsim</span> is an absolute constant independent of <span class="math inline">n</span> and <span class="math inline">K</span>.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> The logarithmic factor is the price of not knowing the support in advance: choosing <span class="math inline">K</span> of <span class="math inline">n</span> coordinates is a combinatorial decision carrying about <span class="math inline">\log\binom{n}{K} \approx K\log(n/K)</span> bits of information, and each measurement must contribute a comparable amount. The warm-up is consistent with the bound: <span class="math inline">K\log(n/K) = 5\log(128/5) \approx 16</span>, and <span class="math inline">m = 40</span> measurements sufficed comfortably.</p>
+<p>The same convexity that guarantees a global minimizer (Chapter 10) guarantees tractability: the <span class="math inline">\ell_1</span> objective is convex, so recovery is a convex optimization problem solvable by simple first-order iterations, with no combinatorial search over supports.</p>
+</section>
+<section id="a-ct-style-phantom" class="level2">
+<h2 class="anchored" data-anchor-id="a-ct-style-phantom">A CT-style phantom</h2>
+<p>The one-dimensional experiment transfers directly to imaging. <strong>The model.</strong> The ground truth is a <span class="math inline">48\times 48</span> image of six bright disks on a black canvas — a sparse image in the pixel basis, in the spirit of the <a href="https://en.wikipedia.org/wiki/Shepp%E2%80%93Logan_phantom">Shepp–Logan phantom</a> used to benchmark tomography algorithms. The next cell draws it.</p>
+<p><strong>The measurements.</strong> An X-ray projection at angle <span class="math inline">\theta</span> is the set of line integrals of the image along parallel rays: rotate the image by <span class="math inline">\theta</span> and sum along the rows. Each projection contributes 48 measurements (one per row), and a measurement matrix <span class="math inline">\mathbf{A}</span> carries one row per ray. With 16 angles at <span class="math inline">15^\circ</span> spacing the system has <span class="math inline">m = 16 \times 48 = 768</span> rows and <span class="math inline">n = 2304</span> columns: about a third of the pixels are “measured”, yet the image is only about 9% nonzero, so the RIP heuristic of the previous section says recovery is feasible.</p>
+<div id="cell-fig-phantom" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:49.215735Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:49.215489Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:49.253114Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:49.252500Z&quot;}}" data-cap="**Ground-truth phantom.** Six filled disks of different intensities on a $48\times 48$ black canvas. The image is sparse in the pixel basis: 214 of 2304 pixels are nonzero." data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>side <span class="op">=</span> <span class="dv">48</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>yy, xx <span class="op">=</span> np.mgrid[<span class="dv">0</span>:side, <span class="dv">0</span>:side].astype(<span class="bu">float</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> disk(cx, cy, r, v):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Filled disk: intensity v, radius r, center (cx, cy)."""</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> v <span class="op">*</span> ((xx <span class="op">-</span> cx) <span class="op">**</span> <span class="dv">2</span> <span class="op">+</span> (yy <span class="op">-</span> cy) <span class="op">**</span> <span class="dv">2</span> <span class="op">&lt;=</span> r <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>x_2d <span class="op">=</span> np.zeros((side, side))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (cx, cy, r, v) <span class="kw">in</span> [(<span class="dv">18</span>, <span class="dv">18</span>, <span class="dv">4</span>, <span class="fl">1.0</span>), (<span class="dv">30</span>, <span class="dv">16</span>, <span class="dv">3</span>, <span class="fl">0.8</span>), (<span class="dv">24</span>, <span class="dv">28</span>, <span class="dv">4</span>, <span class="fl">0.9</span>),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                       (<span class="dv">14</span>, <span class="dv">30</span>, <span class="dv">3</span>, <span class="fl">0.7</span>), (<span class="dv">34</span>, <span class="dv">30</span>, <span class="dv">3</span>, <span class="fl">0.6</span>), (<span class="dv">22</span>, <span class="dv">38</span>, <span class="dv">3</span>, <span class="fl">0.8</span>)]:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    x_2d <span class="op">+=</span> disk(cx, cy, r, v)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>x_2d <span class="op">=</span> np.clip(x_2d, <span class="fl">0.0</span>, <span class="fl">1.0</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>K2 <span class="op">=</span> np.count_nonzero(x_2d)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">4</span>, <span class="dv">4</span>))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>ax.imshow(x_2d, cmap<span class="op">=</span><span class="st">'gray_r'</span>, origin<span class="op">=</span><span class="st">'lower'</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>ax.set_xticks([])</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>ax.set_yticks([])</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'image: </span><span class="sc">{</span>side<span class="sc">}</span><span class="ss"> x </span><span class="sc">{</span>side<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>side <span class="op">*</span> side<span class="sc">}</span><span class="ss"> pixels,'</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f'  </span><span class="sc">{</span>K2<span class="sc">}</span><span class="ss"> nonzero (</span><span class="sc">{</span><span class="dv">100</span> <span class="op">*</span> K2 <span class="op">/</span> side <span class="op">**</span> <span class="dv">2</span><span class="sc">:.1f}</span><span class="ss">%)'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-phantom" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-phantom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="14-compressed-sensing_files/figure-html/fig-phantom-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-4" title="Figure&nbsp;4: "><img src="14-compressed-sensing_files/figure-html/fig-phantom-output-1.svg" id="fig-phantom" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-phantom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>image: 48 x 48 = 2304 pixels,  214 nonzero (9.3%)</code></pre>
+</div>
+</div>
+<p><strong>The measurement operator.</strong> One projection: rotate the image by <span class="math inline">\theta</span> and sum the rows with <code>scipy.ndimage.rotate</code> (bilinear interpolation, same canvas), then <code>sum(axis=1)</code>. The matrix <span class="math inline">\mathbf{A}</span> applies this operator to every pixel: column <span class="math inline">j</span> of <span class="math inline">\mathbf{A}</span> is the projection of the <span class="math inline">j</span>-th basis image (a single pixel of value 1). Rather than rotating 2304 images one by one, the cell stacks them into one array of shape <span class="math inline">(2304, 48, 48)</span> and rotates the stack once per angle — <code>ndimage.rotate</code> with <code>axes=(1, 2)</code> rotates every plane independently, so the planes never mix.</p>
+<div id="f7fee4ff" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:49.254688Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:49.254549Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:53.548376Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:53.547668Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-6"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-6-1"><a href="#annotated-cell-6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.ndimage <span class="im">as</span> ndi</span>
+<span id="annotated-cell-6-2"><a href="#annotated-cell-6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-3"><a href="#annotated-cell-6-3" aria-hidden="true" tabindex="-1"></a>angles <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">165</span>, <span class="dv">16</span>)</span>
+<span id="annotated-cell-6-4"><a href="#annotated-cell-6-4" aria-hidden="true" tabindex="-1"></a>n_angles <span class="op">=</span> <span class="bu">len</span>(angles)</span>
+<span id="annotated-cell-6-5"><a href="#annotated-cell-6-5" aria-hidden="true" tabindex="-1"></a>n_pix <span class="op">=</span> side <span class="op">*</span> side</span>
+<span id="annotated-cell-6-6"><a href="#annotated-cell-6-6" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> n_angles <span class="op">*</span> side</span>
+<span id="annotated-cell-6-7"><a href="#annotated-cell-6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-8"><a href="#annotated-cell-6-8" aria-hidden="true" tabindex="-1"></a>basis <span class="op">=</span> np.zeros((n_pix, side, side))</span>
+<span id="annotated-cell-6-9"><a href="#annotated-cell-6-9" aria-hidden="true" tabindex="-1"></a>idx <span class="op">=</span> np.arange(n_pix)</span>
+<span id="annotated-cell-6-10"><a href="#annotated-cell-6-10" aria-hidden="true" tabindex="-1"></a>basis[idx, idx <span class="op">//</span> side, idx <span class="op">%</span> side] <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="annotated-cell-6-11"><a href="#annotated-cell-6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-12"><a href="#annotated-cell-6-12" aria-hidden="true" tabindex="-1"></a>A_2d <span class="op">=</span> np.empty((m, n_pix))</span>
+<span id="annotated-cell-6-13"><a href="#annotated-cell-6-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k, theta <span class="kw">in</span> <span class="bu">enumerate</span>(angles):</span>
+<span id="annotated-cell-6-14"><a href="#annotated-cell-6-14" aria-hidden="true" tabindex="-1"></a>    rot <span class="op">=</span> ndi.rotate(basis, theta, axes<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>), reshape<span class="op">=</span><span class="va">False</span>, order<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="annotated-cell-6-15"><a href="#annotated-cell-6-15" aria-hidden="true" tabindex="-1"></a>    A_2d[k <span class="op">*</span> side:(k <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> side] <span class="op">=</span> rot.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>).T</span>
+<span id="annotated-cell-6-16"><a href="#annotated-cell-6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-17"><a href="#annotated-cell-6-17" aria-hidden="true" tabindex="-1"></a>b_2d <span class="op">=</span> A_2d <span class="op">@</span> x_2d.ravel()</span>
+<span id="annotated-cell-6-18"><a href="#annotated-cell-6-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'A: </span><span class="sc">{</span>m<span class="sc">}</span><span class="ss"> x </span><span class="sc">{</span>n_pix<span class="sc">}</span><span class="ss">,  sampling ratio m/n = </span><span class="sc">{</span>m <span class="op">/</span> n_pix<span class="sc">:.2f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>A: 768 x 2304,  sampling ratio m/n = 0.33</code></pre>
+</div>
+</div>
+<p><strong>The matrix.</strong> The annotations: <code>&lt;1&gt;</code> the 16 projection angles, <span class="math inline">0^\circ</span> to <span class="math inline">165^\circ</span> in steps of <span class="math inline">15^\circ</span>; <code>&lt;2&gt;</code> the stack of basis images, one per pixel; <code>&lt;3&gt;</code> rotates every plane of the stack by the same angle in a single call; <code>&lt;4&gt;</code> sums the rows of each rotated basis image and writes the result into the block of <span class="math inline">\mathbf{A}</span> for angle <span class="math inline">k</span>.</p>
+<p>The resulting operator is <span class="math inline">768 \times 2304</span>: the measurements <span class="math inline">\mathbf{b} = \mathbf{A}\mathbf{x}</span> use a third of the pixel count. The phantom has <span class="math inline">K = 214</span> nonzero pixels, and the heuristic of the previous section gives <span class="math inline">K\log(n/K) = 214\log(2304/214) \approx 508 &lt; 768</span>: the measurement budget is sufficient, with room to spare. The next cell runs both recovery rules on the same <span class="math inline">\mathbf{b}</span>.</p>
+</section>
+<section id="reconstruction-l2-smears-l1-concentrates" class="level2">
+<h2 class="anchored" data-anchor-id="reconstruction-l2-smears-l1-concentrates">Reconstruction: L2 smears, L1 concentrates</h2>
+<p><strong>The comparison.</strong> Both solvers see the same measurements <span class="math inline">\mathbf{b}</span>. Ridge at <code>alpha = 1e-1</code> represents the <span class="math inline">\ell_2</span> route — its error is flat across a wide range of <code>alpha</code>, since the ridge solution is pinned to the minimum-norm solution; Lasso at <code>alpha = 1e-3</code> represents the <span class="math inline">\ell_1</span> route, chosen from the same small grid used for the one-dimensional experiment. The figure below shows the phantom, the Ridge reconstruction, and the Lasso reconstruction; the printed errors are relative residuals <span class="math inline">\lVert\mathbf{x} - \hat{\mathbf{x}}\rVert_2 / \lVert\mathbf{x}\rVert_2</span>.</p>
+<div id="cell-fig-ct-recon" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T21:02:53.550938Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T21:02:53.550769Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T21:02:54.627205Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T21:02:54.625932Z&quot;}}" data-cap="**Tomographic reconstruction from 768 projections.** The phantom, the Ridge reconstruction ($\ell_2$), and the Lasso reconstruction ($\ell_1$). Ridge smears each disk into a faint halo; Lasso recovers the six disks at the correct positions with the correct intensities." data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-7"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-7-1"><a href="#annotated-cell-7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> Ridge, Lasso</span>
+<span id="annotated-cell-7-2"><a href="#annotated-cell-7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-3"><a href="#annotated-cell-7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'relative errors ||x - x_hat|| / ||x||:'</span>)</span>
+<span id="annotated-cell-7-4"><a href="#annotated-cell-7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> alpha <span class="kw">in</span> [<span class="fl">1e-3</span>, <span class="fl">1e-2</span>, <span class="fl">1e-1</span>]:</span>
+<span id="annotated-cell-7-5"><a href="#annotated-cell-7-5" aria-hidden="true" tabindex="-1"></a>    x_l <span class="op">=</span> Lasso(alpha<span class="op">=</span>alpha, fit_intercept<span class="op">=</span><span class="va">False</span>, max_iter<span class="op">=</span><span class="dv">20000</span>).fit(A_2d, b_2d).coef_</span>
+<span id="annotated-cell-7-6"><a href="#annotated-cell-7-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'  Lasso  alpha=</span><span class="sc">{</span>alpha<span class="sc">:8.1e}</span><span class="ss">  </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(x_2d.ravel() <span class="op">-</span> x_l) <span class="op">/</span> np<span class="sc">.</span>linalg<span class="sc">.</span>norm(x_2d)<span class="sc">:.4f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-7-7"><a href="#annotated-cell-7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> alpha <span class="kw">in</span> [<span class="fl">1e-1</span>, <span class="fl">1.0</span>, <span class="fl">10.0</span>]:</span>
+<span id="annotated-cell-7-8"><a href="#annotated-cell-7-8" aria-hidden="true" tabindex="-1"></a>    x_r <span class="op">=</span> Ridge(alpha<span class="op">=</span>alpha, fit_intercept<span class="op">=</span><span class="va">False</span>).fit(A_2d, b_2d).coef_</span>
+<span id="annotated-cell-7-9"><a href="#annotated-cell-7-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'  Ridge  alpha=</span><span class="sc">{</span>alpha<span class="sc">:8.1e}</span><span class="ss">  </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(x_2d.ravel() <span class="op">-</span> x_r) <span class="op">/</span> np<span class="sc">.</span>linalg<span class="sc">.</span>norm(x_2d)<span class="sc">:.4f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-7-10"><a href="#annotated-cell-7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-11"><a href="#annotated-cell-7-11" aria-hidden="true" tabindex="-1"></a>x_ridge <span class="op">=</span> Ridge(alpha<span class="op">=</span><span class="fl">1e-1</span>, fit_intercept<span class="op">=</span><span class="va">False</span>).fit(A_2d, b_2d).coef_.reshape(side, side)</span>
+<span id="annotated-cell-7-12"><a href="#annotated-cell-7-12" aria-hidden="true" tabindex="-1"></a>x_lasso <span class="op">=</span> Lasso(alpha<span class="op">=</span><span class="fl">1e-3</span>, fit_intercept<span class="op">=</span><span class="va">False</span>, max_iter<span class="op">=</span><span class="dv">20000</span>).fit(A_2d, b_2d).coef_.reshape(side, side)</span>
+<span id="annotated-cell-7-13"><a href="#annotated-cell-7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-14"><a href="#annotated-cell-7-14" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">3.8</span>))</span>
+<span id="annotated-cell-7-15"><a href="#annotated-cell-7-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, im, t <span class="kw">in</span> <span class="bu">zip</span>(ax, [x_2d, x_ridge, x_lasso],</span>
+<span id="annotated-cell-7-16"><a href="#annotated-cell-7-16" aria-hidden="true" tabindex="-1"></a>                    [<span class="st">'phantom'</span>, <span class="st">'Ridge ($</span><span class="ch">\\</span><span class="st">ell_2$)'</span>, <span class="st">'Lasso ($</span><span class="ch">\\</span><span class="st">ell_1$)'</span>]):</span>
+<span id="annotated-cell-7-17"><a href="#annotated-cell-7-17" aria-hidden="true" tabindex="-1"></a>    a.imshow(im, cmap<span class="op">=</span><span class="st">'gray_r'</span>, origin<span class="op">=</span><span class="st">'lower'</span>)</span>
+<span id="annotated-cell-7-18"><a href="#annotated-cell-7-18" aria-hidden="true" tabindex="-1"></a>    a.set_title(t)</span>
+<span id="annotated-cell-7-19"><a href="#annotated-cell-7-19" aria-hidden="true" tabindex="-1"></a>    a.set_xticks([])</span>
+<span id="annotated-cell-7-20"><a href="#annotated-cell-7-20" aria-hidden="true" tabindex="-1"></a>    a.set_yticks([])</span>
+<span id="annotated-cell-7-21"><a href="#annotated-cell-7-21" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="annotated-cell-7-22"><a href="#annotated-cell-7-22" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="annotated-cell-7-23"><a href="#annotated-cell-7-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-24"><a href="#annotated-cell-7-24" aria-hidden="true" tabindex="-1"></a>err_r <span class="op">=</span> np.linalg.norm(x_2d.ravel() <span class="op">-</span> x_ridge.ravel()) <span class="op">/</span> np.linalg.norm(x_2d)</span>
+<span id="annotated-cell-7-25"><a href="#annotated-cell-7-25" aria-hidden="true" tabindex="-1"></a>err_l <span class="op">=</span> np.linalg.norm(x_2d.ravel() <span class="op">-</span> x_lasso.ravel()) <span class="op">/</span> np.linalg.norm(x_2d)</span>
+<span id="annotated-cell-7-26"><a href="#annotated-cell-7-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'ridge rel. error = </span><span class="sc">{</span>err_r<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-7-27"><a href="#annotated-cell-7-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'lasso rel. error = </span><span class="sc">{</span>err_l<span class="sc">:.3f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>relative errors ||x - x_hat|| / ||x||:
+  Lasso  alpha= 1.0e-03  0.0438
+  Lasso  alpha= 1.0e-02  0.3991
+  Lasso  alpha= 1.0e-01  0.7959
+  Ridge  alpha= 1.0e-01  0.3391
+  Ridge  alpha= 1.0e+00  0.3421
+  Ridge  alpha= 1.0e+01  0.3723</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-ct-recon" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ct-recon-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="14-compressed-sensing_files/figure-html/fig-ct-recon-output-2.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-5" title="Figure&nbsp;5: "><img src="14-compressed-sensing_files/figure-html/fig-ct-recon-output-2.svg" id="fig-ct-recon" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-ct-recon-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ridge rel. error = 0.339
+lasso rel. error = 0.044</code></pre>
+</div>
+</div>
+<p><strong>L2 smears, L1 concentrates.</strong> The annotations: <code>&lt;1&gt;</code> the Ridge reconstruction, <code>&lt;2&gt;</code> the Lasso reconstruction at the tuned <code>alpha</code>. Two observations.</p>
+<p>First, Ridge fails in exactly the way the one-dimensional experiment predicted. Its solution is dense — every pixel carries some faint intensity — so each disk appears as a soft halo spread over the whole canvas, and the relative error is 0.34. The image content is “explained” by energy that is everywhere, which is the <span class="math inline">\ell_2</span> ball doing what its geometry forces. Second, Lasso recovers the phantom structure: the six disks reappear at the right positions with the right intensities, at a relative error of 0.04, with mild speckle artifacts and slightly shrunken intensities — the <span class="math inline">\ell_1</span> bias seen in the tuning table.</p>
+<p>The solver is worth a closing remark. Coordinate descent, the algorithm behind <code>Lasso</code>, is linear algebra under the hood: each step is a matrix-vector product with <span class="math inline">\mathbf{A}</span> and <span class="math inline">\mathbf{A}^{\mathsf T}</span>, plus one nonlinear entrywise step — the soft-thresholding operator of Chapter 13. The nonlinearity is exactly where sparsity enters; everything else is the machinery of Chapters 3, 6, and 8.</p>
+</section>
+<section id="l1-versus-l2-at-a-glance" class="level2">
+<h2 class="anchored" data-anchor-id="l1-versus-l2-at-a-glance">L1 versus L2 at a glance</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><span class="math inline">\ell_1</span> (Lasso, basis pursuit)</th>
+<th><span class="math inline">\ell_2</span> (Ridge, min-norm)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Penalty</td>
+<td><span class="math inline">\alpha\lVert\mathbf{x}\rVert_1</span></td>
+<td><span class="math inline">\alpha\lVert\mathbf{x}\rVert_2^2</span></td>
+</tr>
+<tr class="even">
+<td>Penalty ball</td>
+<td>corners on the coordinate axes</td>
+<td>round, no corners</td>
+</tr>
+<tr class="odd">
+<td>Typical solution</td>
+<td>few nonzero entries</td>
+<td>all entries nonzero</td>
+</tr>
+<tr class="even">
+<td>Underdetermined systems</td>
+<td>recovers a sparse support</td>
+<td>spreads energy, dense</td>
+</tr>
+<tr class="odd">
+<td>Failure mode</td>
+<td>bias and support instability under heavy noise</td>
+<td>misses sparsity entirely</td>
+</tr>
+<tr class="even">
+<td>Right when</td>
+<td>signal genuinely sparse, <span class="math inline">m \ll n</span></td>
+<td>dense signal, <span class="math inline">m \ge n</span></td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>The measurement budget.</strong> The working heuristic for sparse recovery: <span class="math inline">m \gtrsim K\log(n/K)</span>, where <span class="math inline">K</span> is the number of nonzero entries of <span class="math inline">\mathbf{x}</span>. The precise guarantee (Candès–Romberg–Tao 2006; Donoho 2006) is that a random Gaussian <span class="math inline">\mathbf{A}</span> with <span class="math inline">m \ge CK\log(n/K)</span> rows satisfies the <a href="https://en.wikipedia.org/wiki/Restricted_isometry_property">restricted isometry property</a> with high probability, and that the minimum-<span class="math inline">\ell_1</span> solution then recovers every <span class="math inline">K</span>-sparse signal exactly — stably, in the presence of noise. In practice the constant <span class="math inline">C</span> is a small number (roughly 2–4), so the heuristic is a genuine guide, not just an asymptotic statement.</p>
+<p>The applications are wherever acquisition is the bottleneck: computed tomography with fewer projections (less radiation), MRI with fewer k-space samples (shorter scans), radar, astronomy, and sensor networks. In each case the hardware measures linear combinations of the signal; compressed sensing says the recovery algorithm — not the scanner — decides how many are needed. See the Wikipedia articles on <a href="https://en.wikipedia.org/wiki/Compressed_sensing">compressed sensing</a>, <a href="https://en.wikipedia.org/wiki/Basis_pursuit">basis pursuit</a>, and the <a href="https://en.wikipedia.org/wiki/Lasso_(statistics)">Lasso</a>.</p>
+</div>
+</div>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li><strong>Underdetermined plus sparse means <span class="math inline">\ell_1</span>.</strong> The minimum-norm solution <span class="math inline">\mathbf{A}^{+}\mathbf{b}</span> minimizes energy, not sparsity, and on a 5-sparse signal in <span class="math inline">\mathbb{R}^{128}</span> its relative error is <span class="math inline">\sqrt{1 - m/n} = 0.83</span>: the reconstruction is dense because a random row space aligns with no coordinate. The Lasso with <span class="math inline">\alpha = 10^{-2}</span> recovers the support exactly, at <span class="math inline">1.9\%</span> error.</li>
+<li><strong>The geometry decides.</strong> The <span class="math inline">\ell_1</span> ball has corners on the coordinate axes, so the smallest ball touching the feasible set touches at a corner — a sparse point. The <span class="math inline">\ell_2</span> ball is round, so its touching point is dense. The same geometry reappears in two dimensions: Ridge smears the phantom (34% error), Lasso recovers it (4% error).</li>
+<li><strong>The count.</strong> A Gaussian measurement matrix satisfies the restricted isometry property with high probability once <span class="math inline">m \gtrsim K\log(n/K)</span>; under the RIP the <span class="math inline">\ell_1</span> minimizer recovers every <span class="math inline">K</span>-sparse signal exactly, and convexity (Chapter 10) keeps the search tractable.</li>
+</ul>
+<p>This closes the applications arc of the course: Chapter 11 put the SVD/NMF decomposition to work on topic modeling, Chapter 12 the eigenvector machinery on PageRank, Chapter 13 the low-rank-plus-sparse decomposition on robust PCA, and this chapter the sparse-recovery geometry on compressed sensing. Four problems, one arc: each is a decomposition or optimization idea from the first ten chapters, applied where the data are large and the structure is small.</p>
+</section>
+<section id="problems" class="level2">
+<h2 class="anchored" data-anchor-id="problems">Problems</h2>
+<p>The problems below exercise the compressed-sensing machinery: the energy identity behind the minimum-norm failure (14-1, 14-3), the sparsity of the minimum-<span class="math inline">\ell_1</span> solution (14-2), the restricted isometry property (14-4), and the phase transition in the measurement count (14-5). All random draws use fixed seeds, so every numerical outcome is reproducible.</p>
+<section id="p14.1-the-energy-identity-for-the-minimum-norm-solution" class="level3">
+<h3 class="anchored" data-anchor-id="p14.1-the-energy-identity-for-the-minimum-norm-solution">[P14.1] The energy identity for the minimum-norm solution</h3>
+<p>The minimum-norm solution <span class="math inline">\hat{\mathbf{x}} = \mathbf{A}^{+}\mathbf{b}</span> is the projection of the true signal onto the row space of <span class="math inline">\mathbf{A}</span>. This problem derives the expected energy of that projection.</p>
+<ol type="a">
+<li><p>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span> be Gaussian with <span class="math inline">m &lt; n</span>. Show that <span class="math inline">\mathbf{P} = \mathbf{A}^{+}\mathbf{A}</span> is the orthogonal projection onto <span class="math inline">\mathsf{C}(\mathbf{A}^{\mathsf T})</span>, and write <span class="math inline">\mathbf{P} = \sum_{i=1}^{m} \mathbf{u}_i \mathbf{u}_i^{\mathsf T}</span> for an orthonormal basis <span class="math inline">\{\mathbf{u}_i\}</span> of the row space.</p></li>
+<li><p>By rotational invariance of the Gaussian distribution, show that <span class="math inline">\mathbb{E}[\mathbf{u}_i \mathbf{u}_i^{\mathsf T}] = \tfrac{1}{n}\mathbf{I}</span> for each <span class="math inline">i</span>.</p></li>
+<li><p>Conclude that for any fixed <span class="math inline">\mathbf{x}</span>,</p></li>
+</ol>
+<p><span class="math display">
+\boxed{\ \mathbb{E}\lVert \mathbf{P}\mathbf{x}\rVert_2^2 = \frac{m}{n}\lVert \mathbf{x}\rVert_2^2\ },
+</span></p>
+<p>and hence the expected relative error of the minimum-norm solution is <span class="math inline">\sqrt{1 - m/n}</span>.</p>
+</section>
+<section id="p14.2-sparsity-of-the-minimum-ell_1-solution" class="level3">
+<h3 class="anchored" data-anchor-id="p14.2-sparsity-of-the-minimum-ell_1-solution">[P14.2] Sparsity of the minimum-<span class="math inline">\ell_1</span> solution</h3>
+<p>Basis pursuit minimizes <span class="math inline">\lVert \mathbf{x}\rVert_1</span> over the affine set <span class="math inline">\{\mathbf{x} : \mathbf{A}\mathbf{x} = \mathbf{b}\}</span>. This problem shows that the solution is sparse.</p>
+<ol type="a">
+<li>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span> have full row rank. Write the problem as a standard-form linear program in the variables <span class="math inline">\mathbf{x}^{+}, \mathbf{x}^{-} \in \mathbb{R}^n</span> with <span class="math inline">\mathbf{x} = \mathbf{x}^{+} - \mathbf{x}^{-}</span> and <span class="math inline">\mathbf{x}^{+}, \mathbf{x}^{-} \ge 0</span>:</li>
+</ol>
+<p><span class="math display">
+\min_{\mathbf{x}^{+}, \mathbf{x}^{-}} \ \mathbf{1}^{\mathsf T}\mathbf{x}^{+} + \mathbf{1}^{\mathsf T}\mathbf{x}^{-}
+\quad \text{subject to} \quad \mathbf{A}\mathbf{x}^{+} - \mathbf{A}\mathbf{x}^{-} = \mathbf{b}, \quad \mathbf{x}^{+}, \mathbf{x}^{-} \ge 0.
+</span></p>
+<ol start="2" type="a">
+<li><p>Argue that the optimum is attained at a vertex of the feasible polytope, and that a vertex has at most <span class="math inline">m</span> nonzero coordinates. (A basic feasible solution of a standard-form LP with <span class="math inline">m</span> equality constraints has at most <span class="math inline">m</span> nonzero variables.)</p></li>
+<li><p>Conclude that the minimum-<span class="math inline">\ell_1</span> solution has at most <span class="math inline">m</span> nonzero entries. Why does this make basis pursuit a plausible recovery rule for <span class="math inline">K</span>-sparse signals with <span class="math inline">m \ge K</span> measurements?</p></li>
+</ol>
+</section>
+<section id="p14.3-verifying-the-energy-identity-numerically" class="level3">
+<h3 class="anchored" data-anchor-id="p14.3-verifying-the-energy-identity-numerically">[P14.3] Verifying the energy identity numerically</h3>
+<p>The energy identity of Problem 14-1 predicts that the minimum-norm solution keeps the fraction <span class="math inline">m/n</span> of the signal energy. The starter code draws a Gaussian <span class="math inline">\mathbf{A} \in \mathbb{R}^{40 \times 128}</span>, forms <span class="math inline">\mathbf{P} = \mathbf{A}^{+}\mathbf{A}</span>, and measures <span class="math inline">\lVert \mathbf{P}\mathbf{x}\rVert_2^2</span> over <span class="math inline">T = 2000</span> random unit-norm signals.</p>
+<ol type="a">
+<li><p>Verify that the empirical mean of <span class="math inline">\lVert \mathbf{P}\mathbf{x}\rVert_2^2</span> matches <span class="math inline">m/n = 0.3125</span>.</p></li>
+<li><p>Verify that <span class="math inline">\sqrt{1 - \text{mean}}</span> matches the predicted relative error <span class="math inline">\sqrt{1 - m/n} \approx 0.829</span>.</p></li>
+</ol>
+<p>The starter code prints both comparisons.</p>
+<div id="403c5ccc" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:02:40.046019Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:02:40.045647Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:02:40.199028Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:02:40.192381Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>n, m, T <span class="op">=</span> <span class="dv">128</span>, <span class="dv">40</span>, <span class="dv">2000</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.standard_normal((m, n))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> np.linalg.pinv(A) <span class="op">@</span> A</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> rng.standard_normal((T, n))</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> xs <span class="op">/</span> np.linalg.norm(xs, axis<span class="op">=</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>energies <span class="op">=</span> np.<span class="bu">sum</span>((xs <span class="op">@</span> P.T) <span class="op">**</span> <span class="dv">2</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"mean ||P x||^2 ="</span>, energies.mean(), <span class="st">"  m/n ="</span>, m <span class="op">/</span> n)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"sqrt(1 - mean) ="</span>, np.sqrt(<span class="dv">1</span> <span class="op">-</span> energies.mean()), <span class="st">"  sqrt(1 - m/n) ="</span>, np.sqrt(<span class="dv">1</span> <span class="op">-</span> m <span class="op">/</span> n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>mean ||P x||^2 = 0.3122261693238835   m/n = 0.3125
+sqrt(1 - mean) = 0.8293213072604106   sqrt(1 - m/n) = 0.82915619758885</code></pre>
+</div>
+</div>
+</section>
+<section id="p14.4-estimating-the-restricted-isometry-constant" class="level3">
+<h3 class="anchored" data-anchor-id="p14.4-estimating-the-restricted-isometry-constant">[P14.4] Estimating the restricted isometry constant</h3>
+<p>The restricted isometry constant <span class="math inline">\delta_K</span> of a matrix <span class="math inline">\mathbf{A}</span> is the worst-case deviation of <span class="math inline">\lVert \mathbf{A}\mathbf{x}\rVert_2^2</span> from <span class="math inline">\lVert \mathbf{x}\rVert_2^2</span> over <span class="math inline">K</span>-sparse <span class="math inline">\mathbf{x}</span>. For a scaled Gaussian matrix, entries <span class="math inline">\mathcal{N}(0, 1/m)</span>, the constant is small when <span class="math inline">m \gg K\log(n/K)</span>. The starter code estimates <span class="math inline">\delta_5</span> by sampling <span class="math inline">T = 2000</span> random 5-sparse unit vectors for three measurement counts.</p>
+<ol type="a">
+<li><p>Report the three estimates and verify that they decrease with <span class="math inline">m</span>: more measurements, better isometry.</p></li>
+<li><p>Verify the scaling <span class="math inline">\delta_5 \cdot \sqrt{m}</span> is roughly constant across the three values, consistent with a deviation that decays like <span class="math inline">1/\sqrt{m}</span>.</p></li>
+</ol>
+<p>The starter code prints the estimates.</p>
+<div id="5e14673c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:02:54.227647Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:02:54.227245Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:02:54.620993Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:02:54.617661Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">5</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>n, K, T <span class="op">=</span> <span class="dv">128</span>, <span class="dv">5</span>, <span class="dv">2000</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> est_delta(m):</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Estimate delta_K by sampling random K-sparse unit vectors."""</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> rng.standard_normal((m, n)) <span class="op">/</span> np.sqrt(m)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    vals <span class="op">=</span> []</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(T):</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> np.zeros(n)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        x[rng.choice(n, K, replace<span class="op">=</span><span class="va">False</span>)] <span class="op">=</span> rng.standard_normal(K)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> x <span class="op">/</span> np.linalg.norm(x)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        vals.append(np.linalg.norm(A <span class="op">@</span> x) <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">max</span>(vals) <span class="op">-</span> <span class="fl">1.0</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> m <span class="kw">in</span> (<span class="dv">40</span>, <span class="dv">80</span>, <span class="dv">160</span>):</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> est_delta(m)</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"m=</span><span class="sc">{</span>m<span class="sc">}</span><span class="ss">: delta_5 ~ </span><span class="sc">{</span>d<span class="sc">:.4f}</span><span class="ss">,  delta_5 * sqrt(m) = </span><span class="sc">{</span>d <span class="op">*</span> np<span class="sc">.</span>sqrt(m)<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>m=40: delta_5 ~ 1.0322,  delta_5 * sqrt(m) = 6.528
+m=80: delta_5 ~ 0.5780,  delta_5 * sqrt(m) = 5.170
+m=160: delta_5 ~ 0.4935,  delta_5 * sqrt(m) = 6.242</code></pre>
+</div>
+</div>
+</section>
+<section id="p14.5-the-phase-transition-in-the-number-of-measurements" class="level3">
+<h3 class="anchored" data-anchor-id="p14.5-the-phase-transition-in-the-number-of-measurements">[P14.5] The phase transition in the number of measurements</h3>
+<p><strong>Challenge.</strong> The heuristic <span class="math inline">m \gtrsim K\log(n/K)</span> predicts how many measurements suffice for exact recovery. This experiment measures the transition empirically.</p>
+<ol type="a">
+<li><p>For <span class="math inline">n = 128</span>, <span class="math inline">K = 5</span>, and each <span class="math inline">m \in \{8, 12, 16, 20, 24, 28, 32, 40\}</span>, run <span class="math inline">T = 20</span> trials: draw a <span class="math inline">K</span>-sparse signal <span class="math inline">\mathbf{x}</span>, a Gaussian <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span>, and measurements <span class="math inline">\mathbf{b} = \mathbf{A}\mathbf{x}</span>; recover with basis pursuit, the <span class="math inline">\alpha \to 0</span> limit of the Lasso; declare success when the recovered support matches the true support exactly. Record the success fraction.</p></li>
+<li><p>Plot the success fraction against <span class="math inline">m</span> and overlay the heuristic <span class="math inline">K\log(n/K) \approx 16.2</span>.</p></li>
+<li><p>Report the smallest <span class="math inline">m</span> with success fraction 1.0 and compare it with the heuristic.</p></li>
+</ol>
+<p>The starter code defines the basis-pursuit solver and runs the trials.</p>
+<div id="82a10a1b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:24.959142Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:24.958684Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:27.834457Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:27.832679Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> linprog</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bp_solve(A, b):</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Basis pursuit: min ||x||_1 s.t. Ax = b, via LP."""</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    m, n <span class="op">=</span> A.shape</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    c <span class="op">=</span> np.ones(<span class="dv">2</span> <span class="op">*</span> n)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    Aeq <span class="op">=</span> np.hstack([A, <span class="op">-</span>A])</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    res <span class="op">=</span> linprog(c, A_eq<span class="op">=</span>Aeq, b_eq<span class="op">=</span>b, bounds<span class="op">=</span>(<span class="dv">0</span>, <span class="va">None</span>), method<span class="op">=</span><span class="st">"highs"</span>)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> res.x[:n] <span class="op">-</span> res.x[n:]</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>n, K, T <span class="op">=</span> <span class="dv">128</span>, <span class="dv">5</span>, <span class="dv">20</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>ms <span class="op">=</span> [<span class="dv">8</span>, <span class="dv">12</span>, <span class="dv">16</span>, <span class="dv">20</span>, <span class="dv">24</span>, <span class="dv">28</span>, <span class="dv">32</span>, <span class="dv">40</span>]</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> m <span class="kw">in</span> ms:</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    rng <span class="op">=</span> np.random.default_rng(<span class="dv">100</span> <span class="op">+</span> m)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    succ <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(T):</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> np.zeros(n)</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>        x[rng.choice(n, K, replace<span class="op">=</span><span class="va">False</span>)] <span class="op">=</span> rng.uniform(<span class="fl">0.5</span>, <span class="fl">1.0</span>, K)</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>        A <span class="op">=</span> rng.standard_normal((m, n))</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>        b <span class="op">=</span> A <span class="op">@</span> x</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>        xh <span class="op">=</span> bp_solve(A, b)</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>        supp <span class="op">=</span> np.<span class="bu">abs</span>(xh) <span class="op">&gt;</span> <span class="fl">1e-4</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.array_equal(np.sort(np.nonzero(x)[<span class="dv">0</span>]), np.sort(np.nonzero(supp)[<span class="dv">0</span>])):</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>            succ <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"m=</span><span class="sc">{</span>m<span class="sc">:3d}</span><span class="ss">: success </span><span class="sc">{</span>succ<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>m=  8: success 0/20
+m= 12: success 1/20
+m= 16: success 4/20
+m= 20: success 6/20
+m= 24: success 16/20
+m= 28: success 20/20
+m= 32: success 20/20
+m= 40: success 20/20</code></pre>
+</div>
+</div>
+
+
+
+</section>
+</section>
+
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="5" data-listing-word-count-sort="905">
+<div class="thumbnail"><a href="../../courses/cla/index.html" class="no-external">
+
+<img loading="lazy" src="../../courses/cla/img/cla-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/index.html" class="no-external">Computational Linear Algebra</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/index.html" class="no-external">
+<p>A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="../../courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="" data-listing-file-modified-sort="1787425121752" data-listing-reading-time-sort="13" data-listing-word-count-sort="2595">
+<div class="thumbnail"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">Eigendecomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix…<mark></mark><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="../../courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="18" data-listing-word-count-sort="3568">
+<div class="thumbnail"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">PageRank</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+The World Wide Web is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-categories="" data-listing-file-modified-sort="1787425121745" data-listing-reading-time-sort="14" data-listing-word-count-sort="2724">
+<div class="thumbnail"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">Projection &amp; orthogonalization</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf…</span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="13" data-listing-word-count-sort="2596">
+<div class="thumbnail"><a href="../../courses/cla/03-svd.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/03-svd.html" class="no-external">The singular value decomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/03-svd.html" class="no-external">
+The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathb…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/03-svd.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Precise statement: a Gaussian <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> satisfies the RIP with constant <span class="math inline">\delta_{2K}</span> with probability <span class="math inline">1 - e^{-ct}</span> once <span class="math inline">m \ge CK\log(n/K) + t</span>. The exact-recovery guarantee is due to Candès, Romberg, and Tao (2006) and, independently, Donoho (2006); see the Wikipedia article on the <a href="https://en.wikipedia.org/wiki/Restricted_isometry_property">restricted isometry property</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Precise statement: a Gaussian <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> satisfies the RIP with constant <span class="math inline">\delta_{2K}</span> with probability <span class="math inline">1 - e^{-ct}</span> once <span class="math inline">m \ge CK\log(n/K) + t</span>. The exact-recovery guarantee is due to Candès, Romberg, and Tao (2006) and, independently, Donoho (2006); see the Wikipedia article on the <a href="https://en.wikipedia.org/wiki/Restricted_isometry_property">restricted isometry property</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../courses/cla/13-robust-pca.html" class="pagination-link" aria-label="13. Robust PCA">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">13. Robust PCA</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>

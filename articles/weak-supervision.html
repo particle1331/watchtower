@@ -92,6 +92,8 @@ div.csl-indent {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../site_libs/quarto-listing/list.min.js"></script>
+<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -132,6 +134,35 @@ div.csl-indent {
     "search-label": "Search"
   }
 }</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
 <script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
@@ -222,6 +253,13 @@ window.Quarto = {
 <span class="menu-text">photos</span></a>
   </li>  
 </ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
   <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
@@ -242,11 +280,10 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#weak-supervision" id="toc-weak-supervision" class="nav-link active" data-scroll-target="#weak-supervision">Weak Supervision</a>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#labeling-functions-lfs" id="toc-labeling-functions-lfs" class="nav-link" data-scroll-target="#labeling-functions-lfs">Labeling Functions (LFs)</a>
   <ul class="collapse">
-  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a>
-  <ul class="collapse">
-  <li><a href="#labeling-functions" id="toc-labeling-functions" class="nav-link" data-scroll-target="#labeling-functions">Labeling Functions</a></li>
+  <li><a href="#example-lfs-for-classifying-movie-reviews" id="toc-example-lfs-for-classifying-movie-reviews" class="nav-link" data-scroll-target="#example-lfs-for-classifying-movie-reviews">Example: LFs for classifying Movie Reviews</a></li>
   <li><a href="#lf-parameters" id="toc-lf-parameters" class="nav-link" data-scroll-target="#lf-parameters">LF parameters</a></li>
   </ul></li>
   <li><a href="#basic-theory" id="toc-basic-theory" class="nav-link" data-scroll-target="#basic-theory">Basic theory</a>
@@ -263,7 +300,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#imdb-movie-reviews" id="toc-imdb-movie-reviews" class="nav-link" data-scroll-target="#imdb-movie-reviews">IMDB Movie Reviews</a>
   <ul class="collapse">
-  <li><a href="#labeling-functions-1" id="toc-labeling-functions-1" class="nav-link" data-scroll-target="#labeling-functions-1">Labeling functions</a></li>
+  <li><a href="#labeling-functions" id="toc-labeling-functions" class="nav-link" data-scroll-target="#labeling-functions">Labeling functions</a></li>
   <li><a href="#model-training" id="toc-model-training" class="nav-link" data-scroll-target="#model-training">Model training</a></li>
   <li><a href="#evaluation" id="toc-evaluation" class="nav-link" data-scroll-target="#evaluation">Evaluation</a></li>
   </ul></li>
@@ -282,7 +319,6 @@ window.Quarto = {
   </ul></li>
   <li><a href="#appendix-results-table" id="toc-appendix-results-table" class="nav-link" data-scroll-target="#appendix-results-table">Appendix: Results Table</a></li>
   <li><a href="#appendix-not-learning-the-class-prior" id="toc-appendix-not-learning-the-class-prior" class="nav-link" data-scroll-target="#appendix-not-learning-the-class-prior">Appendix: (Not) Learning the Class Prior</a></li>
-  </ul></li>
   </ul>
 </nav>
     </div>
@@ -296,6 +332,8 @@ window.Quarto = {
     <div class="quarto-category">weak-supervision</div>
     <div class="quarto-category">machine-learning</div>
     <div class="quarto-category">data-labeling</div>
+    <div class="quarto-category">data-centric</div>
+    <div class="quarto-category">attention</div>
   </div>
   </div>
 
@@ -319,20 +357,23 @@ window.Quarto = {
 </header>
 
 
-<section id="weak-supervision" class="level1">
-<h1>Weak Supervision</h1>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The idea behind <strong>weak supervision</strong> is that for each data point there is a <em>latent true label</em> that is inaccessible to us even during training, instead we utilize weak signals from user-defined <strong>labeling functions</strong> (LF). The material here is based on the <strong>data programming</strong> approach to weak supervision using LFs described in <span class="citation" data-cites="data-programming">(<a href="#ref-data-programming" role="doc-biblioref">Ratner et al. 2017</a>)</span>. Here we extend to the multi-class case where the generative model has entries of the entire confusion matrix as learnable parameters.</p>
-<p>LFs can be thought of as heuristic rules that can be applied to a large subset of the data. In case the LF is not applicable, then the function simply abstains from making a prediction. Note that this is a realistic scenario, it’s easier to describe rules than to manually annotate a large number of data points. LFs provide noisy, but potentially cost-effective labels, which can be used to train discriminative models.</p>
+<p><strong>Weak supervision</strong> constructs training data from noisy, programmatic signals when ground-truth labels are unavailable or too expensive to obtain. The desired label for each data point is a <em>latent true label</em>: it exists conceptually but is not observed during training. Instead, user-defined <strong>labeling functions</strong> (LFs) provide partial supervision. An LF is a heuristic rule that examines an example, emits a class label when its conditions are met, and abstains otherwise. Unlike the hard labels used in standard supervised learning, LFs may produce incorrect labels or abstain on individual examples.</p>
+<p>This notebook develops the <strong>data programming</strong> approach to weak supervision using LFs described in <span class="citation" data-cites="data-programming">(<a href="#ref-data-programming" role="doc-biblioref">Ratner et al. 2017</a>)</span>. It extends the binary setting to multi-class case, where the generative model learns the entries of the full confusion matrix for each LF. The resulting probabilistic labels can then be used to train a discriminative model.</p>
+</section>
+<section id="labeling-functions-lfs" class="level2">
+<h2 class="anchored" data-anchor-id="labeling-functions-lfs">Labeling Functions (LFs)</h2>
+<p>Manual annotation is expensive and does not scale well to large datasets. In many domains, however, it is easier to describe labeling heuristics than to inspect and label thousands of data points. LFs encode this domain knowledge in executable form. Although each LF may be noisy, incomplete, or silent on many examples, a collection of LFs can provide cost-effective supervision across a large dataset.</p>
+<p>The notebook follows the resulting pipeline: users write LFs, a generative model estimates their behavior to denoise the labels, and a discriminative model uses the estimated labels for training.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="../../ai-notebooks/notebooks/tooling/img/01-weak-supervision-pipeline.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Weak supervision training pipeline. The third image is flipped (i.e.&nbsp;the flow of prediction is right to left.) These two tasks will be implemented in this notebook. Source"><img src="../../ai-notebooks/notebooks/tooling/img/01-weak-supervision-pipeline.png" class="img-fluid figure-img" alt="Weak supervision training pipeline. The third image is flipped (i.e.&nbsp;the flow of prediction is right to left.) These two tasks will be implemented in this notebook. Source"></a></p>
-<figcaption><strong>Weak supervision training pipeline</strong>. The third image is flipped (i.e.&nbsp;the flow of prediction is right to left.) These two tasks will be implemented in this notebook. <a href="https://cs.brown.edu/people/sbach/files/bach-icml17-slides.pdf">Source</a></figcaption>
+<p><a href="img/01-weak-supervision-pipeline.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Weak supervision training pipeline. Users write LFs, a generative model denoises their outputs, and a discriminative model uses the estimated labels for training. The third panel is flipped so the prediction flow runs from right to left. Source"><img src="img/01-weak-supervision-pipeline.png" class="img-fluid figure-img" alt="Weak supervision training pipeline. Users write LFs, a generative model denoises their outputs, and a discriminative model uses the estimated labels for training. The third panel is flipped so the prediction flow runs from right to left. Source"></a></p>
+<figcaption><strong>Weak supervision training pipeline.</strong> Users write LFs, a generative model denoises their outputs, and a discriminative model uses the estimated labels for training. The third panel is flipped so the prediction flow runs from right to left. <a href="https://cs.brown.edu/people/sbach/files/bach-icml17-slides.pdf">Source</a></figcaption>
 </figure>
 </div>
-<section id="labeling-functions" class="level3">
-<h3 class="anchored" data-anchor-id="labeling-functions">Labeling Functions</h3>
+<section id="example-lfs-for-classifying-movie-reviews" class="level3">
+<h3 class="anchored" data-anchor-id="example-lfs-for-classifying-movie-reviews">Example: LFs for classifying Movie Reviews</h3>
 <p>Suppose we have a large corpus of text (e.g.&nbsp;the <a href="https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews">IMDB Movie Reviews dataset</a>) that we want to classify as either positive or negative. Our goal is to predict labels for this dataset (with somewhat high accuracy) using only a minimal set of labeled examples. The ff.&nbsp;is an example of a positive movie review:</p>
 <blockquote class="blockquote">
 <p>We always watch American movies with their particular accents from each region (south, west, etc). We have the same here. All foreign people must to watch this movie and need to have a open mind to accept another culture, besides American and European almost dominate the cinematographic industry. <br><br> This movie tell us about a parallel world which it isn’t figured even for those who live in a big city like São Paulo. All actors are improvising and they are very realistic. The camera give us an idea of their confuse world, the loneliness of each character and invite us to share their world. <br><br>It’s a real great movie and worst a rent even have it at home.</p>
@@ -491,7 +532,7 @@ Tip
 </tr>
 </tbody>
 </table>
-<p><u>There is a natural trade-off:</u> LFs with broad coverage (like <code>lf_sentiment_words</code>) tend to have lower F1, while high-F1 LFs fire on fewer reviews (<code>lf_strong_sentiment</code> is a notable exception). The diversity of strategies ensures <strong>conditional independence</strong> — LFs based on different signals (structure, punctuation, lexicon, discourse) make mistakes on different subsets of the data. The full definitions of these LFs and their application to IMDB data appear in the <a href="#application-imdb-movie-reviews">application section</a> at the end of this notebook.</p>
+<p><u>There is a natural trade-off:</u> LFs with broad coverage (like <code>lf_sentiment_words</code>) tend to have lower F1, while high-F1 LFs fire on fewer reviews (<code>lf_strong_sentiment</code> is a notable exception). The diversity of strategies ensures <strong>conditional independence</strong> — LFs based on different signals (structure, punctuation, lexicon, discourse) make mistakes on different subsets of the data. The full definitions of these LFs and their application to IMDB data appear in the <a href="#imdb-movie-reviews">application section</a> at the end of this notebook.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -548,12 +589,12 @@ Note
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datasets <span class="im">import</span> load_dataset</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.utils <span class="im">import</span> set_seed</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_seed</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>RANDOM_SEED <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>set_seed(RANDOM_SEED)</span>
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> load_dataset(<span class="st">"imdb"</span>)[<span class="st">"train"</span>].shuffle(seed<span class="op">=</span>RANDOM_SEED).select(<span class="bu">range</span>(<span class="dv">1000</span>))</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> load_dataset(<span class="st">"stanfordnlp/imdb"</span>)[<span class="st">"train"</span>].shuffle(seed<span class="op">=</span>RANDOM_SEED).select(<span class="bu">range</span>(<span class="dv">1000</span>))</span>
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>ds_texts <span class="op">=</span> ds[<span class="st">"text"</span>]</span>
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>ds_label <span class="op">=</span> ds[<span class="st">"label"</span>]  <span class="co"># {0, 1}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -780,7 +821,7 @@ P(Λ | y=1): tensor([0.0560, 0.0004])</code></pre>
 <div id="99e3e2ce" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;papermill&quot;,&quot;value&quot;:{&quot;duration&quot;:0.908455,&quot;end_time&quot;:&quot;2026-04-15T06:32:26.728910+00:00&quot;,&quot;exception&quot;:false,&quot;start_time&quot;:&quot;2026-04-15T06:32:25.820455+00:00&quot;,&quot;status&quot;:&quot;completed&quot;}}" data-tags="[]" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm.notebook <span class="im">import</span> tqdm</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.plot <span class="im">import</span> set_format</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_format</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>set_format(<span class="st">"svg"</span>)</span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>set_seed(RANDOM_SEED)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -1244,7 +1285,7 @@ Note
 <div id="df3d7288" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-04-25T15:11:38.699409Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-04-25T15:11:38.699343Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-04-25T15:11:38.791066Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-04-25T15:11:38.790721Z&quot;}}" data-execution_count="23">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.plot <span class="im">import</span> Plot</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> Plot</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a plot</span></span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> Plot(<span class="dv">1</span>, <span class="bu">len</span>(labeling_funcs), figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="dv">2</span>))</span>
@@ -1606,7 +1647,7 @@ Note
 <div id="b81c5445" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;papermill&quot;,&quot;value&quot;:{&quot;duration&quot;:0.699885,&quot;end_time&quot;:&quot;2026-04-15T06:33:28.903710+00:00&quot;,&quot;exception&quot;:false,&quot;start_time&quot;:&quot;2026-04-15T06:33:28.203825+00:00&quot;,&quot;status&quot;:&quot;completed&quot;}}" data-tags="[]" data-execution_count="30">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.plot <span class="im">import</span> Plot</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> Plot</span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_history(history, title<span class="op">=</span><span class="st">""</span>):</span>
 <span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> Plot(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>), title<span class="op">=</span>title)</span>
@@ -1657,7 +1698,7 @@ m=2000, f1=0.77432, t=0.59114</code></pre>
 <span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Load IMDB dataset (16000 train in total, 1000 valid + 2000 oracle)</span></span>
-<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> load_dataset(<span class="st">"imdb"</span>)</span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> load_dataset(<span class="st">"stanfordnlp/imdb"</span>)</span>
 <span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>datasets <span class="op">=</span> {</span>
 <span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"test"</span>: ds[<span class="st">"test"</span>].shuffle(seed<span class="op">=</span>RANDOM_SEED),</span>
 <span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"train"</span>: ds[<span class="st">"train"</span>].shuffle(seed<span class="op">=</span>RANDOM_SEED),</span>
@@ -1715,8 +1756,8 @@ Note
 <p>In what follows, all training samples are unlabeled. But we reserve a small budget of 400 <em>labeled</em> examples for <strong>early stopping</strong> and <strong>evaluation</strong>. Having ground truth is unavoidable. Otherwise, we will make design decisions based on noisy estimates. We will expect that the evals are optimistic since we’re early stopping on the same eval set.</p>
 </div>
 </div>
-<section id="labeling-functions-1" class="level3">
-<h3 class="anchored" data-anchor-id="labeling-functions-1">Labeling functions</h3>
+<section id="labeling-functions" class="level3">
+<h3 class="anchored" data-anchor-id="labeling-functions">Labeling functions</h3>
 <div id="b4f65071" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-04-25T15:11:48.885560Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-04-25T15:11:48.885464Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-04-25T15:11:48.897889Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-04-25T15:11:48.897466Z&quot;}}" data-execution_count="33">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (1) Strong adjectives — keyword matching</span></span>
 <span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lf_strong_sentiment(text):</span>
@@ -3289,7 +3330,7 @@ Best train loss: 0.0857 | Best valid loss: 0.3711
 <div id="a1e2c238" class="cell" data-execution_count="59">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb102"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> notebooks.plot <span class="im">import</span> Plot</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb102"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> Plot</span>
 <span id="cb102-2"><a href="#cb102-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb102-3"><a href="#cb102-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Aggregate histories ───────────────────────────────────────────────────────</span></span>
 <span id="cb102-4"><a href="#cb102-4" aria-hidden="true" tabindex="-1"></a>teacher_train, teacher_valid <span class="op">=</span> [], []</span>
@@ -3667,11 +3708,78 @@ Tip
 
 
 
-</section>
+
 </section>
 
 
-<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1787425121725" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="thumbnail"><a href="../articles/index.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../articles/index.html" class="no-external">Articles</a>
+</h3>
+<div class="delink listing-description"><a href="../articles/index.html" class="no-external">
+Self-contained long-form articles and deep dives. Newest first.
+</a></div>
+</div>
+<div class="metadata">
+<a href="../articles/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="ZGVlcC1sZWFybmluZyUyQ3RyYW5zZm9ybWVycyUyQ3RoZW9yeSUyQ2F0dGVudGlvbiUyQ3Rlc3Q=" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1787425121722" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="144">
+<div class="thumbnail"><a href="../articles/attention-mechanism.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../articles/attention-mechanism.html" class="no-external">Attention Mechanism</a>
+</h3>
+<div class="delink listing-description"><a href="../articles/attention-mechanism.html" class="no-external">
+The attention mechanism allows a model to dynamically focus on relevant parts of its input when producing each element of its output. At its core, scaled dot-product…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../articles/attention-mechanism.html" class="no-external">
+<div class="listing-date">
+Jan 24, 2026
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="ZGVlcC1sZWFybmluZyUyQ21vZGVsLWNvbXByZXNzaW9uJTJDdGVzdA==" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1787425121725" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="85">
+<div class="thumbnail"><a href="../articles/knowledge-distillation.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../articles/knowledge-distillation.html" class="no-external">Knowledge Distillation</a>
+</h3>
+<div class="delink listing-description"><a href="../articles/knowledge-distillation.html" class="no-external">
+Knowledge distillation article.
+</a></div>
+</div>
+<div class="metadata">
+<a href="../articles/knowledge-distillation.html" class="no-external">
+<div class="listing-date">
+Dec 20, 2025
+</div>
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
 <div id="ref-astra2021" class="csl-entry" role="listitem">
 Karamanolakis, Giannis, Subhabrata Mukherjee, Guoqing Zheng, and Ahmed Hassan Awadallah. 2021. <span>“Self-Training with Weak Supervision.”</span> <em>CoRR</em> abs/2104.05514. <a href="https://arxiv.org/abs/2104.05514">https://arxiv.org/abs/2104.05514</a>.
 </div>

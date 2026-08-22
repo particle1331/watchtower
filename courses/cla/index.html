@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.">
+
+<title>Computational Linear Algebra – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../courses/cla/01-foundations.html" rel="next">
+<link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/index.html">Computational Linear Algebra</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Computational Linear Algebra</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/01-foundations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Foundations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SVD and its proof</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. The spectral theorem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/03-svd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. The singular value decomposition</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Structure</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Rank &amp; the four fundamental subspaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/05-determinant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Determinant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Inverse &amp; pseudoinverse</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Projection &amp; orthogonalization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/08-least-squares.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Least squares</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The eigenworld</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Eigendecomposition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/10-quadratic-forms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Quadratic forms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Applications</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Topic modeling with SVD and NMF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/12-pagerank.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. PageRank</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/13-robust-pca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Robust PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/14-compressed-sensing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Compressed sensing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#why-the-svd-comes-early" id="toc-why-the-svd-comes-early" class="nav-link active" data-scroll-target="#why-the-svd-comes-early">Why the SVD comes early</a></li>
+  <li><a href="#prerequisites" id="toc-prerequisites" class="nav-link" data-scroll-target="#prerequisites">Prerequisites</a></li>
+  <li><a href="#the-fourteen-chapters" id="toc-the-fourteen-chapters" class="nav-link" data-scroll-target="#the-fourteen-chapters">The fourteen chapters</a></li>
+  <li><a href="#conventions" id="toc-conventions" class="nav-link" data-scroll-target="#conventions">Conventions</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Computational Linear Algebra</h1>
+</div>
+
+<div>
+  <div class="description">
+    A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This course develops linear algebra the way a working numerical analyst or machine-learning practitioner actually uses it: not as an abstract theory of vector spaces encountered once and filed away, but as a small set of concrete tools — the <strong>singular value decomposition</strong> above all — that answer a specific recurring question about every matrix one meets.</p>
+<p>The governing idea is that a matrix is a <em>representation</em> of a linear operator, and the right coordinate system makes that operator transparent. The course reaches for that coordinate system as early as possible and then derives the rest of the subject from it.</p>
+<section id="why-the-svd-comes-early" class="level2">
+<h2 class="anchored" data-anchor-id="why-the-svd-comes-early">Why the SVD comes early</h2>
+<p>Most textbooks build to the singular value decomposition near the end, after determinants, inverses, and the eigenvalue theory. This course inverts that order deliberately. The SVD of a matrix <span class="math inline">\mathbf{A}</span> — the factorization</p>
+<p><span class="math display">
+\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T},
+\qquad
+\mathbf{U}^{\mathsf T}\mathbf{U} = \mathbf{I},\quad
+\mathbf{V}^{\mathsf T}\mathbf{V} = \mathbf{I},\quad
+\boldsymbol{\Sigma} \text{ diagonal}
+</span></p>
+<p>with nonnegative entries <span class="math inline">\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_r &gt; 0</span> — captures, in one statement, the image, the nullspace, the rank, the operator norm, the condition number, the best low-rank approximation, and the pseudoinverse. Nothing else in the subject packages this much into so little.</p>
+<p>The spectral theorem and the SVD are equivalent, and they share one proof. The course proves the <em>symmetric</em> case first — not because the SVD logically requires it, but because it is the simplest instance: one square matrix, real eigenvalues, a single orthonormal basis. The same variational argument (maximize a quadratic form over the unit sphere, restrict to an invariant orthogonal complement, and induct) yields the spectral theorem when run on a symmetric matrix <span class="math inline">\mathbf{M}</span>, and the singular value decomposition when run on <span class="math inline">\mathbf{M} = \mathbf{A}^{\mathsf T}\mathbf{A}</span> for an arbitrary <span class="math inline">\mathbf{A}</span>.</p>
+<p>Once the SVD is in hand, it explains the rank, the four fundamental subspaces, the operator norm, the condition number, the best low-rank approximation, the pseudoinverse, and least squares — but not everything. Two classical topics are genuinely independent of it: the general eigenvalue theory of nonsymmetric matrices, whose eigenvalues the SVD cannot see, and the orientation carried by the sign of the determinant. Each gets its own chapter in its own right.</p>
+<p>Fronting the SVD is the ordering popularized by Trefethen and Bau and, independently, by Strang. The eigenvalue-first ordering, which fronts determinants and Jordan-esque pathologies before any useful factorization appears, is treated here as a pedagogical mistake worth correcting.</p>
+</section>
+<section id="prerequisites" class="level2">
+<h2 class="anchored" data-anchor-id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Comfort with calculus and basic probability; some prior exposure to matrices at the level of Gaussian elimination.</li>
+<li>Working Python with <a href="https://numpy.org/">NumPy</a>, <a href="https://scipy.org/">SciPy</a>, and <a href="https://matplotlib.org/">matplotlib</a>. Every idea is demonstrated in code as it is introduced.</li>
+<li>No prior exposure to the SVD, spectral theory, or numerical analysis is assumed — the course is self-contained from the definition of a vector space forward.</li>
+</ul>
+<p>The mathematical voice is <em>impersonal and terse</em>: definitions, then results with complete proofs, then a code demonstration. Proofs are included not as decoration but because they are where the geometry lives.</p>
+</section>
+<section id="the-fourteen-chapters" class="level2">
+<h2 class="anchored" data-anchor-id="the-fourteen-chapters">The fourteen chapters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 28%">
+<col style="width: 59%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ch</th>
+<th>Chapter</th>
+<th>Center of gravity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>01</td>
+<td>Foundations</td>
+<td>vectors, matrices, inner products, norms, orthogonal matrices</td>
+</tr>
+<tr class="even">
+<td>02</td>
+<td>The spectral theorem</td>
+<td>symmetric matrices diagonalize over an orthonormal basis</td>
+</tr>
+<tr class="odd">
+<td>03</td>
+<td>The singular value decomposition</td>
+<td>geometry, existence, low-rank approximation, Eckart–Young</td>
+</tr>
+<tr class="even">
+<td>04</td>
+<td>Rank &amp; the four fundamental subspaces</td>
+<td>rank as information, numerical rank, the subspace quartet</td>
+</tr>
+<tr class="odd">
+<td>05</td>
+<td>Determinant</td>
+<td>signed volume, invertibility</td>
+</tr>
+<tr class="even">
+<td>06</td>
+<td>Inverse &amp; pseudoinverse</td>
+<td>left/right inverses, the Moore–Penrose inverse</td>
+</tr>
+<tr class="odd">
+<td>07</td>
+<td>Projection &amp; orthogonalization</td>
+<td>orthogonal projectors, Gram–Schmidt, QR, Sherman–Morrison</td>
+</tr>
+<tr class="even">
+<td>08</td>
+<td>Least squares</td>
+<td>the normal equations, the SVD solution, gradient descent</td>
+</tr>
+<tr class="odd">
+<td>09</td>
+<td>Eigendecomposition</td>
+<td>diagonalization, Gershgorin disks, multiplicities, power iteration</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>Quadratic forms</td>
+<td>definiteness, principal axes, the Rayleigh quotient</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>Topic modeling with SVD and NMF</td>
+<td>term–document matrices, topics as singular vectors, NMF, randomized SVD</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>PageRank</td>
+<td>the web as a stochastic matrix, power iteration, damping</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td>Robust PCA</td>
+<td>low-rank plus sparse decomposition, nuclear norm, soft-thresholding</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td>Compressed sensing</td>
+<td>underdetermined systems, <span class="math inline">\ell_1</span> vs <span class="math inline">\ell_2</span>, the restricted isometry property</td>
+</tr>
+</tbody>
+</table>
+<p>Chapters 01–03 form the spine; everything after is an application of that spine. The chapters build on one another and reward reading in order, though the table also works as a lookup index. Chapters 11–14 close the course with four applications — topic modeling, PageRank, robust PCA, and compressed sensing — each putting an idea from the first ten chapters to work outside the synthetic demos of the spine.</p>
+</section>
+<section id="conventions" class="level2">
+<h2 class="anchored" data-anchor-id="conventions">Conventions</h2>
+<p>Notation is the interface, so the course keeps it rigid. The central distinction is between an <strong>operator</strong> and its <strong>representation</strong>:</p>
+<ul>
+<li><strong>Operators</strong> are linear maps between vector spaces, written in regular font: <span class="math inline">T</span>, <span class="math inline">S</span>. They are basis-free.</li>
+<li><strong>Vectors and matrices</strong> are representations — a concrete vector or the matrix of an operator in a chosen basis — written in <strong>bold</strong>: vectors <span class="math inline">\mathbf{x}, \mathbf{y} \in \mathbb{R}^n</span>; matrices <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span>.</li>
+<li><strong>Scalars and components</strong> are regular font: <span class="math inline">\alpha</span>, <span class="math inline">\sigma_i</span>, <span class="math inline">\lambda_i</span>, and the coordinates <span class="math inline">x_i</span> of a vector <span class="math inline">\mathbf{x}</span>.</li>
+</ul>
+<p>A vector is a column <span class="math inline">\mathbf{x} = (x_1, \dots, x_n)^{\mathsf T}</span>; row vectors appear only as transposes. The standard inner product is <span class="math inline">\langle \mathbf{x}, \mathbf{y}\rangle = \mathbf{x}^{\mathsf T}\mathbf{y}</span>. The identity and zero <em>matrices</em> are <span class="math inline">\mathbf{I}</span> and <span class="math inline">\mathbf{0}</span>; the identity and zero <em>operators</em> are <span class="math inline">I</span> and <span class="math inline">0</span>. Orthogonal always means <span class="math inline">\mathbf{Q}^{\mathsf T}\mathbf{Q} = \mathbf{I}</span>. The <strong>singular values</strong> of <span class="math inline">\mathbf{A}</span> are <span class="math inline">\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_r &gt; 0</span>; the <strong>eigenvalues</strong> are <span class="math inline">\lambda_1, \lambda_2, \dots</span>.</p>
+<p>The source of the course is a set of eleven notebooks first written as an undergraduate study aid; this rewrite reconstructs the same material with complete proofs, consistent notation, and the numerical-analysis depth the original sketch left out.</p>
+
+
+
+</section>
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="16" data-listing-word-count-sort="3187">
+<div class="thumbnail"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">Compressed sensing</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of…<span class="math inline"></span><mark></mark><span class="math inline"></span><span class="math inline"></span><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="../../courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="" data-listing-file-modified-sort="1787425121752" data-listing-reading-time-sort="13" data-listing-word-count-sort="2595">
+<div class="thumbnail"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">Eigendecomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix…<mark></mark><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="../../courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="18" data-listing-word-count-sort="3568">
+<div class="thumbnail"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">PageRank</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+The World Wide Web is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-categories="" data-listing-file-modified-sort="1787425121745" data-listing-reading-time-sort="14" data-listing-word-count-sort="2724">
+<div class="thumbnail"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">Projection &amp; orthogonalization</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf…</span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="13" data-listing-word-count-sort="2596">
+<div class="thumbnail"><a href="../../courses/cla/03-svd.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/03-svd.html" class="no-external">The singular value decomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/03-svd.html" class="no-external">
+The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathb…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/03-svd.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../courses/cla/01-foundations.html" class="pagination-link" aria-label="01. Foundations">
+        <span class="nav-page-text">01. Foundations</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

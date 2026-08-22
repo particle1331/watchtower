@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>PageRank – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../courses/cla/13-robust-pca.html" rel="next">
+<link href="../../courses/cla/11-topic-modeling.html" rel="prev">
+<link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/11-topic-modeling.html">Applications</a></li><li class="breadcrumb-item"><a href="../../courses/cla/12-pagerank.html">12. PageRank</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational Linear Algebra</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/01-foundations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Foundations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SVD and its proof</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. The spectral theorem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/03-svd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. The singular value decomposition</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Structure</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Rank &amp; the four fundamental subspaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/05-determinant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Determinant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Inverse &amp; pseudoinverse</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Projection &amp; orthogonalization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/08-least-squares.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Least squares</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The eigenworld</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Eigendecomposition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/10-quadratic-forms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Quadratic forms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Applications</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Topic modeling with SVD and NMF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/12-pagerank.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">12. PageRank</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/13-robust-pca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Robust PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/14-compressed-sensing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Compressed sensing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#a-teaching-web" id="toc-a-teaching-web" class="nav-link active" data-scroll-target="#a-teaching-web">A teaching web</a></li>
+  <li><a href="#from-links-to-probabilities" id="toc-from-links-to-probabilities" class="nav-link" data-scroll-target="#from-links-to-probabilities">From links to probabilities</a></li>
+  <li><a href="#power-iteration-undamped" id="toc-power-iteration-undamped" class="nav-link" data-scroll-target="#power-iteration-undamped">Power iteration, undamped</a></li>
+  <li><a href="#damping-and-the-google-matrix" id="toc-damping-and-the-google-matrix" class="nav-link" data-scroll-target="#damping-and-the-google-matrix">Damping and the Google matrix</a></li>
+  <li><a href="#pagerank-on-a-real-network" id="toc-pagerank-on-a-real-network" class="nav-link" data-scroll-target="#pagerank-on-a-real-network">PageRank on a real network</a></li>
+  <li><a href="#svd-versus-eigendecomposition-one-last-time" id="toc-svd-versus-eigendecomposition-one-last-time" class="nav-link" data-scroll-target="#svd-versus-eigendecomposition-one-last-time">SVD versus eigendecomposition, one last time</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#problems" id="toc-problems" class="nav-link" data-scroll-target="#problems">Problems</a>
+  <ul class="collapse">
+  <li><a href="#p12.1-the-eigenvalue-spectrum-of-the-google-matrix" id="toc-p12.1-the-eigenvalue-spectrum-of-the-google-matrix" class="nav-link" data-scroll-target="#p12.1-the-eigenvalue-spectrum-of-the-google-matrix">[P12.1] The eigenvalue spectrum of the Google matrix</a></li>
+  <li><a href="#p12.2-mass-leak-and-closed-classes" id="toc-p12.2-mass-leak-and-closed-classes" class="nav-link" data-scroll-target="#p12.2-mass-leak-and-closed-classes">[P12.2] Mass leak and closed classes</a></li>
+  <li><a href="#p12.3-the-damping-bound-numerically" id="toc-p12.3-the-damping-bound-numerically" class="nav-link" data-scroll-target="#p12.3-the-damping-bound-numerically">[P12.3] The damping bound, numerically</a></li>
+  <li><a href="#p12.4-pagerank-without-forming-the-google-matrix" id="toc-p12.4-pagerank-without-forming-the-google-matrix" class="nav-link" data-scroll-target="#p12.4-pagerank-without-forming-the-google-matrix">[P12.4] PageRank without forming the Google matrix</a></li>
+  <li><a href="#p12.5-simulating-the-random-surfer" id="toc-p12.5-simulating-the-random-surfer" class="nav-link" data-scroll-target="#p12.5-simulating-the-random-surfer">[P12.5] Simulating the random surfer</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/11-topic-modeling.html">Applications</a></li><li class="breadcrumb-item"><a href="../../courses/cla/12-pagerank.html">12. PageRank</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">PageRank</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>The <a href="https://en.wikipedia.org/wiki/PageRank">World Wide Web</a> is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by importance is the problem that founded the search industry, and its solution rests on one recursive idea: <strong>a page is important if important pages link to it</strong>. The definition is circular, which is precisely what makes it a fixed-point problem: the kind this course has a tool for.</p>
+<p>Chapter 9 ended with the power method, the iterative engine that finds a matrix’s dominant eigenvector using nothing but matrix-vector products, and noted in passing that it is the algorithm behind PageRank. This chapter makes good on that claim. The link structure becomes a matrix, importance becomes an eigenvector, and the power method becomes the ranking algorithm. Two ingredients appear that Chapter 9’s symmetric demo did not exercise: the matrix is <em>nonsymmetric</em> and <em>column-stochastic</em>: the transition matrix of a <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chain</a>.</p>
+<p>The view that makes the connection work is the <mark>random surfer</mark>: a hypothetical reader who starts on a random page, follows a random link on each page, and repeats forever. The fraction of time the surfer spends on each page is a natural measure of importance, and the graph alone determines it — again a fixed point, this time of a probabilistic system.</p>
+<section id="a-teaching-web" class="level2">
+<h2 class="anchored" data-anchor-id="a-teaching-web">A teaching web</h2>
+<p>The ideas are developed on a small synthetic web of sixteen pages, labeled <span class="math inline">\mathrm{A}</span> through <span class="math inline">\mathrm{P}</span>, engineered to contain the three structures that break naive ranking: two <strong>hubs</strong> (pages with many out-links), a <mark>dangling node</mark> (a page with no out-links at all), and a <em>sink cluster</em> (a group of pages that link only to one another). The link structure is deliberately asymmetric: page <span class="math inline">\mathrm{A}</span> receives eleven in-links while page <span class="math inline">\mathrm{P}</span> receives none, so a sensible ranking is not obvious from link counts alone.</p>
+<p>The adjacency matrix <span class="math inline">\mathbf{A} \in \mathbb{R}^{n \times n}</span> records the links: <span class="math inline">A_{ds} = 1</span> when page <span class="math inline">s</span> links to page <span class="math inline">d</span>, and <span class="math inline">0</span> otherwise. Column <span class="math inline">s</span> lists the out-links of page <span class="math inline">s</span>; row <span class="math inline">d</span> lists the in-links of page <span class="math inline">d</span>.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Page</th>
+<th>Out-links</th>
+<th>Page</th>
+<th>Out-links</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>B C D E F G H</td>
+<td>I</td>
+<td>J K</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>A C D</td>
+<td>J</td>
+<td>I K</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>A B</td>
+<td>K</td>
+<td>I J</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>A B</td>
+<td>L</td>
+<td>A B C</td>
+</tr>
+<tr class="odd">
+<td>E</td>
+<td>A</td>
+<td>M</td>
+<td>A L</td>
+</tr>
+<tr class="even">
+<td>F</td>
+<td>A B</td>
+<td>N</td>
+<td>A M</td>
+</tr>
+<tr class="odd">
+<td>G</td>
+<td>A B</td>
+<td>O</td>
+<td>A N</td>
+</tr>
+<tr class="even">
+<td>H</td>
+<td>none</td>
+<td>P</td>
+<td>A O</td>
+</tr>
+</tbody>
+</table>
+<p>Column <span class="math inline">\mathrm{H}</span> is empty: the dangling node. And because <span class="math inline">\mathrm{I}, \mathrm{J}, \mathrm{K}</span> link only to one another, no surfer mass that enters that cluster can ever leave it, a fact that will matter shortly.</p>
+<div id="322c91c5" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:38.121008Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:38.120889Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.233791Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.232415Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_format</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>set_format(<span class="st">"svg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-fig-pagerank-graph" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:40.237180Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:40.236774Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.721509Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.720458Z&quot;}}" data-cap="**Teaching web.** Sixteen pages with two hubs (A, B), a dangling node (H), and a closed sink cluster (I, J, K). Arrows point from the linking page to the linked page." data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-2"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-2-1"><a href="#annotated-cell-2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-2-2"><a href="#annotated-cell-2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="annotated-cell-2-3"><a href="#annotated-cell-2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="annotated-cell-2-4"><a href="#annotated-cell-2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-5"><a href="#annotated-cell-2-5" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> <span class="bu">list</span>(<span class="st">'ABCDEFGHIJKLMNOP'</span>)</span>
+<span id="annotated-cell-2-6"><a href="#annotated-cell-2-6" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {<span class="st">'A'</span>: <span class="st">'BCDEFGH'</span>, <span class="st">'B'</span>: <span class="st">'ACD'</span>, <span class="st">'C'</span>: <span class="st">'AB'</span>, <span class="st">'D'</span>: <span class="st">'AB'</span>, <span class="st">'E'</span>: <span class="st">'A'</span>,</span>
+<span id="annotated-cell-2-7"><a href="#annotated-cell-2-7" aria-hidden="true" tabindex="-1"></a>       <span class="st">'F'</span>: <span class="st">'AB'</span>, <span class="st">'G'</span>: <span class="st">'AB'</span>, <span class="st">'H'</span>: <span class="st">''</span>, <span class="st">'I'</span>: <span class="st">'JK'</span>, <span class="st">'J'</span>: <span class="st">'IK'</span>, <span class="st">'K'</span>: <span class="st">'IJ'</span>,</span>
+<span id="annotated-cell-2-8"><a href="#annotated-cell-2-8" aria-hidden="true" tabindex="-1"></a>       <span class="st">'L'</span>: <span class="st">'ABC'</span>, <span class="st">'M'</span>: <span class="st">'AL'</span>, <span class="st">'N'</span>: <span class="st">'AM'</span>, <span class="st">'O'</span>: <span class="st">'AN'</span>, <span class="st">'P'</span>: <span class="st">'AO'</span>}</span>
+<span id="annotated-cell-2-9"><a href="#annotated-cell-2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-10"><a href="#annotated-cell-2-10" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(pages)</span>
+<span id="annotated-cell-2-11"><a href="#annotated-cell-2-11" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> {p: i <span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(pages)}</span>
+<span id="annotated-cell-2-12"><a href="#annotated-cell-2-12" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.zeros((n, n))</span>
+<span id="annotated-cell-2-13"><a href="#annotated-cell-2-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s, dests <span class="kw">in</span> out.items():</span>
+<span id="annotated-cell-2-14"><a href="#annotated-cell-2-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> d <span class="kw">in</span> dests:</span>
+<span id="annotated-cell-2-15"><a href="#annotated-cell-2-15" aria-hidden="true" tabindex="-1"></a>        A[index[d], index[s]] <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="annotated-cell-2-16"><a href="#annotated-cell-2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-17"><a href="#annotated-cell-2-17" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.DiGraph()</span>
+<span id="annotated-cell-2-18"><a href="#annotated-cell-2-18" aria-hidden="true" tabindex="-1"></a>G.add_nodes_from(pages)</span>
+<span id="annotated-cell-2-19"><a href="#annotated-cell-2-19" aria-hidden="true" tabindex="-1"></a>G.add_edges_from((s, d) <span class="cf">for</span> s, dests <span class="kw">in</span> out.items() <span class="cf">for</span> d <span class="kw">in</span> dests)</span>
+<span id="annotated-cell-2-20"><a href="#annotated-cell-2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-21"><a href="#annotated-cell-2-21" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> {<span class="st">'A'</span>: <span class="st">'tab:red'</span>, <span class="st">'B'</span>: <span class="st">'tab:orange'</span>, <span class="st">'H'</span>: <span class="st">'tab:gray'</span>,</span>
+<span id="annotated-cell-2-22"><a href="#annotated-cell-2-22" aria-hidden="true" tabindex="-1"></a>          <span class="st">'I'</span>: <span class="st">'tab:blue'</span>, <span class="st">'J'</span>: <span class="st">'tab:blue'</span>, <span class="st">'K'</span>: <span class="st">'tab:blue'</span>}</span>
+<span id="annotated-cell-2-23"><a href="#annotated-cell-2-23" aria-hidden="true" tabindex="-1"></a>node_color <span class="op">=</span> [colors.get(p, <span class="st">'lightsteelblue'</span>) <span class="cf">for</span> p <span class="kw">in</span> pages]</span>
+<span id="annotated-cell-2-24"><a href="#annotated-cell-2-24" aria-hidden="true" tabindex="-1"></a>pos <span class="op">=</span> nx.spring_layout(G, seed<span class="op">=</span><span class="dv">0</span>, k<span class="op">=</span><span class="fl">1.2</span>, iterations<span class="op">=</span><span class="dv">60</span>)</span>
+<span id="annotated-cell-2-25"><a href="#annotated-cell-2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-26"><a href="#annotated-cell-2-26" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">7.5</span>, <span class="fl">6.5</span>))</span>
+<span id="annotated-cell-2-27"><a href="#annotated-cell-2-27" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx(G, pos, ax<span class="op">=</span>ax, node_color<span class="op">=</span>node_color, node_size<span class="op">=</span><span class="dv">900</span>,</span>
+<span id="annotated-cell-2-28"><a href="#annotated-cell-2-28" aria-hidden="true" tabindex="-1"></a>                 font_size<span class="op">=</span><span class="dv">13</span>, arrowsize<span class="op">=</span><span class="dv">14</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>, width<span class="op">=</span><span class="fl">1.2</span>)</span>
+<span id="annotated-cell-2-29"><a href="#annotated-cell-2-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> label, c <span class="kw">in</span> [(<span class="st">'hub A'</span>, <span class="st">'tab:red'</span>), (<span class="st">'hub B'</span>, <span class="st">'tab:orange'</span>),</span>
+<span id="annotated-cell-2-30"><a href="#annotated-cell-2-30" aria-hidden="true" tabindex="-1"></a>                 (<span class="st">'dangling H'</span>, <span class="st">'tab:gray'</span>), (<span class="st">'sink cluster'</span>, <span class="st">'tab:blue'</span>),</span>
+<span id="annotated-cell-2-31"><a href="#annotated-cell-2-31" aria-hidden="true" tabindex="-1"></a>                 (<span class="st">'leaf'</span>, <span class="st">'lightsteelblue'</span>)]:</span>
+<span id="annotated-cell-2-32"><a href="#annotated-cell-2-32" aria-hidden="true" tabindex="-1"></a>    ax.scatter([], [], c<span class="op">=</span>c, s<span class="op">=</span><span class="dv">90</span>, label<span class="op">=</span>label)</span>
+<span id="annotated-cell-2-33"><a href="#annotated-cell-2-33" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">'lower left'</span>, frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="annotated-cell-2-34"><a href="#annotated-cell-2-34" aria-hidden="true" tabindex="-1"></a>ax.axis(<span class="st">'off'</span>)</span>
+<span id="annotated-cell-2-35"><a href="#annotated-cell-2-35" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="annotated-cell-2-36"><a href="#annotated-cell-2-36" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="annotated-cell-2-37"><a href="#annotated-cell-2-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-2-38"><a href="#annotated-cell-2-38" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(A.astype(<span class="bu">int</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-pagerank-graph" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pagerank-graph-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="12-pagerank_files/figure-html/fig-pagerank-graph-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Figure&nbsp;1: "><img src="12-pagerank_files/figure-html/fig-pagerank-graph-output-1.svg" id="fig-pagerank-graph" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-pagerank-graph-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[0 1 1 1 1 1 1 0 0 0 0 1 1 1 1 1]
+ [1 0 1 1 0 1 1 0 0 0 0 1 0 0 0 0]
+ [1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0]
+ [1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]]</code></pre>
+</div>
+</div>
+<p><strong>The teaching graph.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> The adjacency convention: a <span class="math inline">1</span> in row <span class="math inline">d</span>, column <span class="math inline">s</span> says page <span class="math inline">s</span> links to page <span class="math inline">d</span>, so column <span class="math inline">s</span> is the out-link list of page <span class="math inline">s</span>.</li>
+<li><code>&lt;2&gt;</code> Empty scatter points supply the legend: hubs in red and orange, the dangling node in gray, the sink cluster in blue, leaves in light blue.</li>
+</ul>
+<p>The printed matrix makes the structure legible. Column <span class="math inline">\mathrm{H}</span> is entirely zero: the dangling node. The submatrix on rows and columns <span class="math inline">\mathrm{I}, \mathrm{J}, \mathrm{K}</span> is the closed cluster: its columns have their <span class="math inline">1</span>s inside the cluster and nowhere else, so mass that enters it never leaves. Page <span class="math inline">\mathrm{A}</span>’s row holds eleven <span class="math inline">1</span>s, the most in-links of any page; page <span class="math inline">\mathrm{P}</span>’s row is empty. A naive “count the in-links” ranking would put <span class="math inline">\mathrm{A}</span> first and <span class="math inline">\mathrm{P}</span> last, which is the right spirit, but the closed cluster will defeat the naive <em>linear</em> ranking below.</p>
+</section>
+<section id="from-links-to-probabilities" class="level2">
+<h2 class="anchored" data-anchor-id="from-links-to-probabilities">From links to probabilities</h2>
+<p>A surfer at page <span class="math inline">s</span> picks uniformly among its out-links. Normalizing column <span class="math inline">s</span> of <span class="math inline">\mathbf{A}</span> by the out-degree <span class="math inline">\operatorname{out}(s) = \sum_d A_{ds}</span> turns each column into a probability distribution over the next page:</p>
+<p><span class="math display">\mathbf{P}_{ds} = \frac{A_{ds}}{\operatorname{out}(s)}, \qquad \sum_d \mathbf{P}_{ds} = 1.</span></p>
+<p>The matrix <span class="math inline">\mathbf{P}</span> is <mark>column-stochastic</mark>: nonnegative entries with every column summing to one. It is the transition matrix of a <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chain</a> on the pages: <span class="math inline">\mathbf{P}_{ds}</span> is the probability that a surfer at page <span class="math inline">s</span> moves to page <span class="math inline">d</span>. Unlike every matrix iterated in Chapter 9, <span class="math inline">\mathbf{P}</span> is not symmetric: the web’s links point one way, so the full nonsymmetric machinery of that chapter applies.</p>
+<p>The cell below builds <span class="math inline">\mathbf{P}</span> and records its spectrum. The dangling column <span class="math inline">\mathrm{H}</span> is left as a zero column for now; the division by <span class="math inline">\operatorname{out}(\mathrm{H}) = 0</span> is undefined, and confronting that undefinedness is the point.</p>
+<div id="a57524a3" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:40.726594Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:40.726167Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.741928Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.740268Z&quot;}}" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-3"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-3-1"><a href="#annotated-cell-3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-3-2"><a href="#annotated-cell-3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-3-3"><a href="#annotated-cell-3-3" aria-hidden="true" tabindex="-1"></a>outdeg <span class="op">=</span> A.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="annotated-cell-3-4"><a href="#annotated-cell-3-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> np.errstate(divide<span class="op">=</span><span class="st">'ignore'</span>, invalid<span class="op">=</span><span class="st">'ignore'</span>):</span>
+<span id="annotated-cell-3-5"><a href="#annotated-cell-3-5" aria-hidden="true" tabindex="-1"></a>    P <span class="op">=</span> A <span class="op">/</span> outdeg</span>
+<span id="annotated-cell-3-6"><a href="#annotated-cell-3-6" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> np.nan_to_num(P, nan<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="annotated-cell-3-7"><a href="#annotated-cell-3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-3-8"><a href="#annotated-cell-3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'out-degrees :'</span>, <span class="bu">dict</span>(<span class="bu">zip</span>(pages, outdeg.astype(<span class="bu">int</span>).tolist())))</span>
+<span id="annotated-cell-3-9"><a href="#annotated-cell-3-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'column sums :'</span>, np.<span class="bu">round</span>(P.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>), <span class="dv">3</span>))</span>
+<span id="annotated-cell-3-10"><a href="#annotated-cell-3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="annotated-cell-3-11"><a href="#annotated-cell-3-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'P ='</span>)</span>
+<span id="annotated-cell-3-12"><a href="#annotated-cell-3-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(P, <span class="dv">2</span>))</span>
+<span id="annotated-cell-3-13"><a href="#annotated-cell-3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-3-14"><a href="#annotated-cell-3-14" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.eigvals(P)</span>
+<span id="annotated-cell-3-15"><a href="#annotated-cell-3-15" aria-hidden="true" tabindex="-1"></a>lam_abs <span class="op">=</span> np.sort(np.<span class="bu">abs</span>(lam))[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="annotated-cell-3-16"><a href="#annotated-cell-3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="annotated-cell-3-17"><a href="#annotated-cell-3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'|lambda_1|         ='</span>, np.<span class="bu">round</span>(lam_abs[<span class="dv">0</span>], <span class="dv">6</span>))</span>
+<span id="annotated-cell-3-18"><a href="#annotated-cell-3-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'|lambda_2/lambda_1| ='</span>, np.<span class="bu">round</span>(lam_abs[<span class="dv">1</span>] <span class="op">/</span> lam_abs[<span class="dv">0</span>], <span class="dv">6</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>out-degrees : {'A': 7, 'B': 3, 'C': 2, 'D': 2, 'E': 1, 'F': 2, 'G': 2, 'H': 0, 'I': 2, 'J': 2, 'K': 2, 'L': 3, 'M': 2, 'N': 2, 'O': 2, 'P': 2}
+column sums : [1. 1. 1. 1. 1. 1. 1. 0. 1. 1. 1. 1. 1. 1. 1. 1.]
+
+P =
+[[0.   0.33 0.5  0.5  1.   0.5  0.5  0.   0.   0.   0.   0.33 0.5  0.5
+  0.5  0.5 ]
+ [0.14 0.   0.5  0.5  0.   0.5  0.5  0.   0.   0.   0.   0.33 0.   0.
+  0.   0.  ]
+ [0.14 0.33 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.33 0.   0.
+  0.   0.  ]
+ [0.14 0.33 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.  ]
+ [0.14 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.  ]
+ [0.14 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.  ]
+ [0.14 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.  ]
+ [0.14 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.   0.5  0.5  0.   0.   0.
+  0.   0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.5  0.   0.5  0.   0.   0.
+  0.   0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.5  0.5  0.   0.   0.   0.
+  0.   0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.5  0.
+  0.   0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.5
+  0.   0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.5  0.  ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.5 ]
+ [0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+  0.   0.  ]]
+
+|lambda_1|         = 1.0
+|lambda_2/lambda_1| = 0.952378</code></pre>
+</div>
+</div>
+<p><strong>The stochastic matrix.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> The out-degree of page <span class="math inline">s</span> is the sum of column <span class="math inline">s</span> of <span class="math inline">\mathbf{A}</span>.</li>
+<li><code>&lt;2&gt;</code> The dangling column <span class="math inline">\mathrm{H}</span> produced a <span class="math inline">0/0</span>; it is set to zero rather than left as <code>nan</code>.</li>
+</ul>
+<p>Every nonzero column of <span class="math inline">\mathbf{P}</span> sums to one, as the printed column sums show; the exception is column <span class="math inline">\mathrm{H}</span>, whose out-degree is zero. The spectrum confirms the theory: <span class="math inline">\lambda_1 = 1</span> exactly, and <span class="math inline">|\lambda_2/\lambda_1| = 0.952</span>. By the convergence-rate formula of Chapter 9 the power method will need hundreds of iterations here, a first hint that the undamped matrix is not through misbehaving.</p>
+<p>Column-stochasticity is a statement about the <em>left</em> eigenvector: <span class="math inline">\mathbf{1}^{\mathsf T}\mathbf{P} = \mathbf{1}^{\mathsf T}</span>. The ranking lives on the <em>right</em> side: a vector <span class="math inline">\mathbf{x}</span> with <span class="math inline">\mathbf{P}\mathbf{x} = \mathbf{x}</span>, <span class="math inline">\mathbf{x} \ge \mathbf{0}</span> and <span class="math inline">\sum_d x_d = 1</span> is a <mark>stationary distribution</mark>, the long-run fraction of visits the surfer pays to each page. For the symmetric matrices of Chapters 2 and 9 the two sides coincide; for a nonsymmetric <span class="math inline">\mathbf{P}</span> they are different objects, and the biorthogonality of Chapter 9 becomes operational.</p>
+</section>
+<section id="power-iteration-undamped" class="level2">
+<h2 class="anchored" data-anchor-id="power-iteration-undamped">Power iteration, undamped</h2>
+<p>Chapter 9’s power method finds the dominant eigenvector by iterating <span class="math inline">\mathbf{x}_{k+1} = \mathbf{P}\mathbf{x}_k</span> and renormalizing. Nothing in its derivation required symmetry, so it applies to the nonsymmetric <span class="math inline">\mathbf{P}</span> unchanged; only the normalization differs. Chapter 9 normalized to unit 2-norm to feed the Rayleigh quotient; here the limit is a probability distribution, so the iterates are normalized to sum to one. The two normalizations change the scale, not the direction, and the direction is what converges.</p>
+<p>The convergence rate is the same formula as in Chapter 9: the error in direction decays like <span class="math inline">|\lambda_2/\lambda_1|^k</span>, now <span class="math inline">0.952^k</span>. The iteration below runs until consecutive iterates agree to <span class="math inline">10^{-10}</span> in the 2-norm.</p>
+<div id="9b08a89a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:40.744529Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:40.744316Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.753541Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.752695Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-4"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-4-1"><a href="#annotated-cell-4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> power_method(P, max_iter<span class="op">=</span><span class="dv">5000</span>, tol<span class="op">=</span><span class="fl">1e-10</span>):</span>
+<span id="annotated-cell-4-2"><a href="#annotated-cell-4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Dominant right eigenvector of P: x_{k+1} = P x_k, normalized to sum one."""</span></span>
+<span id="annotated-cell-4-3"><a href="#annotated-cell-4-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> P.shape[<span class="dv">0</span>]</span>
+<span id="annotated-cell-4-4"><a href="#annotated-cell-4-4" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> np.full(n, <span class="fl">1.0</span> <span class="op">/</span> n)</span>
+<span id="annotated-cell-4-5"><a href="#annotated-cell-4-5" aria-hidden="true" tabindex="-1"></a>    residuals <span class="op">=</span> []</span>
+<span id="annotated-cell-4-6"><a href="#annotated-cell-4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(max_iter):</span>
+<span id="annotated-cell-4-7"><a href="#annotated-cell-4-7" aria-hidden="true" tabindex="-1"></a>        x_new <span class="op">=</span> P <span class="op">@</span> x</span>
+<span id="annotated-cell-4-8"><a href="#annotated-cell-4-8" aria-hidden="true" tabindex="-1"></a>        x_new <span class="op">=</span> x_new <span class="op">/</span> x_new.<span class="bu">sum</span>()</span>
+<span id="annotated-cell-4-9"><a href="#annotated-cell-4-9" aria-hidden="true" tabindex="-1"></a>        residuals.append(np.linalg.norm(x_new <span class="op">-</span> x, <span class="dv">2</span>))</span>
+<span id="annotated-cell-4-10"><a href="#annotated-cell-4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> residuals[<span class="op">-</span><span class="dv">1</span>] <span class="op">&lt;</span> tol:</span>
+<span id="annotated-cell-4-11"><a href="#annotated-cell-4-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="annotated-cell-4-12"><a href="#annotated-cell-4-12" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> x_new</span>
+<span id="annotated-cell-4-13"><a href="#annotated-cell-4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x, np.array(residuals), k <span class="op">+</span> <span class="dv">1</span></span>
+<span id="annotated-cell-4-14"><a href="#annotated-cell-4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-15"><a href="#annotated-cell-4-15" aria-hidden="true" tabindex="-1"></a>scores, residuals, iters <span class="op">=</span> power_method(P)</span>
+<span id="annotated-cell-4-16"><a href="#annotated-cell-4-16" aria-hidden="true" tabindex="-1"></a>rank <span class="op">=</span> np.argsort(<span class="op">-</span>scores)</span>
+<span id="annotated-cell-4-17"><a href="#annotated-cell-4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-4-18"><a href="#annotated-cell-4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'converged in </span><span class="sc">{</span>iters<span class="sc">}</span><span class="ss"> iterations, final residual </span><span class="sc">{</span>residuals[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1e}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-4-19"><a href="#annotated-cell-4-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> rank:</span>
+<span id="annotated-cell-4-20"><a href="#annotated-cell-4-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'  </span><span class="sc">{</span>pages[i]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>scores[i]<span class="sc">:.6f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>converged in 434 iterations, final residual 1.0e-10
+  I: 0.333333
+  J: 0.333333
+  K: 0.333333
+  A: 0.000000
+  B: 0.000000
+  C: 0.000000
+  D: 0.000000
+  E: 0.000000
+  F: 0.000000
+  G: 0.000000
+  H: 0.000000
+  L: 0.000000
+  M: 0.000000
+  N: 0.000000
+  O: 0.000000
+  P: 0.000000</code></pre>
+</div>
+</div>
+<p><strong>The undamped ranking.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> One matrix-vector product per step; this is the entire per-iteration cost of the method, as in Chapter 9.</li>
+<li><code>&lt;2&gt;</code> Sum-to-one normalization keeps <span class="math inline">\mathbf{x}</span> a probability vector; only the direction matters for convergence.</li>
+</ul>
+<p>The iteration converged and produced a ranking that is obviously wrong. All of the probability mass sits on the sink cluster <span class="math inline">\{\mathrm{I}, \mathrm{J}, \mathrm{K}\}</span>, split evenly, and every other page — including <span class="math inline">\mathrm{A}</span>, the most-linked page in the graph — scores zero to six decimals. The failure has two independent causes, each a violation of an assumption the eigenvector story silently makes.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 55%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Failure</th>
+<th>Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dangling node <span class="math inline">\mathrm{H}</span></td>
+<td>Column <span class="math inline">\mathrm{H}</span> of <span class="math inline">\mathbf{P}</span> is zero, so a surfer at <span class="math inline">\mathrm{H}</span> has no next page. Mass vanishes at <span class="math inline">\mathrm{H}</span> instead of circulating, and the matrix is not stochastic.</td>
+</tr>
+<tr class="even">
+<td>Closed sink cluster</td>
+<td><span class="math inline">\{\mathrm{I}, \mathrm{J}, \mathrm{K}\}</span> is a <mark>reducible</mark> component: mass that enters can never leave, so the chain has multiple closed classes and the stationary distribution is not unique. The iteration returns the distribution the cluster’s dominant eigenvalue forces.</td>
+</tr>
+</tbody>
+</table>
+<p>Both defects are repaired by a single mechanism: damping.</p>
+</section>
+<section id="damping-and-the-google-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="damping-and-the-google-matrix">Damping and the Google matrix</h2>
+<p>The two failures share a root cause: the surfer can get trapped, at <span class="math inline">\mathrm{H}</span> with nowhere to go, or inside a cluster with no way out. The <a href="https://en.wikipedia.org/wiki/PageRank">PageRank</a> remedy makes getting trapped impossible, in two small edits to <span class="math inline">\mathbf{P}</span>.</p>
+<p><strong>Dangling repair.</strong> A surfer at a page with no out-links picks a uniformly random page. Replace every zero column of <span class="math inline">\mathbf{P}</span> by the uniform column <span class="math inline">\tfrac{1}{n}\mathbf{1}</span>; call the result <span class="math inline">\widetilde{\mathbf{P}}</span>, which is now genuinely column-stochastic.</p>
+<p><strong>Teleportation.</strong> At every step the surfer follows a link with probability <span class="math inline">\alpha</span> and jumps to a uniformly random page with probability <span class="math inline">1-\alpha</span>. The transition matrix of this modified walk is the <mark>Google matrix</mark></p>
+<p><span class="math display">\boxed{\;\mathbf{G} = \alpha\widetilde{\mathbf{P}} + (1-\alpha)\,\tfrac{1}{n}\mathbf{1}\mathbf{1}^{\mathsf T},\;}</span></p>
+<p>with <mark>damping factor</mark> <span class="math inline">\alpha \approx 0.85</span>. As a convex combination of stochastic matrices, <span class="math inline">\mathbf{G}</span> is stochastic; and because the teleport term is positive, every entry of <span class="math inline">\mathbf{G}</span> is at least <span class="math inline">(1-\alpha)/n</span>: the matrix is positive.</p>
+<p>Positivity is the entire point. The <a href="https://en.wikipedia.org/wiki/Perron%E2%80%93Frobenius_theorem">Perron–Frobenius theorem</a> says a positive matrix has a unique dominant eigenvalue <span class="math inline">\lambda_1 = 1</span>, strictly larger in modulus than every other eigenvalue, with a strictly positive eigenvector. In Markov-chain language the walk is now <mark>irreducible</mark> and <mark>aperiodic</mark>: every page can be reached from every page, and a page can return to itself in one step. The stationary distribution therefore exists, is unique, and is reached from any starting vector. That unique vector is <strong>PageRank</strong>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Damping also buys a quantitative guarantee. Every eigenvalue of <span class="math inline">\mathbf{G}</span> other than <span class="math inline">\lambda_1 = 1</span> satisfies <span class="math inline">|\lambda_i| \le \alpha</span>,<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> so the power method’s rate on <span class="math inline">\mathbf{G}</span> is at most <span class="math inline">0.85</span> for <em>any</em> link structure — the pathological ratio <span class="math inline">0.952</span> is structurally impossible now. This is the same regularizing move as the ridge shift <span class="math inline">\mathbf{A} + \lambda\mathbf{I}</span> of Chapter 4, which stabilizes the least-squares problem of Chapter 8: a cheap rank-one term that pushes the spectrum into the regime where the iteration is well posed.</p>
+<div id="15e046ed" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:40.756495Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:40.756061Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.763734Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.762858Z&quot;}}" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-5"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-5-1"><a href="#annotated-cell-5-1" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.85</span></span>
+<span id="annotated-cell-5-2"><a href="#annotated-cell-5-2" aria-hidden="true" tabindex="-1"></a>P_tilde <span class="op">=</span> P.copy()</span>
+<span id="annotated-cell-5-3"><a href="#annotated-cell-5-3" aria-hidden="true" tabindex="-1"></a>P_tilde[:, outdeg <span class="op">==</span> <span class="dv">0</span>] <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> n</span>
+<span id="annotated-cell-5-4"><a href="#annotated-cell-5-4" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> alpha <span class="op">*</span> P_tilde <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> alpha) <span class="op">/</span> n <span class="op">*</span> np.ones((n, n))</span>
+<span id="annotated-cell-5-5"><a href="#annotated-cell-5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-6"><a href="#annotated-cell-5-6" aria-hidden="true" tabindex="-1"></a>scores_d, residuals_d, iters_d <span class="op">=</span> power_method(G)</span>
+<span id="annotated-cell-5-7"><a href="#annotated-cell-5-7" aria-hidden="true" tabindex="-1"></a>rank_d <span class="op">=</span> np.argsort(<span class="op">-</span>scores_d)</span>
+<span id="annotated-cell-5-8"><a href="#annotated-cell-5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-9"><a href="#annotated-cell-5-9" aria-hidden="true" tabindex="-1"></a>lam_G <span class="op">=</span> np.sort(np.<span class="bu">abs</span>(np.linalg.eigvals(G)))[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="annotated-cell-5-10"><a href="#annotated-cell-5-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'converged in </span><span class="sc">{</span>iters_d<span class="sc">}</span><span class="ss"> iterations (undamped needed </span><span class="sc">{</span>iters<span class="sc">}</span><span class="ss">)'</span>)</span>
+<span id="annotated-cell-5-11"><a href="#annotated-cell-5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'|lambda_2(G)| = </span><span class="sc">{</span>lam_G[<span class="dv">1</span>]<span class="sc">:.4f}</span><span class="ss">   bound: alpha = </span><span class="sc">{</span>alpha<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-5-12"><a href="#annotated-cell-5-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="annotated-cell-5-13"><a href="#annotated-cell-5-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> rank_d:</span>
+<span id="annotated-cell-5-14"><a href="#annotated-cell-5-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'  </span><span class="sc">{</span>pages[i]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>scores_d[i]<span class="sc">:.4f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>converged in 104 iterations (undamped needed 434)
+|lambda_2(G)| = 0.8424   bound: alpha = 0.85
+
+  A: 0.2217
+  B: 0.1467
+  C: 0.0854
+  D: 0.0799
+  J: 0.0761
+  I: 0.0761
+  K: 0.0761
+  E: 0.0383
+  F: 0.0383
+  G: 0.0383
+  H: 0.0383
+  L: 0.0196
+  M: 0.0192
+  N: 0.0183
+  O: 0.0163
+  P: 0.0114</code></pre>
+</div>
+</div>
+<p><strong>Before and after damping.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> The dangling repair: every zero column of <span class="math inline">\mathbf{P}</span> becomes the uniform column <span class="math inline">\tfrac{1}{n}\mathbf{1}</span>.</li>
+<li><code>&lt;2&gt;</code> The Google matrix as a rank-one update of <span class="math inline">\alpha\widetilde{\mathbf{P}}</span>; the teleport term needs no storage beyond the vector <span class="math inline">\mathbf{1}</span>.</li>
+<li><code>&lt;3&gt;</code> The same <code>power_method</code> runs on <span class="math inline">\mathbf{G}</span>; the algorithm does not know or care which matrix it is iterating.</li>
+</ul>
+<p>The repaired iteration converges faster, and the printed eigenvalue gap confirms the bound <span class="math inline">|\lambda_2(\mathbf{G})| \le \alpha</span>. The ranking is now sensible:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Rank</th>
+<th>Undamped (score)</th>
+<th>Damped (score)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>I, J, K (0.333)</td>
+<td>A (0.222)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>all other pages (0.000)</td>
+<td>B (0.147)</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>—</td>
+<td>C (0.085)</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>—</td>
+<td>D (0.080)</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>—</td>
+<td>I, J, K (0.076)</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>—</td>
+<td>E, F, G, H (0.038)</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>—</td>
+<td>L (0.020)</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>—</td>
+<td>M (0.019), N (0.018), O (0.016)</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>—</td>
+<td>P (0.011)</td>
+</tr>
+</tbody>
+</table>
+<p>The hub <span class="math inline">\mathrm{A}</span> ranks first and the source <span class="math inline">\mathrm{P}</span> last, as the link counts suggested; the cluster, dangling node, and leaves — indistinguishable by raw counts — are now ordered by the eigenvector. <span class="math inline">\mathrm{I}, \mathrm{J}, \mathrm{K}</span> still sit above the single-in-link leaves because each receives two in-links; <span class="math inline">\mathrm{H}</span> ranks with the leaves despite being dangling, its mass coming from <span class="math inline">\mathrm{A}</span> and the teleport term alone. Damping did not invent the ranking; it removed the structural pathologies and let the link structure speak.</p>
+</section>
+<section id="pagerank-on-a-real-network" class="level2">
+<h2 class="anchored" data-anchor-id="pagerank-on-a-real-network">PageRank on a real network</h2>
+<p>The synthetic web exercises the machinery, but the payoff is real data. <a href="https://en.wikipedia.org/wiki/Les_Mis%C3%A9rables">Les Misérables</a> ships with networkx as a <a href="https://networkx.org/documentation/stable/reference/generated/networkx.generators.social.les_miserables_graph.html">character co-occurrence network</a>: 77 nodes, one per character, with an edge between two characters whenever they appear together in a chapter of the novel. The data was compiled by Donald Knuth and is bundled with the library, so no download is needed.</p>
+<p><strong>The model.</strong> The construction is unchanged: adjacency matrix, column-stochastic <span class="math inline">\mathbf{P}</span>, Google matrix with <span class="math inline">\alpha = 0.85</span>, dominant eigenvector by power iteration. The graph is undirected, so each co-occurrence contributes two directed edges and the adjacency matrix is symmetric. Two structural differences from the synthetic web are worth noting: no character is a dangling node, and the graph is connected, so the undamped iteration would not fail here. Damping is applied anyway, because it is the standard algorithm and its convergence guarantee holds regardless.</p>
+<div id="a4843452" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:40.766298Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:40.766092Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.774473Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.773133Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-6"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-6-1"><a href="#annotated-cell-6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-6-2"><a href="#annotated-cell-6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="annotated-cell-6-3"><a href="#annotated-cell-6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-4"><a href="#annotated-cell-6-4" aria-hidden="true" tabindex="-1"></a>G_mis <span class="op">=</span> nx.les_miserables_graph()</span>
+<span id="annotated-cell-6-5"><a href="#annotated-cell-6-5" aria-hidden="true" tabindex="-1"></a>chars <span class="op">=</span> <span class="bu">list</span>(G_mis.nodes())</span>
+<span id="annotated-cell-6-6"><a href="#annotated-cell-6-6" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="bu">len</span>(chars)</span>
+<span id="annotated-cell-6-7"><a href="#annotated-cell-6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-8"><a href="#annotated-cell-6-8" aria-hidden="true" tabindex="-1"></a>A_mis <span class="op">=</span> nx.to_numpy_array(G_mis)</span>
+<span id="annotated-cell-6-9"><a href="#annotated-cell-6-9" aria-hidden="true" tabindex="-1"></a>outdeg_mis <span class="op">=</span> A_mis.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="annotated-cell-6-10"><a href="#annotated-cell-6-10" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> np.errstate(divide<span class="op">=</span><span class="st">'ignore'</span>, invalid<span class="op">=</span><span class="st">'ignore'</span>):</span>
+<span id="annotated-cell-6-11"><a href="#annotated-cell-6-11" aria-hidden="true" tabindex="-1"></a>    P_mis <span class="op">=</span> A_mis <span class="op">/</span> outdeg_mis</span>
+<span id="annotated-cell-6-12"><a href="#annotated-cell-6-12" aria-hidden="true" tabindex="-1"></a>P_mis <span class="op">=</span> np.nan_to_num(P_mis, nan<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="annotated-cell-6-13"><a href="#annotated-cell-6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-14"><a href="#annotated-cell-6-14" aria-hidden="true" tabindex="-1"></a>G_mat <span class="op">=</span> alpha <span class="op">*</span> P_mis <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> alpha) <span class="op">/</span> m <span class="op">*</span> np.ones((m, m))</span>
+<span id="annotated-cell-6-15"><a href="#annotated-cell-6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-16"><a href="#annotated-cell-6-16" aria-hidden="true" tabindex="-1"></a>scores_mis, residuals_mis, iters_mis <span class="op">=</span> power_method(G_mat)</span>
+<span id="annotated-cell-6-17"><a href="#annotated-cell-6-17" aria-hidden="true" tabindex="-1"></a>rank_mis <span class="op">=</span> np.argsort(<span class="op">-</span>scores_mis)</span>
+<span id="annotated-cell-6-18"><a href="#annotated-cell-6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-19"><a href="#annotated-cell-6-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'</span><span class="sc">{</span>m<span class="sc">}</span><span class="ss"> characters, </span><span class="sc">{</span>G_mis<span class="sc">.</span>number_of_edges()<span class="sc">}</span><span class="ss"> edges; converged in </span><span class="sc">{</span>iters_mis<span class="sc">}</span><span class="ss"> iterations'</span>)</span>
+<span id="annotated-cell-6-20"><a href="#annotated-cell-6-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="annotated-cell-6-21"><a href="#annotated-cell-6-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> rank_mis[:<span class="dv">10</span>]:</span>
+<span id="annotated-cell-6-22"><a href="#annotated-cell-6-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'  </span><span class="sc">{</span>chars[i]<span class="sc">:&lt;14}</span><span class="ss"> </span><span class="sc">{</span>scores_mis[i]<span class="sc">:.4f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>77 characters, 254 edges; converged in 69 iterations
+
+  Valjean        0.0996
+  Marius         0.0517
+  Myriel         0.0392
+  Cosette        0.0369
+  Enjolras       0.0366
+  Thenardier     0.0357
+  Courfeyrac     0.0330
+  Gavroche       0.0283
+  Fantine        0.0272
+  Javert         0.0268</code></pre>
+</div>
+</div>
+<p><strong>Importance without supervision.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> The bundled networkx graph; the method is identical to the synthetic web, only the data changed.</li>
+<li><code>&lt;2&gt;</code> <code>to_numpy_array</code> returns the symmetric adjacency matrix in the graph’s node order.</li>
+</ul>
+<p>Valjean, the protagonist, ranks first with about a tenth of the stationary mass, and the top ten reads like a cast list. The method never saw the text — only who appears with whom — yet the ranking tracks the narrative’s center of gravity. The ranking is not a re-sorted co-occurrence count: Gavroche, second by count with 22 co-occurrences, falls to eighth, while Myriel, with 10, ranks third. The recursion explains it: Myriel’s neighbors are mostly minor characters whose only connection is him, so their entire visiting mass flows back to Myriel. The count sees one link per neighbor; the eigenvector sees the mass those links carry.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Scale.</strong> Production PageRank runs on graphs with billions of nodes. The power method needs only matrix-vector products, so the Google matrix is never formed: the iterate <span class="math inline">\mathbf{G}\mathbf{x} = \alpha(\widetilde{\mathbf{P}}\mathbf{x}) + \tfrac{1-\alpha}{n}\mathbf{1}</span> costs one sparse matrix-vector product and one vector add, and at <span class="math inline">\alpha = 0.85</span> a few hundred iterations suffice. The algorithm of this chapter is, unchanged, the algorithm that ranked the web.</p>
+</div>
+</div>
+</section>
+<section id="svd-versus-eigendecomposition-one-last-time" class="level2">
+<h2 class="anchored" data-anchor-id="svd-versus-eigendecomposition-one-last-time">SVD versus eigendecomposition, one last time</h2>
+<p>Chapter 3’s SVD and Chapter 9’s eigendecomposition answer different questions about the same matrix, and the Les Misérables graph makes the difference tangible. Recall the hub/authority split of <a href="https://en.wikipedia.org/wiki/HITS_algorithm">HITS</a>: a page is a <em>hub</em> if it points to many authorities, an <em>authority</em> if many hubs point to it. In the language of Chapter 3, the hub and authority scores of the link matrix are its principal <strong>left</strong> and <strong>right</strong> singular vectors — the two orthonormal bases of the SVD — while PageRank is the principal right <em>eigenvector</em> of the Google matrix. Three importance vectors, computed on the same graph; they disagree.</p>
+<div id="62df667c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T20:59:40.776679Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T20:59:40.776496Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T20:59:40.783450Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T20:59:40.782553Z&quot;}}" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-7"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-7-1"><a href="#annotated-cell-7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-7-2"><a href="#annotated-cell-7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-3"><a href="#annotated-cell-7-3" aria-hidden="true" tabindex="-1"></a>U, s, Vt <span class="op">=</span> np.linalg.svd(P_mis)</span>
+<span id="annotated-cell-7-4"><a href="#annotated-cell-7-4" aria-hidden="true" tabindex="-1"></a>u1, v1 <span class="op">=</span> U[:, <span class="dv">0</span>], Vt[<span class="dv">0</span>, :]</span>
+<span id="annotated-cell-7-5"><a href="#annotated-cell-7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-6"><a href="#annotated-cell-7-6" aria-hidden="true" tabindex="-1"></a>hub <span class="op">=</span> np.argsort(<span class="op">-</span>np.<span class="bu">abs</span>(u1))[:<span class="dv">5</span>]</span>
+<span id="annotated-cell-7-7"><a href="#annotated-cell-7-7" aria-hidden="true" tabindex="-1"></a>auth <span class="op">=</span> np.argsort(<span class="op">-</span>np.<span class="bu">abs</span>(v1))[:<span class="dv">5</span>]</span>
+<span id="annotated-cell-7-8"><a href="#annotated-cell-7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'sigma_1 / sigma_2 ='</span>, <span class="bu">round</span>(s[<span class="dv">0</span>] <span class="op">/</span> s[<span class="dv">1</span>], <span class="dv">3</span>))</span>
+<span id="annotated-cell-7-9"><a href="#annotated-cell-7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="annotated-cell-7-10"><a href="#annotated-cell-7-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'hub (left singular):      '</span>, [chars[i] <span class="cf">for</span> i <span class="kw">in</span> hub])</span>
+<span id="annotated-cell-7-11"><a href="#annotated-cell-7-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'authority (right singular):'</span>, [chars[i] <span class="cf">for</span> i <span class="kw">in</span> auth])</span>
+<span id="annotated-cell-7-12"><a href="#annotated-cell-7-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'PageRank top five:        '</span>, [chars[i] <span class="cf">for</span> i <span class="kw">in</span> rank_mis[:<span class="dv">5</span>]])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>sigma_1 / sigma_2 = 1.023
+
+hub (left singular):       ['Myriel', 'Valjean', 'Javert', 'Fantine', 'Cosette']
+authority (right singular): ['Cravatte', 'Napoleon', 'CountessDeLo', 'Geborand', 'Champtercier']
+PageRank top five:         ['Valjean', 'Marius', 'Myriel', 'Cosette', 'Enjolras']</code></pre>
+</div>
+</div>
+<p><strong>Two factorizations, three rankings.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> The principal left and right singular vectors of <span class="math inline">\mathbf{P}</span>; neither is guaranteed nonnegative, so the comparison uses magnitudes.</li>
+</ul>
+<p>The three vectors split the graph differently. The hub vector centers on the best-connected characters, with Myriel and Valjean leading; the authority vector is dominated by the degree-one periphery, Cravatte, Napoleon, and the other characters whose only connection is Myriel; and PageRank’s top five shares Valjean, Myriel, and Cosette with the hub vector but nothing with the authority vector. Marius, second by PageRank, appears in neither singular vector’s top five.</p>
+<p>The disagreement is structural, not a bug, and the printed ratio exposes it. With <span class="math inline">\sigma_1/\sigma_2 = 1.02</span> the top singular subspace is nearly two-dimensional, so the singular vectors inside it are numerically unstable; they track the degree-one nodes because those dominate the diagonal of <span class="math inline">\mathbf{P}^{\mathsf T}\mathbf{P}</span>. PageRank’s eigenvalue, by contrast, is separated from the rest of the spectrum by the damping bound <span class="math inline">|\lambda_2(\mathbf{G})| \le \alpha</span>, and the vector is correspondingly stable. The SVD and the eigendecomposition are not competing answers to the same question; they are different questions.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 31%">
+<col style="width: 62%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>SVD (Chapter 3)</th>
+<th>Eigendecomposition (Chapter 9)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bases</td>
+<td>two, <span class="math inline">\mathbf{U}</span> and <span class="math inline">\mathbf{V}</span>, both orthonormal</td>
+<td>one, the eigenvector matrix</td>
+</tr>
+<tr class="even">
+<td>Domain</td>
+<td>any matrix, rectangular included</td>
+<td>square matrices only</td>
+</tr>
+<tr class="odd">
+<td>Scalars</td>
+<td>singular values, real and nonnegative</td>
+<td>eigenvalues, possibly complex</td>
+</tr>
+<tr class="even">
+<td>Orthogonality</td>
+<td>guaranteed by construction</td>
+<td>only for symmetric matrices</td>
+</tr>
+<tr class="odd">
+<td>This chapter</td>
+<td>hub and authority directions</td>
+<td>the PageRank vector</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>This chapter turned the web’s link structure into a matrix problem. The adjacency matrix <span class="math inline">\mathbf{A}</span> of a directed graph becomes the column-stochastic transition matrix <span class="math inline">\mathbf{P}</span> of a Markov chain by normalizing each column by its out-degree, and the ranking problem becomes the fixed point <span class="math inline">\mathbf{P}\mathbf{x} = \mathbf{x}</span>, computed by Chapter 9’s power method with matrix-vector products alone. Two structural defects break the naive iteration: dangling nodes, whose zero columns leak mass, and closed clusters, which make the stationary distribution non-unique. One mechanism repairs both: the Google matrix <span class="math inline">\mathbf{G} = \alpha\widetilde{\mathbf{P}} + (1-\alpha)\tfrac{1}{n}\mathbf{1}\mathbf{1}^{\mathsf T}</span> is positive, so Perron–Frobenius guarantees a unique positive stationary distribution, and the damping bound <span class="math inline">|\lambda_2| \le \alpha</span> controls the convergence rate. On the Les Misérables network the same iteration ranks Valjean first, an unsupervised importance ranking produced by a linear-algebra method. A final contrast with the SVD showed the two factorizations answering different questions on the same data: two orthonormal bases, nearly degenerate here, versus one eigenbasis with a well-separated dominant direction. The next chapter applies the SVD to a different sparsity structure, separating low-rank signal from sparse corruption.</p>
+</section>
+<section id="problems" class="level2">
+<h2 class="anchored" data-anchor-id="problems">Problems</h2>
+<p>The problems exercise the machinery of this chapter: the eigenvalue structure of the Google matrix, the two structural failures of the undamped walk, the matrix-free iteration, and the random-surfer interpretation. Notation follows the chapter: <span class="math inline">\mathbf{A}</span> is the adjacency matrix with <span class="math inline">A_{ds} = 1</span> when page <span class="math inline">s</span> links to page <span class="math inline">d</span>, <span class="math inline">\mathbf{P}</span> its out-degree normalization, <span class="math inline">\widetilde{\mathbf{P}}</span> the dangling-repaired matrix, and <span class="math inline">\mathbf{G} = \alpha\widetilde{\mathbf{P}} + \frac{1-\alpha}{n}\mathbf{1}\mathbf{1}^{\mathsf T}</span> the Google matrix.</p>
+<section id="p12.1-the-eigenvalue-spectrum-of-the-google-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="p12.1-the-eigenvalue-spectrum-of-the-google-matrix">[P12.1] The eigenvalue spectrum of the Google matrix</h3>
+<p>Let <span class="math inline">\widetilde{\mathbf{P}}\in\mathbb{R}^{n\times n}</span> be column-stochastic and define <span class="math inline">\mathbf{G} = \alpha\widetilde{\mathbf{P}} + \frac{1-\alpha}{n}\mathbf{1}\mathbf{1}^{\mathsf T}</span> with <span class="math inline">0 &lt; \alpha &lt; 1</span>.</p>
+<ol type="a">
+<li><p>Show that <span class="math inline">\mathbf{G}\mathbf{1} = \mathbf{1}</span>: the all-ones vector is an eigenvector with eigenvalue 1.</p></li>
+<li><p>Let <span class="math inline">\mathbf{x}</span> be a right eigenvector of <span class="math inline">\widetilde{\mathbf{P}}</span> with eigenvalue <span class="math inline">\lambda \ne 1</span>. Using <span class="math inline">\mathbf{1}^{\mathsf T}\widetilde{\mathbf{P}} = \mathbf{1}^{\mathsf T}</span>, show that <span class="math inline">\mathbf{1}^{\mathsf T}\mathbf{x} = 0</span>, and conclude that <span class="math inline">\mathbf{G}\mathbf{x} = \alpha\lambda\,\mathbf{x}</span>.</p></li>
+<li><p>Conclude that the eigenvalues of <span class="math inline">\mathbf{G}</span> are</p></li>
+</ol>
+<p><span class="math display">\boxed{\;\{1\} \cup \alpha\cdot\{\lambda : \lambda \in \sigma(\widetilde{\mathbf{P}}),\; \lambda \ne 1\},\;}</span></p>
+<p>and since a stochastic matrix has spectral radius 1, that <span class="math inline">|\lambda_i(\mathbf{G})| \le \alpha</span> for every <span class="math inline">i \ge 2</span>. State the resulting bound on the power-method rate on <span class="math inline">\mathbf{G}</span>, and compare it with the undamped ratio <span class="math inline">|\lambda_2/\lambda_1| = 0.952</span> measured on the teaching web.</p>
+</section>
+<section id="p12.2-mass-leak-and-closed-classes" class="level3">
+<h3 class="anchored" data-anchor-id="p12.2-mass-leak-and-closed-classes">[P12.2] Mass leak and closed classes</h3>
+<p>The two failures of the undamped walk have clean linear-algebra statements.</p>
+<ol type="a">
+<li><p>Let <span class="math inline">\mathbf{P}</span> have a zero column <span class="math inline">s</span>, a dangling node, and let <span class="math inline">\mathbf{x}</span> be a probability vector with <span class="math inline">x_s &gt; 0</span>. Show that <span class="math inline">\mathbf{1}^{\mathsf T}\mathbf{P}\mathbf{x} = 1 - x_s &lt; 1</span>, so mass leaks from the walk at rate <span class="math inline">x_s</span> per step, and no probability vector with <span class="math inline">x_s &gt; 0</span> can satisfy <span class="math inline">\mathbf{P}\mathbf{x} = \mathbf{x}</span>.</p></li>
+<li><p>Show that replacing the zero column by the uniform column <span class="math inline">\tfrac{1}{n}\mathbf{1}</span> restores <span class="math inline">\mathbf{1}^{\mathsf T}\widetilde{\mathbf{P}} = \mathbf{1}^{\mathsf T}</span>, so the mass-leak obstruction disappears.</p></li>
+<li><p>Let <span class="math inline">\mathcal{C}</span> be a closed class: no page in <span class="math inline">\mathcal{C}</span> links outside it. Show that the restriction <span class="math inline">\widetilde{\mathbf{P}}_{\mathcal{C}}</span> is column-stochastic, and that a vector <span class="math inline">\mathbf{x}</span> supported on <span class="math inline">\mathcal{C}</span> whose restriction <span class="math inline">\mathbf{x}_{\mathcal{C}}</span> is stationary for it satisfies <span class="math inline">\widetilde{\mathbf{P}}\mathbf{x} = \mathbf{x}</span>. Verify this for the teaching web’s cluster <span class="math inline">\{\mathrm{I}, \mathrm{J}, \mathrm{K}\}</span>: the uniform vector on the cluster is stationary, because the cluster’s restriction is doubly stochastic. Conclude that the undamped iteration’s all-mass-on-cluster limit is only one of infinitely many stationary distributions: any convex combination of two stationary distributions is stationary, by linearity.</p></li>
+</ol>
+</section>
+<section id="p12.3-the-damping-bound-numerically" class="level3">
+<h3 class="anchored" data-anchor-id="p12.3-the-damping-bound-numerically">[P12.3] The damping bound, numerically</h3>
+<ol type="a">
+<li><p>Rebuild the teaching web: adjacency matrix <span class="math inline">\mathbf{A}</span>, out-degrees, the transition matrix <span class="math inline">\mathbf{P}</span> with the dangling column left zero, and the repaired matrix <span class="math inline">\widetilde{\mathbf{P}}</span>.</p></li>
+<li><p>For <span class="math inline">\alpha \in \{0.5, 0.85, 0.95\}</span>, form <span class="math inline">\mathbf{G}</span> and verify the spectral identity of Problem 1 numerically: the second-largest eigenvalue magnitude satisfies <span class="math inline">|\lambda_2(\mathbf{G})| = \alpha\,|\lambda_2(\widetilde{\mathbf{P}})|</span> to <span class="math inline">10^{-10}</span>, and <span class="math inline">|\lambda_2(\mathbf{G})| \le \alpha</span>.</p></li>
+<li><p>Report <span class="math inline">|\lambda_2(\mathbf{G})|</span> at the chapter’s <span class="math inline">\alpha = 0.85</span>, and verify that <span class="math inline">\mathbf{G}</span> is stochastic: every column sums to 1. Note that <span class="math inline">|\lambda_2(\widetilde{\mathbf{P}})| = 0.991</span> is <em>worse</em> than the undamped <span class="math inline">0.952</span>: the dangling repair alone does not fix the closed cluster, which is exactly why damping is needed.</p></li>
+</ol>
+<p>The starter cell below rebuilds the web and computes the spectra.</p>
+<div id="c70a5220" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:02:37.958600Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:02:37.958194Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:02:38.091479Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:02:38.087467Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> <span class="bu">list</span>(<span class="st">'ABCDEFGHIJKLMNOP'</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {<span class="st">'A'</span>: <span class="st">'BCDEFGH'</span>, <span class="st">'B'</span>: <span class="st">'ACD'</span>, <span class="st">'C'</span>: <span class="st">'AB'</span>, <span class="st">'D'</span>: <span class="st">'AB'</span>, <span class="st">'E'</span>: <span class="st">'A'</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>       <span class="st">'F'</span>: <span class="st">'AB'</span>, <span class="st">'G'</span>: <span class="st">'AB'</span>, <span class="st">'H'</span>: <span class="st">''</span>, <span class="st">'I'</span>: <span class="st">'JK'</span>, <span class="st">'J'</span>: <span class="st">'IK'</span>, <span class="st">'K'</span>: <span class="st">'IJ'</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>       <span class="st">'L'</span>: <span class="st">'ABC'</span>, <span class="st">'M'</span>: <span class="st">'AL'</span>, <span class="st">'N'</span>: <span class="st">'AM'</span>, <span class="st">'O'</span>: <span class="st">'AN'</span>, <span class="st">'P'</span>: <span class="st">'AO'</span>}</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(pages)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> {p: i <span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(pages)}</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.zeros((n, n))</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s, dests <span class="kw">in</span> out.items():</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> d <span class="kw">in</span> dests:</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        A[index[d], index[s]] <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>outdeg <span class="op">=</span> A.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> np.errstate(divide<span class="op">=</span><span class="st">'ignore'</span>, invalid<span class="op">=</span><span class="st">'ignore'</span>):</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    P <span class="op">=</span> A <span class="op">/</span> outdeg</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> np.nan_to_num(P, nan<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>P_tilde <span class="op">=</span> P.copy()</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>P_tilde[:, outdeg <span class="op">==</span> <span class="dv">0</span>] <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> n</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>lamPt <span class="op">=</span> np.sort(np.<span class="bu">abs</span>(np.linalg.eigvals(P_tilde)))[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> alpha <span class="kw">in</span> (<span class="fl">0.5</span>, <span class="fl">0.85</span>, <span class="fl">0.95</span>):</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    G <span class="op">=</span> alpha <span class="op">*</span> P_tilde <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> alpha) <span class="op">/</span> n <span class="op">*</span> np.ones((n, n))</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    lamG <span class="op">=</span> np.sort(np.<span class="bu">abs</span>(np.linalg.eigvals(G)))[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># check: |lam2(G)| == alpha * |lam2(P_tilde)| and |lam2(G)| &lt;= alpha</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"alpha=</span><span class="sc">{</span>alpha<span class="sc">}</span><span class="ss">: |lam2(G)| = </span><span class="sc">{</span>lamG[<span class="dv">1</span>]<span class="sc">:.6f}</span><span class="ss">   alpha*|lam2(P~)| = </span><span class="sc">{</span>alpha <span class="op">*</span> lamPt[<span class="dv">1</span>]<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>G85 <span class="op">=</span> <span class="fl">0.85</span> <span class="op">*</span> P_tilde <span class="op">+</span> <span class="fl">0.15</span> <span class="op">/</span> n <span class="op">*</span> np.ones((n, n))</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"column sums of G(0.85):"</span>, np.<span class="bu">round</span>(G85.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>), <span class="dv">12</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>alpha=0.5: |lam2(G)| = 0.495504   alpha*|lam2(P~)| = 0.495504
+alpha=0.85: |lam2(G)| = 0.842357   alpha*|lam2(P~)| = 0.842357
+alpha=0.95: |lam2(G)| = 0.941458   alpha*|lam2(P~)| = 0.941458
+column sums of G(0.85): [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]</code></pre>
+</div>
+</div>
+</section>
+<section id="p12.4-pagerank-without-forming-the-google-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="p12.4-pagerank-without-forming-the-google-matrix">[P12.4] PageRank without forming the Google matrix</h3>
+<p>The scale callout in the chapter notes that at web scale <span class="math inline">\mathbf{G}</span> is never formed: the iteration is one sparse matrix-vector product plus a vector add per step.</p>
+<ol type="a">
+<li>Implement the matrix-free step for the teaching web, folding the dangling repair into the vector add. With <span class="math inline">\mathbf{P}</span> the un-repaired matrix and <span class="math inline">x_{\mathrm{H}}</span> the mass at the dangling page, <span class="math inline">\widetilde{\mathbf{P}}\mathbf{x} = \mathbf{P}\mathbf{x} + \frac{x_{\mathrm{H}}}{n}\mathbf{1}</span>, so</li>
+</ol>
+<p><span class="math display">\mathbf{x}' = \alpha\mathbf{P}\mathbf{x} + \frac{\alpha x_{\mathrm{H}} + (1-\alpha)}{n}\,\mathbf{1}.</span></p>
+<p>Iterate to <span class="math inline">10^{-12}</span> in the 2-norm. Note that the step preserves total mass exactly: <span class="math inline">\mathbf{1}^{\mathsf T}\mathbf{x}' = 1</span>.</p>
+<ol start="2" type="a">
+<li><p>Verify the result against the dense power method on <span class="math inline">\mathbf{G}</span>: the <span class="math inline">\infty</span>-norm difference of the two PageRank vectors must be below <span class="math inline">10^{-10}</span>.</p></li>
+<li><p>Report the top-ranked page and the iteration count. Compare the count with the rate bound of Problem 1: with <span class="math inline">|\lambda_2(\mathbf{G})| = 0.842</span>, the bound predicts <span class="math inline">k \approx \ln(10^{-12})/\ln(0.842) \approx 161</span> iterations for the error, and the residual-based stopping rule terminates a bit sooner; reconcile the two.</p></li>
+</ol>
+<p>The starter cell below builds the sparse matrix and the dense reference.</p>
+<div id="205b8649" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:02:53.179775Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:02:53.179411Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:02:53.618195Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:02:53.615677Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> sparse</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> <span class="bu">list</span>(<span class="st">'ABCDEFGHIJKLMNOP'</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {<span class="st">'A'</span>: <span class="st">'BCDEFGH'</span>, <span class="st">'B'</span>: <span class="st">'ACD'</span>, <span class="st">'C'</span>: <span class="st">'AB'</span>, <span class="st">'D'</span>: <span class="st">'AB'</span>, <span class="st">'E'</span>: <span class="st">'A'</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>       <span class="st">'F'</span>: <span class="st">'AB'</span>, <span class="st">'G'</span>: <span class="st">'AB'</span>, <span class="st">'H'</span>: <span class="st">''</span>, <span class="st">'I'</span>: <span class="st">'JK'</span>, <span class="st">'J'</span>: <span class="st">'IK'</span>, <span class="st">'K'</span>: <span class="st">'IJ'</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>       <span class="st">'L'</span>: <span class="st">'ABC'</span>, <span class="st">'M'</span>: <span class="st">'AL'</span>, <span class="st">'N'</span>: <span class="st">'AM'</span>, <span class="st">'O'</span>: <span class="st">'AN'</span>, <span class="st">'P'</span>: <span class="st">'AO'</span>}</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(pages)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> {p: i <span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(pages)}</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>rows, cols <span class="op">=</span> [], []</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s, dests <span class="kw">in</span> out.items():</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> d <span class="kw">in</span> dests:</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        rows.append(index[d])<span class="op">;</span> cols.append(index[s])</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> sparse.coo_matrix((np.ones(<span class="bu">len</span>(rows)), (rows, cols)), shape<span class="op">=</span>(n, n))</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> sparse.csr_matrix(P.multiply(<span class="fl">1.0</span> <span class="op">/</span> P.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)))</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.85</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>dangling <span class="op">=</span> index[<span class="st">'H'</span>]</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) matrix-free step and iteration:</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># def step(x):</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="co">#     return alpha * (P @ x) + (alpha * x[dangling] + 1 - alpha) / n</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="co"># x = np.full(n, 1.0 / n)</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="co"># for it in range(5000):</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="co">#     x_new = step(x)</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="co">#     if np.linalg.norm(x_new - x) &lt; 1e-12: break</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="co">#     x = x_new</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) dense reference</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>P_tilde <span class="op">=</span> P.toarray().copy()</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>P_tilde[:, dangling] <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> n</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> alpha <span class="op">*</span> P_tilde <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> alpha) <span class="op">/</span> n <span class="op">*</span> np.ones((n, n))</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>x_dense <span class="op">=</span> np.full(n, <span class="fl">1.0</span> <span class="op">/</span> n)</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> it_d <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5000</span>):</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    xd <span class="op">=</span> G <span class="op">@</span> x_dense</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> np.linalg.norm(xd <span class="op">-</span> x_dense) <span class="op">&lt;</span> <span class="fl">1e-12</span>: <span class="cf">break</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    x_dense <span class="op">=</span> xd</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"top page (dense):"</span>, pages[<span class="bu">int</span>(np.argmax(x_dense))], <span class="st">" score:"</span>, <span class="bu">round</span>(np.<span class="bu">max</span>(x_dense), <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>top page (dense): A  score: 0.2217</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/var/folders/jq/9vsvd9252_349lsng_5gc_jw0000gn/T/ipykernel_39791/3824119977.py:16: RuntimeWarning: divide by zero encountered in divide
+  P = sparse.csr_matrix(P.multiply(1.0 / P.sum(axis=0)))</code></pre>
+</div>
+</div>
+</section>
+<section id="p12.5-simulating-the-random-surfer" class="level3">
+<h3 class="anchored" data-anchor-id="p12.5-simulating-the-random-surfer">[P12.5] Simulating the random surfer</h3>
+<p><strong>Challenge.</strong> The Google matrix defines the damped walk; this problem simulates the walk directly and checks that empirical visit frequencies recover the PageRank vector.</p>
+<ol type="a">
+<li><p>Simulate the damped random surfer on the teaching web: at each step, follow a uniformly random out-link with probability <span class="math inline">\alpha = 0.85</span> (treating the dangling page <span class="math inline">\mathrm{H}</span> as linking to every page with probability <span class="math inline">1/16</span>), and teleport to a uniformly random page with probability <span class="math inline">1 - \alpha = 0.15</span>. Count visits over <span class="math inline">N \in \{10^4, 10^5, 10^6\}</span> steps with <code>rng = np.random.default_rng(42)</code>, and compute the <span class="math inline">L^1</span> distance between the empirical frequencies and the PageRank vector obtained by power iteration on <span class="math inline">\mathbf{G}</span>.</p></li>
+<li><p>Verify that at <span class="math inline">N = 10^6</span> the empirical top-ranked page is the stationary top-ranked page, the hub <span class="math inline">\mathrm{A}</span>.</p></li>
+<li><p>The sampling error of a frequency estimate decays like <span class="math inline">N^{-1/2}</span>. Check the scaling: the ratio of the <span class="math inline">L^1</span> errors at <span class="math inline">N = 10^5</span> and <span class="math inline">N = 10^6</span> should be near <span class="math inline">\sqrt{10} \approx 3.16</span>. Report the measured ratio, and note that the walk’s autocorrelation, governed by the spectral gap <span class="math inline">1 - |\lambda_2(\mathbf{G})| = 0.158</span> from Problem 3, inflates the variance by a bounded factor, so the <span class="math inline">N^{-1/2}</span> law survives.</p></li>
+</ol>
+<p>The starter cell below builds the walk and the exact PageRank reference.</p>
+<div id="f5884545" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:20.620222Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:20.619929Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:26.661007Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:26.658344Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> <span class="bu">list</span>(<span class="st">'ABCDEFGHIJKLMNOP'</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {<span class="st">'A'</span>: <span class="st">'BCDEFGH'</span>, <span class="st">'B'</span>: <span class="st">'ACD'</span>, <span class="st">'C'</span>: <span class="st">'AB'</span>, <span class="st">'D'</span>: <span class="st">'AB'</span>, <span class="st">'E'</span>: <span class="st">'A'</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>       <span class="st">'F'</span>: <span class="st">'AB'</span>, <span class="st">'G'</span>: <span class="st">'AB'</span>, <span class="st">'H'</span>: <span class="st">''</span>, <span class="st">'I'</span>: <span class="st">'JK'</span>, <span class="st">'J'</span>: <span class="st">'IK'</span>, <span class="st">'K'</span>: <span class="st">'IJ'</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>       <span class="st">'L'</span>: <span class="st">'ABC'</span>, <span class="st">'M'</span>: <span class="st">'AL'</span>, <span class="st">'N'</span>: <span class="st">'AM'</span>, <span class="st">'O'</span>: <span class="st">'AN'</span>, <span class="st">'P'</span>: <span class="st">'AO'</span>}</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(pages)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> {p: i <span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(pages)}</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>neigh <span class="op">=</span> [[index[d] <span class="cf">for</span> d <span class="kw">in</span> out[s]] <span class="cf">if</span> out[s] <span class="cf">else</span> <span class="bu">list</span>(<span class="bu">range</span>(n))</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>         <span class="cf">for</span> s <span class="kw">in</span> pages]                       <span class="co"># dangling H links everywhere</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.zeros((n, n))</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s, dests <span class="kw">in</span> out.items():</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> d <span class="kw">in</span> dests:</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        A[index[d], index[s]] <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>outdeg <span class="op">=</span> A.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> np.errstate(divide<span class="op">=</span><span class="st">'ignore'</span>, invalid<span class="op">=</span><span class="st">'ignore'</span>):</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    P <span class="op">=</span> A <span class="op">/</span> outdeg</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> np.nan_to_num(P, nan<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>P_tilde <span class="op">=</span> P.copy()</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>P_tilde[:, outdeg <span class="op">==</span> <span class="dv">0</span>] <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> n</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.85</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> alpha <span class="op">*</span> P_tilde <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> alpha) <span class="op">/</span> n <span class="op">*</span> np.ones((n, n))</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.full(n, <span class="fl">1.0</span> <span class="op">/</span> n)                        <span class="co"># exact PageRank by power iteration</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5000</span>):</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>    xn <span class="op">=</span> G <span class="op">@</span> x</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> np.linalg.norm(xn <span class="op">-</span> x) <span class="op">&lt;</span> <span class="fl">1e-13</span>: <span class="cf">break</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> xn</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">42</span>)</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> N <span class="kw">in</span> (<span class="dv">10</span><span class="op">**</span><span class="dv">4</span>, <span class="dv">10</span><span class="op">**</span><span class="dv">5</span>, <span class="dv">10</span><span class="op">**</span><span class="dv">6</span>):</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>    counts <span class="op">=</span> np.zeros(n)</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>    cur <span class="op">=</span> <span class="bu">int</span>(rng.integers(<span class="dv">0</span>, n))</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(N):</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rng.random() <span class="op">&lt;</span> alpha:</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>            nb <span class="op">=</span> neigh[cur]</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>            cur <span class="op">=</span> nb[<span class="bu">int</span>(rng.integers(<span class="dv">0</span>, <span class="bu">len</span>(nb)))]</span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>            cur <span class="op">=</span> <span class="bu">int</span>(rng.integers(<span class="dv">0</span>, n))</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>        counts[cur] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>    freq <span class="op">=</span> counts <span class="op">/</span> N</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># err = np.abs(freq - x).sum()</span></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"N=</span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">: top page = </span><span class="sc">{</span>pages[<span class="bu">int</span>(np.argmax(freq))]<span class="sc">}</span><span class="ss">, L1 error = fill in (a)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>N=10000: top page = A, L1 error = fill in (a)
+N=100000: top page = A, L1 error = fill in (a)
+N=1000000: top page = A, L1 error = fill in (a)</code></pre>
+</div>
+</div>
+
+
+
+</section>
+</section>
+
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="16" data-listing-word-count-sort="3187">
+<div class="thumbnail"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">Compressed sensing</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of…<span class="math inline"></span><mark></mark><span class="math inline"></span><span class="math inline"></span><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="5" data-listing-word-count-sort="905">
+<div class="thumbnail"><a href="../../courses/cla/index.html" class="no-external">
+
+<img loading="lazy" src="../../courses/cla/img/cla-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/index.html" class="no-external">Computational Linear Algebra</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/index.html" class="no-external">
+<p>A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="../../courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="" data-listing-file-modified-sort="1787425121752" data-listing-reading-time-sort="13" data-listing-word-count-sort="2595">
+<div class="thumbnail"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">Eigendecomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix…<mark></mark><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="../../courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-categories="" data-listing-file-modified-sort="1787425121745" data-listing-reading-time-sort="14" data-listing-word-count-sort="2724">
+<div class="thumbnail"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">Projection &amp; orthogonalization</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf…</span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="13" data-listing-word-count-sort="2596">
+<div class="thumbnail"><a href="../../courses/cla/03-svd.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/03-svd.html" class="no-external">The singular value decomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/03-svd.html" class="no-external">
+The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathb…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/03-svd.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>The name puns on <em>rank</em> and on Larry Page, who with Sergey Brin described the method in 1998.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>The bound <span class="math inline">|\lambda_2(\mathbf{G})| \le \alpha</span> is a standard result on the Google matrix; the code below verifies it numerically.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../courses/cla/11-topic-modeling.html" class="pagination-link" aria-label="Applications">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Applications</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../courses/cla/13-robust-pca.html" class="pagination-link" aria-label="13. Robust PCA">
+        <span class="nav-page-text">13. Robust PCA</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>

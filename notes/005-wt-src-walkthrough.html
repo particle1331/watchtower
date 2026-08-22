@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-08-22">
+
+<title>Reading the wt CLI from the outside in – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../site_libs/quarto-listing/list.min.js"></script>
+<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+<script src="../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#general-workflows" id="toc-general-workflows" class="nav-link active" data-scroll-target="#general-workflows">General workflows</a></li>
+  <li><a href="#start-at-cli.py-the-command-map" id="toc-start-at-cli.py-the-command-map" class="nav-link" data-scroll-target="#start-at-cli.py-the-command-map">1. Start at <code>cli.py</code>: the command map</a></li>
+  <li><a href="#from-a-name-to-a-notebook" id="toc-from-a-name-to-a-notebook" class="nav-link" data-scroll-target="#from-a-name-to-a-notebook">2. From a name to a notebook</a></li>
+  <li><a href="#notebook.py-the-shared-cell-layer" id="toc-notebook.py-the-shared-cell-layer" class="nav-link" data-scroll-target="#notebook.py-the-shared-cell-layer">3. <code>notebook.py</code>: the shared cell layer</a></li>
+  <li><a href="#why-cat-is-shaped-for-agent-reads" id="toc-why-cat-is-shaped-for-agent-reads" class="nav-link" data-scroll-target="#why-cat-is-shaped-for-agent-reads">4. Why <code>cat</code> is shaped for agent reads</a></li>
+  <li><a href="#the-write-path-and-the-execution-path" id="toc-the-write-path-and-the-execution-path" class="nav-link" data-scroll-target="#the-write-path-and-the-execution-path">5. The write path and the execution path</a></li>
+  <li><a href="#course-problems-structure-carried-by-tags" id="toc-course-problems-structure-carried-by-tags" class="nav-link" data-scroll-target="#course-problems-structure-carried-by-tags">6. Course problems: structure carried by tags</a></li>
+  <li><a href="#the-supporting-modules" id="toc-the-supporting-modules" class="nav-link" data-scroll-target="#the-supporting-modules">7. The supporting modules</a></li>
+  <li><a href="#read-the-tests-alongside-the-source" id="toc-read-the-tests-alongside-the-source" class="nav-link" data-scroll-target="#read-the-tests-alongside-the-source">8. Read the tests alongside the source</a></li>
+  <li><a href="#the-compact-mental-model" id="toc-the-compact-mental-model" class="nav-link" data-scroll-target="#the-compact-mental-model">9. The compact mental model</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Reading the wt CLI from the outside in</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">meta</div>
+    <div class="quarto-category">dev</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">August 22, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><code>wt</code> is the command-line interface used to navigate the <code>watchtower</code> (⛫) workspace. That workspace is also the source for this entire website: its notebooks hold the notes, articles, and courses, while <code>wt</code> provides the commands for reading, editing, running, and rendering them.</p>
+<section id="general-workflows" class="level2">
+<h2 class="anchored" data-anchor-id="general-workflows">General workflows</h2>
+<p><code>wt</code> is easiest to understand as a path from a shell command to a notebook cell. Most commands follow the same small loop:</p>
+<pre class="text"><code>parse command -&gt; find a file -&gt; read a notebook -&gt; inspect or change cells</code></pre>
+<p>The interesting details are in the edges of that loop: how names resolve, how notebook JSON becomes agent-readable text, how a cell is changed without discarding its outputs, and how course problems use tags instead of a second database.</p>
+<p>This walkthrough follows three representative journeys:</p>
+<ol type="1">
+<li><code>wt cat</code>, which reads a notebook for an agent;</li>
+<li><code>wt edit-cell</code> and <code>wt run</code>, which write notebook state back; and</li>
+<li><code>wt problem</code> and <code>wt solution</code>, which treat course notebooks as a small structured content system.</li>
+</ol>
+<p>Around that center are import, scaffolding, rendering, resume, vault, and ML plotting helpers. They are part of the same package, but they do not need to be forced into one architectural story.</p>
+</section>
+<section id="start-at-cli.py-the-command-map" class="level2">
+<h2 class="anchored" data-anchor-id="start-at-cli.py-the-command-map">1. Start at <code>cli.py</code>: the command map</h2>
+<p>The CLI is built with Typer. The top-level app owns the command names, while <code>new</code> and <code>vault</code> are mounted sub-applications:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>app <span class="op">=</span> typer.Typer(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">"wt"</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">help</span><span class="op">=</span><span class="st">"Personal notes, articles, courses, and projects system."</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    no_args_is_help<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>new_app <span class="op">=</span> typer.Typer(name<span class="op">=</span><span class="st">"new"</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Scaffold new artifacts."</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>app.add_typer(new_app)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>vault_app <span class="op">=</span> typer.Typer(name<span class="op">=</span><span class="st">"vault"</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Manage secrets in OS keyring."</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>app.add_typer(vault_app)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The command functions mostly translate CLI arguments into calls to a module function. For example, <code>cat</code> imports <code>notebook</code> inside its body, selects the effective read limit, calls <code>cat_notebook</code>, and prints the result. Imports are kept close to the command that needs them, so <code>wt vault ls</code> does not need to load the notebook execution stack.</p>
+<p>The current command map includes:</p>
+<ul>
+<li>repository navigation: <code>map</code>, <code>ls</code>, <code>find</code>, <code>count</code>, and <code>kernels</code>;</li>
+<li>notebook operations: <code>cat</code>, <code>output</code>, <code>diff</code>, <code>run</code>, <code>edit-cell</code>, <code>append-cell</code>, <code>insert-cell</code>, <code>remove-cell</code>, <code>clear-outputs</code>, and <code>tag</code>;</li>
+<li>course operations: <code>problem</code>, <code>solution</code>, <code>hint</code>, <code>check</code>, <code>add-exercise</code>, and <code>solution-set</code>;</li>
+<li>creation and integration: <code>new</code>, <code>import</code>, <code>render</code>, <code>resume</code>, and <code>docs</code>;</li>
+<li>secrets: <code>vault set</code>, <code>get</code>, <code>rm</code>, <code>ls</code>, and <code>export</code>.</li>
+</ul>
+<p>The two console scripts in <code>pyproject.toml</code>, <code>wt</code> and <code>watchtower</code>, both point at <code>watchtower.cli:main</code>. <code>main()</code> is also the final error boundary: selected file and argument errors become a readable message and exit status 1.</p>
+</section>
+<section id="from-a-name-to-a-notebook" class="level2">
+<h2 class="anchored" data-anchor-id="from-a-name-to-a-notebook">2. From a name to a notebook</h2>
+<p>The first real question for a notebook command is not “what cell?” It is “which file does this name mean?” That logic lives in <code>inspect.resolve_ipynb()</code>.</p>
+<p>Its resolution ladder is short:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> resolve_ipynb(name: <span class="bu">str</span>) <span class="op">-&gt;</span> Path:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    maybe <span class="op">=</span> Path(name)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> maybe.exists() <span class="kw">and</span> maybe.suffix <span class="op">==</span> <span class="st">".ipynb"</span>:</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> maybe.resolve()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    parts <span class="op">=</span> name.split(<span class="st">"/"</span>, <span class="dv">1</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(parts) <span class="op">==</span> <span class="dv">2</span> <span class="kw">and</span> parts[<span class="dv">0</span>] <span class="kw">in</span> {<span class="st">"notes"</span>, <span class="st">"articles"</span>, <span class="st">"courses"</span>}:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        tier, stem <span class="op">=</span> parts</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> stem.endswith(<span class="st">".ipynb"</span>):</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            stem <span class="op">=</span> stem[:<span class="op">-</span><span class="dv">6</span>]</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        path <span class="op">=</span> Path(tier) <span class="op">/</span> <span class="ss">f"</span><span class="sc">{</span>stem<span class="sc">}</span><span class="ss">.ipynb"</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path.exists():</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> path</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> base <span class="kw">in</span> CONTENT_DIRS:</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> path <span class="kw">in</span> base.rglob(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">.ipynb"</span>):</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="st">".ipynb_checkpoints"</span> <span class="kw">not</span> <span class="kw">in</span> path.parts:</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> path</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">FileNotFoundError</span>(...)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>That gives the CLI three useful forms:</p>
+<pre class="text"><code>notes/005-wt-src-walkthrough.ipynb   explicit path
+notes/005-wt-src-walkthrough         tier plus stem
+005-wt-src-walkthrough               bare stem</code></pre>
+<p><code>paths.py</code> supplies the content-directory constants and the absolute <code>ROOT_PATH</code> used for repository-anchored generated artifacts. The content directories themselves are relative paths, which is why the normal workflow starts in the repository root and why the tests change into temporary repo directories.</p>
+<p>The rest of <code>inspect.py</code> builds on the same filesystem view. <code>wt map</code> returns the repository structure as JSON, <code>ls</code> lists notebooks while excluding index and checkpoint files, and <code>find</code> searches notebook sources. <code>find</code> uses <code>rg</code> as a quick candidate filter when it is available, then parses matching notebooks to report the cell index and matching line.</p>
+</section>
+<section id="notebook.py-the-shared-cell-layer" class="level2">
+<h2 class="anchored" data-anchor-id="notebook.py-the-shared-cell-layer">3. <code>notebook.py</code>: the shared cell layer</h2>
+<p>The core notebook path can be pictured like this:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    name["user-supplied name"] --&gt; resolve["resolve_ipynb"]
+    resolve --&gt; read["nbformat.read"]
+    read --&gt; inspect["render cells"]
+    read --&gt; mutate["change cells"]
+    mutate --&gt; write["nbformat.write"]
+    inspect --&gt; stdout["print Markdown-like text"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>There is no long-lived <code>Notebook</code> object. Each CLI process resolves a path, reads a <code>NotebookNode</code>, performs one operation, and exits. That makes the state easy to find: it is in the <code>.ipynb</code> file.</p>
+<p><code>cat_notebook()</code> is the read side. It can render every cell, or select cells by:</p>
+<ul>
+<li>an index, including Python-style ranges such as <code>0:3</code> and negative indices;</li>
+<li>a Jupyter tag; or</li>
+<li>a leading Quarto <code>#| label:</code> pragma.</li>
+</ul>
+<p><code>_render_cell()</code> adds a small header such as <code>&gt; cell 4 [code]</code>, renders code cells inside a Python fence, and leaves Markdown sources readable as Markdown. The same renderer is reused by <code>wt diff</code>, which is why notebook diffs show content instead of a wall of JSON.</p>
+<p>The write functions are deliberately small: <code>edit_cell</code>, <code>append_cell</code>, <code>insert_cell</code>, <code>remove_cell</code>, <code>clear_outputs</code>, and <code>tag_cell</code>. They validate locators, enforce the 20,000-character source limit, mutate the in-memory notebook, and write it back through <code>nbformat</code>. <code>edit_cell</code> changes the selected cell’s source, so its existing outputs and metadata remain attached to that cell. <code>remove_cell</code> deletes matching indices in reverse order so the remaining positions do not shift under the loop.</p>
+</section>
+<section id="why-cat-is-shaped-for-agent-reads" class="level2">
+<h2 class="anchored" data-anchor-id="why-cat-is-shaped-for-agent-reads">4. Why <code>cat</code> is shaped for agent reads</h2>
+<p>The normal notebook representation is excellent for Jupyter and awkward for an agent: cell sources, metadata, execution counts, and output payloads are all nested in JSON. <code>cat</code> creates a compact text view instead.</p>
+<p>For example, a selected code cell looks conceptually like this:</p>
+<pre class="text"><code>&gt; cell 4 [code] tags:example
+
+```{python}
+print("hello")
+```</code></pre>
+<p>The command has a few features that make long notebooks manageable:</p>
+<ul>
+<li>source reads default to 4,096 characters per cell;</li>
+<li><code>--offset</code> and <code>--limit</code> make a long cell readable in successive slices;</li>
+<li><code>--context N</code> includes nearby cells and marks them as context;</li>
+<li><code>--with-outputs</code> appends stored outputs with their own headers; and</li>
+<li><code>--decode</code> is an explicit opt-in for readable course solutions.</li>
+</ul>
+<p>Output rendering is intentionally conservative. Text and errors are shown; PNG, JPEG, and SVG payloads are summarized rather than expanded into base64. When an agent needs the actual image, <code>outputs.py</code> provides a structured <code>CellOutput</code> interface and <code>wt output</code> decodes image bytes into <code>.tmp</code>.</p>
+<p>The same plain representation powers <code>wt diff</code>. <code>diff_notebook()</code> reads the base version with <code>git show</code>, renders both versions through the notebook renderer, and decodes solution cells so a change to a hidden solution is still understandable in the diff.</p>
+</section>
+<section id="the-write-path-and-the-execution-path" class="level2">
+<h2 class="anchored" data-anchor-id="the-write-path-and-the-execution-path">5. The write path and the execution path</h2>
+<p>An edit is a simple notebook round trip:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> resolve_ipynb(name)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>nb <span class="op">=</span> read_notebook(path)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>cell_index <span class="op">=</span> _resolve_unique_cell(nb, ...)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>nb[<span class="st">"cells"</span>][cell_index][<span class="st">"source"</span>] <span class="op">=</span> source</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>nbformat.write(nb, path)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The important part is that the operation changes a loaded notebook object, not a hand-edited JSON string. Existing metadata and outputs survive because they are still present when <code>nbformat.write()</code> serializes the object. The file is still the source of truth, so <code>wt clear-outputs</code> and <code>wt run</code> visibly change the stored notebook state.</p>
+<p><code>wt run</code> takes the next step by using <code>nbclient</code>:</p>
+<pre class="text"><code>read notebook -&gt; start kernel -&gt; execute code cells -&gt; store outputs -&gt; write notebook</code></pre>
+<p>A normal run executes all code cells in one kernel. Errors are stored as inline error outputs and execution continues. <code>wt run --index N</code> executes only that cell in a fresh kernel, which is useful for testing a self-contained cell and intentionally does not provide state from earlier cells. <code>wt kernels</code> lists the installed kernels that can be passed with <code>--kernel</code>.</p>
+<p>The repository is configured so Quarto renders stored inline outputs without re-executing code. That makes <code>wt run</code> the explicit refresh operation: a render can faithfully show outputs that were produced earlier, including outputs that are now stale.</p>
+</section>
+<section id="course-problems-structure-carried-by-tags" class="level2">
+<h2 class="anchored" data-anchor-id="course-problems-structure-carried-by-tags">6. Course problems: structure carried by tags</h2>
+<p>Course problems live inside chapter notebooks. There is no separate problem database. The cell layout is the data model:</p>
+<pre class="text"><code>problem cell [problem, 07-3]
+        |
+        +--&gt; optional starter code cell
+        |
+        +--&gt; solution cell [solution, 07-3]</code></pre>
+<p>The shared id is what connects the cells. <code>problems.resolve_problem()</code> first resolves the chapter, then finds the problem cell with the matching id tag, looks for an immediately following starter code cell, and finds the matching solution cell. Chapter locators can be numeric (<code>7.3</code>, <code>07-3</code>, <code>07 3</code>) or name-based (<code>projection 3</code>).</p>
+<p>Solutions are stored in code cells so they can carry Quarto cell options, but they are not meant to execute. <code>obfuscate.wrap()</code> leaves the hiding options literal and applies ROT13 to letters plus ROT5 to digits to the solution body. It also prefixes non-empty encoded lines with <code>#</code>, making the source both hidden from the rendered page and visually distinct in JupyterLab.</p>
+<p>The transform is reversible, not cryptographic. The public workflows make that explicit:</p>
+<pre class="text"><code>wt add-exercise    plaintext in -&gt; wrapped solution cell
+wt solution-set   plaintext in -&gt; replace wrapped solution cell
+wt solution       wrapped cell -&gt; decoded solution
+wt hint           wrapped cell -&gt; progressive decoded hint
+wt check          notebook -&gt; pairing and encoding warnings</code></pre>
+<p>This is a nice example of using notebook metadata as an application schema: the content stays portable, while <code>wt</code> provides the conventions and checks around it.</p>
+</section>
+<section id="the-supporting-modules" class="level2">
+<h2 class="anchored" data-anchor-id="the-supporting-modules">7. The supporting modules</h2>
+<p>The notebook layer is the center of the walkthrough, but the package has several useful neighbors.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Area</th>
+<th>Modules</th>
+<th>Main job</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Create content</td>
+<td><code>scaffold.py</code></td>
+<td>Build note, article, course, chapter, section, and project stubs</td>
+</tr>
+<tr class="even">
+<td>Import content</td>
+<td><code>convert.py</code></td>
+<td>Copy external notebooks, preserve outputs, normalize kernelspecs, and register course chapters</td>
+</tr>
+<tr class="odd">
+<td>Render content</td>
+<td><code>render.py</code></td>
+<td>Invoke Quarto for PDFs or a blocking site preview</td>
+</tr>
+<tr class="even">
+<td>Build the resume</td>
+<td><code>resume.py</code></td>
+<td>Turn YAML and Jinja templates into the web page, LaTeX source, and PDF</td>
+</tr>
+<tr class="odd">
+<td>Store secrets</td>
+<td><code>vault.py</code></td>
+<td>Use the OS keyring with a local index of available key names</td>
+</tr>
+<tr class="even">
+<td>ML notebook tools</td>
+<td><code>core/</code></td>
+<td>Provide plotting primitives and a Python/NumPy/PyTorch seed helper</td>
+</tr>
+<tr class="odd">
+<td>Discover kernels</td>
+<td><code>kernels.py</code></td>
+<td>List installed Jupyter kernels for <code>wt run --kernel</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>scaffold.py</code> is where content creation meets the site configuration. It uses <code>ruamel.yaml</code> to register courses and chapters in <code>_quarto.yml</code>, preserving the YAML document while adding sidebar entries. <code>convert.py</code> reuses that registration path when importing a chapter.</p>
+<p>The other modules cross external boundaries. Quarto renders, <code>pdflatex</code> builds the resume, <code>uv</code> creates projects, and the OS keyring stores secrets. The Python package supplies the arguments and file conventions; those tools still do the work.</p>
+</section>
+<section id="read-the-tests-alongside-the-source" class="level2">
+<h2 class="anchored" data-anchor-id="read-the-tests-alongside-the-source">8. Read the tests alongside the source</h2>
+<p>The tests are the best way to see which details are meant to stay stable. They use temporary repositories for filesystem operations, so notebook edits and sidebar changes can be tested without touching the real knowledge base.</p>
+<p>The most useful reading pairs are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source</th>
+<th>Tests</th>
+<th>What the pair teaches</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>notebook.py</code></td>
+<td><code>test_notebook.py</code></td>
+<td>Cell selectors, slices, writes, output clearing, and readable diffs</td>
+</tr>
+<tr class="even">
+<td><code>inspect.py</code></td>
+<td><code>test_inspect.py</code></td>
+<td>Repository listing, resolution, and source search</td>
+</tr>
+<tr class="odd">
+<td><code>scaffold.py</code></td>
+<td><code>test_scaffold.py</code></td>
+<td>Notebook stubs and sidebar registration</td>
+</tr>
+<tr class="even">
+<td><code>convert.py</code></td>
+<td><code>test_convert.py</code></td>
+<td>Import normalization and duplicate-title handling</td>
+</tr>
+<tr class="odd">
+<td><code>problems.py</code></td>
+<td><code>test_problems.py</code></td>
+<td>Problem ids, solution wrapping, hints, and checks</td>
+</tr>
+<tr class="even">
+<td><code>execute.py</code></td>
+<td><code>test_execute.py</code></td>
+<td>Real-kernel execution and persisted outputs</td>
+</tr>
+<tr class="odd">
+<td><code>outputs.py</code></td>
+<td><code>test_outputs.py</code></td>
+<td>Text/image normalization and image extraction</td>
+</tr>
+<tr class="even">
+<td><code>cli.py</code></td>
+<td><code>test_cli.py</code></td>
+<td>The command boundary through Typer’s test runner</td>
+</tr>
+</tbody>
+</table>
+<p>The suite covers the notebook and course center directly, and the execution tests launch a real Python kernel. Quarto rendering, PDF generation, and the plotting helpers sit at different external boundaries, so they are better understood by reading their small wrappers and trying them in the local environment.</p>
+<p>For the normal development loop, the repository’s own tools make the source easy to inspect:</p>
+<pre class="console"><code>.venv/bin/wt cat notes/005-wt-src-walkthrough --index 3 --context 1
+.venv/bin/wt diff notes/005-wt-src-walkthrough
+.venv/bin/pytest -q</code></pre>
+</section>
+<section id="the-compact-mental-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-compact-mental-model">9. The compact mental model</h2>
+<p>The package becomes much easier to hold in your head if you group commands by the kind of state they move through:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+    command["wt command"] --&gt; notebook_flow["resolve -&gt; read -&gt; render or mutate -&gt; write"]
+    command --&gt; course_flow["resolve course -&gt; find tagged cells -&gt; format or encode"]
+    command --&gt; kernel_flow["start kernel -&gt; execute -&gt; persist outputs"]
+    command --&gt; external_flow["call Quarto, LaTeX, uv, or keyring"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>From that model, the source-reading order is natural:</p>
+<ol type="1">
+<li><code>cli.py</code> tells you what the user can ask for.</li>
+<li><code>inspect.py</code> tells you how a name becomes a path.</li>
+<li><code>notebook.py</code> tells you how cells become readable text and how edits are written.</li>
+<li><code>execute.py</code> and <code>outputs.py</code> explain the lifecycle of stored results.</li>
+<li><code>problems.py</code> shows how tags turn ordinary notebooks into course content.</li>
+<li><code>scaffold.py</code>, <code>convert.py</code>, and the external wrappers fill in the rest of the repository workflow.</li>
+</ol>
+<p>The recurring design choice is simple: keep the CLI close to the shell, keep the notebook as the canonical artifact, and put conventions in small modules that can be tested with temporary files. Once that is clear, the source is no longer a list of unrelated commands. It is a set of short, inspectable paths through the same filesystem-backed knowledge base.</p>
+
+
+
+</section>
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="c3RhdGlzdGljcyUyQ3Byb2JhYmlsaXR5JTJDbWFjaGluZS1sZWFybmluZw==" data-listing-date-sort="1787356800000" data-listing-file-modified-sort="1787425121758" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="790">
+<div class="thumbnail"><a href="../notes/006-maximum-likelihood-estimation.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="006-maximum-likelihood-estimation_files/figure-html/fig-histogram-output-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../notes/006-maximum-likelihood-estimation.html" class="no-external">Maximum Likelihood Estimation</a>
+</h3>
+<div class="delink listing-description"><a href="../notes/006-maximum-likelihood-estimation.html" class="no-external">
+<strong>Maximum likelihood estimation (MLE)</strong> is a way to estimate unknown parameters from observed data. Given a probabilistic model and observations <span class="math inline">x_1, \ldots, x_n</span>, MLE chooses…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../notes/006-maximum-likelihood-estimation.html" class="no-external">
+<div class="listing-date">
+Aug 22, 2026
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-listing-file-modified-sort="1787425121758" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="thumbnail"><a href="../notes/index.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../notes/index.html" class="no-external">Notes</a>
+</h3>
+<div class="delink listing-description"><a href="../notes/index.html" class="no-external">
+Random working drafts and low-effort notes. Newest first.
+</a></div>
+</div>
+<div class="metadata">
+<a href="../notes/index.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

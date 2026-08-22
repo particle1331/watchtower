@@ -37,6 +37,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
 <link href="./assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="site_libs/quarto-listing/list.min.js"></script>
+<script src="site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
@@ -74,7 +76,80 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script>
 
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      page: 25,
+    pagination: { item: "<li class='page-item'><a class='page page-link' href='#'></a></li>" },
+      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="assets/styles.css">
 </head>
@@ -115,6 +190,13 @@ ul.task-list li input[type="checkbox"] {
   <li class="nav-item">
     <a class="nav-link" href="./photos/photos.html"> 
 <span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -469,10 +551,717 @@ ul.task-list li input[type="checkbox"] {
 <p>Attended a 10-week bootcamp which included 160 hours of in-class learning in addition to coursework. At the end of the bootcamp, I presented my capstone project about modeling nonlinear chaotic systems using neural networks implemented in TensorFlow 1.x to industry leaders in Makati City, Philippines.</p>
 
 
+
 </section>
 </section>
 
-<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="6" data-listing-word-count-sort="1080">
+<div class="thumbnail"><a href="./courses/mlops/01-overview.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/01-overview.html" class="no-external">01. Overview &amp; the golden path</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/01-overview.html" class="no-external">
+<p>The four planes, the fixed invariants, the golden path a model travels, and the phased plan the course follows.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/01-overview.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="6" data-listing-word-count-sort="1169">
+<div class="thumbnail"><a href="./courses/mlops/02-platform-foundation.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/02-platform-foundation.html" class="no-external">02. Platform foundation</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/02-platform-foundation.html" class="no-external">
+<p>Phase 0 — the Azure footprint every later phase depends on: registry, ACA environment, Postgres, storage, Key Vault, Grafana, per-workload identities, and self-hosted MLflow.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/02-platform-foundation.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="963">
+<div class="thumbnail"><a href="./courses/mlops/03-reproducible-training.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/03-reproducible-training.html" class="no-external">03. Reproducible training &amp; registry</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/03-reproducible-training.html" class="no-external">
+<p>Phase 1 — training and evaluation as ACA Jobs that log to self-hosted MLflow with reconstructable lineage and a results-DB record.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/03-reproducible-training.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="7" data-listing-word-count-sort="1302">
+<div class="thumbnail"><a href="./courses/mlops/04-results-db-and-batch.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/04-results-db-and-batch.html" class="no-external">04. Results DB &amp; batch workflows</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/04-results-db-and-batch.html" class="no-external">
+<p>Phase 2 — the generic results database, scheduled and manual triggers, and batch fan-out with parent/child rows and a stateless continuation rule.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/04-results-db-and-batch.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="936">
+<div class="thumbnail"><a href="./courses/mlops/05-online-serving.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/05-online-serving.html" class="no-external">05. Online serving &amp; promotion</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/05-online-serving.html" class="no-external">
+<p>Phase 3 — optional online HTTP serving as an ACA App that loads an exact model version, with promotion and rollback as version/definition changes.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/05-online-serving.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="943">
+<div class="thumbnail"><a href="./courses/mlops/06-observability-and-dashboard.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/06-observability-and-dashboard.html" class="no-external">06. Observability &amp; dashboard</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/06-observability-and-dashboard.html" class="no-external">
+<p>Phase 4 — three non-overlapping observability layers plus a lightweight catalog/launcher dashboard over the four planes.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/06-observability-and-dashboard.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="999">
+<div class="thumbnail"><a href="./courses/mlops/07-llm-release-artifacts.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/07-llm-release-artifacts.html" class="no-external">07. LLM release artifacts</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/07-llm-release-artifacts.html" class="no-external">
+<p>Phase 5 — package an LLM app as an MLflow pyfunc version, evaluate it with a repeatable job, and release it through the same promotion path as any model.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/07-llm-release-artifacts.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="4" data-listing-word-count-sort="742">
+<div class="thumbnail"><a href="./courses/mlops/08-multi-gpu-training.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/08-multi-gpu-training.html" class="no-external">08. Multi-GPU training (exception track)</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/08-multi-gpu-training.html" class="no-external">
+<p>The admission-gated exception: distributed / multi-GPU training on Azure ML command jobs against min-zero clusters, logging to the same self-hosted MLflow.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/08-multi-gpu-training.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="4" data-listing-word-count-sort="704">
+<div class="thumbnail"><a href="./courses/mlops/09-broker-upgrade.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/09-broker-upgrade.html" class="no-external">09. Broker upgrade (only if forced)</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/09-broker-upgrade.html" class="no-external">
+<p>The conditional upgrade path: Celery-as-a-library on short-lived KEDA-triggered ACA Jobs backed by managed Redis — adopted only when batch fan-out outgrows the results-DB continuation rule.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/09-broker-upgrade.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="6" data-listing-word-count-sort="1047">
+<div class="thumbnail"><a href="./courses/mlops/10-e2e-integration.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/mlops/img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/10-e2e-integration.html" class="no-external">10. End-to-end integration</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/10-e2e-integration.html" class="no-external">
+<p>Walk the whole golden path on the deployed platform, verify the acceptance evidence for each phase, and catalog every deferred production extension.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/10-e2e-integration.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-listing-file-modified-sort="1787425121725" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="thumbnail"><a href="./articles/index.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./articles/index.html" class="no-external">Articles</a>
+</h3>
+<div class="delink listing-description"><a href="./articles/index.html" class="no-external">
+Self-contained long-form articles and deep dives. Newest first.
+</a></div>
+</div>
+<div class="metadata">
+<a href="./articles/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="ZGVlcC1sZWFybmluZyUyQ3RyYW5zZm9ybWVycyUyQ3RoZW9yeSUyQ2F0dGVudGlvbiUyQ3Rlc3Q=" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1787425121722" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="144">
+<div class="thumbnail"><a href="./articles/attention-mechanism.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./articles/attention-mechanism.html" class="no-external">Attention Mechanism</a>
+</h3>
+<div class="delink listing-description"><a href="./articles/attention-mechanism.html" class="no-external">
+The attention mechanism allows a model to dynamically focus on relevant parts of its input when producing each element of its output. At its core, scaled dot-product…
+</a></div>
+</div>
+<div class="metadata">
+<a href="./articles/attention-mechanism.html" class="no-external">
+<div class="listing-date">
+Jan 24, 2026
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-listing-file-modified-sort="1787425121757" data-listing-reading-time-sort="3" data-listing-word-count-sort="576">
+<div class="thumbnail"><a href="./courses/mlops/index.html" class="no-external">
+
+<img loading="lazy" src="./courses/mlops/img/mlops-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/mlops/index.html" class="no-external">Building an ML Platform on Azure</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/mlops/index.html" class="no-external">
+<p>A small, low-ops MLOps platform built step by step on Azure Container Apps, self-hosted MLflow, and a generic results database.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/mlops/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="16" data-listing-word-count-sort="3187">
+<div class="thumbnail"><a href="./courses/cla/14-compressed-sensing.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/14-compressed-sensing.html" class="no-external">Compressed sensing</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/14-compressed-sensing.html" class="no-external">
+Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of…<span class="math inline"></span><mark></mark><span class="math inline"></span><span class="math inline"></span><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/14-compressed-sensing.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="14" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="5" data-listing-word-count-sort="905">
+<div class="thumbnail"><a href="./courses/cla/index.html" class="no-external">
+
+<img loading="lazy" src="./courses/cla/img/cla-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/index.html" class="no-external">Computational Linear Algebra</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/index.html" class="no-external">
+<p>A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="15" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="thumbnail"><a href="./courses/index.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/index.html" class="no-external">Courses</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/index.html" class="no-external">
+Full course notes, mid-effort. Click a course below.
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="16" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="./courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="17" data-categories="" data-listing-file-modified-sort="1787425121752" data-listing-reading-time-sort="13" data-listing-word-count-sort="2595">
+<div class="thumbnail"><a href="./courses/cla/09-eigendecomposition.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/09-eigendecomposition.html" class="no-external">Eigendecomposition</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/09-eigendecomposition.html" class="no-external">
+The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix…<mark></mark><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/09-eigendecomposition.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="18" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="./courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="19" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="./courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="20" data-categories="ZGVlcC1sZWFybmluZyUyQ21vZGVsLWNvbXByZXNzaW9uJTJDdGVzdA==" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1787425121725" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="85">
+<div class="thumbnail"><a href="./articles/knowledge-distillation.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./articles/knowledge-distillation.html" class="no-external">Knowledge Distillation</a>
+</h3>
+<div class="delink listing-description"><a href="./articles/knowledge-distillation.html" class="no-external">
+Knowledge distillation article.
+</a></div>
+</div>
+<div class="metadata">
+<a href="./articles/knowledge-distillation.html" class="no-external">
+<div class="listing-date">
+Dec 20, 2025
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="21" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="./courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="22" data-categories="c3RhdGlzdGljcyUyQ3Byb2JhYmlsaXR5JTJDbWFjaGluZS1sZWFybmluZw==" data-listing-date-sort="1787356800000" data-listing-file-modified-sort="1787425121758" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="790">
+<div class="thumbnail"><a href="./notes/006-maximum-likelihood-estimation.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="notes/006-maximum-likelihood-estimation_files/figure-html/fig-histogram-output-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./notes/006-maximum-likelihood-estimation.html" class="no-external">Maximum Likelihood Estimation</a>
+</h3>
+<div class="delink listing-description"><a href="./notes/006-maximum-likelihood-estimation.html" class="no-external">
+<strong>Maximum likelihood estimation (MLE)</strong> is a way to estimate unknown parameters from observed data. Given a probabilistic model and observations <span class="math inline">x_1, \ldots, x_n</span>, MLE chooses…
+</a></div>
+</div>
+<div class="metadata">
+<a href="./notes/006-maximum-likelihood-estimation.html" class="no-external">
+<div class="listing-date">
+Aug 22, 2026
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="23" data-listing-file-modified-sort="1787425121758" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="thumbnail"><a href="./notes/index.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./notes/index.html" class="no-external">Notes</a>
+</h3>
+<div class="delink listing-description"><a href="./notes/index.html" class="no-external">
+Random working drafts and low-effort notes. Newest first.
+</a></div>
+</div>
+<div class="metadata">
+<a href="./notes/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="24" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="18" data-listing-word-count-sort="3568">
+<div class="thumbnail"><a href="./courses/cla/12-pagerank.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/12-pagerank.html" class="no-external">PageRank</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/12-pagerank.html" class="no-external">
+The World Wide Web is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/12-pagerank.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="25" data-listing-file-modified-sort="1787425121758" data-listing-reading-time-sort="1" data-listing-word-count-sort="21">
+<div class="thumbnail"><a href="./photos/photos.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./photos/photos.html" class="no-external">Photos</a>
+</h3>
+<div class="delink listing-description"><a href="./photos/photos.html" class="no-external">
+Things that matter to me.
+</a></div>
+</div>
+<div class="metadata">
+<a href="./photos/photos.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="26" data-listing-file-modified-sort="1787425121758" data-listing-reading-time-sort="1" data-listing-word-count-sort="53">
+<div class="thumbnail"><a href="./portfolio/portfolio.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="https://placehold.co/400x250?text=thumbnail.png" alt="Thumbnail"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./portfolio/portfolio.html" class="no-external">Portfolio</a>
+</h3>
+<div class="delink listing-description"><a href="./portfolio/portfolio.html" class="no-external">
+Short summary of what this is and why it matters. Replace this card with your own; copy the block below to add more.
+</a></div>
+</div>
+<div class="metadata">
+<a href="./portfolio/portfolio.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="27" data-categories="" data-listing-file-modified-sort="1787425121745" data-listing-reading-time-sort="14" data-listing-word-count-sort="2724">
+<div class="thumbnail"><a href="./courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/07-projection-and-orthogonalization.html" class="no-external">Projection &amp; orthogonalization</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf…</span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="28" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="./courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="29" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="./courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="30" data-categories="bWV0YSUyQ2Rldg==" data-listing-date-sort="1787356800000" data-listing-file-modified-sort="1787425121758" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="11" data-listing-word-count-sort="2172">
+<div class="thumbnail"><a href="./notes/005-wt-src-walkthrough.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./notes/005-wt-src-walkthrough.html" class="no-external">Reading the wt CLI from the outside in</a>
+</h3>
+<div class="delink listing-description"><a href="./notes/005-wt-src-walkthrough.html" class="no-external">
+<code>wt</code> is the command-line interface used to navigate the <code>watchtower</code> (⛫) workspace. That workspace is also the source for this entire website: its notebooks hold the notes…<code></code>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./notes/005-wt-src-walkthrough.html" class="no-external">
+<div class="listing-date">
+Aug 22, 2026
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="31" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="./courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="32" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="13" data-listing-word-count-sort="2596">
+<div class="thumbnail"><a href="./courses/cla/03-svd.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/03-svd.html" class="no-external">The singular value decomposition</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/03-svd.html" class="no-external">
+The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathb…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/03-svd.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="33" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="./courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="34" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="./courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="courses/cla/img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="./courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="35" data-categories="d2Vhay1zdXBlcnZpc2lvbiUyQ21hY2hpbmUtbGVhcm5pbmclMkNkYXRhLWxhYmVsaW5nJTJDZGF0YS1jZW50cmljJTJDYXR0ZW50aW9u" data-listing-date-sort="1777507200000" data-listing-file-modified-sort="1787425121736" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="38" data-listing-word-count-sort="7421">
+<div class="thumbnail"><a href="./articles/weak-supervision.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' data-src="articles/img/01-weak-supervision-pipeline.png" alt="Weak supervision training pipeline. Users write LFs, a generative model denoises their outputs, and a discriminative model uses the estimated labels for training. The third panel is flipped so the prediction flow runs from right to left. Source"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./articles/weak-supervision.html" class="no-external">Weak Supervision</a>
+</h3>
+<div class="delink listing-description"><a href="./articles/weak-supervision.html" class="no-external">
+<strong>Weak supervision</strong> constructs training data from noisy, programmatic signals when ground-truth labels are unavailable or too expensive to obtain. The desired label for each…<em></em><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./articles/weak-supervision.html" class="no-external">
+<div class="listing-date">
+Apr 30, 2026
+</div>
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+<nav id="listing-pagination" class="listing-pagination" aria-label="Page Navigation">
+  <ul class="pagination"></ul>
+</nav>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";

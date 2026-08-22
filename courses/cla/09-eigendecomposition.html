@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Eigendecomposition – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../courses/cla/10-quadratic-forms.html" rel="next">
+<link href="../../courses/cla/08-least-squares.html" rel="prev">
+<link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/09-eigendecomposition.html">The eigenworld</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational Linear Algebra</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/01-foundations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Foundations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SVD and its proof</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. The spectral theorem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/03-svd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. The singular value decomposition</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Structure</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Rank &amp; the four fundamental subspaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/05-determinant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Determinant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Inverse &amp; pseudoinverse</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Projection &amp; orthogonalization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/08-least-squares.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Least squares</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">The eigenworld</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">09. Eigendecomposition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/10-quadratic-forms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Quadratic forms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Applications</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Topic modeling with SVD and NMF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/12-pagerank.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. PageRank</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/13-robust-pca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Robust PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/14-compressed-sensing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Compressed sensing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#eigenvalues-and-eigenvectors" id="toc-eigenvalues-and-eigenvectors" class="nav-link active" data-scroll-target="#eigenvalues-and-eigenvectors">Eigenvalues and eigenvectors</a></li>
+  <li><a href="#existence-and-the-characteristic-polynomial" id="toc-existence-and-the-characteristic-polynomial" class="nav-link" data-scroll-target="#existence-and-the-characteristic-polynomial">Existence and the characteristic polynomial</a></li>
+  <li><a href="#gershgorins-circle-theorem" id="toc-gershgorins-circle-theorem" class="nav-link" data-scroll-target="#gershgorins-circle-theorem">Gershgorin’s circle theorem</a></li>
+  <li><a href="#diagonalization" id="toc-diagonalization" class="nav-link" data-scroll-target="#diagonalization">Diagonalization</a></li>
+  <li><a href="#when-diagonalization-fails" id="toc-when-diagonalization-fails" class="nav-link" data-scroll-target="#when-diagonalization-fails">When diagonalization fails</a></li>
+  <li><a href="#geometric-multiplicity-is-bounded-by-algebraic-multiplicity" id="toc-geometric-multiplicity-is-bounded-by-algebraic-multiplicity" class="nav-link" data-scroll-target="#geometric-multiplicity-is-bounded-by-algebraic-multiplicity">Geometric multiplicity is bounded by algebraic multiplicity</a></li>
+  <li><a href="#eigenspaces-are-invariant-subspaces" id="toc-eigenspaces-are-invariant-subspaces" class="nav-link" data-scroll-target="#eigenspaces-are-invariant-subspaces">Eigenspaces are invariant subspaces</a></li>
+  <li><a href="#triangular-matrices" id="toc-triangular-matrices" class="nav-link" data-scroll-target="#triangular-matrices">Triangular matrices</a></li>
+  <li><a href="#trace-and-determinant" id="toc-trace-and-determinant" class="nav-link" data-scroll-target="#trace-and-determinant">Trace and determinant</a></li>
+  <li><a href="#complex-eigenvalues-come-in-conjugate-pairs" id="toc-complex-eigenvalues-come-in-conjugate-pairs" class="nav-link" data-scroll-target="#complex-eigenvalues-come-in-conjugate-pairs">Complex eigenvalues come in conjugate pairs</a></li>
+  <li><a href="#the-power-method" id="toc-the-power-method" class="nav-link" data-scroll-target="#the-power-method">The power method</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#problems" id="toc-problems" class="nav-link" data-scroll-target="#problems">Problems</a>
+  <ul class="collapse">
+  <li><a href="#p9.1-strict-diagonal-dominance-implies-invertibility" id="toc-p9.1-strict-diagonal-dominance-implies-invertibility" class="nav-link" data-scroll-target="#p9.1-strict-diagonal-dominance-implies-invertibility">[P9.1] Strict diagonal dominance implies invertibility</a></li>
+  <li><a href="#p9.2-distinct-eigenvalues-imply-diagonalizability" id="toc-p9.2-distinct-eigenvalues-imply-diagonalizability" class="nav-link" data-scroll-target="#p9.2-distinct-eigenvalues-imply-diagonalizability">[P9.2] Distinct eigenvalues imply diagonalizability</a></li>
+  <li><a href="#p9.3-verifying-gershgorins-theorem-and-its-scaling-refinement" id="toc-p9.3-verifying-gershgorins-theorem-and-its-scaling-refinement" class="nav-link" data-scroll-target="#p9.3-verifying-gershgorins-theorem-and-its-scaling-refinement">[P9.3] Verifying Gershgorin’s theorem and its scaling refinement</a></li>
+  <li><a href="#p9.4-jordan-block-powers-grow-polynomially" id="toc-p9.4-jordan-block-powers-grow-polynomially" class="nav-link" data-scroll-target="#p9.4-jordan-block-powers-grow-polynomially">[P9.4] Jordan block powers grow polynomially</a></li>
+  <li><a href="#p9.5-power-method-convergence-scaling" id="toc-p9.5-power-method-convergence-scaling" class="nav-link" data-scroll-target="#p9.5-power-method-convergence-scaling">[P9.5] Power method convergence scaling</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Eigendecomposition</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix enjoys no such guarantee, and two genuinely new phenomena appear. First, eigenvalues may be <mark>complex</mark>, even for a matrix with real entries. Second, the eigenvectors may fail to <em>span</em> the whole space, so the matrix cannot be diagonalized at all. This chapter develops the theory that handles both.</p>
+<p>Three facts anchor everything that follows. The eigenvalues are exactly the roots of a single degree-<span class="math inline">n</span> polynomial, the <mark>characteristic polynomial</mark>; they can be located without solving anything through <mark>Gershgorin’s circle theorem</mark>; and, when a matrix <em>is</em> diagonalizable, its powers, trace, and determinant all reduce to scalars. The chapter closes with the <mark>power method</mark>, the simplest algorithm for finding the dominant eigenvalue, which is the computational engine behind <a href="https://en.wikipedia.org/wiki/PageRank">PageRank</a>.</p>
+<section id="eigenvalues-and-eigenvectors" class="level2">
+<h2 class="anchored" data-anchor-id="eigenvalues-and-eigenvectors">Eigenvalues and eigenvectors</h2>
+<p>A nonzero vector <span class="math inline">\mathbf{v}</span> is an <strong>eigenvector</strong> of <span class="math inline">\mathbf{A}\in\mathbb{R}^{n\times n}</span> when the action of <span class="math inline">\mathbf{A}</span> on it is pure scaling:</p>
+<p><span class="math display">\mathbf{A}\mathbf{v} = \lambda\mathbf{v}.</span></p>
+<p>The scalar <span class="math inline">\lambda</span> is the corresponding <strong>eigenvalue</strong>. The defining equation says that on the line spanned by <span class="math inline">\mathbf{v}</span>, the linear map <span class="math inline">\mathbf{A}</span> acts as multiplication by <span class="math inline">\lambda</span> — the direction is preserved, only the length changes.</p>
+<p>Two immediate observations. First, <span class="math inline">\lambda</span> is an eigenvalue exactly when <span class="math inline">\lambda\mathbf{I} - \mathbf{A}</span> fails to be invertible, because that failure is equivalent to the existence of a nonzero <span class="math inline">\mathbf{v}</span> with <span class="math inline">(\lambda\mathbf{I}-\mathbf{A})\mathbf{v}=\mathbf{0}</span>. Second, <span class="math inline">\lambda = 0</span> is an eigenvalue precisely when <span class="math inline">\mathbf{A}</span> has a nontrivial null space, i.e.&nbsp;<span class="math inline">\mathbf{A}</span> is singular.</p>
+<p>Eigenvectors for a given eigenvalue are not unique: any nonzero scalar multiple is again an eigenvector, and the set of all of them (together with <span class="math inline">\mathbf{0}</span>) forms a subspace.</p>
+</section>
+<section id="existence-and-the-characteristic-polynomial" class="level2">
+<h2 class="anchored" data-anchor-id="existence-and-the-characteristic-polynomial">Existence and the characteristic polynomial</h2>
+<p>Whether <span class="math inline">\lambda\mathbf{I}-\mathbf{A}</span> is invertible is decided by its determinant. Define the <strong>characteristic polynomial</strong></p>
+<p><span class="math display">p_{\mathbf{A}}(\lambda) = \det(\lambda\mathbf{I} - \mathbf{A}).</span></p>
+<p>Expanding the determinant shows <span class="math inline">p_{\mathbf{A}}</span> is a monic polynomial of degree <span class="math inline">n</span> in <span class="math inline">\lambda</span>. Since a matrix is singular exactly when its determinant vanishes, <span class="math inline">\lambda</span> is an eigenvalue of <span class="math inline">\mathbf{A}</span> if and only if <span class="math inline">p_{\mathbf{A}}(\lambda)=0</span>.</p>
+<p>The <a href="https://en.wikipedia.org/wiki/Fundamental_theorem_of_algebra">fundamental theorem of algebra</a> factors <span class="math inline">p_{\mathbf{A}}</span> over <span class="math inline">\mathbb{C}</span>:</p>
+<p><span class="math display">p_{\mathbf{A}}(\lambda) = \prod_{i=1}^{s} (\lambda - \lambda_i)^{r_i}, \qquad r_1 + \cdots + r_s = n,</span></p>
+<p>where <span class="math inline">\lambda_1,\dots,\lambda_s</span> are the distinct eigenvalues. The exponent <span class="math inline">r_i</span> is the <strong>algebraic multiplicity</strong> of <span class="math inline">\lambda_i</span>. A real matrix therefore has exactly <span class="math inline">n</span> eigenvalues counted with multiplicity, though they may be complex; and it has <em>at most</em> <span class="math inline">n</span> distinct ones.</p>
+</section>
+<section id="gershgorins-circle-theorem" class="level2">
+<h2 class="anchored" data-anchor-id="gershgorins-circle-theorem">Gershgorin’s circle theorem</h2>
+<p>The eigenvalues are the roots of a degree-<span class="math inline">n</span> polynomial, which in general cannot be found in closed form. But they can be <em>localized</em> cheaply. For each row <span class="math inline">i</span>, define the <strong>Gershgorin disk</strong></p>
+<p><span class="math display">D_i = \Big\{\, z\in\mathbb{C} : |z - a_{ii}| \le r_i \,\Big\}, \qquad r_i = \sum_{j \ne i} |a_{ij}|,</span></p>
+<p>centered at the diagonal entry <span class="math inline">a_{ii}</span> with radius equal to the sum of the off-diagonal moduli in row <span class="math inline">i</span>.</p>
+<p><strong>Gershgorin’s circle theorem.</strong> <em>Every eigenvalue of <span class="math inline">\mathbf{A}</span> lies in the union <span class="math inline">D_{\mathbf{A}} = \bigcup_{i=1}^n D_i</span> of the Gershgorin disks.</em></p>
+<p>To see why, take an eigenpair <span class="math inline">\mathbf{A}\mathbf{v}=\lambda\mathbf{v}</span> and choose an index <span class="math inline">i</span> with <span class="math inline">|v_i| = \max_j |v_j| = \lVert\mathbf{v}\rVert_\infty</span>. The <span class="math inline">i</span>-th component of the equation reads</p>
+<p><span class="math display">(\lambda - a_{ii}) v_i = \sum_{j\ne i} a_{ij} v_j,</span></p>
+<p>so, dividing by <span class="math inline">v_i</span> and taking moduli,</p>
+<p><span class="math display">|\lambda - a_{ii}| \le \sum_{j\ne i} |a_{ij}|\, \frac{|v_j|}{|v_i|} \le \sum_{j\ne i} |a_{ij}| = r_i.</span></p>
+<p>Thus <span class="math inline">\lambda \in D_i</span>. The theorem is a one-line bound with real teeth: it certifies, for instance, that a <a href="https://en.wikipedia.org/wiki/Diagonally_dominant_matrix">strictly diagonally dominant</a> matrix (one with <span class="math inline">|a_{ii}| &gt; r_i</span> for every <span class="math inline">i</span>) has no zero eigenvalue, hence is invertible.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The disks are drawn from row sums, but the column sums give an identical bound, since <span class="math inline">\mathbf{A}</span> and <span class="math inline">\mathbf{A}^{\mathsf T}</span> share eigenvalues.</p>
+</div>
+</div>
+<div id="41850ad5" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:20:30.750730Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:20:30.750580Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:20:33.261146Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:20:33.258844Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_format</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>set_format(<span class="st">"svg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="944cdfed" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:20:33.267655Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:20:33.267243Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:20:33.759976Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:20:33.758441Z&quot;}}" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.array([[<span class="fl">2.0</span>, <span class="op">-</span><span class="fl">1.0</span>,  <span class="fl">0.0</span>],</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>              [<span class="fl">1.0</span>,  <span class="fl">4.0</span>, <span class="op">-</span><span class="fl">1.0</span>],</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>              [<span class="op">-</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">3.0</span>]])</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">5.2</span>, <span class="fl">5.2</span>))</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(A.shape[<span class="dv">0</span>]):</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    center <span class="op">=</span> A[i, i]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    radius <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(A[i, :])) <span class="op">-</span> <span class="bu">abs</span>(A[i, i])</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    ax.add_patch(plt.Circle((center, <span class="dv">0</span>), radius,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>                            fill<span class="op">=</span><span class="va">False</span>, ec<span class="op">=</span><span class="st">'k'</span>, ls<span class="op">=</span><span class="st">'--'</span>, lw<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>eigs <span class="op">=</span> np.linalg.eigvals(A)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>ax.scatter(eigs.real, eigs.imag, marker<span class="op">=</span><span class="st">'x'</span>, s<span class="op">=</span><span class="dv">70</span>, color<span class="op">=</span><span class="st">'r'</span>, zorder<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'gray'</span>, lw<span class="op">=</span><span class="fl">0.5</span>)<span class="op">;</span> ax.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'gray'</span>, lw<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">'equal'</span>)<span class="op">;</span> ax.set_xlabel(<span class="st">'Re'</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">'Im'</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)<span class="op">;</span> fig.tight_layout()</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'eigenvalues:'</span>, np.<span class="bu">round</span>(eigs, <span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>eigenvalues: [ 3.162+0.j  3.   +0.j -3.162+0.j]</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><a href="09-eigendecomposition_files/figure-html/cell-3-output-2.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="09-eigendecomposition_files/figure-html/cell-3-output-2.svg" class="img-fluid figure-img"></a></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Gershgorin localization.</strong></p>
+<p>Each eigenvalue (red cross) lies inside the union of the three disks, as the theorem guarantees. Here the disks overlap, but the localization is already informative: the spectrum is confined to <span class="math inline">[-5, 6]</span>, and the disk at <span class="math inline">a_{33}=-3</span> of radius <span class="math inline">2</span> isolates a single eigenvalue in the left half-plane.</p>
+<p>The theorem generalizes: a similarity transform <span class="math inline">\mathbf{A}\mapsto \mathbf{D}\mathbf{A}\mathbf{D}^{-1}</span> with positive diagonal <span class="math inline">\mathbf{D}</span> preserves the spectrum while rescaling the off-diagonal entries, and a clever choice of <span class="math inline">\mathbf{D}</span> can shrink the localization arbitrarily.</p>
+</section>
+<section id="diagonalization" class="level2">
+<h2 class="anchored" data-anchor-id="diagonalization">Diagonalization</h2>
+<p>A matrix is <strong>diagonalizable</strong> when it possesses <span class="math inline">n</span> linearly independent eigenvectors. Collect them as the columns of <span class="math inline">\mathbf{V}</span> and the eigenvalues as <span class="math inline">\boldsymbol{\Lambda}=\operatorname{diag}(\lambda_1,\dots,\lambda_n)</span>; the eigen-equations <span class="math inline">\mathbf{A}\mathbf{v}_i = \lambda_i\mathbf{v}_i</span> assemble into <span class="math inline">\mathbf{A}\mathbf{V} = \mathbf{V}\boldsymbol{\Lambda}</span>, and since <span class="math inline">\mathbf{V}</span> is invertible,</p>
+<p><span class="math display">\boxed{\;\mathbf{A} = \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}.\;}</span></p>
+<p>In the eigenbasis the map is <em>diagonal</em>: it stretches coordinate <span class="math inline">i</span> by <span class="math inline">\lambda_i</span> and mixes nothing. Powers collapse to scalars,</p>
+<p><span class="math display">\mathbf{A}^k = \mathbf{V}\boldsymbol{\Lambda}^k\mathbf{V}^{-1},</span></p>
+<p>which is the reason diagonalization matters for any iterated dynamics.</p>
+<p>One subtlety worth recording. Expanding <span class="math inline">\mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}</span> as a sum of rank-one terms gives</p>
+<p><span class="math display">\mathbf{A} = \sum_{i=1}^{n} \lambda_i\, \mathbf{v}_i \mathbf{w}_i^{\mathsf T},</span></p>
+<p>where <span class="math inline">\mathbf{w}_i^{\mathsf T}</span> is the <span class="math inline">i</span>-th <em>row</em> of <span class="math inline">\mathbf{V}^{-1}</span>, i.e.&nbsp;the <mark>left eigenvector</mark> <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{w}_i = \lambda_i \mathbf{w}_i</span>. The two families are <mark>biorthogonal</mark>, <span class="math inline">\mathbf{w}_i^{\mathsf T}\mathbf{v}_j = \delta_{ij}</span>. Only when <span class="math inline">\mathbf{A}</span> is symmetric (Chapter 2) do the two coincide, <span class="math inline">\mathbf{w}_i = \mathbf{v}_i</span>, collapsing this to the spectral theorem’s <span class="math inline">\mathbf{A}=\sum_i\lambda_i\mathbf{v}_i\mathbf{v}_i^{\mathsf T}</span>.</p>
+<div id="87f3b947" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:20:33.766235Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:20:33.765895Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:20:33.818131Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:20:33.816470Z&quot;}}" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">1</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.standard_normal((<span class="dv">4</span>, <span class="dv">4</span>))</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>lam, V <span class="op">=</span> np.linalg.eig(A)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># reconstruct A = V Lambda V^{-1}</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>recon <span class="op">=</span> (V <span class="op">@</span> np.diag(lam)) <span class="op">@</span> np.linalg.inv(V)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'max |A - V Lambda V^{-1}| ='</span>, np.<span class="bu">max</span>(np.<span class="bu">abs</span>(A <span class="op">-</span> recon)))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># powers collapse: A^5 = V Lambda^5 V^{-1}</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>err_pow <span class="op">=</span> np.<span class="bu">max</span>(np.<span class="bu">abs</span>(np.linalg.matrix_power(A, k) <span class="op">-</span> (V <span class="op">@</span> np.diag(lam<span class="op">**</span>k)) <span class="op">@</span> np.linalg.inv(V)))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'max |A^5 - V Lambda^5 V^</span><span class="sc">{</span><span class="op">-</span><span class="dv">1</span><span class="sc">}</span><span class="ss">| = </span><span class="sc">{</span>err_pow<span class="sc">:.2e}</span><span class="ss">'</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># left eigenvectors: rows of V^{-1} are biorthogonal to the columns of V</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>W <span class="op">=</span> np.linalg.inv(V)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'max |W V - I|              ='</span>, np.<span class="bu">max</span>(np.<span class="bu">abs</span>(W <span class="op">@</span> V <span class="op">-</span> np.eye(<span class="dv">4</span>))))</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'max |A^T W^T - W^T Lambda| ='</span>, np.<span class="bu">max</span>(np.<span class="bu">abs</span>(A.T <span class="op">@</span> W.T <span class="op">-</span> W.T <span class="op">@</span> np.diag(lam))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>max |A - V Lambda V^{-1}| = 1.44349424796038e-15
+max |A^5 - V Lambda^5 V^-1| = 1.60e-14
+max |W V - I|              = 2.222087621814296e-16
+max |A^T W^T - W^T Lambda| = 1.3325180118266506e-15</code></pre>
+</div>
+</div>
+<p>The reconstruction and the power identity both hold to machine precision, and the two final checks confirm that the rows of <span class="math inline">\mathbf{W}=\mathbf{V}^{-1}</span> are left eigenvectors. The diagonalization is exact for this generic matrix, and that is the point: <em>generic</em> matrices are diagonalizable, and the failure is a measure-zero, structurally special event.</p>
+</section>
+<section id="when-diagonalization-fails" class="level2">
+<h2 class="anchored" data-anchor-id="when-diagonalization-fails">When diagonalization fails</h2>
+<p>Not every matrix is diagonalizable. Consider</p>
+<p><span class="math display">\mathbf{A} = \begin{bmatrix} 1 &amp; 0 \\ 1 &amp; 1 \end{bmatrix}.</span></p>
+<p>Its characteristic polynomial is <span class="math inline">(1-\lambda)^2</span>, so <span class="math inline">\lambda=1</span> has algebraic multiplicity <span class="math inline">2</span>. But the eigen-equation <span class="math inline">(\mathbf{A}-\mathbf{I})\mathbf{v}=\mathbf{0}</span> is</p>
+<p><span class="math display">\begin{bmatrix} 0 &amp; 0 \\ 1 &amp; 0 \end{bmatrix}\begin{bmatrix} v_1 \\ v_2 \end{bmatrix} = \mathbf{0} \quad\Longrightarrow\quad v_1 = 0,</span></p>
+<p>so every eigenvector is a multiple of <span class="math inline">[0,\ 1]^{\mathsf T}</span>. The eigenspace is one-dimensional, and <span class="math inline">\mathbf{A}</span> has no second independent eigenvector — it cannot be diagonalized. Such a matrix is called <a href="https://en.wikipedia.org/wiki/Defective_matrix">defective</a>, and its structure is a <a href="https://en.wikipedia.org/wiki/Jordan_normal_form">Jordan block</a> rather than a diagonal of scalars.</p>
+<div id="a2910254" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:20:33.821503Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:20:33.821031Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:20:33.836899Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:20:33.835161Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.array([[<span class="fl">1.0</span>, <span class="fl">0.0</span>],</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>              [<span class="fl">1.0</span>, <span class="fl">1.0</span>]])</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>lam, V <span class="op">=</span> np.linalg.eig(A)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'eigenvalues :'</span>, lam)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'rank of V   :'</span>, np.linalg.matrix_rank(V), <span class="st">'(needs 2 to diagonalize)'</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># try to reconstruct: V is singular so A = V Lambda V^{-1} is impossible</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'det(V)      :'</span>, np.linalg.det(V))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>eigenvalues : [1.+0.j 1.+0.j]
+rank of V   : 1 (needs 2 to diagonalize)
+det(V)      : (-2.2204460492503185e-16+0j)</code></pre>
+</div>
+</div>
+<p>NumPy reports the two (equal) eigenvalues, but the eigenvector matrix <span class="math inline">\mathbf{V}</span> has rank <span class="math inline">1</span> — a numerical smoking gun for defectiveness. The matrix still has a perfectly good theory (the Jordan form), but it is not of the tidy diagonal kind, and its powers grow <em>polynomially</em> rather than geometrically: <span class="math inline">\mathbf{A}^k = \begin{bmatrix}1&amp;0\\ k&amp;1\end{bmatrix}</span>.</p>
+</section>
+<section id="geometric-multiplicity-is-bounded-by-algebraic-multiplicity" class="level2">
+<h2 class="anchored" data-anchor-id="geometric-multiplicity-is-bounded-by-algebraic-multiplicity">Geometric multiplicity is bounded by algebraic multiplicity</h2>
+<p>The <strong>eigenspace</strong> of <span class="math inline">\lambda</span> is <span class="math inline">E_\lambda = \operatorname{N}(\lambda\mathbf{I}-\mathbf{A})</span>, and its dimension is the <strong>geometric multiplicity</strong> of <span class="math inline">\lambda</span>. The geometric multiplicity counts independent eigenvectors; the algebraic multiplicity counts how many times <span class="math inline">\lambda</span> is a root of <span class="math inline">p_{\mathbf{A}}</span>. The two need not agree — the defective matrix above has algebraic multiplicity <span class="math inline">2</span> but geometric multiplicity <span class="math inline">1</span> — but they are ordered.</p>
+<p><strong>Proposition.</strong> <em>For every eigenvalue, geometric multiplicity <span class="math inline">\le</span> algebraic multiplicity.</em></p>
+<p>Let <span class="math inline">k = \dim E_\lambda</span> and extend a basis <span class="math inline">\mathbf{v}_1,\dots,\mathbf{v}_k</span> of <span class="math inline">E_\lambda</span> to a basis of <span class="math inline">\mathbb{R}^n</span>, collected as columns of an invertible <span class="math inline">\mathbf{V}</span>. Since each <span class="math inline">\mathbf{v}_i</span> is a <span class="math inline">\lambda</span>-eigenvector,</p>
+<p><span class="math display">\mathbf{A}\mathbf{V} = \mathbf{V}\begin{bmatrix} \lambda \mathbf{I}_k &amp; \mathbf{C} \\ \mathbf{0} &amp; \mathbf{D} \end{bmatrix},</span></p>
+<p>so <span class="math inline">\mathbf{A}</span> is similar to that block-upper-triangular matrix. The characteristic polynomial is invariant under similarity, and the determinant of a block-triangular matrix is the product of the block determinants:</p>
+<p><span class="math display">p_{\mathbf{A}}(\mu) = \det(\mu\mathbf{I}-\mathbf{A}) = \det\big((\mu-\lambda)\mathbf{I}_k\big)\,\det(\mu\mathbf{I}_{n-k}-\mathbf{D}) = (\mu-\lambda)^k \det(\mu\mathbf{I}_{n-k}-\mathbf{D}).</span></p>
+<p>Hence <span class="math inline">(\mu-\lambda)^k</span> divides <span class="math inline">p_{\mathbf{A}}(\mu)</span>, so the algebraic multiplicity of <span class="math inline">\lambda</span> is at least <span class="math inline">k</span>. In particular, <span class="math inline">\mathbf{A}</span> is diagonalizable exactly when every eigenvalue has geometric multiplicity equal to its algebraic multiplicity.</p>
+</section>
+<section id="eigenspaces-are-invariant-subspaces" class="level2">
+<h2 class="anchored" data-anchor-id="eigenspaces-are-invariant-subspaces">Eigenspaces are invariant subspaces</h2>
+<p>An eigenspace is the simplest kind of <a href="https://en.wikipedia.org/wiki/Invariant_subspace">invariant subspace</a>: <span class="math inline">\mathbf{A}</span> maps <span class="math inline">E_\lambda</span> into itself, since <span class="math inline">\mathbf{A}\mathbf{v}=\lambda\mathbf{v}\in E_\lambda</span>. This constrains the geometry of a matrix. Consider</p>
+<p><span class="math display">\mathbf{B} = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ -1 &amp; 0 &amp; 0 \\ 0 &amp; 0 &amp; -5 \end{bmatrix},</span></p>
+<p>a rotation by <span class="math inline">\pi/2</span> in the <span class="math inline">xy</span>-plane combined with scaling by <span class="math inline">-5</span> along the <span class="math inline">z</span>-axis. The <span class="math inline">xy</span>-plane is a two-dimensional invariant subspace, but the restriction of <span class="math inline">\mathbf{B}</span> to it is a <em>rotation</em>, which has no real eigenvectors (no real vector is mapped to a scalar multiple of itself by a <span class="math inline">90^\circ</span> rotation). Hence <span class="math inline">\mathbf{B}</span> has no real eigendecomposition; its eigenvalues are <span class="math inline">\pm i</span> and <span class="math inline">-5</span>. This is the generic picture for real matrices with complex eigenvalues: they rotate inside a real invariant plane.</p>
+</section>
+<section id="triangular-matrices" class="level2">
+<h2 class="anchored" data-anchor-id="triangular-matrices">Triangular matrices</h2>
+<p>For an upper- or lower-triangular matrix, the eigenvalues are the diagonal entries. The reason is that <span class="math inline">\mu\mathbf{I}-\mathbf{A}</span> remains triangular with diagonal <span class="math inline">\mu-a_{11},\dots,\mu-a_{nn}</span>, and the determinant of a triangular matrix is the product of its diagonal entries:</p>
+<p><span class="math display">p_{\mathbf{A}}(\mu) = \prod_{i=1}^n (\mu - a_{ii}).</span></p>
+<p>This is the mechanism behind <em>elimination</em>: Schur’s theorem says every square matrix is unitarily similar to an upper-triangular one (its <a href="https://en.wikipedia.org/wiki/Schur_decomposition">Schur form</a>), which is why an <span class="math inline">O(n^3)</span> algorithm suffices to compute the full spectrum.</p>
+</section>
+<section id="trace-and-determinant" class="level2">
+<h2 class="anchored" data-anchor-id="trace-and-determinant">Trace and determinant</h2>
+<p>Two scalar invariants of <span class="math inline">\mathbf{A}</span> are determined by its eigenvalues, whether or not <span class="math inline">\mathbf{A}</span> is diagonalizable:</p>
+<p><span class="math display">\boxed{\;\det\mathbf{A} = \prod_{i=1}^n \lambda_i, \qquad \operatorname{tr}\mathbf{A} = \sum_{i=1}^n \lambda_i.\;}</span></p>
+<p>Both follow from matching coefficients of <span class="math inline">p_{\mathbf{A}}(\mu)=\prod_i(\mu-\lambda_i)</span>. For the determinant, evaluate at <span class="math inline">\mu=0</span>:</p>
+<p><span class="math display">p_{\mathbf{A}}(0) = \det(-\mathbf{A}) = (-1)^n\det\mathbf{A} = \prod_i (-\lambda_i) = (-1)^n\prod_i \lambda_i,</span></p>
+<p>so <span class="math inline">\det\mathbf{A}=\prod_i\lambda_i</span>. For the trace, the coefficient of <span class="math inline">\mu^{n-1}</span> in <span class="math inline">\det(\mu\mathbf{I}-\mathbf{A})</span> is <span class="math inline">-\sum_i a_{ii} = -\operatorname{tr}\mathbf{A}</span>, because a term contributing <span class="math inline">\mu^{n-1}</span> picks <span class="math inline">n-1</span> diagonal factors <span class="math inline">\mu</span> and one diagonal entry <span class="math inline">-a_{ii}</span>. Matching against <span class="math inline">-\sum_i\lambda_i</span> from the factored form gives <span class="math inline">\operatorname{tr}\mathbf{A}=\sum_i\lambda_i</span>.</p>
+<div id="e16a4637" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:20:33.840428Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:20:33.840068Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:20:33.851164Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:20:33.849531Z&quot;}}" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.standard_normal((<span class="dv">5</span>, <span class="dv">5</span>))</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.eigvals(A)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'det(A)        ='</span>, np.linalg.det(A))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'prod(eigvals) ='</span>, np.prod(lam))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'tr(A)         ='</span>, np.trace(A))</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'sum(eigvals)  ='</span>, np.<span class="bu">sum</span>(lam))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>det(A)        = 1.8269058625543482
+prod(eigvals) = (1.8269058625543453-4.273745946688848e-17j)
+tr(A)         = 0.5145653024486103
+sum(eigvals)  = (0.5145653024486097+0j)</code></pre>
+</div>
+</div>
+<p>Both identities hold even though <span class="math inline">\mathbf{A}</span> is a generic non-symmetric matrix with complex eigenvalues. The trace identity explains a useful shortcut: for any square matrix, <span class="math inline">\operatorname{tr}(\mathbf{A}^{\mathsf T}\mathbf{A}) = \sum_i \sigma_i^2 = \lVert\mathbf{A}\rVert_{\mathrm{F}}^2</span>, connecting the Frobenius norm of Chapter 1 to the singular values of Chapter 3.</p>
+</section>
+<section id="complex-eigenvalues-come-in-conjugate-pairs" class="level2">
+<h2 class="anchored" data-anchor-id="complex-eigenvalues-come-in-conjugate-pairs">Complex eigenvalues come in conjugate pairs</h2>
+<p>For a <em>real</em> matrix, the complex eigenvalues occur in conjugate pairs. Taking the complex conjugate of <span class="math inline">\mathbf{A}\mathbf{v}=\lambda\mathbf{v}</span> gives <span class="math inline">\mathbf{A}\bar{\mathbf{v}}=\bar{\lambda}\bar{\mathbf{v}}</span> (since <span class="math inline">\mathbf{A}</span> is real, <span class="math inline">\bar{\mathbf{A}}=\mathbf{A}</span>), so <span class="math inline">\bar{\lambda}</span> is an eigenvalue with eigenvector <span class="math inline">\bar{\mathbf{v}}</span>. This is why <span class="math inline">\det\mathbf{A}=\prod_i\lambda_i</span> is real even when individual <span class="math inline">\lambda_i</span> are complex, and why a real matrix of odd order always has at least one real eigenvalue: the complex eigenvalues pair up, leaving an odd count to be real.</p>
+</section>
+<section id="the-power-method" class="level2">
+<h2 class="anchored" data-anchor-id="the-power-method">The power method</h2>
+<p>Suppose <span class="math inline">\mathbf{A}</span> is diagonalizable with a <em>dominant</em> eigenvalue, <span class="math inline">|\lambda_1| &gt; |\lambda_2| \ge \cdots \ge |\lambda_n|</span>. Write an arbitrary starting vector <span class="math inline">\mathbf{x}_0</span> in the eigenbasis, <span class="math inline">\mathbf{x}_0 = \sum_i c_i\mathbf{v}_i</span> with <span class="math inline">c_1\ne 0</span>. Iterating <span class="math inline">\mathbf{x}_{k+1}=\mathbf{A}\mathbf{x}_k</span>,</p>
+<p><span class="math display">\mathbf{x}_k = \mathbf{A}^k\mathbf{x}_0 = \lambda_1^k\left( c_1\mathbf{v}_1 + \sum_{i\ge 2} c_i\left(\frac{\lambda_i}{\lambda_1}\right)^{k}\mathbf{v}_i\right),</span></p>
+<p>and every term with <span class="math inline">i\ge 2</span> decays like <span class="math inline">|\lambda_i/\lambda_1|^k</span>. The iterates align with <span class="math inline">\mathbf{v}_1</span> at rate <span class="math inline">|\lambda_2/\lambda_1|</span>, and the <a href="https://en.wikipedia.org/wiki/Rayleigh_quotient">Rayleigh quotient</a> of Chapter 2 converges to <span class="math inline">\lambda_1</span>:</p>
+<p><span class="math display">\frac{\mathbf{x}_k^{\mathsf T}\mathbf{A}\mathbf{x}_k}{\mathbf{x}_k^{\mathsf T}\mathbf{x}_k} \longrightarrow \lambda_1.</span></p>
+<p>Normalizing at each step keeps <span class="math inline">\mathbf{x}_k</span> from overflowing or underflowing, giving the <strong>power method</strong>:</p>
+<p><span class="math display">\mathbf{x}_{k+1} = \frac{\mathbf{A}\mathbf{x}_k}{\lVert\mathbf{A}\mathbf{x}_k\rVert_2}, \qquad \mu_k = \mathbf{x}_k^{\mathsf T}\mathbf{A}\mathbf{x}_k.</span></p>
+<p>This is the algorithm behind <a href="https://en.wikipedia.org/wiki/PageRank">PageRank</a>: the web’s link structure forms a sparse matrix, and its dominant eigenvector (found by the power method) ranks pages. The method’s virtue is that it needs only matrix-vector products, never a factorization.</p>
+<div id="9985d26e" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:20:33.855212Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:20:33.854689Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:20:34.688249Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:20:34.686980Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-6"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-6-1"><a href="#annotated-cell-6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="annotated-cell-6-2"><a href="#annotated-cell-6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="annotated-cell-6-3"><a href="#annotated-cell-6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-4"><a href="#annotated-cell-6-4" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
+<span id="annotated-cell-6-5"><a href="#annotated-cell-6-5" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> rng.standard_normal((<span class="dv">6</span>, <span class="dv">6</span>))</span>
+<span id="annotated-cell-6-6"><a href="#annotated-cell-6-6" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> (B <span class="op">+</span> B.T) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="annotated-cell-6-7"><a href="#annotated-cell-6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-8"><a href="#annotated-cell-6-8" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.eigvalsh(A)</span>
+<span id="annotated-cell-6-9"><a href="#annotated-cell-6-9" aria-hidden="true" tabindex="-1"></a>lam1 <span class="op">=</span> lam[np.argmax(np.<span class="bu">abs</span>(lam))]</span>
+<span id="annotated-cell-6-10"><a href="#annotated-cell-6-10" aria-hidden="true" tabindex="-1"></a>lam2 <span class="op">=</span> lam[np.argsort(<span class="op">-</span>np.<span class="bu">abs</span>(lam))[<span class="dv">1</span>]]</span>
+<span id="annotated-cell-6-11"><a href="#annotated-cell-6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-12"><a href="#annotated-cell-6-12" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> rng.standard_normal(<span class="dv">6</span>)</span>
+<span id="annotated-cell-6-13"><a href="#annotated-cell-6-13" aria-hidden="true" tabindex="-1"></a>x <span class="op">/=</span> np.linalg.norm(x)</span>
+<span id="annotated-cell-6-14"><a href="#annotated-cell-6-14" aria-hidden="true" tabindex="-1"></a>mu <span class="op">=</span> []</span>
+<span id="annotated-cell-6-15"><a href="#annotated-cell-6-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">201</span>):</span>
+<span id="annotated-cell-6-16"><a href="#annotated-cell-6-16" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> A <span class="op">@</span> x</span>
+<span id="annotated-cell-6-17"><a href="#annotated-cell-6-17" aria-hidden="true" tabindex="-1"></a>    x <span class="op">/=</span> np.linalg.norm(x)</span>
+<span id="annotated-cell-6-18"><a href="#annotated-cell-6-18" aria-hidden="true" tabindex="-1"></a>    mu.append(x <span class="op">@</span> A <span class="op">@</span> x)</span>
+<span id="annotated-cell-6-19"><a href="#annotated-cell-6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-20"><a href="#annotated-cell-6-20" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="fl">3.6</span>))</span>
+<span id="annotated-cell-6-21"><a href="#annotated-cell-6-21" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">201</span>), mu, marker<span class="op">=</span><span class="st">'o'</span>, ms<span class="op">=</span><span class="dv">2</span>, lw<span class="op">=</span><span class="fl">0.8</span>, label<span class="op">=</span><span class="st">'Rayleigh quotient'</span>)</span>
+<span id="annotated-cell-6-22"><a href="#annotated-cell-6-22" aria-hidden="true" tabindex="-1"></a>ax.axhline(lam1, color<span class="op">=</span><span class="st">'r'</span>, ls<span class="op">=</span><span class="st">'--'</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="vs">rf'</span><span class="dv">$</span><span class="er">\</span><span class="vs">lambda_1</span><span class="dv">$</span><span class="vs"> = </span><span class="sc">{</span>lam1<span class="sc">:.4f}</span><span class="vs">'</span>)</span>
+<span id="annotated-cell-6-23"><a href="#annotated-cell-6-23" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'iteration $k$'</span>)<span class="op">;</span> ax.set_ylabel(<span class="vs">r'</span><span class="dv">$\m</span><span class="vs">u_k</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="annotated-cell-6-24"><a href="#annotated-cell-6-24" aria-hidden="true" tabindex="-1"></a>ax.legend()<span class="op">;</span> fig.tight_layout()</span>
+<span id="annotated-cell-6-25"><a href="#annotated-cell-6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-26"><a href="#annotated-cell-6-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'lambda_1 = </span><span class="sc">{</span>lam1<span class="sc">:.6f}</span><span class="ss">,  |lambda_2/lambda_1| = </span><span class="sc">{</span><span class="bu">abs</span>(lam2<span class="op">/</span>lam1)<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="annotated-cell-6-27"><a href="#annotated-cell-6-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'mu_200   = </span><span class="sc">{</span>mu[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.6f}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lambda_1 = -2.003712,  |lambda_2/lambda_1| = 0.906
+mu_200   = -2.003712</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><a href="09-eigendecomposition_files/figure-html/cell-7-output-2.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="09-eigendecomposition_files/figure-html/cell-7-output-2.svg" class="img-fluid figure-img"></a></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Power method convergence.</strong></p>
+<ul>
+<li><code>&lt;1&gt;</code> A symmetric matrix keeps the eigenvalues real and the eigenvectors orthogonal, the cleanest setting for the method.</li>
+<li><code>&lt;2&gt;</code> Ground-truth eigenvalues for comparison, computed by a dense solver.</li>
+<li><code>&lt;3&gt;</code> Renormalization is what distinguishes the <em>power method</em> from raw iteration of <span class="math inline">\mathbf{A}^k</span>; it prevents overflow and keeps the vector a unit vector.</li>
+<li><code>&lt;4&gt;</code> The Rayleigh quotient <span class="math inline">\mu_k = \mathbf{x}_k^{\mathsf T}\mathbf{A}\mathbf{x}_k</span> converges to <span class="math inline">\lambda_1</span> faster than the vector <span class="math inline">\mathbf{x}_k</span> itself.</li>
+</ul>
+<p>The quotient converges to <span class="math inline">\lambda_1</span>, but slowly, because the printed ratio <span class="math inline">|\lambda_2/\lambda_1|=0.906</span> is close to <span class="math inline">1</span>: the eigenvector error decays by only a factor <span class="math inline">0.906</span> per step. The Rayleigh quotient compensates with <a href="https://en.wikipedia.org/wiki/Rate_of_convergence">quadratic convergence</a>, its error shrinking like <span class="math inline">|\lambda_2/\lambda_1|^{2k}</span>, so a couple hundred iterations still pin <span class="math inline">\lambda_1</span> to six decimals. A well-separated dominant eigenvalue converges in a handful of steps; here the gap is deliberately narrow to make the rate visible. The one failure mode is a tie, <span class="math inline">|\lambda_1|=|\lambda_2|</span>, for instance a dominant complex conjugate pair: the iterates then oscillate between the two directions instead of settling, and the plain power method must be replaced by a subspace (block) variant.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>The eigendecomposition generalizes the spectral theorem at the cost of two complications: complex eigenvalues and defective matrices. The eigenvalues are the roots of the characteristic polynomial, localized by Gershgorin disks and read off directly for triangular matrices; the trace and determinant are their sum and product. When <span class="math inline">n</span> independent eigenvectors exist the matrix diagonalizes, <span class="math inline">\mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}</span>, and iterated dynamics reduce to scalar powers. When they do not, the matrix is defective and the Jordan form takes over. The power method turns the dominant-eigenvalue theory into an algorithm needing only matrix-vector products — the bridge from this chapter’s theory to the least-squares optimization of Chapter 8 and the quadratic forms of Chapter 10.</p>
+</section>
+<section id="problems" class="level2">
+<h2 class="anchored" data-anchor-id="problems">Problems</h2>
+<p>The problems below exercise the chapter’s main results: Gershgorin localization, diagonalizability, defective matrices, and the power method. Problems 1 and 2 are theory; Problems 3 and 4 are computational; Problem 5 is a numerical experiment.</p>
+<section id="p9.1-strict-diagonal-dominance-implies-invertibility" class="level3">
+<h3 class="anchored" data-anchor-id="p9.1-strict-diagonal-dominance-implies-invertibility">[P9.1] Strict diagonal dominance implies invertibility</h3>
+<p>Let <span class="math inline">\mathbf{A}\in\mathbb{R}^{n\times n}</span> be <mark>strictly diagonally dominant</mark>: <span class="math inline">|a_{ii}| &gt; r_i</span> for every <span class="math inline">i</span>, where <span class="math inline">r_i = \sum_{j\ne i}|a_{ij}|</span> is the radius of the <span class="math inline">i</span>-th Gershgorin disk <span class="math inline">D_i</span>.</p>
+<ol type="a">
+<li>Show that <span class="math inline">0</span> lies outside every disk <span class="math inline">D_i</span>.</li>
+<li>Conclude from Gershgorin’s circle theorem that <span class="math inline">\mathbf{A}</span> is invertible.</li>
+<li>Suppose in addition that <span class="math inline">a_{ii} &gt; 0</span> for every <span class="math inline">i</span>. Show that every eigenvalue of <span class="math inline">\mathbf{A}</span> has positive real part. [Hint: locate the disks in the complex plane.]</li>
+</ol>
+</section>
+<section id="p9.2-distinct-eigenvalues-imply-diagonalizability" class="level3">
+<h3 class="anchored" data-anchor-id="p9.2-distinct-eigenvalues-imply-diagonalizability">[P9.2] Distinct eigenvalues imply diagonalizability</h3>
+<p>Let <span class="math inline">\mathbf{A}\in\mathbb{R}^{n\times n}</span> have <span class="math inline">n</span> <em>distinct</em> eigenvalues <span class="math inline">\lambda_1,\dots,\lambda_n</span>.</p>
+<ol type="a">
+<li>Show that each eigenvalue has geometric multiplicity at least <span class="math inline">1</span>.</li>
+<li>Combine (a) with the proposition that geometric multiplicity is bounded above by algebraic multiplicity to show that each eigenvalue has geometric multiplicity exactly <span class="math inline">1</span>.</li>
+<li>Conclude that <span class="math inline">\mathbf{A}</span> is diagonalizable.</li>
+</ol>
+</section>
+<section id="p9.3-verifying-gershgorins-theorem-and-its-scaling-refinement" class="level3">
+<h3 class="anchored" data-anchor-id="p9.3-verifying-gershgorins-theorem-and-its-scaling-refinement">[P9.3] Verifying Gershgorin’s theorem and its scaling refinement</h3>
+<ol type="a">
+<li>For the fixed random matrix <span class="math inline">\mathbf{A}</span> below, verify that every eigenvalue lies in at least one Gershgorin disk: the quantity</li>
+</ol>
+<p><span class="math display">\max_i \min_j \big(|\lambda_i - a_{jj}| - r_j\big)</span></p>
+<p>should be nonpositive.</p>
+<ol start="2" type="a">
+<li><p>Verify that the similarity transform <span class="math inline">\mathbf{B} = \mathbf{D}\mathbf{A}\mathbf{D}^{-1}</span> with <span class="math inline">\mathbf{D} = \operatorname{diag}(1,2,3,4,5)</span> preserves the spectrum: <span class="math inline">\max_i|\lambda_i(\mathbf{B}) - \lambda_i(\mathbf{A})|</span> should be at machine precision.</p></li>
+<li><p>For <span class="math inline">\mathbf{M} = \begin{bmatrix}1 &amp; 100\\ 0.001 &amp; 1\end{bmatrix}</span>, the first row gives a disk of radius <span class="math inline">100</span>, and the union of the two disks has diameter <span class="math inline">200</span>. Apply the scaling <span class="math inline">\mathbf{D} = \operatorname{diag}(1, 1000)</span> and show that the union of disks of <span class="math inline">\mathbf{D}\mathbf{M}\mathbf{D}^{-1}</span> has diameter <span class="math inline">2</span>, while the spectrum is unchanged.</p></li>
+</ol>
+<p>The starter code below provides the disk helper and the data; the three parts are left to be completed.</p>
+<div id="7d5226b5" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:39.820399Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:39.820155Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:39.902534Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:39.901573Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gershgorin_disks(M):</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    centers <span class="op">=</span> np.diag(M)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    radii <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(M), axis<span class="op">=</span><span class="dv">1</span>) <span class="op">-</span> np.<span class="bu">abs</span>(np.diag(M))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> centers, radii</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">7</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.standard_normal((<span class="dv">5</span>, <span class="dv">5</span>))</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>eigs <span class="op">=</span> np.linalg.eigvals(A)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'eigenvalues of A:'</span>, np.<span class="bu">round</span>(eigs, <span class="dv">3</span>))</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) max over eigenvalues of min_j(|lambda - a_jj| - r_j); should be &lt;= 0</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co"># violation = ...</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) B = D A D^{-1} with D = diag(1, 2, 3, 4, 5); compare eigenvalues</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="co"># D = ...</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="co"># B = ...</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) union diameter of M before and after D = diag(1, 1000)</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="co"># M = ...</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>eigenvalues of A: [-2.531+0.j    -0.458+1.093j -0.458-1.093j  0.935+0.279j  0.935-0.279j]</code></pre>
+</div>
+</div>
+</section>
+<section id="p9.4-jordan-block-powers-grow-polynomially" class="level3">
+<h3 class="anchored" data-anchor-id="p9.4-jordan-block-powers-grow-polynomially">[P9.4] Jordan block powers grow polynomially</h3>
+<p>The <span class="math inline">3\times 3</span> Jordan block <span class="math inline">\mathbf{J} = \lambda\mathbf{I} + \mathbf{N}</span>, with <span class="math inline">\mathbf{N}</span> the nilpotent shift (ones on the superdiagonal), is defective: it has a single eigenvector, so it cannot be diagonalized. Its powers therefore grow <em>polynomially</em> rather than geometrically.</p>
+<ol type="a">
+<li>Compute <span class="math inline">\mathbf{J}^k</span> for <span class="math inline">\lambda = 2</span> and <span class="math inline">k = 10</span> with <code>np.linalg.matrix_power</code>.</li>
+<li>Verify the closed forms for the superdiagonal entries:</li>
+</ol>
+<p><span class="math display">(\mathbf{J}^k)_{0,1} = k\lambda^{k-1}, \qquad (\mathbf{J}^k)_{0,2} = \binom{k}{2}\lambda^{k-2}.</span></p>
+<ol start="3" type="a">
+<li>Contrast with the geometric growth <span class="math inline">\lambda^k</span> of a diagonalizable matrix with the same eigenvalue: compute the ratio <span class="math inline">(\mathbf{J}^k)_{0,2}/\lambda^k</span> for <span class="math inline">k = 10</span> and <span class="math inline">k = 20</span> and check that it equals <span class="math inline">k(k-1)/(2\lambda^2)</span>, growing like <span class="math inline">k^2</span>.</li>
+</ol>
+<p>The starter code below builds the Jordan block; the verifications are left to be completed.</p>
+<div id="b8c96f6a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:53.336844Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:53.335621Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:53.477543Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:53.475189Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> np.diag(np.ones(n <span class="op">-</span> <span class="dv">1</span>), <span class="dv">1</span>)   <span class="co"># ones on the superdiagonal</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>J <span class="op">=</span> lam <span class="op">*</span> np.eye(n) <span class="op">+</span> N          <span class="co"># Jordan block</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'J =</span><span class="ch">\n</span><span class="st">'</span>, J)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) closed forms for k = 10</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>Jk <span class="op">=</span> np.linalg.matrix_power(J, k)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># print('(J^k)[0,1] =', Jk[0, 1], ' vs k*lam^(k-1) =', k * lam**(k-1))</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># print('(J^k)[0,2] =', Jk[0, 2], ' vs C(k,2)*lam^(k-2) =', k*(k-1)//2 * lam**(k-2))</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) ratio (J^k)[0,2] / lam^k for k in {10, 20}; should equal k(k-1)/(2 lam^2)</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co"># for kk in [10, 20]:</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co">#     Jkk = np.linalg.matrix_power(J, kk)</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="co">#     print('ratio =', Jkk[0, 2] / lam**kk)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>J =
+ [[2. 1. 0.]
+ [0. 2. 1.]
+ [0. 0. 2.]]</code></pre>
+</div>
+</div>
+</section>
+<section id="p9.5-power-method-convergence-scaling" class="level3">
+<h3 class="anchored" data-anchor-id="p9.5-power-method-convergence-scaling">[P9.5] Power method convergence scaling</h3>
+<p><strong>Challenge.</strong> The power method converges at a rate governed by the eigenvalue gap. Verify the two convergence rates numerically for the fixed symmetric matrix <span class="math inline">\mathbf{A}</span> below, with dominant eigenvalue <span class="math inline">\lambda_1</span> and second eigenvalue <span class="math inline">\lambda_2</span>.</p>
+<ol type="a">
+<li>Run the normalized power method for <span class="math inline">45</span> iterations, recording the eigenvector error <span class="math inline">e_k = \lVert\mathbf{x}_k - \mathbf{v}_1\rVert_2</span> (with <span class="math inline">\mathbf{v}_1</span> the unit dominant eigenvector, sign-aligned at every step) and the Rayleigh quotient <span class="math inline">\mu_k = \mathbf{x}_k^{\mathsf T}\mathbf{A}\mathbf{x}_k</span>.</li>
+<li>Measure the empirical ratio <span class="math inline">e_{k+1}/e_k</span> over a window of late iterations and compare it with <span class="math inline">|\lambda_2/\lambda_1|</span>.</li>
+<li>Measure the empirical ratio <span class="math inline">|\mu_{k+1}-\lambda_1|/|\mu_k-\lambda_1|</span> and compare it with <span class="math inline">|\lambda_2/\lambda_1|^2</span>, the <em>quadratic</em> convergence of the Rayleigh quotient.</li>
+<li>Construct the scaled rotation <span class="math inline">\mathbf{C} = 1.5\begin{bmatrix}\cos\theta &amp; -\sin\theta\\ \sin\theta &amp; \cos\theta\end{bmatrix}</span> with <span class="math inline">\theta = 0.3</span>, whose eigenvalues are the dominant complex conjugate pair <span class="math inline">1.5e^{\pm i\theta}</span>. Run the plain power method and show that it never settles: the iterates keep rotating, so <span class="math inline">\min_k\lVert\mathbf{x}_{k+1}-\mathbf{x}_k\rVert_2 = 2\sin(\theta/2) \approx 0.299</span>, bounded away from <span class="math inline">0</span>.</li>
+</ol>
+<p>The starter code below sets up the matrix and the iteration; the measurements are left to be completed.</p>
+<div id="23b8c8d9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:02:38.805736Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:02:38.805154Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:02:38.962756Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:02:38.959638Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">11</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> rng.standard_normal((<span class="dv">6</span>, <span class="dv">6</span>))</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> (B <span class="op">+</span> B.T) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.eigvalsh(A)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>lam1 <span class="op">=</span> lam[np.argmax(np.<span class="bu">abs</span>(lam))]</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>lam2 <span class="op">=</span> lam[np.argsort(<span class="op">-</span>np.<span class="bu">abs</span>(lam))[<span class="dv">1</span>]]</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>v1 <span class="op">=</span> np.linalg.eigh(A)[<span class="dv">1</span>][:, np.argmax(np.<span class="bu">abs</span>(lam))]</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> rng.standard_normal(<span class="dv">6</span>)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>x <span class="op">/=</span> np.linalg.norm(x)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> x <span class="op">@</span> v1 <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> <span class="op">-</span>x</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>errs, mus <span class="op">=</span> [], []</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">45</span>):</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> A <span class="op">@</span> x</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    x <span class="op">/=</span> np.linalg.norm(x)</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> x <span class="op">@</span> v1 <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> <span class="op">-</span>x</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    errs.append(np.linalg.norm(x <span class="op">-</span> v1))</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    mus.append(x <span class="op">@</span> A <span class="op">@</span> x)</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'|lam2/lam1|   ='</span>, <span class="bu">abs</span>(lam2 <span class="op">/</span> lam1))</span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'|lam2/lam1|^2 ='</span>, <span class="bu">abs</span>(lam2 <span class="op">/</span> lam1)<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) median of e_{k+1}/e_k over a late window; compare with |lam2/lam1|</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a><span class="co"># ratio_vec = ...</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) median of |mu_{k+1}-lam1|/|mu_k-lam1| over a late window; compare with |lam2/lam1|^2</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a><span class="co"># qe = ...</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a><span class="co"># ratio_q = ...</span></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a><span class="co"># (d) scaled rotation: min over k of ||x_{k+1} - x_k||; compare with 2*sin(theta/2)</span></span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a><span class="co"># theta = 0.3</span></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a><span class="co"># C = ...</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>|lam2/lam1|   = 0.6659106577252804
+|lam2/lam1|^2 = 0.4434370040721155</code></pre>
+</div>
+</div>
+
+
+
+</section>
+</section>
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="16" data-listing-word-count-sort="3187">
+<div class="thumbnail"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">Compressed sensing</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of…<span class="math inline"></span><mark></mark><span class="math inline"></span><span class="math inline"></span><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="5" data-listing-word-count-sort="905">
+<div class="thumbnail"><a href="../../courses/cla/index.html" class="no-external">
+
+<img loading="lazy" src="../../courses/cla/img/cla-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/index.html" class="no-external">Computational Linear Algebra</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/index.html" class="no-external">
+<p>A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="../../courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="../../courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="18" data-listing-word-count-sort="3568">
+<div class="thumbnail"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">PageRank</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+The World Wide Web is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-categories="" data-listing-file-modified-sort="1787425121745" data-listing-reading-time-sort="14" data-listing-word-count-sort="2724">
+<div class="thumbnail"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">Projection &amp; orthogonalization</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf…</span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="13" data-listing-word-count-sort="2596">
+<div class="thumbnail"><a href="../../courses/cla/03-svd.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/03-svd.html" class="no-external">The singular value decomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/03-svd.html" class="no-external">
+The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathb…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/03-svd.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../courses/cla/08-least-squares.html" class="pagination-link" aria-label="08. Least squares">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">08. Least squares</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../courses/cla/10-quadratic-forms.html" class="pagination-link" aria-label="10. Quadratic forms">
+        <span class="nav-page-text">10. Quadratic forms</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>

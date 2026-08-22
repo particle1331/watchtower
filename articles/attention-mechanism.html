@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2026-07-24">
+<meta name="dcterms.date" content="2026-01-24">
 
 <title>Attention Mechanism – Ron Medina ∷ Résumé</title>
 <style>
@@ -73,6 +73,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../site_libs/quarto-listing/list.min.js"></script>
+<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -110,6 +112,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
 
   <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
   <script>document.addEventListener("DOMContentLoaded", function () {
@@ -196,6 +227,13 @@ window.Quarto = {
 <span class="menu-text">photos</span></a>
   </li>  
 </ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
   <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
@@ -232,6 +270,7 @@ window.Quarto = {
     <div class="quarto-category">transformers</div>
     <div class="quarto-category">theory</div>
     <div class="quarto-category">attention</div>
+    <div class="quarto-category">test</div>
   </div>
   </div>
 
@@ -243,7 +282,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 24, 2026</p>
+      <p class="date">January 24, 2026</p>
     </div>
   </div>
   
@@ -283,9 +322,77 @@ window.Quarto = {
 <p>where <span class="math inline">\text{head}_i = \text{Attention}(Q W_i^Q, K W_i^K, V W_i^V)</span>.</p>
 
 
+
 </section>
 
-<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1787425121725" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="thumbnail"><a href="../articles/index.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../articles/index.html" class="no-external">Articles</a>
+</h3>
+<div class="delink listing-description"><a href="../articles/index.html" class="no-external">
+Self-contained long-form articles and deep dives. Newest first.
+</a></div>
+</div>
+<div class="metadata">
+<a href="../articles/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="ZGVlcC1sZWFybmluZyUyQ21vZGVsLWNvbXByZXNzaW9uJTJDdGVzdA==" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1787425121725" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="85">
+<div class="thumbnail"><a href="../articles/knowledge-distillation.html" class="no-external">
+
+<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../articles/knowledge-distillation.html" class="no-external">Knowledge Distillation</a>
+</h3>
+<div class="delink listing-description"><a href="../articles/knowledge-distillation.html" class="no-external">
+Knowledge distillation article.
+</a></div>
+</div>
+<div class="metadata">
+<a href="../articles/knowledge-distillation.html" class="no-external">
+<div class="listing-date">
+Dec 20, 2025
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="d2Vhay1zdXBlcnZpc2lvbiUyQ21hY2hpbmUtbGVhcm5pbmclMkNkYXRhLWxhYmVsaW5nJTJDZGF0YS1jZW50cmljJTJDYXR0ZW50aW9u" data-listing-date-sort="1777507200000" data-listing-file-modified-sort="1787425121736" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="38" data-listing-word-count-sort="7421">
+<div class="thumbnail"><a href="../articles/weak-supervision.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/01-weak-supervision-pipeline.png" alt="Weak supervision training pipeline. Users write LFs, a generative model denoises their outputs, and a discriminative model uses the estimated labels for training. The third panel is flipped so the prediction flow runs from right to left. Source"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../articles/weak-supervision.html" class="no-external">Weak Supervision</a>
+</h3>
+<div class="delink listing-description"><a href="../articles/weak-supervision.html" class="no-external">
+<strong>Weak supervision</strong> constructs training data from noisy, programmatic signals when ground-truth labels are unavailable or too expensive to obtain. The desired label for each…<em></em><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../articles/weak-supervision.html" class="no-external">
+<div class="listing-date">
+Apr 30, 2026
+</div>
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";

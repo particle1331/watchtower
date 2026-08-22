@@ -75,6 +75,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../courses/mlops/09-broker-upgrade.html" rel="next">
 <link href="../../courses/mlops/07-llm-release-artifacts.html" rel="prev">
 <link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
@@ -112,7 +114,79 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<script>
 
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../assets/styles.css">
 </head>
@@ -153,6 +227,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li class="nav-item">
     <a class="nav-link" href="../../photos/photos.html"> 
 <span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -463,10 +544,205 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Next: <strong><a href="../../courses/mlops/09-broker-upgrade.html">09 — Broker upgrade</a></strong> — the other conditional track, for fan-out that outgrows the results-DB continuation rule.</p>
 
 
+
 </section>
 </section>
 
-<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="6" data-listing-word-count-sort="1080">
+<div class="thumbnail"><a href="../../courses/mlops/01-overview.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/01-overview.html" class="no-external">01. Overview &amp; the golden path</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/01-overview.html" class="no-external">
+<p>The four planes, the fixed invariants, the golden path a model travels, and the phased plan the course follows.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/01-overview.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="6" data-listing-word-count-sort="1169">
+<div class="thumbnail"><a href="../../courses/mlops/02-platform-foundation.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/02-platform-foundation.html" class="no-external">02. Platform foundation</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/02-platform-foundation.html" class="no-external">
+<p>Phase 0 — the Azure footprint every later phase depends on: registry, ACA environment, Postgres, storage, Key Vault, Grafana, per-workload identities, and self-hosted MLflow.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/02-platform-foundation.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="963">
+<div class="thumbnail"><a href="../../courses/mlops/03-reproducible-training.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/03-reproducible-training.html" class="no-external">03. Reproducible training &amp; registry</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/03-reproducible-training.html" class="no-external">
+<p>Phase 1 — training and evaluation as ACA Jobs that log to self-hosted MLflow with reconstructable lineage and a results-DB record.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/03-reproducible-training.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="7" data-listing-word-count-sort="1302">
+<div class="thumbnail"><a href="../../courses/mlops/04-results-db-and-batch.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/04-results-db-and-batch.html" class="no-external">04. Results DB &amp; batch workflows</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/04-results-db-and-batch.html" class="no-external">
+<p>Phase 2 — the generic results database, scheduled and manual triggers, and batch fan-out with parent/child rows and a stateless continuation rule.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/04-results-db-and-batch.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="936">
+<div class="thumbnail"><a href="../../courses/mlops/05-online-serving.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/05-online-serving.html" class="no-external">05. Online serving &amp; promotion</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/05-online-serving.html" class="no-external">
+<p>Phase 3 — optional online HTTP serving as an ACA App that loads an exact model version, with promotion and rollback as version/definition changes.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/05-online-serving.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="943">
+<div class="thumbnail"><a href="../../courses/mlops/06-observability-and-dashboard.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/06-observability-and-dashboard.html" class="no-external">06. Observability &amp; dashboard</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/06-observability-and-dashboard.html" class="no-external">
+<p>Phase 4 — three non-overlapping observability layers plus a lightweight catalog/launcher dashboard over the four planes.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/06-observability-and-dashboard.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="5" data-listing-word-count-sort="999">
+<div class="thumbnail"><a href="../../courses/mlops/07-llm-release-artifacts.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/07-llm-release-artifacts.html" class="no-external">07. LLM release artifacts</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/07-llm-release-artifacts.html" class="no-external">
+<p>Phase 5 — package an LLM app as an MLflow pyfunc version, evaluate it with a repeatable job, and release it through the same promotion path as any model.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/07-llm-release-artifacts.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="4" data-listing-word-count-sort="704">
+<div class="thumbnail"><a href="../../courses/mlops/09-broker-upgrade.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/09-broker-upgrade.html" class="no-external">09. Broker upgrade (only if forced)</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/09-broker-upgrade.html" class="no-external">
+<p>The conditional upgrade path: Celery-as-a-library on short-lived KEDA-triggered ACA Jobs backed by managed Redis — adopted only when batch fan-out outgrows the results-DB continuation rule.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/09-broker-upgrade.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-listing-file-modified-sort="1787425121756" data-listing-reading-time-sort="6" data-listing-word-count-sort="1047">
+<div class="thumbnail"><a href="../../courses/mlops/10-e2e-integration.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/mlops-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/10-e2e-integration.html" class="no-external">10. End-to-end integration</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/10-e2e-integration.html" class="no-external">
+<p>Walk the whole golden path on the deployed platform, verify the acceptance evidence for each phase, and catalog every deferred production extension.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/10-e2e-integration.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-listing-file-modified-sort="1787425121757" data-listing-reading-time-sort="3" data-listing-word-count-sort="576">
+<div class="thumbnail"><a href="../../courses/mlops/index.html" class="no-external">
+
+<img loading="lazy" src="../../courses/mlops/img/mlops-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/mlops/index.html" class="no-external">Building an ML Platform on Azure</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/mlops/index.html" class="no-external">
+<p>A small, low-ops MLOps platform built step by step on Azure Container Apps, self-hosted MLflow, and a generic results database.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/mlops/index.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";

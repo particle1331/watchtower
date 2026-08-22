@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>The singular value decomposition – Ron Medina ∷ Résumé</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../courses/cla/04-rank-and-four-subspaces.html" rel="next">
+<link href="../../courses/cla/02-spectral-theorem.html" rel="prev">
+<link href="../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-listing/list.min.js"></script>
+<script src="../../site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-7b67f2ab0b6bf9f6b6e1e6f623931207.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Ron Medina ∷ Résumé</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../articles/index.html"> 
+<span class="menu-text">articles</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../notes/index.html"> 
+<span class="menu-text">notes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../photos/photos.html"> 
+<span class="menu-text">photos</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/02-spectral-theorem.html">The SVD and its proof</a></li><li class="breadcrumb-item"><a href="../../courses/cla/03-svd.html">03. The singular value decomposition</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational Linear Algebra</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/01-foundations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Foundations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SVD and its proof</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/02-spectral-theorem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. The spectral theorem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/03-svd.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">03. The singular value decomposition</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Structure</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Rank &amp; the four fundamental subspaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/05-determinant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Determinant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Inverse &amp; pseudoinverse</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/07-projection-and-orthogonalization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Projection &amp; orthogonalization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/08-least-squares.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Least squares</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The eigenworld</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/09-eigendecomposition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Eigendecomposition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/10-quadratic-forms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Quadratic forms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Applications</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/11-topic-modeling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Topic modeling with SVD and NMF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/12-pagerank.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. PageRank</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/13-robust-pca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Robust PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../courses/cla/14-compressed-sensing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Compressed sensing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#three-forms-of-the-svd" id="toc-three-forms-of-the-svd" class="nav-link active" data-scroll-target="#three-forms-of-the-svd">Three forms of the SVD</a></li>
+  <li><a href="#geometry-rotate-stretch-rotate" id="toc-geometry-rotate-stretch-rotate" class="nav-link" data-scroll-target="#geometry-rotate-stretch-rotate">Geometry: rotate, stretch, rotate</a></li>
+  <li><a href="#the-theorem-proved" id="toc-the-theorem-proved" class="nav-link" data-scroll-target="#the-theorem-proved">The theorem, proved</a></li>
+  <li><a href="#the-variational-characterization" id="toc-the-variational-characterization" class="nav-link" data-scroll-target="#the-variational-characterization">The variational characterization</a></li>
+  <li><a href="#the-polar-decomposition" id="toc-the-polar-decomposition" class="nav-link" data-scroll-target="#the-polar-decomposition">The polar decomposition</a></li>
+  <li><a href="#singular-values-and-the-gram-matrices" id="toc-singular-values-and-the-gram-matrices" class="nav-link" data-scroll-target="#singular-values-and-the-gram-matrices">Singular values and the Gram matrices</a></li>
+  <li><a href="#constructing-the-svd-from-scratch" id="toc-constructing-the-svd-from-scratch" class="nav-link" data-scroll-target="#constructing-the-svd-from-scratch">Constructing the SVD from scratch</a></li>
+  <li><a href="#the-condition-number" id="toc-the-condition-number" class="nav-link" data-scroll-target="#the-condition-number">The condition number</a></li>
+  <li><a href="#low-rank-structure-and-the-layer-perspective" id="toc-low-rank-structure-and-the-layer-perspective" class="nav-link" data-scroll-target="#low-rank-structure-and-the-layer-perspective">Low-rank structure and the layer perspective</a></li>
+  <li><a href="#eckartyoung-the-truncated-svd-is-optimal" id="toc-eckartyoung-the-truncated-svd-is-optimal" class="nav-link" data-scroll-target="#eckartyoung-the-truncated-svd-is-optimal">Eckart–Young: the truncated SVD is optimal</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#problems" id="toc-problems" class="nav-link" data-scroll-target="#problems">Problems</a>
+  <ul class="collapse">
+  <li><a href="#p3.1-singular-values-of-the-gram-matrices" id="toc-p3.1-singular-values-of-the-gram-matrices" class="nav-link" data-scroll-target="#p3.1-singular-values-of-the-gram-matrices">[P3.1] Singular values of the Gram matrices</a></li>
+  <li><a href="#p3.2-the-polar-factor-is-a-rotation" id="toc-p3.2-the-polar-factor-is-a-rotation" class="nav-link" data-scroll-target="#p3.2-the-polar-factor-is-a-rotation">[P3.2] The polar factor is a rotation</a></li>
+  <li><a href="#p3.3-the-compact-svd-from-the-proof" id="toc-p3.3-the-compact-svd-from-the-proof" class="nav-link" data-scroll-target="#p3.3-the-compact-svd-from-the-proof">[P3.3] The compact SVD, from the proof</a></li>
+  <li><a href="#p3.4-eckartyoung-in-practice" id="toc-p3.4-eckartyoung-in-practice" class="nav-link" data-scroll-target="#p3.4-eckartyoung-in-practice">[P3.4] Eckart–Young in practice</a></li>
+  <li><a href="#p3.5-the-condition-number-is-a-worst-case-guarantee" id="toc-p3.5-the-condition-number-is-a-worst-case-guarantee" class="nav-link" data-scroll-target="#p3.5-the-condition-number-is-a-worst-case-guarantee">[P3.5] The condition number is a worst-case guarantee</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../courses/cla/02-spectral-theorem.html">The SVD and its proof</a></li><li class="breadcrumb-item"><a href="../../courses/cla/03-svd.html">03. The singular value decomposition</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">The singular value decomposition</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>The singular value decomposition is the central theorem of the course: the spectral theorem, generalized from symmetric square matrices to arbitrary ones. Every matrix <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span> factors as</p>
+<p><span class="math display">
+\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T},
+\qquad
+\mathbf{U}^{\mathsf T}\mathbf{U} = \mathbf{I}_m,\quad
+\mathbf{V}^{\mathsf T}\mathbf{V} = \mathbf{I}_n,
+</span></p>
+<p>where <span class="math inline">\boldsymbol{\Sigma} \in \mathbb{R}^{m \times n}</span> is diagonal with nonnegative entries <span class="math inline">\sigma_1 \ge \sigma_2 \ge \dots \ge 0</span> down its main diagonal, and both <span class="math inline">\mathbf{U}</span> and <span class="math inline">\mathbf{V}</span> are orthogonal. The numbers <span class="math inline">\sigma_i</span> are the <strong>singular values</strong>, the columns of <span class="math inline">\mathbf{U}</span> the <strong>left singular vectors</strong>, and the columns of <span class="math inline">\mathbf{V}</span> the <strong>right singular vectors</strong>.</p>
+<p>Unlike the eigenvalue theory of a general square matrix, which can fail in spectacular ways (chapter 9), the SVD <em>always</em> exists, is <em>always</em> real for a real matrix, and is <em>always</em> built from orthonormal bases. This is why it is the workhorse: it gives every matrix an orthogonal change of basis in both its domain and its codomain, at once.</p>
+<section id="three-forms-of-the-svd" class="level2">
+<h2 class="anchored" data-anchor-id="three-forms-of-the-svd">Three forms of the SVD</h2>
+<p>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span> and <span class="math inline">r = \operatorname{rank}\mathbf{A}</span>. The theorem has three standard incarnations, distinguished by how much padding each factor carries.</p>
+<ul>
+<li><strong>Full SVD.</strong> <span class="math inline">\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span> with <span class="math inline">\mathbf{U} \in \mathbb{R}^{m \times m}</span> orthogonal, <span class="math inline">\boldsymbol{\Sigma} \in \mathbb{R}^{m \times n}</span> diagonal (rectangular diagonal, zero beyond position <span class="math inline">r</span>), and <span class="math inline">\mathbf{V} \in \mathbb{R}^{n \times n}</span> orthogonal.</li>
+<li><strong>Compact (reduced) SVD.</strong> <span class="math inline">\mathbf{A} = \mathbf{U}_r\boldsymbol{\Sigma}_r\mathbf{V}_r^{\mathsf T}</span>, keeping only the <span class="math inline">r</span> nonzero singular values: <span class="math inline">\mathbf{U}_r \in \mathbb{R}^{m \times r}</span> with orthonormal columns, <span class="math inline">\boldsymbol{\Sigma}_r = \operatorname{diag}(\sigma_1,\dots,\sigma_r) \in \mathbb{R}^{r \times r}</span>, <span class="math inline">\mathbf{V}_r \in \mathbb{R}^{n \times r}</span>.</li>
+<li><strong>Rank-one sum.</strong> The same information as a sum of outer products,</li>
+</ul>
+<p><span class="math display">
+\mathbf{A} = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf T}.
+</span></p>
+<p>The rank-one form is the most useful for thinking. Each term is a rank-one matrix (a column times a row), so <span class="math inline">\mathbf{A}</span> is written as <span class="math inline">r</span> simple pieces weighted by the singular values — the full-blown version of view 4 of matrix multiplication from chapter 1.</p>
+</section>
+<section id="geometry-rotate-stretch-rotate" class="level2">
+<h2 class="anchored" data-anchor-id="geometry-rotate-stretch-rotate">Geometry: rotate, stretch, rotate</h2>
+<p>The SVD says a matrix does three things, in order. Reading <span class="math inline">\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span> from right to left:</p>
+<ol type="1">
+<li><span class="math inline">\mathbf{V}^{\mathsf T}</span> rotates the input so the standard axes line up with the right singular vectors <span class="math inline">\mathbf{v}_1, \dots, \mathbf{v}_n</span>;</li>
+<li><span class="math inline">\boldsymbol{\Sigma}</span> stretches axis <span class="math inline">i</span> by the factor <span class="math inline">\sigma_i</span>;</li>
+<li><span class="math inline">\mathbf{U}</span> rotates the result so the stretched axes line up with the left singular vectors <span class="math inline">\mathbf{u}_1, \dots, \mathbf{u}_m</span>.</li>
+</ol>
+<p>Consequently a matrix sends the unit sphere to a <strong>hyperellipse</strong> whose principal axes are <span class="math inline">\sigma_1\mathbf{u}_1, \dots, \sigma_r\mathbf{u}_r</span>; the directions with <span class="math inline">\sigma_i = 0</span> collapse to the origin. The largest stretch is <span class="math inline">\sigma_1</span>, the smallest nonzero stretch <span class="math inline">\sigma_r</span>; a singular matrix is exactly one that flattens at least one axis.</p>
+<div id="4c3a04be" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:16:08.706572Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:16:08.706190Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:16:12.313937Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:16:12.312449Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> watchtower.core <span class="im">import</span> set_format</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>set_format(<span class="st">"svg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-fig-svd-geometry" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:16:12.319456Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:16:12.319005Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:16:13.009901Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:16:13.007862Z&quot;}}" data-cap="**Rotate, stretch, rotate.** A $2\times2$ matrix maps the unit circle to an ellipse. The red arrows are $\mathbf{A}\mathbf{v}_i = \sigma_i\mathbf{u}_i$: the images of the right singular vectors, equal to the ellipse's axes. Their lengths are the singular values, the per-axis stretch factors." data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)) <span class="op">*</span> <span class="fl">1.3</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>U, S, Vt <span class="op">=</span> np.linalg.svd(A)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">500</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>circle <span class="op">=</span> np.c_[np.cos(t), np.sin(t)]</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>image <span class="op">=</span> circle <span class="op">@</span> A.T                          <span class="co"># row-wise A x</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">6.5</span>))</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>ax.plot(circle[:, <span class="dv">0</span>], circle[:, <span class="dv">1</span>], ls<span class="op">=</span><span class="st">"--"</span>, lw<span class="op">=</span><span class="fl">1.2</span>, color<span class="op">=</span><span class="st">"gray"</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        label<span class="op">=</span><span class="st">"unit circle"</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>ax.plot(image[:, <span class="dv">0</span>], image[:, <span class="dv">1</span>], lw<span class="op">=</span><span class="fl">2.2</span>, color<span class="op">=</span><span class="st">"#1f77b4"</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        label<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="ch">\{</span><span class="dv">\m</span><span class="vs">athbf{A}</span><span class="dv">\m</span><span class="vs">athbf{x} : </span><span class="ch">\|</span><span class="dv">\m</span><span class="vs">athbf{x}</span><span class="ch">\|</span><span class="vs">=1</span><span class="ch">\}</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    Av <span class="op">=</span> A <span class="op">@</span> Vt[i]                            <span class="co"># = sigma_i u_i</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="st">""</span>, xy<span class="op">=</span>Av, xytext<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>                arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">"-|&gt;"</span>, color<span class="op">=</span><span class="st">"#d62728"</span>, lw<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.6</span>)<span class="op">;</span> ax.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> sp <span class="kw">in</span> (<span class="st">"top"</span>, <span class="st">"right"</span>): ax.spines[sp].set_visible(<span class="va">False</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>ax.legend(fontsize<span class="op">=</span><span class="dv">10</span>, loc<span class="op">=</span><span class="st">"upper right"</span>)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"singular values:"</span>, np.<span class="bu">round</span>(S, <span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-svd-geometry" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-svd-geometry-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="03-svd_files/figure-html/fig-svd-geometry-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Figure&nbsp;1: "><img src="03-svd_files/figure-html/fig-svd-geometry-output-1.svg" id="fig-svd-geometry" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-svd-geometry-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>singular values: [4.349 0.035]</code></pre>
+</div>
+</div>
+<p>The figure makes <span class="math inline">\sigma_1</span> visible as the largest distance from the origin attained by any unit vector. That observation anticipates the variational characterization below and the operator norm identity that resolves the chapter-1 definition.</p>
+</section>
+<section id="the-theorem-proved" class="level2">
+<h2 class="anchored" data-anchor-id="the-theorem-proved">The theorem, proved</h2>
+<blockquote class="blockquote">
+<p><strong>Theorem (singular value decomposition).</strong> Every <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span> admits a factorization <span class="math inline">\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span> with <span class="math inline">\mathbf{U}, \mathbf{V}</span> orthogonal and <span class="math inline">\boldsymbol{\Sigma}</span> diagonal with nonnegative entries. Moreover <span class="math inline">\operatorname{rank}\mathbf{A}</span> equals the number of nonzero <span class="math inline">\sigma_i</span>.</p>
+</blockquote>
+<p><em>Proof.</em> The matrix <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A} \in \mathbb{R}^{n \times n}</span> is symmetric and positive semidefinite, since <span class="math inline">\mathbf{x}^{\mathsf T}\mathbf{A}^{\mathsf T}\mathbf{A}\mathbf{x} = \lVert \mathbf{A}\mathbf{x}\rVert^2 \ge 0</span>. By the spectral theorem (chapter 2) it diagonalizes over an orthonormal basis with nonnegative eigenvalues:</p>
+<p><span class="math display">
+\mathbf{A}^{\mathsf T}\mathbf{A}
+= \mathbf{V}\boldsymbol{\Sigma}^2\mathbf{V}^{\mathsf T},
+\qquad
+\boldsymbol{\Sigma}^2 = \operatorname{diag}(\sigma_1^2, \dots, \sigma_n^2),
+\qquad
+\sigma_1 \ge \cdots \ge \sigma_n \ge 0 .
+</span></p>
+<p>Let <span class="math inline">r</span> be the number of <em>positive</em> <span class="math inline">\sigma_i</span>. For <span class="math inline">i \le r</span> define <span class="math inline">\mathbf{u}_i = \mathbf{A}\mathbf{v}_i / \sigma_i \in \mathbb{R}^m</span>. These are orthonormal:</p>
+<p><span class="math display">
+\mathbf{u}_i^{\mathsf T}\mathbf{u}_j
+= \frac{\mathbf{v}_i^{\mathsf T}\mathbf{A}^{\mathsf T}\mathbf{A}\mathbf{v}_j}{\sigma_i\sigma_j}
+= \frac{\sigma_j^2\,\mathbf{v}_i^{\mathsf T}\mathbf{v}_j}{\sigma_i\sigma_j}
+= \delta_{ij} .
+</span></p>
+<p>Extend <span class="math inline">\mathbf{u}_1,\dots,\mathbf{u}_r</span> to an orthonormal basis <span class="math inline">\mathbf{u}_1,\dots,\mathbf{u}_m</span> of <span class="math inline">\mathbb{R}^m</span> (any orthonormal completion of the missing directions). For <span class="math inline">i &gt; r</span> the vector <span class="math inline">\mathbf{A}\mathbf{v}_i</span> vanishes, because <span class="math inline">\lVert \mathbf{A}\mathbf{v}_i\rVert^2 = \mathbf{v}_i^{\mathsf T}\mathbf{A}^{\mathsf T}\mathbf{A}\mathbf{v}_i = \sigma_i^2 = 0</span>. Hence <span class="math inline">\mathbf{A}\mathbf{v}_i = \sigma_i\mathbf{u}_i</span> for <span class="math inline">i \le r</span> and <span class="math inline">\mathbf{A}\mathbf{v}_i = \mathbf{0}</span> for <span class="math inline">i &gt; r</span>, so</p>
+<p><span class="math display">
+\mathbf{A} = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf T}
+= \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T},
+</span></p>
+<p>with <span class="math inline">\mathbf{U} = [\mathbf{u}_1\ \cdots\ \mathbf{u}_m]</span>, <span class="math inline">\mathbf{V} = [\mathbf{v}_1\ \cdots\ \mathbf{v}_n]</span>, and <span class="math inline">\boldsymbol{\Sigma}</span> carrying the <span class="math inline">\sigma_i</span>. Finally <span class="math inline">\operatorname{rank}\mathbf{A} = r</span>: the vectors <span class="math inline">\mathbf{u}_1,\dots,\mathbf{u}_r</span> form an orthonormal basis of the column space of <span class="math inline">\mathbf{A}</span>, since <span class="math inline">\mathbf{A}\mathbf{v}_i = \sigma_i\mathbf{u}_i</span> for <span class="math inline">i \le r</span> and vanishes thereafter, so the <span class="math inline">\sigma_i\mathbf{u}_i</span> span the same column space. <span class="math inline">\square</span></p>
+<p>The proof is constructive except for the orthonormal completion of the left singular vectors — a Gram–Schmidt step, which chapter 7 makes mechanical. The only real input is the spectral theorem on <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span>, which is why chapter 2 came first.</p>
+</section>
+<section id="the-variational-characterization" class="level2">
+<h2 class="anchored" data-anchor-id="the-variational-characterization">The variational characterization</h2>
+<p>The largest singular value has a meaning independent of the factorization: it is the operator norm, the largest stretch a matrix can inflict on a unit vector.</p>
+<p><span class="math display">
+\sigma_1 = \lVert \mathbf{A}\rVert_2
+= \max_{\lVert \mathbf{x}\rVert = 1} \lVert \mathbf{A}\mathbf{x}\rVert .
+</span></p>
+<p>Expanding in the right singular vectors, <span class="math inline">\lVert \mathbf{A}\mathbf{x}\rVert^2 = \mathbf{x}^{\mathsf T}\mathbf{A}^{\mathsf T}\mathbf{A}\mathbf{x} = \sum_i \sigma_i^2 (\mathbf{v}_i^{\mathsf T}\mathbf{x})^2 \le \sigma_1^2 \sum_i (\mathbf{v}_i^{\mathsf T}\mathbf{x})^2 = \sigma_1^2 \lVert \mathbf{x}\rVert^2</span>, with equality at <span class="math inline">\mathbf{x} = \mathbf{v}_1</span>. So the supremum is <span class="math inline">\sigma_1</span>, attained at <span class="math inline">\mathbf{v}_1</span>. This closes the loop with chapter 1, where the operator norm was introduced abstractly: it is now identified with the top singular value. Every intermediate <span class="math inline">\sigma_k</span> admits a similar, constrained description (the Courant–Fischer principle for rectangular matrices), but <span class="math inline">\sigma_1</span> and <span class="math inline">\sigma_r</span> are the ones the course uses.</p>
+</section>
+<section id="the-polar-decomposition" class="level2">
+<h2 class="anchored" data-anchor-id="the-polar-decomposition">The polar decomposition</h2>
+<p>For a <em>square</em> <span class="math inline">\mathbf{A} \in \mathbb{R}^{n \times n}</span> the SVD reorganizes into a single isometry times a single symmetric positive semidefinite stretch.</p>
+<blockquote class="blockquote">
+<p><strong>Polar decomposition.</strong> Every square <span class="math inline">\mathbf{A}</span> factors as <span class="math inline">\mathbf{A} = \mathbf{Q}\mathbf{P}</span> with <span class="math inline">\mathbf{Q}</span> orthogonal and <span class="math inline">\mathbf{P}</span> symmetric positive semidefinite. The factor <span class="math inline">\mathbf{P} = \sqrt{\mathbf{A}^{\mathsf T}\mathbf{A}}</span> is unique; <span class="math inline">\mathbf{Q}</span> is unique only when <span class="math inline">\mathbf{A}</span> is invertible.</p>
+</blockquote>
+<p><em>Existence.</em> Write the SVD <span class="math inline">\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span> and group it as</p>
+<p><span class="math display">
+\mathbf{A} = (\mathbf{U}\mathbf{V}^{\mathsf T})(\mathbf{V}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T})
+= \mathbf{Q}\mathbf{P},
+</span></p>
+<p>where <span class="math inline">\mathbf{Q} = \mathbf{U}\mathbf{V}^{\mathsf T}</span> is orthogonal (a product of orthogonal matrices) and <span class="math inline">\mathbf{P} = \mathbf{V}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span> is the positive semidefinite square root of <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A} = \mathbf{V}\boldsymbol{\Sigma}^2\mathbf{V}^{\mathsf T}</span> constructed in chapter 2. <em>Uniqueness of <span class="math inline">\mathbf{P}</span></em>: any <span class="math inline">\mathbf{P}</span> with <span class="math inline">\mathbf{P} \succeq 0</span> and <span class="math inline">\mathbf{P}^2 = \mathbf{A}^{\mathsf T}\mathbf{A}</span> must be the principal square root, which is unique. <em>Non-uniqueness of <span class="math inline">\mathbf{Q}</span> when singular</em>: along a collapsed direction (a zero singular value) one may reflect freely without changing <span class="math inline">\mathbf{A}</span>. <span class="math inline">\square</span></p>
+<p>The name is exact: a complex number factors in polar coordinates as <span class="math inline">z = r e^{i\theta}</span> with <span class="math inline">r = \sqrt{\bar z z} \ge 0</span> and <span class="math inline">|e^{i\theta}| = 1</span>; the matrix analog replaces the nonnegative modulus <span class="math inline">r</span> by <span class="math inline">\sqrt{\mathbf{A}^{\mathsf T}\mathbf{A}}</span> and the unit complex number <span class="math inline">e^{i\theta}</span> by the isometry <span class="math inline">\mathbf{Q}</span>. The decomposition separates “how much does <span class="math inline">\mathbf{A}</span> stretch” (<span class="math inline">\mathbf{P}</span>) from “how much does it rotate or reflect” (<span class="math inline">\mathbf{Q}</span>).</p>
+</section>
+<section id="singular-values-and-the-gram-matrices" class="level2">
+<h2 class="anchored" data-anchor-id="singular-values-and-the-gram-matrices">Singular values and the Gram matrices</h2>
+<p>The two Gram matrices of <span class="math inline">\mathbf{A}</span> share its nonzero singular values. Because <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}\mathbf{v}_i = \sigma_i^2\mathbf{v}_i</span> and, symmetrically,</p>
+<p><span class="math display">
+\mathbf{A}\mathbf{A}^{\mathsf T}\mathbf{u}_i
+= \mathbf{A}\frac{\mathbf{A}^{\mathsf T}\mathbf{A}\mathbf{v}_i}{\sigma_i}
+= \frac{\sigma_i^2 \mathbf{A}\mathbf{v}_i}{\sigma_i}
+= \sigma_i^2 \mathbf{u}_i,
+</span></p>
+<p>the right singular vectors diagonalize <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span> and the left ones diagonalize <span class="math inline">\mathbf{A}\mathbf{A}^{\mathsf T}</span>, both with eigenvalues <span class="math inline">\sigma_i^2</span> (and zeros beyond <span class="math inline">r</span>). The nonzero singular values of <span class="math inline">\mathbf{A}</span> and <span class="math inline">\mathbf{A}^{\mathsf T}</span> coincide. Unlike eigenvalues, singular values treat a matrix and its transpose symmetrically: both have the same ‘size’ in every singular direction.</p>
+</section>
+<section id="constructing-the-svd-from-scratch" class="level2">
+<h2 class="anchored" data-anchor-id="constructing-the-svd-from-scratch">Constructing the SVD from scratch</h2>
+<p>The proof is executable. Follow it literally: diagonalize <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span>, take square roots for <span class="math inline">\boldsymbol{\Sigma}</span>, and form <span class="math inline">\mathbf{U}</span> as the normalized images <span class="math inline">\mathbf{A}\mathbf{v}_i/\sigma_i</span>.</p>
+<div id="ab3332f2" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:16:13.015744Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:16:13.014946Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:16:13.031599Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:16:13.029687Z&quot;}}" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">4</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>m, n <span class="op">=</span> A.shape</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>lam, V <span class="op">=</span> np.linalg.eigh(A.T <span class="op">@</span> A)             <span class="co"># spectral theorem on A^T A</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>order <span class="op">=</span> np.argsort(<span class="op">-</span>lam)                      <span class="co"># descending</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>lam, V <span class="op">=</span> lam[order], V[:, order]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>sigma <span class="op">=</span> np.sqrt(np.maximum(lam, <span class="fl">0.0</span>))        <span class="co"># singular values</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> <span class="bu">int</span>(np.<span class="bu">sum</span>(sigma <span class="op">&gt;</span> <span class="fl">1e-10</span>))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>Ur <span class="op">=</span> np.zeros((m, r))</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(r):</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    Ur[:, i] <span class="op">=</span> A <span class="op">@</span> V[:, i] <span class="op">/</span> sigma[i]        <span class="co"># u_i = A v_i / sigma_i</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>Sr, Vr <span class="op">=</span> np.diag(sigma[:r]), V[:, :r]</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"A == U_r Sigma_r V_r^T :"</span>, np.allclose(A, Ur <span class="op">@</span> Sr <span class="op">@</span> Vr.T))</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"U_r orthonormal        :"</span>, np.allclose(Ur.T <span class="op">@</span> Ur, np.eye(r)))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"V  orthonormal         :"</span>, np.allclose(V.T <span class="op">@</span> V, np.eye(n)))</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"sigma_1 == ||A||_2     :"</span>, np.allclose(sigma[<span class="dv">0</span>], np.linalg.norm(A, <span class="dv">2</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>A == U_r Sigma_r V_r^T : True
+U_r orthonormal        : True
+V  orthonormal         : True
+sigma_1 == ||A||_2     : True</code></pre>
+</div>
+</div>
+<p>The compact SVD is recovered exactly from the spectral decomposition of <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span>, and the top singular value matches the operator norm computed independently by <code>np.linalg.norm</code>. The only part of the proof not reproduced here is the orthonormal completion of <span class="math inline">\mathbf{U}</span> to a full <span class="math inline">m \times m</span> matrix, which the compact form (dropping the zero singular values and their corresponding vectors) does not need.</p>
+</section>
+<section id="the-condition-number" class="level2">
+<h2 class="anchored" data-anchor-id="the-condition-number">The condition number</h2>
+<p>The singular values quantify a matrix’s fragility. Solving <span class="math inline">\mathbf{A}\mathbf{x} = \mathbf{b}</span> for invertible square <span class="math inline">\mathbf{A}</span> is sensitive to the ratio of the extreme singular values.</p>
+<blockquote class="blockquote">
+<p><strong>Condition number.</strong> For invertible <span class="math inline">\mathbf{A}</span>, define <span class="math inline">\kappa(\mathbf{A}) = \lVert \mathbf{A}\rVert_2\,\lVert \mathbf{A}^{-1}\rVert_2 = \sigma_1 / \sigma_n</span>. Then a perturbation <span class="math inline">\delta\mathbf{b}</span> of the right-hand side perturbs the solution by at most</p>
+<p><span class="math display">
+\frac{\lVert \delta\mathbf{x}\rVert}{\lVert \mathbf{x}\rVert}
+\le \kappa(\mathbf{A})\,\frac{\lVert \delta\mathbf{b}\rVert}{\lVert \mathbf{b}\rVert} .
+</span></p>
+</blockquote>
+<p><em>Proof.</em> <span class="math inline">\mathbf{A}\delta\mathbf{x} = \delta\mathbf{b}</span> gives <span class="math inline">\lVert \delta\mathbf{x}\rVert \le \lVert \mathbf{A}^{-1}\rVert\lVert \delta\mathbf{b}\rVert</span>, while <span class="math inline">\lVert \mathbf{b}\rVert = \lVert \mathbf{A}\mathbf{x}\rVert \le \lVert \mathbf{A}\rVert\lVert \mathbf{x}\rVert</span>, so <span class="math inline">\lVert \mathbf{x}\rVert^{-1} \le \lVert \mathbf{A}\rVert/\lVert \mathbf{b}\rVert</span>. Multiplying,</p>
+<p><span class="math display">
+\lVert \delta\mathbf{x}\rVert
+\le \lVert \mathbf{A}^{-1}\rVert\lVert \delta\mathbf{b}\rVert
+= \lVert \mathbf{A}\rVert\lVert \mathbf{A}^{-1}\rVert
+\cdot \frac{\lVert \delta\mathbf{b}\rVert}{\lVert \mathbf{A}\rVert}
+\le \kappa(\mathbf{A})\,\frac{\lVert \delta\mathbf{b}\rVert\,\lVert \mathbf{x}\rVert}{\lVert \mathbf{b}\rVert},
+</span></p>
+<p>which rearranges to the claim. The second equality uses <span class="math inline">\lVert \mathbf{A}\rVert = \sigma_1</span> and <span class="math inline">\lVert \mathbf{A}^{-1}\rVert = 1/\sigma_n</span>, since <span class="math inline">\mathbf{A}^{-1}</span> has singular values <span class="math inline">1/\sigma_i</span>. <span class="math inline">\square</span></p>
+<p>The bound is <em>attained</em>. Since <span class="math inline">\mathbf{A}^{-1}\mathbf{u}_i = \mathbf{v}_i/\sigma_i</span>, the direction <span class="math inline">\mathbf{A}^{-1}</span> stretches most is <span class="math inline">\mathbf{u}_n</span>: it is mapped to <span class="math inline">\mathbf{v}_n/\sigma_n</span>, the largest factor <span class="math inline">1/\sigma_n</span>. When <span class="math inline">\mathbf{x}</span> aligns with <span class="math inline">\mathbf{v}_1</span> (so <span class="math inline">\lVert\mathbf{b}\rVert = \sigma_1\lVert\mathbf{x}\rVert</span>) and <span class="math inline">\delta\mathbf{b}</span> aligns with <span class="math inline">\mathbf{u}_n</span>, the relative error is exactly <span class="math inline">\kappa(\mathbf{A})</span> times the relative input perturbation. A large condition number is the numerical meaning of “nearly singular” — the matrix inverts some directions so weakly that tiny errors in <span class="math inline">\mathbf{b}</span> are amplified enormously in <span class="math inline">\mathbf{x}</span>.</p>
+<div id="bd90690b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:16:13.034705Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:16:13.034346Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:16:13.062415Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:16:13.060794Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">1</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>Q, _ <span class="op">=</span> np.linalg.qr(rng.normal(size<span class="op">=</span>(n, n)))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>W, _ <span class="op">=</span> np.linalg.qr(rng.normal(size<span class="op">=</span>(n, n)))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>sigma <span class="op">=</span> np.geomspace(<span class="dv">1</span>, <span class="fl">1e3</span>, n)              <span class="co"># sigma_1..sigma_n = 1..1000</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> Q <span class="op">@</span> np.diag(sigma) <span class="op">@</span> W.T</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> rng.normal(size<span class="op">=</span>n)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> A <span class="op">@</span> x</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> rng.normal(size<span class="op">=</span>n)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> db <span class="op">/</span> np.linalg.norm(db) <span class="op">*</span> np.linalg.norm(b) <span class="op">*</span> <span class="fl">1e-4</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>x_tilde <span class="op">=</span> np.linalg.solve(A, b <span class="op">+</span> db)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>rel_x <span class="op">=</span> np.linalg.norm(x_tilde <span class="op">-</span> x) <span class="op">/</span> np.linalg.norm(x)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>rel_b <span class="op">=</span> np.linalg.norm(db) <span class="op">/</span> np.linalg.norm(b)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"kappa(A)              ="</span>, np.linalg.cond(A))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"rel_x / rel_b (&lt;= kappa):"</span>, rel_x <span class="op">/</span> rel_b)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>kappa(A)              = 1000.0000000000107
+rel_x / rel_b (&lt;= kappa): 57.838345144508374</code></pre>
+</div>
+</div>
+<p>The amplification factor <span class="math inline">\lVert \delta\mathbf{x}\rVert/\lVert \mathbf{x}\rVert</span> divided by <span class="math inline">\lVert \delta\mathbf{b}\rVert/\lVert \mathbf{b}\rVert</span> lands below <span class="math inline">\kappa(\mathbf{A}) = 1000</span>, as the theorem requires; a <em>generic</em> random perturbation lands well below the worst case, since the worst case requires <span class="math inline">\delta\mathbf{b}</span> to align precisely with <span class="math inline">\mathbf{u}_1</span>. The condition number is a worst-case guarantee, not a typical-case prediction — the same gap between generic and extremal behavior seen with the norm inequalities of chapter 1.</p>
+</section>
+<section id="low-rank-structure-and-the-layer-perspective" class="level2">
+<h2 class="anchored" data-anchor-id="low-rank-structure-and-the-layer-perspective">Low-rank structure and the layer perspective</h2>
+<p>The rank-one form <span class="math inline">\mathbf{A} = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf T}</span> reads as a <em>layered</em> decomposition: the matrix is a sum of <span class="math inline">r</span> layers, the <span class="math inline">i</span>-th contributing <span class="math inline">\sigma_i\mathbf{u}_i\mathbf{v}_i^{\mathsf T}</span> with weight <span class="math inline">\sigma_i</span>. Truncating after <span class="math inline">k</span> layers gives</p>
+<p><span class="math display">
+\mathbf{A}_k = \sum_{i=1}^k \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf T},
+\qquad
+\operatorname{rank}\mathbf{A}_k = k .
+</span></p>
+<p>A matrix whose <strong>scree plot</strong> drops off quickly — a few dominant singular values — has its essential content in a low-dimensional subspace; everything below the knee of the plot is structure that can be discarded at small cost. Matrices with genuine low-rank <em>signal</em> decay fast; pure noise decays slowly and uniformly, its scree plot nearly flat.</p>
+<div id="cell-fig-svd-lowrank" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:16:13.065782Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:16:13.065439Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:16:13.487816Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:16:13.486294Z&quot;}}" data-cap="**Low-rank reconstruction.** A structured image (smooth blobs plus faint noise) reconstructed from its first $k$ layers. By $k = 8$ the signal is essentially recovered; the remaining layers capture only the noise." data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">64</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>xx, yy <span class="op">=</span> np.meshgrid(np.linspace(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, n), np.linspace(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, n))</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> np.exp(<span class="op">-</span>(xx<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> yy<span class="op">**</span><span class="dv">2</span>))                <span class="co"># central blob</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">6</span>):</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    cx, cy <span class="op">=</span> rng.uniform(<span class="op">-</span><span class="fl">2.5</span>, <span class="fl">2.5</span>, <span class="dv">2</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    img <span class="op">+=</span> <span class="fl">0.7</span> <span class="op">*</span> np.exp(<span class="op">-</span>((xx <span class="op">-</span> cx)<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> (yy <span class="op">-</span> cy)<span class="op">**</span><span class="dv">2</span>) <span class="op">/</span> <span class="fl">0.3</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>img <span class="op">+=</span> <span class="fl">0.03</span> <span class="op">*</span> rng.normal(size<span class="op">=</span>(n, n))         <span class="co"># faint noise</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>U, S, Vt <span class="op">=</span> np.linalg.svd(img)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>ks <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">8</span>, <span class="dv">30</span>]</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="bu">len</span>(ks), figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="fl">3.8</span>))</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, k <span class="kw">in</span> <span class="bu">zip</span>(axes, ks):</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    Ak <span class="op">=</span> (U[:, :k] <span class="op">*</span> S[:k]) <span class="op">@</span> Vt[:k, :]</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    ax.imshow(Ak, cmap<span class="op">=</span><span class="st">"gray"</span>, vmin<span class="op">=</span>img.<span class="bu">min</span>(), vmax<span class="op">=</span>img.<span class="bu">max</span>())</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"$k = </span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">$"</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    ax.axis(<span class="st">"off"</span>)</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"total singular values:"</span>, <span class="bu">len</span>(S))</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"energy in first 8 layers:"</span>, (S[:<span class="dv">8</span>]<span class="op">**</span><span class="dv">2</span>).<span class="bu">sum</span>() <span class="op">/</span> (S<span class="op">**</span><span class="dv">2</span>).<span class="bu">sum</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-svd-lowrank" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-svd-lowrank-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="03-svd_files/figure-html/fig-svd-lowrank-output-1.svg" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Figure&nbsp;2: "><img src="03-svd_files/figure-html/fig-svd-lowrank-output-1.svg" id="fig-svd-lowrank" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-svd-lowrank-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>total singular values: 64
+energy in first 8 layers: 0.9936763507322495</code></pre>
+</div>
+</div>
+<p>The first layer captures the dominant brightness, the next few the individual blobs, and by <span class="math inline">k = 8</span> essentially all the <em>signal</em> is present; the noise requires a long tail of small singular values. The fraction of squared Frobenius norm (energy) retained by the first <span class="math inline">k</span> layers is <span class="math inline">\sum_{i\le k}\sigma_i^2 / \sum_i \sigma_i^2</span>, and it rises fast when the signal is low-rank. This is the quantitative meaning of “the layers are the information”: singular values order the layers by how much of <span class="math inline">\mathbf{A}</span> they explain.</p>
+</section>
+<section id="eckartyoung-the-truncated-svd-is-optimal" class="level2">
+<h2 class="anchored" data-anchor-id="eckartyoung-the-truncated-svd-is-optimal">Eckart–Young: the truncated SVD is optimal</h2>
+<p>Given the scree plot, truncating at <span class="math inline">k</span> is the natural approximation — but is it the <em>best</em> rank-<span class="math inline">k</span> approximation? The answer is the Eckart–Young theorem: nothing beats the truncated SVD.</p>
+<blockquote class="blockquote">
+<p><strong>Theorem (Eckart–Young).</strong> For any matrix <span class="math inline">\mathbf{B}</span> of rank at most <span class="math inline">k</span>,</p>
+<p><span class="math display">
+\lVert \mathbf{A} - \mathbf{B}\rVert_2 \ge \lVert \mathbf{A} - \mathbf{A}_k\rVert_2 = \sigma_{k+1},
+</span></p>
+<p>and the same holds with the Frobenius norm, where <span class="math inline">\lVert \mathbf{A} - \mathbf{A}_k\rVert_F = \big(\sum_{i &gt; k} \sigma_i^2\big)^{1/2}</span>.</p>
+</blockquote>
+<p><em>Proof (operator norm).</em> Since <span class="math inline">\operatorname{rank}\mathbf{B} \le k</span>, the rank–nullity theorem (chapter 4) gives <span class="math inline">\dim \operatorname{null}\mathbf{B} \ge n - k</span>. The subspace <span class="math inline">W = \operatorname{span}\{\mathbf{v}_1, \dots, \mathbf{v}_{k+1}\}</span> has dimension <span class="math inline">k + 1</span>, and</p>
+<p><span class="math display">
+\dim \operatorname{null}\mathbf{B} + \dim W \ge (n-k) + (k+1) = n + 1 &gt; n,
+</span></p>
+<p>so the two subspaces intersect nontrivially. Choose a unit vector <span class="math inline">\mathbf{w} \in \operatorname{null}\mathbf{B} \cap W</span>, written <span class="math inline">\mathbf{w} = \sum_{i=1}^{k+1} c_i \mathbf{v}_i</span> with <span class="math inline">\sum_i c_i^2 = 1</span>. Then</p>
+<p><span class="math display">
+\lVert \mathbf{A} - \mathbf{B}\rVert_2^2
+\ge \lVert (\mathbf{A} - \mathbf{B})\mathbf{w}\rVert^2
+= \lVert \mathbf{A}\mathbf{w}\rVert^2
+= \sum_{i=1}^{k+1} c_i^2 \sigma_i^2
+\ge \sigma_{k+1}^2 \sum_{i=1}^{k+1} c_i^2
+= \sigma_{k+1}^2,
+</span></p>
+<p>using <span class="math inline">\mathbf{B}\mathbf{w} = \mathbf{0}</span> in the second step and <span class="math inline">\sigma_i \ge \sigma_{k+1}</span> in the last. Since <span class="math inline">\mathbf{A} - \mathbf{A}_k = \sum_{i &gt; k}\sigma_i\mathbf{u}_i\mathbf{v}_i^{\mathsf T}</span> has operator norm exactly <span class="math inline">\sigma_{k+1}</span>, the bound is tight and <span class="math inline">\mathbf{A}_k</span> attains it. <span class="math inline">\square</span></p>
+<p>The argument has a concrete geometric reading. A rank-<span class="math inline">k</span> matrix <span class="math inline">\mathbf{B}</span> kills an <span class="math inline">(n-k)</span>-dimensional subspace; among the <span class="math inline">k+1</span> most important directions <span class="math inline">\mathbf{v}_1,\dots,\mathbf{v}_{k+1}</span>, some nonzero combination must fall in that kernel, and along it <span class="math inline">\mathbf{B}</span> does nothing where <span class="math inline">\mathbf{A}</span> stretches by at least <span class="math inline">\sigma_{k+1}</span>. That unavoidable discrepancy is the lower bound, and <span class="math inline">\mathbf{A}_k</span> hits it exactly.</p>
+<p><em>Frobenius norm.</em> The operator-norm argument does not carry over: the matching lower bound <span class="math inline">\lVert\mathbf{A} - \mathbf{B}\rVert_F \ge \big(\sum_{i&gt;k}\sigma_i^2\big)^{1/2}</span> is <a href="https://en.wikipedia.org/wiki/Low-rank_approximation#Basic_low-rank_approximation_problems">Mirsky’s theorem</a>, a consequence of singular-value interlacing, not of the intersection argument above.</p>
+<div id="69e0c8d8" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-14T19:16:13.494123Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-14T19:16:13.493790Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-14T19:16:13.502585Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-14T19:16:13.501248Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">2</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>U, S, Vt <span class="op">=</span> np.linalg.svd(A)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    Ak <span class="op">=</span> (U[:, :k] <span class="op">*</span> S[:k]) <span class="op">@</span> Vt[:k, :]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    err_op <span class="op">=</span> np.linalg.norm(A <span class="op">-</span> Ak, <span class="dv">2</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    err_fr <span class="op">=</span> np.linalg.norm(A <span class="op">-</span> Ak, <span class="st">"fro"</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"k=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">: ||A-Ak||_2 = </span><span class="sc">{</span>err_op<span class="sc">:.4f}</span><span class="ss">   sigma_</span><span class="ch">{{</span><span class="ss">k+1</span><span class="ch">}}</span><span class="ss"> = </span><span class="sc">{</span>S[k]<span class="sc">:.4f}</span><span class="ss">   "</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"||A-Ak||_F = </span><span class="sc">{</span>err_fr<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>k=0: ||A-Ak||_2 = 4.3141   sigma_{k+1} = 4.3141   ||A-Ak||_F = 6.5786
+k=1: ||A-Ak||_2 = 3.4712   sigma_{k+1} = 3.4712   ||A-Ak||_F = 4.9666
+k=2: ||A-Ak||_2 = 2.3460   sigma_{k+1} = 2.3460   ||A-Ak||_F = 3.5521
+k=3: ||A-Ak||_2 = 1.9331   sigma_{k+1} = 1.9331   ||A-Ak||_F = 2.6671
+k=4: ||A-Ak||_2 = 1.5477   sigma_{k+1} = 1.5477   ||A-Ak||_F = 1.8376</code></pre>
+</div>
+</div>
+<p>The Eckart–Young theorem converts the scree plot from a descriptive device into a guarantee: the rank-<span class="math inline">k</span> truncation of the SVD is not merely good, it is the best possible rank-<span class="math inline">k</span> approximation in both the operator and Frobenius norms. The two norms report the error differently: the operator norm sees the single worst direction (<span class="math inline">\sigma_{k+1}</span>), the Frobenius norm the total tail energy <span class="math inline">\big(\sum_{i&gt;k}\sigma_i^2\big)^{1/2}</span>.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>The SVD now packages a great deal into one factorization: the rank (number of nonzero singular values), the operator norm (<span class="math inline">\sigma_1</span>), the condition number (<span class="math inline">\sigma_1/\sigma_n</span> when <span class="math inline">\mathbf{A}</span> is invertible), the best low-rank approximation (truncated SVD), the polar decomposition, and — as the proof showed — the column space of <span class="math inline">\mathbf{A}</span>, spanned by <span class="math inline">\mathbf{u}_1,\dots,\mathbf{u}_r</span>. The next chapter turns that last observation into a systematic account of the four fundamental subspaces: where <span class="math inline">\mathbf{A}</span> maps, where it collapses, and how the two are related.</p>
+</section>
+<section id="problems" class="level2">
+<h2 class="anchored" data-anchor-id="problems">Problems</h2>
+<p>The problems below exercise the chapter’s definitions and theorems: the Gram matrices, the polar decomposition, the constructive proof, Eckart–Young, and the condition number as a worst-case guarantee.</p>
+<section id="p3.1-singular-values-of-the-gram-matrices" class="level3">
+<h3 class="anchored" data-anchor-id="p3.1-singular-values-of-the-gram-matrices">[P3.1] Singular values of the Gram matrices</h3>
+<p>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{m \times n}</span> have full SVD <span class="math inline">\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span>.</p>
+<ol type="a">
+<li><p>Show that the nonzero eigenvalues of <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span> and <span class="math inline">\mathbf{A}\mathbf{A}^{\mathsf T}</span> coincide, with the same multiplicities. Write both Gram matrices as orthogonal diagonalizations of <span class="math inline">\boldsymbol{\Sigma}^{\mathsf T}\boldsymbol{\Sigma}</span> and <span class="math inline">\boldsymbol{\Sigma}\boldsymbol{\Sigma}^{\mathsf T}</span>.</p></li>
+<li><p>Conclude that <span class="math inline">\mathbf{A}</span> and <span class="math inline">\mathbf{A}^{\mathsf T}</span> have the same nonzero singular values, hence <span class="math inline">\lVert \mathbf{A}\rVert_2 = \lVert \mathbf{A}^{\mathsf T}\rVert_2</span> and, for invertible square <span class="math inline">\mathbf{A}</span>, <span class="math inline">\kappa(\mathbf{A}) = \kappa(\mathbf{A}^{\mathsf T})</span>.</p></li>
+<li><p>For <span class="math inline">m &gt; n</span>, show that <span class="math inline">\mathbf{A}\mathbf{A}^{\mathsf T}</span> has exactly <span class="math inline">m - n</span> more zero eigenvalues than <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span>.</p></li>
+</ol>
+</section>
+<section id="p3.2-the-polar-factor-is-a-rotation" class="level3">
+<h3 class="anchored" data-anchor-id="p3.2-the-polar-factor-is-a-rotation">[P3.2] The polar factor is a rotation</h3>
+<p>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{n \times n}</span> be invertible, with SVD <span class="math inline">\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\mathsf T}</span> and polar decomposition <span class="math inline">\mathbf{A} = \mathbf{Q}\mathbf{P}</span>.</p>
+<ol type="a">
+<li><p>Show that <span class="math inline">\mathbf{Q}</span> maps right singular vectors to left singular vectors: <span class="math inline">\mathbf{Q}\mathbf{v}_i = \mathbf{u}_i</span> for <span class="math inline">i = 1, \dots, n</span>. Conclude that <span class="math inline">\det\mathbf{Q} = \pm 1</span>, and that <span class="math inline">\mathbf{Q}</span> is a rotation when <span class="math inline">\det\mathbf{A} &gt; 0</span> and a reflection when <span class="math inline">\det\mathbf{A} &lt; 0</span>.</p></li>
+<li><p>Show that <span class="math inline">\mathbf{Q} = \mathbf{A}(\mathbf{A}^{\mathsf T}\mathbf{A})^{-1/2}</span>, where <span class="math inline">(\mathbf{A}^{\mathsf T}\mathbf{A})^{1/2}</span> is the principal square root of chapter 2.</p></li>
+<li><p>Show that the polar decomposition is unique for invertible <span class="math inline">\mathbf{A}</span>: if <span class="math inline">\mathbf{A} = \mathbf{Q}_1\mathbf{P}_1 = \mathbf{Q}_2\mathbf{P}_2</span> with <span class="math inline">\mathbf{Q}_i</span> orthogonal and <span class="math inline">\mathbf{P}_i \succeq \mathbf{0}</span>, then <span class="math inline">\mathbf{P}_1 = \mathbf{P}_2</span> and <span class="math inline">\mathbf{Q}_1 = \mathbf{Q}_2</span>.</p></li>
+</ol>
+</section>
+<section id="p3.3-the-compact-svd-from-the-proof" class="level3">
+<h3 class="anchored" data-anchor-id="p3.3-the-compact-svd-from-the-proof">[P3.3] The compact SVD, from the proof</h3>
+<p>The proof of the SVD theorem is constructive: diagonalize <span class="math inline">\mathbf{A}^{\mathsf T}\mathbf{A}</span>, take square roots for the singular values, and form the left singular vectors as the normalized images <span class="math inline">\mathbf{A}\mathbf{v}_i/\sigma_i</span>. Implement it for a rank-deficient matrix.</p>
+<p>Let <span class="math inline">\mathbf{A} = \mathbf{B}\mathbf{C}</span> with <span class="math inline">\mathbf{B} \in \mathbb{R}^{6 \times 3}</span> and <span class="math inline">\mathbf{C} \in \mathbb{R}^{3 \times 5}</span> drawn from a standard normal distribution (fixed seed), so <span class="math inline">\operatorname{rank}\mathbf{A} = 3 &lt; \min(6, 5)</span>. The starter code computes the compact SVD of <span class="math inline">\mathbf{A}</span> following the proof. Complete the four checks:</p>
+<ol type="a">
+<li>The reconstruction <span class="math inline">\mathbf{U}_r\boldsymbol{\Sigma}_r\mathbf{V}_r^{\mathsf T}</span> equals <span class="math inline">\mathbf{A}</span>.</li>
+<li><span class="math inline">\mathbf{U}_r</span> has orthonormal columns.</li>
+<li>The top singular value equals the operator norm <span class="math inline">\lVert \mathbf{A}\rVert_2</span>.</li>
+<li>The number of nonzero singular values equals <span class="math inline">\operatorname{rank}\mathbf{A}</span>.</li>
+</ol>
+<p>All four checks should print <code>True</code>. The starter code follows.</p>
+<div id="a6e12e18" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:10.862950Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:10.862751Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:10.959119Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:10.958383Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">7</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">3</span>))</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">5</span>))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> B <span class="op">@</span> C                                    <span class="co"># rank 3, shape (6, 5)</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>lam, V <span class="op">=</span> np.linalg.eigh(A.T <span class="op">@</span> A)             <span class="co"># spectral theorem on A^T A</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>order <span class="op">=</span> np.argsort(<span class="op">-</span>lam)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>lam, V <span class="op">=</span> lam[order], V[:, order]</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>sigma <span class="op">=</span> np.sqrt(np.maximum(lam, <span class="fl">0.0</span>))</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> <span class="bu">int</span>(np.<span class="bu">sum</span>(sigma <span class="op">&gt;</span> <span class="fl">1e-6</span>))                <span class="co"># noise floor ~1e-7, sigma_3 ~ 1.2</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>Ur <span class="op">=</span> np.zeros((<span class="dv">6</span>, r))</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(r):</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    Ur[:, i] <span class="op">=</span> A <span class="op">@</span> V[:, i] <span class="op">/</span> sigma[i]        <span class="co"># u_i = A v_i / sigma_i</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>Sr, Vr <span class="op">=</span> np.diag(sigma[:r]), V[:, :r]</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"singular values:"</span>, np.<span class="bu">round</span>(sigma, <span class="dv">4</span>))</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) reconstruction: check A == U_r Sigma_r V_r^T</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) orthonormality: check U_r^T U_r == I_r</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) operator norm: check sigma_1 == ||A||_2</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="co"># (d) rank: check r == np.linalg.matrix_rank(A)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>singular values: [6.0123 4.7448 1.1961 0.     0.    ]</code></pre>
+</div>
+</div>
+</section>
+<section id="p3.4-eckartyoung-in-practice" class="level3">
+<h3 class="anchored" data-anchor-id="p3.4-eckartyoung-in-practice">[P3.4] Eckart–Young in practice</h3>
+<p>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{8 \times 6}</span> be drawn from a standard normal distribution (fixed seed). The starter code computes its SVD. Verify the Eckart–Young identities numerically:</p>
+<ol type="a">
+<li>For each <span class="math inline">k = 1, \dots, 5</span>, the truncated SVD <span class="math inline">\mathbf{A}_k = \sum_{i \le k}\sigma_i\mathbf{u}_i\mathbf{v}_i^{\mathsf T}</span> satisfies <span class="math inline">\lVert \mathbf{A} - \mathbf{A}_k\rVert_2 = \sigma_{k+1}</span>.</li>
+<li>The Frobenius error satisfies <span class="math inline">\lVert \mathbf{A} - \mathbf{A}_k\rVert_F = \big(\sum_{i &gt; k}\sigma_i^2\big)^{1/2}</span>.</li>
+<li>A random rank-3 competitor <span class="math inline">\mathbf{B} = \mathbf{X}\mathbf{Y}</span> with <span class="math inline">\mathbf{X} \in \mathbb{R}^{8 \times 3}</span> and <span class="math inline">\mathbf{Y} \in \mathbb{R}^{3 \times 6}</span> never beats <span class="math inline">\mathbf{A}_3</span>: <span class="math inline">\lVert \mathbf{A} - \mathbf{B}\rVert_2 \ge \sigma_4</span>.</li>
+</ol>
+<p>The starter code sets up <span class="math inline">\mathbf{A}</span> and its SVD; write the verification.</p>
+<div id="6275f823" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:28.089047Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:28.088585Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:28.181476Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:28.179733Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">11</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>U, S, Vt <span class="op">=</span> np.linalg.svd(A)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"singular values:"</span>, np.<span class="bu">round</span>(S, <span class="dv">4</span>))</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) for each k = 1..5: build A_k = (U[:, :k] * S[:k]) @ Vt[:k, :] and</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#     check ||A - A_k||_2 == S[k]</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) check ||A - A_k||_F == sqrt(sum_{i&gt;k} S[i]**2)</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) a random rank-3 competitor B = X @ Y (X 8x3, Y 3x6) satisfies</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     ||A - B||_2 &gt;= S[3]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>singular values: [3.6408 3.0871 2.5967 1.863  1.5894 0.7759]</code></pre>
+</div>
+</div>
+</section>
+<section id="p3.5-the-condition-number-is-a-worst-case-guarantee" class="level3">
+<h3 class="anchored" data-anchor-id="p3.5-the-condition-number-is-a-worst-case-guarantee">[P3.5] The condition number is a worst-case guarantee</h3>
+<p><strong>Challenge.</strong> The condition-number bound of the chapter is a worst-case guarantee: generic perturbations amplify far less than <span class="math inline">\kappa(\mathbf{A})</span>. Verify this numerically, and construct the perturbation that attains the bound.</p>
+<p>Let <span class="math inline">\mathbf{A} \in \mathbb{R}^{100 \times 100}</span> have singular values <span class="math inline">\sigma_i = 10^{3(n-i)/(n-1)}</span> for <span class="math inline">i = 1, \dots, n</span>, geometric from <span class="math inline">\sigma_1 = 1000</span> down to <span class="math inline">\sigma_n = 1</span>, so <span class="math inline">\kappa(\mathbf{A}) = 1000</span>. The starter code builds <span class="math inline">\mathbf{A}</span> from random orthogonal factors (fixed seeds) and fixes a random <span class="math inline">\mathbf{x}</span> with <span class="math inline">\mathbf{b} = \mathbf{A}\mathbf{x}</span>.</p>
+<ol type="a">
+<li>Report <span class="math inline">\kappa(\mathbf{A})</span> from <code>np.linalg.cond</code>.</li>
+<li>For 1000 random perturbations <span class="math inline">\delta\mathbf{b}</span> with <span class="math inline">\lVert \delta\mathbf{b}\rVert = 10^{-4}\lVert \mathbf{b}\rVert</span>, solve <span class="math inline">\mathbf{A}\,\delta\mathbf{x} = \delta\mathbf{b}</span> and record the amplification factor <span class="math inline">\rho = \frac{\lVert \delta\mathbf{x}\rVert/\lVert \mathbf{x}\rVert}{\lVert \delta\mathbf{b}\rVert/\lVert \mathbf{b}\rVert}</span>. Report the maximum and the mean; the maximum stays below <span class="math inline">\kappa(\mathbf{A})</span> and the mean far below.</li>
+<li>Worst case: take <span class="math inline">\mathbf{x} = \mathbf{v}_1</span>, the right singular vector for <span class="math inline">\sigma_1</span>, and <span class="math inline">\delta\mathbf{b} = 10^{-4}\lVert \mathbf{A}\mathbf{v}_1\rVert\,\mathbf{u}_n</span>, the left singular vector for <span class="math inline">\sigma_n</span>. Show that the amplification factor equals <span class="math inline">\kappa(\mathbf{A})</span> to machine precision.</li>
+<li>Verify that the bound <span class="math inline">\lVert \delta\mathbf{x}\rVert/\lVert \mathbf{x}\rVert \le \kappa(\mathbf{A})\,\lVert \delta\mathbf{b}\rVert/\lVert \mathbf{b}\rVert</span> holds for every random perturbation of part (b).</li>
+</ol>
+<p>The starter code follows.</p>
+<div id="c60d1124" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-16T20:03:41.373631Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-16T20:03:41.373319Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-16T20:03:41.488491Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-16T20:03:41.487240Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">5</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>Q, _ <span class="op">=</span> np.linalg.qr(rng.normal(size<span class="op">=</span>(n, n)))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>W, _ <span class="op">=</span> np.linalg.qr(rng.normal(size<span class="op">=</span>(n, n)))</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>sigma <span class="op">=</span> np.geomspace(<span class="fl">1e3</span>, <span class="dv">1</span>, n)              <span class="co"># sigma_1..sigma_n = 1000..1</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> Q <span class="op">@</span> np.diag(sigma) <span class="op">@</span> W.T</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>kappa <span class="op">=</span> np.linalg.cond(A)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>U, S, Vt <span class="op">=</span> np.linalg.svd(A)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>v1, un <span class="op">=</span> Vt[<span class="dv">0</span>], U[:, <span class="op">-</span><span class="dv">1</span>]                     <span class="co"># v_1 and u_n</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> rng.normal(size<span class="op">=</span>n)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> A <span class="op">@</span> x</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>eps <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"kappa(A) ="</span>, kappa)</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) for 1000 random perturbations db with ||db|| = eps ||b||, solve</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="co">#     A dx = db and record rho = (||dx||/||x||) / (||db||/||b||);</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="co">#     report the maximum and the mean</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) worst case: x = v1, db = eps ||A v1|| u_n; show rho == kappa</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="co"># (d) check rho &lt;= kappa for every random perturbation</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>kappa(A) = 1000.0000000000163</code></pre>
+</div>
+</div>
+
+
+
+</section>
+</section>
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="16" data-listing-word-count-sort="3187">
+<div class="thumbnail"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="14-compressed-sensing_files/figure-html/fig-l1-recovery-output-2.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">Compressed sensing</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+Compressed sensing inverts the usual sampling logic. A conventional acquisition pipeline measures a signal <span class="math inline">\mathbf{x}\in\mathbb{R}^n</span> coordinate by coordinate, so the cost of…<span class="math inline"></span><mark></mark><span class="math inline"></span><span class="math inline"></span><strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/14-compressed-sensing.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="" data-listing-file-modified-sort="1787425121755" data-listing-reading-time-sort="5" data-listing-word-count-sort="905">
+<div class="thumbnail"><a href="../../courses/cla/index.html" class="no-external">
+
+<img loading="lazy" src="../../courses/cla/img/cla-cover.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/index.html" class="no-external">Computational Linear Algebra</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/index.html" class="no-external">
+<p>A numerical-first treatment of linear algebra: the singular value decomposition as the organizing principle, built up from first principles with complete proofs and working code.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/index.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2443">
+<div class="thumbnail"><a href="../../courses/cla/05-determinant.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/05-determinant.html" class="no-external">Determinant</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/05-determinant.html" class="no-external">
+The determinant attaches to every square matrix a single scalar that packages two independent facts: <em>how much</em> the map scales volume, and <em>whether</em> it flips orientation. The…<span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/05-determinant.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="" data-listing-file-modified-sort="1787425121752" data-listing-reading-time-sort="13" data-listing-word-count-sort="2595">
+<div class="thumbnail"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">Eigendecomposition</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+The spectral theorem of Chapter 2 settles the story for <em>symmetric</em> matrices: every symmetric matrix admits an orthonormal basis of real eigenvectors. A general square matrix…<mark></mark><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/09-eigendecomposition.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="4" data-categories="" data-listing-file-modified-sort="1787425121738" data-listing-reading-time-sort="15" data-listing-word-count-sort="2943">
+<div class="thumbnail"><a href="../../courses/cla/01-foundations.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/01-foundations.html" class="no-external">Foundations</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/01-foundations.html" class="no-external">
+This chapter fixes the object model and the notation the rest of the course relies on. A vector is a point in <span class="math inline">\mathbb{R}^n</span>, a matrix is the representation of a linear map <span class="math inline">\ma…</span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/01-foundations.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="5" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="11" data-listing-word-count-sort="2137">
+<div class="thumbnail"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">Inverse &amp; pseudoinverse</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+This chapter climbs a ladder of invertibility. At the top sits the true inverse, defined only for square, full-rank matrices. One rung down sit the one-sided inverses, which…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/06-inverse-and-pseudoinverse.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="6" data-categories="" data-listing-file-modified-sort="1787425121751" data-listing-reading-time-sort="11" data-listing-word-count-sort="2122">
+<div class="thumbnail"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">Least squares</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/08-least-squares.html" class="no-external">
+Given a design matrix <span class="math inline">\mathbf{X} \in \mathbb{R}^{n\times d}</span> and observations <span class="math inline">\mathbf{y}\in\mathbb{R}^n</span>, the <mark>least-squares problem</mark> asks for the coefficient vector <span class="math inline">\mathbf{w}\i…</span><span class="math inline"></span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/08-least-squares.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="7" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="18" data-listing-word-count-sort="3568">
+<div class="thumbnail"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">PageRank</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/12-pagerank.html" class="no-external">
+The World Wide Web is a directed graph: pages are nodes and hyperlinks are edges, pointing from the page that contains them to the page they reference. Ranking pages by…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/12-pagerank.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="8" data-categories="" data-listing-file-modified-sort="1787425121745" data-listing-reading-time-sort="14" data-listing-word-count-sort="2724">
+<div class="thumbnail"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">Projection &amp; orthogonalization</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+Projection is the geometric engine behind most of what remains in the course. Least-squares fitting (Chapter 8) <em>is</em> projection onto a column space; the two factors <span class="math inline">\mathbf…</span><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/07-projection-and-orthogonalization.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="8" data-listing-word-count-sort="1569">
+<div class="thumbnail"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">Quadratic forms</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+A symmetric matrix <span class="math inline">\mathbf{Q}</span> defines a scalar-valued function
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/10-quadratic-forms.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="" data-listing-file-modified-sort="1787425121743" data-listing-reading-time-sort="13" data-listing-word-count-sort="2508">
+<div class="thumbnail"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">Rank &amp; the four fundamental subspaces</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+A matrix <span class="math inline">\mathbf{A}\in\mathbb{R}^{m\times n}</span> turns vectors in <span class="math inline">\mathbb{R}^n</span> into vectors in <span class="math inline">\mathbb{R}^m</span>. The single most informative integer attached to it is its <strong>rank</strong> <span class="math inline">r</span>…<strong></strong><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/04-rank-and-four-subspaces.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="11" data-categories="" data-listing-file-modified-sort="1787425121754" data-listing-reading-time-sort="13" data-listing-word-count-sort="2526">
+<div class="thumbnail"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="13-robust-pca_files/figure-html/fig-rpca-recovery-output-1.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">Robust PCA</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/13-robust-pca.html" class="no-external">
+A static surveillance camera watches a corridor: walls, doors, and furniture never move, while people walk through the field of view. Stack the <span class="math inline">n</span> frames as columns of a…<span class="math inline"></span><em></em><strong></strong><span class="math inline"></span>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/13-robust-pca.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="12" data-categories="" data-listing-file-modified-sort="1787425121739" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="thumbnail"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">The spectral theorem</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+Every matrix worth understanding is, at bottom, an answer to one question: <em>in which coordinates does this linear map become transparent?</em> For a symmetric matrix the answer is…
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/02-spectral-theorem.html" class="no-external">
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="" data-listing-file-modified-sort="1787425121753" data-listing-reading-time-sort="16" data-listing-word-count-sort="3015">
+<div class="thumbnail"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="img/cla-cover.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">Topic modeling with SVD and NMF</a>
+</h3>
+<div class="delink listing-description"><a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+This chapter puts the machinery of Chapter 3 to work on a matrix built from text rather than from geometry: a collection of newsgroup messages becomes a matrix of word…<em></em>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../../courses/cla/11-topic-modeling.html" class="no-external">
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../courses/cla/02-spectral-theorem.html" class="pagination-link" aria-label="The SVD and its proof">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">The SVD and its proof</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../courses/cla/04-rank-and-four-subspaces.html" class="pagination-link" aria-label="Structure">
+        <span class="nav-page-text">Structure</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>
