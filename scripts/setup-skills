@@ -1,0 +1,54 @@
+#!/bin/sh
+
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
+canonical_dir="$repo_root/skills"
+
+if [ ! -d "$canonical_dir" ]; then
+	printf '%s\n' "error: canonical skills directory is missing: $canonical_dir" >&2
+	exit 1
+fi
+
+skill_count=0
+
+for skill_dir in "$canonical_dir"/*; do
+	[ -d "$skill_dir" ] || continue
+
+	skill_name=${skill_dir##*/}
+	if [ ! -f "$skill_dir/SKILL.md" ]; then
+		printf '%s\n' "error: skill is missing SKILL.md: $skill_dir" >&2
+		exit 1
+	fi
+
+	skill_count=$((skill_count + 1))
+	relative_target="../../skills/$skill_name"
+
+	for tool_dir in "$repo_root/.codex/skills" "$repo_root/.opencode/skills"; do
+		mkdir -p "$tool_dir"
+		link_path="$tool_dir/$skill_name"
+
+		if [ -L "$link_path" ]; then
+			current_target=$(readlink "$link_path")
+			if [ "$current_target" != "$relative_target" ]; then
+				printf '%s\n' "error: incorrect skill link: $link_path -> $current_target" >&2
+				printf '%s\n' "       expected: $relative_target" >&2
+				exit 1
+			fi
+		elif [ -e "$link_path" ]; then
+			printf '%s\n' "error: refusing to replace existing path: $link_path" >&2
+			exit 1
+		else
+			ln -s "$relative_target" "$link_path"
+			printf '%s\n' "linked: $link_path -> $relative_target"
+		fi
+	done
+done
+
+if [ "$skill_count" -eq 0 ]; then
+	printf '%s\n' "error: no skills found under $canonical_dir" >&2
+	exit 1
+fi
+
+printf '%s\n' "validated $skill_count shared skill(s)"

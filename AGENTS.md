@@ -7,6 +7,18 @@ This repo is a personal system with three tiers of content with DIFFERENT visibi
 - `courses/` — full course notes
 - `projects/<name>/` — code projects (each a uv workspace member)
 
+## Agent skills
+- Shared skills live in `skills/<name>/SKILL.md`, which is the canonical source.
+- `.codex/skills/` and `.opencode/skills/` contain relative symlinks to the
+  shared skills. Edit the canonical files under `skills/`, not the symlink
+  paths.
+- When creating a shared skill, add it under `skills/<name>/` with a
+  `SKILL.md`, then run `make setup-skills`. The command creates or validates
+  the corresponding symlinks in both tool directories. Do not duplicate skill
+  files or create the symlinks manually.
+- Run `make setup-skills` to create missing links or validate an existing
+  checkout. `make bootstrap` runs it automatically before `uv sync`.
+
 Canonical source files are Jupyter notebooks (`.ipynb`). Authors edit them
 in JupyterLab (running cells, getting outputs); Quarto renders the notebooks
 to the website using **inline outputs, no re-execution** — so heavy compute

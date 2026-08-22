@@ -1,8 +1,11 @@
-.PHONY: bootstrap test lint typecheck review
+.PHONY: bootstrap setup-skills test lint typecheck review
 
-bootstrap:
+bootstrap: setup-skills
 	uv sync
 	@echo "Ready. Try: wt --help"
+
+setup-skills:
+	./scripts/setup-skills
 
 test:
 	uv run pytest

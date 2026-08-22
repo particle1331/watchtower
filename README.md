@@ -1,4 +1,4 @@
-# watchtower
+# watchtower ⛫
 
 A personal system for notes, articles, projects, and course notes. Edit in
 JupyterLab (running cells, getting outputs); Quarto renders the notebooks
@@ -23,7 +23,7 @@ the raw JSON.
 ## Quick start
 
 ```bash
-make bootstrap                       # uv sync (creates .venv)
+make bootstrap                       # setup shared skills + uv sync (creates .venv)
 wt new note my-note                  # notes/my-note.ipynb
 wt new note my-note -t "My Note"       # custom display title
 
@@ -41,6 +41,20 @@ wt docs                              # serve site on :4200
 
 The site is published automatically to `gh-pages` on push to `main` via
 `.github/workflows/publish.yml`.
+
+## Agent skills
+
+Shared Codex and OpenCode skills live under `skills/`. The corresponding
+`.codex/skills/` and `.opencode/skills/` entries are relative symlinks into
+that directory, so each skill has one canonical source file.
+
+After cloning, run `make bootstrap`. It installs the Python environment and
+repairs or validates the skill symlinks. Edit the files under `skills/`, not
+the tool-specific symlink paths.
+
+To add a shared skill, create `skills/<name>/SKILL.md` and run
+`make setup-skills`. The command registers it in both tool directories; do not
+duplicate the skill file or create the symlinks manually.
 
 ## Editing workflow
 
@@ -65,7 +79,7 @@ vision-capable agent can inspect plots without parsing notebook JSON.
 ## Importing notebooks from elsewhere
 
 ```bash
-wt import ~/Downloads/foo.ipynb notes my-foo                  # copy + normalize into notes/
+wt import ~/Downloads/foo.ipynb notes my-foo                   # copy + normalize into notes/
 wt import ~/Downloads/foo.ipynb courses llm                    # import as a chapter of llm/ + register in sidebar
 wt import ~/Downloads/foo.ipynb courses llm 02-bar             # chapter stem override
 wt import ~/Downloads/foo.ipynb courses llm 02-bar -s "Setup"  # into a specific section
@@ -270,7 +284,8 @@ don't belong in `wt`).
 
 | Target             | What it runs   |
 |--------------------|----------------|
-| `make bootstrap`   | `uv sync`      |
+| `make bootstrap`   | setup skills + `uv sync` |
+| `make setup-skills`| create and validate skill symlinks |
 | `make test`        | `pytest`       |
 | `make lint`        | `ruff check .` |
 | `make typecheck`   | `pyright`      |

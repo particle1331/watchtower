@@ -1,0 +1,4 @@
+interface:
+  display_name: "Quarto Jupyter"
+  short_description: "Author and validate Quarto Jupyter notebooks"
+  default_prompt: "Use $quarto-jupyter to author or review a Quarto Jupyter notebook."
