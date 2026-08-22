@@ -49,6 +49,42 @@ def test_cli_tag_requires_locator(nb_file, cli_console, invoke):
 
 
 # ---------------------------------------------------------------------------
+# wt kernels
+# ---------------------------------------------------------------------------
+
+def test_cli_kernels_lists_kernel_names(monkeypatch):
+    from watchtower import kernels
+
+    monkeypatch.setattr(
+        kernels,
+        "available_kernel_rows",
+        lambda: [("python3", "python", "Python 3")],
+    )
+    result = runner.invoke(cli.app, ["kernels"])
+    assert result.exit_code == 0
+    assert "python3" in result.output
+
+
+def test_cli_run_kernel_error_lists_available_names(tmp_path, monkeypatch, cli_console, invoke):
+    monkeypatch.chdir(tmp_path)
+    _write_code_notebook(tmp_path / "notes" / "test.ipynb", ["print('hello')"])
+
+    from watchtower import execute, kernels
+
+    def fail(*args, **kwargs):
+        raise ValueError("kernel 'missing' failed to run: No such kernel named missing")
+
+    monkeypatch.setattr(execute, "run_notebook", fail)
+    monkeypatch.setattr(kernels, "available_kernel_names", lambda: ["python3", "xcpp14"])
+
+    assert invoke("run", "test", "--kernel", "missing") == 1
+    output = cli_console.getvalue()
+    assert "Available kernels:" in output
+    assert "python3, xcpp14" in output
+    assert "wt kernels" in output
+
+
+# ---------------------------------------------------------------------------
 # wt run exit codes
 # ---------------------------------------------------------------------------
 
@@ -65,3 +101,43 @@ def test_cli_run_errors_exit_1(tmp_path, monkeypatch, cli_console):
     result = runner.invoke(cli.app, ["run", "err"])
     assert result.exit_code == 1
     assert "ZeroDivisionError" in cli_console.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# wt diff
+# ---------------------------------------------------------------------------
+
+def test_print_diff_highlights_interactive_terminal(monkeypatch):
+    buf = io.StringIO()
+    monkeypatch.setattr(
+        cli,
+        "console",
+        Console(file=buf, force_terminal=True, color_system="standard", no_color=False),
+    )
+
+    cli._print_diff("@@ -1 +1 @@\n-old\n+new")
+
+    output = buf.getvalue()
+    assert "\x1b[" in output
+    assert "-old" in output
+    assert "+new" in output
+
+
+def test_print_diff_stays_plain_when_not_terminal(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "console", Console(force_terminal=False))
+
+    cli._print_diff("@@ -1 +1 @@\n-old\n+new")
+
+    assert capsys.readouterr().out == "@@ -1 +1 @@\n-old\n+new\n"
+
+
+def test_print_diff_respects_no_color(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli,
+        "console",
+        Console(force_terminal=True, color_system="standard", no_color=True),
+    )
+
+    cli._print_diff("@@ -1 +1 @@\n-old\n+new")
+
+    assert "\x1b[" not in capsys.readouterr().out

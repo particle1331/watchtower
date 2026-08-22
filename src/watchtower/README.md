@@ -12,6 +12,7 @@ root, and the `core` tools library containing helpers for ML-based code.
 | `convert.py` | Import an external Jupyter notebook into a content tier |
 | `inspect.py` | Agent-facing inspection helpers: repo structure, search, file content |
 | `notebook.py` | Read and edit cells in `.ipynb` files |
+| `outputs.py` | Read stored cell outputs and extract image payloads into `ROOT_PATH / ".tmp"` for inspection |
 | `paths.py` | Repo path resolution helpers for workspace projects |
 | `render.py` | Quarto wrappers: render notebooks to PDF, serve the site |
 | `resume.py` | Resume builder; YAML is the single source for both outputs |

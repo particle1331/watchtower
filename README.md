@@ -53,6 +53,14 @@ For agent reads/edits, never touch the raw `.ipynb` JSON. Use `wt cat`,
 
 To re-run code without opening JupyterLab, use `wt run <name>`: it executes
 the notebook in place and saves the outputs, which Quarto then renders as-is.
+To see the names accepted by `--kernel`, run `wt kernels`; use the `name`
+column, for example `wt run <name> --kernel python3`.
+When `--kernel` is omitted, `wt run` uses the notebook's `kernelspec.name`
+and falls back to `python3` if the notebook has no kernelspec.
+
+To inspect a stored result from one code cell, use `wt output <name> --index N`.
+Text and errors are printed; image outputs are decoded into `ROOT_PATH / ".tmp"` so a
+vision-capable agent can inspect plots without parsing notebook JSON.
 
 ## Importing notebooks from elsewhere
 
@@ -128,6 +136,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
   scaffold.py             # `wt new note|article|course|chapter|section|project`
   notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
+  outputs.py              # structured cell-output access + image extraction
   inspect.py              # `wt map | find | ls` + resolver
   convert.py              # `wt import` (external ipynb -> tier)
   render.py               # `wt render | docs`
@@ -178,9 +187,10 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt cat <name> --index N --offset O [--limit L]` | slice chars `O:O+L` of cell N (default limit 4096; 0 = unlimited) |
 | `wt cat <name> --with-outputs` | also print each code cell's outputs (stream/error/etc.) |
 | `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
+| `wt output <name> --index N [--output K] [--save-dir DIR]` | inspect one cell's stored outputs; print text/errors and save images (default: `ROOT_PATH / ".tmp"`) |
 | `wt cat <name> --index N --context K` | print cells N-K..N+K (surrounding context, marked `context`) |
 | `wt cat <name> --tag solution --decode` | print solution cells decoded to plaintext (spoiler opt-in) |
-| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, solutions decoded) |
+| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, solutions decoded); highlights in interactive terminals and stays plain when piped or `NO_COLOR` is set |
 
 ### Editing notebooks
 | Command                              | What it does                                              |
@@ -199,10 +209,22 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 
 ### Executing notebooks
 
-| Command                              | What it does                                              |
-|--------------------------------------|-----------------------------------------------------------|
-| `wt run <name> [--index N] [--timeout S] [--kernel K]` | execute code cells in place, writing outputs back to the `.ipynb` (exit 1 if any cell errored) |
-| `wt run <name> --index N`            | run only that cell in a fresh kernel (no state carries over) |
+| Command | What it does |
+|---|---|
+| `wt kernels` | list installed Jupyter kernel names and languages |
+| `wt run <name> [--timeout S] [--kernel K]` | execute every code cell in order and write all outputs back to the `.ipynb` |
+| `wt run <name> --index N [--timeout S] [--kernel K]` | execute cells through `N` in a fresh kernel and write only cell `N`'s outputs back |
+
+Both forms start a fresh kernel. Without `--index`, the entire notebook runs;
+with `--index N`, the prefix through cell `N` runs so that cell has prior
+notebook state, but only its outputs are saved. Every indexed invocation
+re-executes that prefix, which is deterministic but can be expensive when
+earlier cells perform heavy computation. State is not reused between separate
+CLI calls.
+
+Kernel selection: an explicit `--kernel K` overrides the notebook's
+`kernelspec.name`; otherwise the notebook kernelspec is used, falling back to
+`python3` when no kernelspec is stored.
 
 ### Problems
 

@@ -22,6 +22,28 @@ def _output_text(cell) -> str:
     return "".join(cell.outputs[0].text) if isinstance(cell.outputs[0].text, list) else cell.outputs[0].text
 
 
+def test_run_uses_notebook_kernelspec_unless_overridden(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = tmp_path / "notes" / "kernel.ipynb"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    nb = nbformat.v4.new_notebook()
+    nb.metadata["kernelspec"] = {"name": "watchtower"}
+    nb.cells = [nbformat.v4.new_code_cell("print('hello')")]
+    nbformat.write(nb, path)
+
+    selected = []
+
+    def fake_execute(notebook, *, kernel, timeout):
+        selected.append(kernel)
+
+    monkeypatch.setattr(execute, "_execute", fake_execute)
+
+    execute.run_notebook("kernel")
+    execute.run_notebook("kernel", kernel="python3")
+
+    assert selected == ["watchtower", "python3"]
+
+
 # ---------------------------------------------------------------------------
 # whole-notebook runs
 # ---------------------------------------------------------------------------
@@ -66,6 +88,22 @@ def test_run_single_cell_writes_only_requested_cell(tmp_path, monkeypatch):
     assert nb.cells[0].execution_count == 1
     assert "first" in _output_text(nb.cells[0])
     assert nb.cells[1].outputs == []
+
+
+def test_run_single_cell_has_state_from_earlier_cells(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = _write_code_notebook(
+        tmp_path / "notes" / "context.ipynb", ["value = 41", "print(value + 1)"]
+    )
+
+    result = execute.run_notebook("context", index=1)
+
+    assert result["ran"] == 2
+    assert result["errors"] == []
+    nb = nbformat.read(path, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[0].outputs == []
+    assert "42" in _output_text(nb.cells[1])
+    assert nb.cells[1].execution_count == 2
 
 
 def test_run_single_cell_out_of_bounds(nb_file):

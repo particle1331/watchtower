@@ -16,6 +16,7 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.syntax import Syntax
 from rich.table import Table
 
 app = typer.Typer(
@@ -188,6 +189,22 @@ def map_cmd() -> None:
     from . import inspect
 
     print(inspect.repo_map_json())
+
+
+@app.command(name="kernels")
+def kernels_cmd() -> None:
+    """List Jupyter kernels available to ``wt run --kernel``."""
+    from . import kernels
+
+    rows = kernels.available_kernel_rows()
+    if not rows:
+        console.print("[yellow]no Jupyter kernels installed[/yellow]")
+        return
+
+    table = Table("name", "language", "display name")
+    for name, language, display_name in rows:
+        table.add_row(name, language, display_name)
+    console.print(table)
 
 
 @app.command()
@@ -400,6 +417,43 @@ def cat(
     )
 
 
+@app.command(name="output")
+def output_cmd(
+    name: str,
+    index: int = typer.Option(..., "--index", "-i", help="0-based code-cell index"),
+    output_index: int | None = typer.Option(
+        None, "--output", "-o", help="only show this output index (default: all)"
+    ),
+    save_dir: str | None = typer.Option(
+        None, "--save-dir", help='directory for extracted image files (default: ROOT_PATH / ".tmp")'
+    ),
+) -> None:
+    """Inspect stored outputs from one cell and save images for visual review.
+
+    Text and error outputs are printed. Image payloads are decoded and written
+    to ``ROOT_PATH / ".tmp"`` by default; the resulting paths are printed so an agent
+    or image-capable tool can inspect them.
+    """
+    from . import outputs
+
+    values = outputs.get_cell_outputs(name, index)
+    if output_index is not None:
+        if output_index < 0 or output_index >= len(values):
+            raise ValueError(
+                f"cell {index} has {len(values)} outputs; index {output_index} is out of bounds"
+            )
+        values = [values[output_index]]
+    if not values:
+        console.print(f"[yellow]cell {index} has no stored outputs[/yellow]")
+        return
+    for value in values:
+        print(f"> cell {value.cell_index} output {value.output_index} [{value.output_type}]")
+        if value.text:
+            print(value.text)
+        for image_path in outputs.save_output_images(name, value, directory=save_dir):
+            print(f"image: {image_path}")
+
+
 @app.command(name="diff")
 def diff_cmd(
     name: str,
@@ -416,6 +470,14 @@ def diff_cmd(
     out = notebook.diff_notebook(name, base=base)
     if out is None:
         console.print("[green]no changes[/green]")
+    else:
+        _print_diff(out)
+
+
+def _print_diff(out: str) -> None:
+    """Print a diff with terminal highlighting when the output supports it."""
+    if console.is_terminal and console.color_system and not console.no_color:
+        console.print(Syntax(out, "diff", theme="ansi_dark"), end="")
     else:
         print(out)
 
@@ -627,19 +689,43 @@ def tag(
 @app.command()
 def run(
     name: str,
-    index: int | None = typer.Option(None, "--index", "-i", help="run only this cell in a fresh kernel"),
+    index: int | None = typer.Option(
+        None,
+        "--index",
+        "-i",
+        help="run through this cell in a fresh kernel (prior state available)",
+    ),
     timeout: int = typer.Option(300, "--timeout", help="per-cell timeout in seconds"),
-    kernel: str | None = typer.Option(None, "--kernel", "-k", help="kernel name (default: python3)"),
+    kernel: str | None = typer.Option(
+        None,
+        "--kernel",
+        "-k",
+        help="kernel name (run `wt kernels`; default: notebook kernelspec, then python3)",
+    ),
 ) -> None:
     """Execute a notebook's code cells in-place, writing outputs back.
 
     Quarto renders inline outputs without re-running; wt run is the explicit
-    re-execution path. Single-cell runs (--index) start a fresh kernel, so
-    state from other cells does not carry over.
+    re-execution path. Indexed runs (--index) start a fresh kernel and execute
+    the notebook prefix through the selected cell, so prior state is available.
+    Only the selected cell's outputs are written back.
     """
     from . import execute
 
-    result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout)
+    try:
+        result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout)
+    except ValueError as e:
+        if kernel is not None and str(e).startswith("kernel '"):
+            from . import kernels
+
+            available = kernels.available_kernel_names()
+            hint = (
+                f" Available kernels: {', '.join(available)}."
+                if available
+                else " No Jupyter kernels are installed."
+            )
+            raise ValueError(f"{e}{hint} Run `wt kernels` to list them.") from e
+        raise
     if result["ran"] == 0 and index is None:
         console.print("[green]no code cells to run[/green]")
     else:

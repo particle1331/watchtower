@@ -1,5 +1,6 @@
-# Repo-local scratch/temp files (agents: use tmp/ instead of system /tmp)
+# Repo-local scratch/temp files (agents: use .tmp/ instead of system /tmp)
 tmp/
+.tmp/
 todos/
 
 # Build / render noise

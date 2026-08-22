@@ -21,7 +21,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 ## Environment
 - All `wt` commands require the venv. Use `.venv/bin/wt` (from repo root)
   or activate the venv first. Never run bare `wt`.
-- Scratch/temp files belong in `tmp/` (repo root, gitignored) — not the
+- Scratch/temp files belong in `ROOT_PATH / ".tmp"` (repo root, gitignored) — not the
   system `/tmp`. Use it for any intermediate artifacts, drafts, or scratch
   docs you'd otherwise write outside the repo.
 
@@ -45,6 +45,9 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
   Use `--out-offset` / `--out-limit` to slice each output's body the same
   way `--offset` / `--limit` slice the source. Image/base64 payloads are
   summarized (`[image/png, N chars — not shown]`), not dumped.
+- `wt output <name> --index N` — inspect stored outputs from one code cell;
+  text/errors are printed and image payloads are decoded to `ROOT_PATH / ".tmp"`.
+  Use `--output K` for one output or `--save-dir DIR` for another directory.
 - `wt cat <name> --index N --context 3` — render cells N-3..N+3; context
   cells are marked `context` in their header. The standard way to see a cell
   with its surroundings before editing.
@@ -65,7 +68,8 @@ opencode, Claude Code, ...). The loop:
    insert/append/remove per the rules below).
 5. `wt diff <path>` — review the change as a markdown diff vs HEAD (never
    read `.ipynb` JSON directly; `wt diff` renders both sides for you).
-6. `wt run <path> --index N` — re-execute the edited cell in a fresh kernel.
+6. `wt run <path> --index N` — re-execute the edited cell with prior notebook
+   state available in a fresh kernel.
 
 ## Editing notebooks
 - Cell writes (`edit-cell`, `append-cell`, `insert-cell`) are hard-capped at
@@ -102,14 +106,22 @@ opencode, Claude Code, ...). The loop:
   nor `--remove`, prints the cell's current tags.
 
 ## Executing notebooks
+- `wt kernels` — list installed Jupyter kernel names and languages; use the
+  `name` column with `wt run --kernel`.
+- When `--kernel` is omitted, `wt run` uses the notebook's
+  `kernelspec.name`, falling back to `python3` when no kernelspec is stored.
 - `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code
   cells in-place via nbclient, writing outputs back to the `.ipynb`. Quarto
   renders inline outputs without re-running; `wt run` is the explicit
   re-execution path. Execution is JupyterLab-like: a cell error is stored as
   an inline output and execution continues; exit code is 1 if any cell
   errored (agents can use it to verify notebook code).
-- `--index N` runs only that cell in a *fresh* kernel, so state from other
-  cells does not carry over; a dependent cell failing is the useful signal.
+- `--index N` runs the notebook prefix through that cell in a *fresh* kernel,
+  so imports and variables from earlier cells are available. Only the target
+  cell's outputs are written back.
+- Indexed runs replay that prefix on every CLI invocation. This is deterministic
+  but can be expensive for heavy earlier cells; state is not reused between
+  separate `wt run` calls.
 - A notebook with no code cells prints "no code cells to run" and never
   launches a kernel.
 
@@ -230,6 +242,8 @@ position.
 - Run `wt check <course>` after any problem/solution work.
 
 ## CLI command reference (for the agent)
+- `wt kernels` — list installed Jupyter kernel names and languages; use the
+  `name` column with `wt run --kernel`.
 - `wt new note|article <name> [--title <title>]` — scaffold a notebook stub (note or article); <title> defaults to a placeholder derived from <name>
 - `wt new project <name>` — `uv init` workspace member
 - `wt new course <name> <title>` — scaffold `courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
@@ -246,6 +260,9 @@ position.
   Default per-cell limit is 4096 chars (`--limit 0` = unlimited).
   `--context N` also renders the N cells around each match (marked
   `context`); `--decode` decodes solution-tagged cells to plaintext.
+- `wt output <name> --index N [--output K] [--save-dir DIR]` — print text and
+  error outputs from one cell and save decoded image outputs for visual
+  inspection. The default image directory is `ROOT_PATH / ".tmp"`.
 - `wt edit-cell <name> --index N | --tag foo | --label foo [--content X]`
   — replace a cell's source (outputs + metadata preserved); locator must match one cell
 - `wt append-cell <name> --type md|code [--content X]`
@@ -288,9 +305,12 @@ position.
 - `wt diff <name> [--base REF]` — markdown diff of a notebook vs a git ref
   (default HEAD): both sides rendered like `wt cat` (JSON-stripped, no
   outputs; solutions decoded), so the diff shows content, not `.ipynb` JSON.
+  Added/removed lines are highlighted in interactive terminals; output stays
+  plain when piped, redirected, or `NO_COLOR` is set.
 - `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code cells
   in-place via nbclient, writing outputs back; exit code 1 if any cell errored.
-  `--index N` runs only that cell in a fresh kernel (no state carries).
+  `--index N` runs the notebook prefix through that cell in a fresh kernel;
+  prior state is available and only the target cell's outputs are written back.
 - `wt import <path.ipynb> notes|articles [<name>]` — import an external notebook
   (Colab/Kaggle) into a flat tier
 - `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]`
