@@ -1,0 +1,7 @@
+project:
+  render:
+    - "!notes/001-testnote.ipynb"
+
+listing:
+  exclude:
+    filename: "001-testnote.ipynb"
