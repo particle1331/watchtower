@@ -8,7 +8,7 @@ runnable demonstration in docs/02; real workloads swap in their own contract.
 
 
 import pandas as pd
-import pandera.pandas as pa
+import pandera as pa
 
 # Physicochemical features + integer quality score (UCI wine-quality, white).
 _UNIT_INTERVAL_FLOAT = pa.Column(float, pa.Check.ge(0), nullable=False)

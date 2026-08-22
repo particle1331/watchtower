@@ -34,6 +34,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Batch scoring ACA Job.")
     p.add_argument("--data-source", required=True, help="CSV URL or path to score")
     p.add_argument("--delimiter", default=";", help="CSV delimiter")
+    p.add_argument(
+        "--target",
+        default="quality",
+        help="Optional target column present in labeled input; it is excluded from features",
+    )
     p.add_argument("--model-name", default=_MODEL_NAME, help="Registered model name")
     p.add_argument(
         "--model-version",
@@ -75,12 +80,15 @@ def main(argv: list[str] | None = None) -> None:
 
     # --- (2) Load data ---
     df = pd.read_csv(args.data_source, delimiter=args.delimiter)
-    chunks = _chunks(df, args.chunk_size)
+    feature_df = df.drop(columns=[args.target], errors="ignore")
+    chunks = _chunks(feature_df, args.chunk_size)
     n_chunks = len(chunks)
 
     # --- (3) Create parent + child rows ---
     batch_name = f"batch:score-{args.model_name}"
-    batch_id = str(uuid.uuid4())
+    # The local runner sets RESULTS_RUN_ID to the execution name, making the
+    # trigger response directly usable with GET /api/results/{result_id}.
+    batch_id = os.environ.get("RESULTS_RUN_ID") or str(uuid.uuid4())
     parent_id = store.create_run(
         batch_name,
         triggered_by=args.triggered_by,

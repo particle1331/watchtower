@@ -1,4 +1,4 @@
-# watchtower
+# watchtower ⛫
 
 A personal system for notes, articles, projects, and course notes. Edit in
 JupyterLab (running cells, getting outputs); Quarto renders the notebooks
@@ -23,7 +23,7 @@ the raw JSON.
 ## Quick start
 
 ```bash
-make bootstrap                       # uv sync (creates .venv)
+make bootstrap                       # setup shared skills + uv sync (creates .venv)
 wt new note my-note                  # notes/my-note.ipynb
 wt new note my-note -t "My Note"       # custom display title
 
@@ -42,6 +42,20 @@ wt docs                              # serve site on :4200
 The site is published automatically to `gh-pages` on push to `main` via
 `.github/workflows/publish.yml`.
 
+## Agent skills
+
+Shared Codex and OpenCode skills live under `skills/`. The corresponding
+`.codex/skills/` and `.opencode/skills/` entries are relative symlinks into
+that directory, so each skill has one canonical source file.
+
+After cloning, run `make bootstrap`. It installs the Python environment and
+repairs or validates the skill symlinks. Edit the files under `skills/`, not
+the tool-specific symlink paths.
+
+To add a shared skill, create `skills/<name>/SKILL.md` and run
+`make setup-skills`. The command registers it in both tool directories; do not
+duplicate the skill file or create the symlinks manually.
+
 ## Editing workflow
 
 Open the `.ipynb` in JupyterLab, run cells, save. Inline outputs are
@@ -51,10 +65,21 @@ false` in `_quarto.yml`).
 For agent reads/edits, never touch the raw `.ipynb` JSON. Use `wt cat`,
 `wt edit-cell`, etc. (see `AGENTS.md` for the full reference).
 
+To re-run code without opening JupyterLab, use `wt run <name>`: it executes
+the notebook in place and saves the outputs, which Quarto then renders as-is.
+To see the names accepted by `--kernel`, run `wt kernels`; use the `name`
+column, for example `wt run <name> --kernel python3`.
+When `--kernel` is omitted, `wt run` uses the notebook's `kernelspec.name`
+and falls back to `python3` if the notebook has no kernelspec.
+
+To inspect a stored result from one code cell, use `wt output <name> --index N`.
+Text and errors are printed; image outputs are decoded into `ROOT_PATH / ".tmp"` so a
+vision-capable agent can inspect plots without parsing notebook JSON.
+
 ## Importing notebooks from elsewhere
 
 ```bash
-wt import ~/Downloads/foo.ipynb notes my-foo                  # copy + normalize into notes/
+wt import ~/Downloads/foo.ipynb notes my-foo                   # copy + normalize into notes/
 wt import ~/Downloads/foo.ipynb courses llm                    # import as a chapter of llm/ + register in sidebar
 wt import ~/Downloads/foo.ipynb courses llm 02-bar             # chapter stem override
 wt import ~/Downloads/foo.ipynb courses llm 02-bar -s "Setup"  # into a specific section
@@ -62,6 +87,9 @@ wt import ~/Downloads/foo.ipynb courses llm 02-bar -s "Setup"  # into a specific
 
 Inline outputs are preserved — Colab/Kaggle runs ship with the file, so a
 heavy-training notebook renders with its figures intact, no re-execution.
+A leading `# Title` heading that duplicates the frontmatter `title` is
+stripped (Quarto renders that title as the H1), so imported notebooks get one
+H1, not two.
 
 ## Rendering
 
@@ -77,7 +105,8 @@ QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
 
 ```bash
 wt vault set OPENAI_API_KEY sk-...
-wt vault list
+wt vault rm OPENAI_API_KEY
+wt vault ls
 eval $(wt vault export)        # export lines for current shell
 ```
 
@@ -121,6 +150,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
   scaffold.py             # `wt new note|article|course|chapter|section|project`
   notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
+  outputs.py              # structured cell-output access + image extraction
   inspect.py              # `wt map | find | ls` + resolver
   convert.py              # `wt import` (external ipynb -> tier)
   render.py               # `wt render | docs`
@@ -171,18 +201,70 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt cat <name> --index N --offset O [--limit L]` | slice chars `O:O+L` of cell N (default limit 4096; 0 = unlimited) |
 | `wt cat <name> --with-outputs` | also print each code cell's outputs (stream/error/etc.) |
 | `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
+| `wt output <name> --index N [--output K] [--save-dir DIR]` | inspect one cell's stored outputs; print text/errors and save images (default: `ROOT_PATH / ".tmp"`) |
+| `wt cat <name> --index N --context K` | print cells N-K..N+K (surrounding context, marked `context`) |
+| `wt cat <name> --tag solution --decode` | print solution cells decoded to plaintext (spoiler opt-in) |
+| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, solutions decoded); highlights in interactive terminals and stays plain when piped or `NO_COLOR` is set |
 
 ### Editing notebooks
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
-| `wt edit-cell <name> --index N [--content X]` | replace cell N source (outputs preserved)         |
+| `wt edit-cell <name> --index N \| --tag foo \| --label foo [--content X]` | replace a cell's source (outputs preserved) |
 | `wt append-cell <name> [--type md\|code] [--content X]` | append a new cell (default: md)          |
 | `wt insert-cell <name> --after N [--type] [--content X]` | insert a new cell below index N            |
 | `wt insert-cell <name> --before N ...`           | insert above index N                                    |
-| `wt remove-cell <name> --index N`     | delete cell N                                             |
-| `wt tag <name> --index N [--add foo] [--remove bar]` | list tags on cell N (no flags), or add/remove |
+| `wt remove-cell <name> --index N \| --tag foo \| --label foo` | delete matching cell(s); a tag may remove multiple |
+| `wt tag <name> --index N \| --tag foo \| --label foo [--add foo] [--remove bar]` | list tags (no flags), or add/remove |
+| `wt clear-outputs <name> [--index N \| --tag foo \| --label foo \| --from N]` | clear stored outputs of code cells (markdown skipped); `--from N` clears every code cell from N to the end; no locator clears all |
 > `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
 > the new source is read from stdin (useful for multi-line contents via heredoc).
+> Write locators (`--index` / `--tag` / `--label`) must match exactly one cell,
+> except `remove-cell --tag foo`, which removes every matching cell.
+
+### Executing notebooks
+
+| Command | What it does |
+|---|---|
+| `wt kernels` | list installed Jupyter kernel names and languages |
+| `wt run <name> [--timeout S] [--kernel K]` | execute every code cell in order and write all outputs back to the `.ipynb` |
+| `wt run <name> --index N [--timeout S] [--kernel K]` | execute cells through `N` in a fresh kernel and write only cell `N`'s outputs back |
+
+Both forms start a fresh kernel. Without `--index`, the entire notebook runs;
+with `--index N`, the prefix through cell `N` runs so that cell has prior
+notebook state, but only its outputs are saved. Every indexed invocation
+re-executes that prefix, which is deterministic but can be expensive when
+earlier cells perform heavy computation. State is not reused between separate
+CLI calls.
+
+Kernel selection: an explicit `--kernel K` overrides the notebook's
+`kernelspec.name`; otherwise the notebook kernelspec is used, falling back to
+`python3` when no kernelspec is stored.
+
+### Problems
+
+Course problems and solutions live entirely in the chapter notebooks — there
+is no `problems.json`. A problem is a markdown cell tagged `problem` + its id
+(e.g. `07-3`), headed by `### [PNN.N] title` (chapter from the notebook
+filename, number per-chapter, e.g. `### [P11.4] Energy retention in
+practice`), optionally followed by a starter code cell; the solution is
+the code cell tagged `solution` + the same id right after it. Its source is a
+`#| echo: false` / `#| eval: false` / `#| output: false` Quarto cell-options
+header followed by the ROT18-obfuscated body, each non-empty line prefixed
+`# ` (blank lines stay blank). The `#|` options hide the cell entirely on the
+rendered site, so solutions stay in the notebook for self-grading but never
+spoil the rendered chapters.
+
+| Command                              | What it does                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `wt problem <course> <locator>`      | print a problem statement (plus starter code)             |
+| `wt solution <course> <locator>`     | print a problem's decoded solution (worked text, answer, checks, reference code) |
+| `wt hint <course> <locator> [--level 1\|2]` | progressive hint (checks without expected values, worked-text excerpt) |
+| `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X [--number N]` | append a new problem + solution pair (solution encoded on write) |
+| `wt solution-set <course> <locator> --content X` | create/replace a solution cell (plaintext in, encoded stored) |
+| `wt check <course>`                  | validate tagging, pairing, and encoding across all chapters |
+
+Locator forms: `7.3`, `07-3`, `07 3`, `07-projection-and-orthogonalization 3`,
+or a fuzzy chapter name like `projection 3`.
 
 
 ### Secrets (vault)
@@ -191,7 +273,8 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 |--------------------------------------|-----------------------------------------------------------|
 | `wt vault set <key> <value>`          | store secret                                              |
 | `wt vault get <key>`                 | print secret value                                        |
-| `wt vault list`                      | list stored secret keys                                   |
+| `wt vault rm <key>`                  | delete secret                                             |
+| `wt vault ls`                        | list stored secret keys                                   |
 | `wt vault export`                       | emit `export` lines for all secrets                       |
 
 ## Make targets
@@ -201,7 +284,8 @@ don't belong in `wt`).
 
 | Target             | What it runs   |
 |--------------------|----------------|
-| `make bootstrap`   | `uv sync`      |
+| `make bootstrap`   | setup skills + `uv sync` |
+| `make setup-skills`| create and validate skill symlinks |
 | `make test`        | `pytest`       |
 | `make lint`        | `ruff check .` |
 | `make typecheck`   | `pyright`      |

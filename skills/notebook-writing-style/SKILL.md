@@ -1,14 +1,16 @@
 ---
 name: notebook-writing-style
-description: Prose and formatting conventions for watchtower notes, articles, and course chapters. Use when writing or editing any .ipynb content under notes/, articles/, or courses/ — voice, emphasis, math, code-cell prose, callouts, tables, footnotes, and Quarto spans. Use ONLY when working on notebook content, not tooling code under src/ or projects/.
+description: Prose and formatting conventions for watchtower notes, articles, and course chapters. Use when writing or editing any .ipynb content under notes/, articles/, or courses/ — voice, emphasis, math, code-cell prose, callouts, tables, footnotes, and Quarto spans. Defer Quarto/Jupyter cell-option syntax to the quarto-jupyter skill. Use ONLY when working on notebook content, not tooling code under src/ or projects/.
 ---
 
 # Notebook writing style
 
 Conventions for the canonical content in `notes/`, `articles/`, and `courses/`.
 The watchtower source walk-through (`notes/005-wt-src-walkthrough`) and the
-style demonstration note (`notes/006-notebook-style-demo`) are the reference
-exemplars; consult them when the rules below need a concrete instance.
+Maximum Likelihood note (`notes/006-maximum-likelihood-estimation`) are the reference
+exemplars; consult them when the rules below need a concrete instance. For an example
+of a larger article see the Weak Supervision article (articles/weak-supervision) as a
+good example.
 
 ## Voice
 
@@ -59,7 +61,16 @@ exemplars; consult them when the rules below need a concrete instance.
 - **Numbered annotations** `# <1>`, `# <2>` for non-obvious lines. Explain
   each annotation in the *following* markdown cell, not in an inline comment.
 - **Figure captions** open with a bold title phrase, then narrative:
-  `#| cap: "**Synthetic sample.** Fifty draws from ..."`.
+  `**Synthetic sample.** Fifty draws from ...`. For the exact Quarto/Jupyter
+  option name and placement, follow the `quarto-jupyter` skill.
+
+## Quarto cell options
+
+Cell-option syntax is a rendering concern rather than a prose convention. When
+editing Jupyter notebooks rendered by Quarto, use the `quarto-jupyter` skill for
+figure and table captions, code folding, Markdown output, YAML quoting, and
+preview validation. This skill governs the writing around those cells, not the
+`#|` option vocabulary.
 
 ## Callouts and footnotes
 

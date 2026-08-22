@@ -50,6 +50,11 @@ website:
         text: courses
       - href: photos/photos.ipynb
         text: photos
+    right:
+      - icon: github
+        href: 
+          https://github.com/particle1331/watchtower/tree/main/src/watchtower
+        aria-label: watchtower source on GitHub
 
   sidebar:
     - id: mlops
@@ -104,17 +109,65 @@ website:
           contents:
             - text: "10. End-to-end integration"
               href: courses/mlops/10-e2e-integration.ipynb
-    - id: llm
+    - id: cla
       style: floating
       collapse-level: 2
       align: left
       contents:
         - section: ''
-          href: courses/llm/index.ipynb
+          href: courses/cla/index.ipynb
           contents:
             - text: Overview
-              href: courses/llm/index.ipynb
-            - text: 01. Introduction
-              href: courses/llm/01-introduction.ipynb
-            - text: Hello, world
-              href: courses/llm/hello-world.ipynb
+              href: courses/cla/index.ipynb
+            - text: 01. Foundations
+              href: courses/cla/01-foundations.ipynb
+        - section: "The SVD and its proof"
+          href: courses/cla/02-spectral-theorem.ipynb
+          contents:
+            - text: "02. The spectral theorem"
+              href: 
+                courses/cla/02-spectral-theorem.ipynb
+            - text: "03. The singular value decomposition"
+              href: courses/cla/03-svd.ipynb
+        - section: "Structure"
+          href: 
+            courses/cla/04-rank-and-four-subspaces.ipynb
+          contents:
+            - text: "04. Rank & the four fundamental subspaces"
+              href: 
+                courses/cla/04-rank-and-four-subspaces.ipynb
+            - text: "05. Determinant"
+              href: courses/cla/05-determinant.ipynb
+            - text: "06. Inverse & pseudoinverse"
+              href: 
+                courses/cla/06-inverse-and-pseudoinverse.ipynb
+        - section: "Computation"
+          href: 
+            courses/cla/07-projection-and-orthogonalization.ipynb
+          contents:
+            - text: "07. Projection & orthogonalization"
+              href: 
+                courses/cla/07-projection-and-orthogonalization.ipynb
+            - text: "08. Least squares"
+              href: courses/cla/08-least-squares.ipynb
+        - section: "The eigenworld"
+          href: courses/cla/09-eigendecomposition.ipynb
+          contents:
+            - text: "09. Eigendecomposition"
+              href: 
+                courses/cla/09-eigendecomposition.ipynb
+            - text: "10. Quadratic forms"
+              href: 
+                courses/cla/10-quadratic-forms.ipynb
+        - section: Applications
+          contents:
+            - text: 11. Topic modeling with SVD and NMF
+              href: courses/cla/11-topic-modeling.ipynb
+            - text: 12. PageRank
+              href: courses/cla/12-pagerank.ipynb
+            - text: 13. Robust PCA
+              href: courses/cla/13-robust-pca.ipynb
+            - text: 14. Compressed sensing
+              href: 
+                courses/cla/14-compressed-sensing.ipynb
+          href: courses/cla/11-topic-modeling.ipynb

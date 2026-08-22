@@ -22,6 +22,18 @@ def test_new_note_custom_title(repo):
     assert 'title: "Custom Title"' in nb.cells[0].source
 
 
+def test_new_note_duplicate_raises(repo):
+    scaffold.new_note("my-note")
+    with pytest.raises(FileExistsError):
+        scaffold.new_note("my-note")
+
+
+def test_new_article_duplicate_raises(repo):
+    scaffold.new_article("svd")
+    with pytest.raises(FileExistsError):
+        scaffold.new_article("svd")
+
+
 def test_new_note_default_title_is_name(repo):
     path = scaffold.new_note("my-note")
     nb = nbformat.read(path, as_version=nbformat.NO_CONVERT)

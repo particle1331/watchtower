@@ -34,11 +34,25 @@ def _configured() -> bool:
 
 def _connect():
     import psycopg
+
+    # Deployed jobs use Entra tokens. The local Compose POC uses ordinary
+    # Postgres password auth instead, selected by PGPASSWORD.
+    if os.environ.get("PGPASSWORD"):
+        return psycopg.connect(
+            host=os.environ["PGHOST"],
+            port=os.environ.get("PGPORT", "5432"),
+            dbname=os.environ.get("RESULTS_DB", "results"),
+            user=os.environ["PGUSER"],
+            password=os.environ["PGPASSWORD"],
+            sslmode=os.environ.get("PGSSLMODE", "prefer"),
+        )
+
     from azure.identity import DefaultAzureCredential
 
     token = DefaultAzureCredential().get_token(_OSSRDBMS_SCOPE).token
     return psycopg.connect(
         host=os.environ["PGHOST"],
+        port=os.environ.get("PGPORT", "5432"),
         dbname=os.environ.get("RESULTS_DB", "results"),
         user=os.environ["PGUSER"],
         password=token,

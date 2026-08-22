@@ -1,10 +1,12 @@
 """Tests for watchtower.notebook — cell read/write operations."""
 
 
+import subprocess
+
 import nbformat
 import pytest
 
-from watchtower import notebook
+from watchtower import notebook, obfuscate
 
 # ---------------------------------------------------------------------------
 # count_cells
@@ -185,3 +187,207 @@ def test_tag_cell_read_only_does_not_write(nb_file):
     mtime_before = os.path.getmtime(nb_file)
     notebook.tag_cell("test", index=0)
     assert os.path.getmtime(nb_file) == mtime_before
+
+
+def test_tag_cell_by_tag_locator(nb_file):
+    notebook.tag_cell("test", index=0, add=["important"])
+    notebook.tag_cell("test", tag="important", add=["second"])
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert set(nb.cells[0].metadata["tags"]) == {"important", "second"}
+
+
+def test_tag_cell_by_label_locator(nb_file):
+    notebook.edit_cell("test", "#| label: fig-intro\n\nSome text", index=0)
+    notebook.tag_cell("test", label="fig-intro", add=["figure"])
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert "figure" in nb.cells[0].metadata.get("tags", [])
+
+
+def test_tag_cell_read_only_by_tag(nb_file):
+    notebook.tag_cell("test", index=0, add=["focus"])
+    assert notebook.tag_cell("test", tag="focus") == ["focus"]
+
+
+def test_tag_cell_no_locator_raises(nb_file):
+    with pytest.raises(ValueError, match="exactly one"):
+        notebook.tag_cell("test", add=["x"])
+
+
+def test_tag_cell_multiple_locators_raise(nb_file):
+    with pytest.raises(ValueError, match="exactly one"):
+        notebook.tag_cell("test", index=0, tag="missing", add=["x"])
+
+
+def test_tag_cell_ambiguous_locator_raises(nb_file):
+    notebook.tag_cell("test", index=0, add=["dup"])
+    notebook.tag_cell("test", index=2, add=["dup"])
+    with pytest.raises(ValueError, match="ambiguous"):
+        notebook.tag_cell("test", tag="dup")
+
+
+def test_tag_cell_index_locator_still_works(nb_file):
+    notebook.tag_cell("test", index=1, add=["code-tag"])
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].metadata.get("tags") == ["code-tag"]
+
+
+# ---------------------------------------------------------------------------
+# clear_outputs
+# ---------------------------------------------------------------------------
+
+def _with_outputs(nb_file):
+    """Give the notebook's code cells some stored outputs."""
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    for c in nb.cells:
+        if c.cell_type == "code":
+            c.outputs = [nbformat.v4.new_output("stream", name="stdout", text="x")]
+    nbformat.write(nb, nb_file)
+
+
+def test_clear_outputs_by_index(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test", index=1)
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_by_tag(nb_file):
+    _with_outputs(nb_file)
+    notebook.tag_cell("test", index=1, add=["starter"])
+    notebook.clear_outputs("test", tag="starter")
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_from_index(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test", from_index=1)
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_all(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test")
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert all(c.outputs == [] for c in nb.cells if c.cell_type == "code")
+
+
+def test_clear_outputs_from_index_skips_markdown(nb_file):
+    _with_outputs(nb_file)
+    notebook.clear_outputs("test", from_index=0)
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    assert nb.cells[0].cell_type == "markdown"
+    assert nb.cells[1].outputs == []
+
+
+def test_clear_outputs_markdown_index_raises(nb_file):
+    with pytest.raises(ValueError, match="no code cell matched"):
+        notebook.clear_outputs("test", index=0)
+
+
+def test_clear_outputs_no_code_matched_raises(nb_file):
+    with pytest.raises(ValueError, match="no code cell matched"):
+        notebook.clear_outputs("test", index=0)
+
+
+def test_clear_outputs_from_index_out_of_bounds(nb_file):
+    with pytest.raises(ValueError, match="out of bounds"):
+        notebook.clear_outputs("test", from_index=99)
+
+
+# ---------------------------------------------------------------------------
+# cat_notebook --context
+# ---------------------------------------------------------------------------
+
+def test_cat_context_around_index(nb_file):
+    out = notebook.cat_notebook("test", index="1", context=1)
+    assert "> cell 0 [markdown]" in out and "context" in out
+    assert "> cell 1 [code]" in out and "context" not in out.split("> cell 1")[1].split("> cell 2")[0]
+    assert "> cell 2 [markdown]" in out and "context" in out
+
+
+def test_cat_context_clamps_to_edges(nb_file):
+    out = notebook.cat_notebook("test", index="0", context=2)
+    assert "# Title" in out and "## Section" in out
+    assert "context" in out  # all surrounding cells are marked
+
+
+def test_cat_context_ignored_without_locator(nb_file):
+    out = notebook.cat_notebook("test", context=1)
+    assert "context" not in out
+
+
+# ---------------------------------------------------------------------------
+# cat_notebook --decode (solution cells)
+# ---------------------------------------------------------------------------
+
+def _append_solution_cell(nb_file):
+    nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
+    cell = nbformat.v4.new_code_cell(obfuscate.wrap("**Solution.** Apply Cauchy-Schwarz."))
+    cell.metadata["tags"] = ["solution", "01-1"]
+    nb.cells.append(cell)
+    nbformat.write(nb, nb_file)
+
+
+def test_cat_decode_solutions_flag(nb_file):
+    _append_solution_cell(nb_file)
+    out = notebook.cat_notebook("test", tag="solution")
+    assert "Apply Cauchy-Schwarz" not in out
+    assert "#| echo: false" in out
+    decoded = notebook.cat_notebook("test", tag="solution", decode_solutions=True)
+    assert "Apply Cauchy-Schwarz" in decoded
+    assert "#| echo: false" not in decoded
+    assert "```{python}" not in decoded
+
+
+def test_cat_decode_solutions_plain_cells_unaffected(nb_file):
+    _append_solution_cell(nb_file)
+    out = notebook.cat_notebook("test", decode_solutions=True)
+    assert "# Title" in out
+    assert "print('hello')" in out
+
+
+# ---------------------------------------------------------------------------
+# diff_notebook
+# ---------------------------------------------------------------------------
+
+def _git_init_and_commit(path: str) -> None:
+    for cmd in (
+        ["git", "init", "-q"],
+        ["git", "config", "user.name", "Test"],
+        ["git", "config", "user.email", "test@example.com"],
+        ["git", "add", path],
+        ["git", "commit", "-q", "-m", "initial"],
+    ):
+        subprocess.run(cmd, check=True, capture_output=True)
+
+
+def test_diff_notebook_shows_changes(nb_file, tmp_path):
+    _git_init_and_commit("notes/test.ipynb")
+    notebook.edit_cell("test", "# Updated title", index=0)
+    out = notebook.diff_notebook("test")
+    assert out is not None
+    assert "+# Updated title" in out
+    assert "-# Title" in out
+
+
+def test_diff_notebook_decodes_solution_without_fence(nb_file, tmp_path):
+    _append_solution_cell(nb_file)
+    _git_init_and_commit("notes/test.ipynb")
+    notebook.edit_cell("test", obfuscate.wrap("**Solution.** Updated."), tag="solution")
+    out = notebook.diff_notebook("test")
+    assert out is not None
+    assert "+**Solution.** Updated." in out
+    assert "```{python}" not in out
+
+
+def test_diff_notebook_unchanged_returns_none(nb_file, tmp_path):
+    _git_init_and_commit("notes/test.ipynb")
+    assert notebook.diff_notebook("test") is None
+
+
+def test_diff_notebook_untracked_raises(nb_file, tmp_path):
+    subprocess.run(["git", "init", "-q"], check=True, capture_output=True)
+    with pytest.raises(ValueError, match="not tracked"):
+        notebook.diff_notebook("test")

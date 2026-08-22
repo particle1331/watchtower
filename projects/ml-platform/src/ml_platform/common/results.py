@@ -5,8 +5,8 @@ dashboard sees all workflows the same way, while MLflow holds the ML-specific
 lineage. This is the shared writer used from Chapter 03 onward; the ``results``
 table's DDL and the parent/child batch model are defined in Chapter 04
 (``ml_platform/results/``). The record shape here is intentionally the columns
-that DDL formalizes: ``name, status, triggered_by, started_at, finished_at,
-output(jsonb)``.
+that DDL formalizes: ``id, name, status, triggered_by, created_at, updated_at,
+output(jsonb), error``.
 
 Auth mirrors the MLflow app: no passwords — an Entra access token for the
 ``ossrdbms-aad`` scope is used as the Postgres password via the job's managed
@@ -16,31 +16,11 @@ no-op so the training logic still runs locally before Phase 2 exists.
 
 
 import contextlib
-import datetime as dt
-import json
 import os
 from collections.abc import Iterator
 from typing import Any
 
-_OSSRDBMS_SCOPE = "https://ossrdbms-aad.database.windows.net/.default"
-
-
-def _configured() -> bool:
-    return bool(os.environ.get("PGHOST"))
-
-
-def _connect():
-    import psycopg
-    from azure.identity import DefaultAzureCredential
-
-    token = DefaultAzureCredential().get_token(_OSSRDBMS_SCOPE).token
-    return psycopg.connect(
-        host=os.environ["PGHOST"],
-        dbname=os.environ.get("RESULTS_DB", "results"),
-        user=os.environ["PGUSER"],
-        password=token,
-        sslmode="require",
-    )
+from ml_platform.results import store
 
 
 @contextlib.contextmanager
@@ -49,7 +29,7 @@ def record_run(
     *,
     triggered_by: str | None = None,
 ) -> Iterator[dict[str, Any]]:
-    """Record a run as ``RUNNING``, then mark ``SUCCESS``/``FAILURE`` on exit.
+    """Record a run as ``STARTED``, then mark ``SUCCESS``/``FAILURE`` on exit.
 
     Yields a mutable ``dict`` the caller fills with an ``output`` payload (e.g.
     the MLflow run id and registered version). On an exception the record is
@@ -57,41 +37,26 @@ def record_run(
     training error leaves an honest operational trail.
     """
     payload: dict[str, Any] = {}
-    triggered_by = triggered_by or os.environ.get("TRIGGERED_BY")
+    triggered_by = triggered_by or os.environ.get("TRIGGERED_BY") or "schedule"
 
-    if not _configured():
+    if not os.environ.get("PGHOST"):
         # Local/dev before Phase 2: run the work, skip persistence.
         yield payload
         return
 
-    started = dt.datetime.now(dt.UTC)
-    conn = _connect()
+    # The local execution-plane supplies its execution name here so callers can
+    # follow one identifier from trigger response to the results API. Deployed
+    # ACA jobs do not set this variable and keep the existing UUID behavior.
+    run_id = store.create_run(
+        name,
+        triggered_by=triggered_by,
+        run_id=os.environ.get("RESULTS_RUN_ID"),
+    )
+    store.mark(run_id, "STARTED")
     try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO results (name, status, triggered_by, started_at) "
-                "VALUES (%s, 'RUNNING', %s, %s) RETURNING id",
-                (name, triggered_by, started),
-            )
-            run_id = cur.fetchone()[0]
-        conn.commit()
-
-        try:
-            yield payload
-        except Exception:
-            _finish(conn, run_id, "FAILURE", payload)
-            raise
-        else:
-            _finish(conn, run_id, "SUCCESS", payload)
-    finally:
-        conn.close()
-
-
-def _finish(conn, run_id: int, status: str, payload: dict[str, Any]) -> None:
-    finished = dt.datetime.now(dt.UTC)
-    with conn.cursor() as cur:
-        cur.execute(
-            "UPDATE results SET status = %s, finished_at = %s, output = %s WHERE id = %s",
-            (status, finished, json.dumps(payload), run_id),
-        )
-    conn.commit()
+        yield payload
+    except Exception as exc:
+        store.mark(run_id, "FAILURE", output=payload, error=str(exc))
+        raise
+    else:
+        store.mark(run_id, "SUCCESS", output=payload)
