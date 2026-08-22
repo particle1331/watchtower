@@ -1,9 +1,15 @@
 # watchtower ⛫
 
-A personal system for notes, articles, projects, and course notes. Edit in
-JupyterLab (running cells, getting outputs); Quarto renders the notebooks
-to the website using **inline outputs, no re-execution** — so heavy compute
-done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
+A personal system for notes, articles, projects, and course notes.
+
+This repository supports lifelong learning while also serving as a place to
+compile and document interesting projects into a portfolio. Jupyter
+notebooks are rendered into a website with Quarto and published automatically
+through CI, so the published material is backed by code executed end to end.
+It also provides infrastructure for coding agents, including a
+notebook-aware CLI and shared skills synchronized across agent frameworks.
+
+This repository takes its name from the [Watchtower structure in *Battle Realms*](https://battlerealms.fandom.com/wiki/Watchtower).
 
 ## Tiers
 
@@ -90,16 +96,6 @@ heavy-training notebook renders with its figures intact, no re-execution.
 A leading `# Title` heading that duplicates the frontmatter `title` is
 stripped (Quarto renders that title as the H1), so imported notebooks get one
 H1, not two.
-
-## Rendering
-
-Quarto needs to find Python with `jupyter` installed. The `wt` wrapper
-(`wt docs`, `wt render`, `wt resume`) sets `QUARTO_PYTHON` at the venv
-interpreter automatically. Calling `quarto` directly? Set it yourself:
-
-```bash
-QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render
-```
 
 ## Secrets
 
