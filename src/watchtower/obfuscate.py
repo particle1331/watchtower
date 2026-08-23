@@ -14,7 +14,7 @@ plus ROT5 over ASCII digits; it keeps the cells unreadable at a glance while
 studying in JupyterLab, and unreadable digits hide the numeric answers that
 plain ROT13 would leak. The encoding is an involution, so ``deobfuscate`` is
 ``obfuscate``; it is not security, just a spoiler guard. ``wt solution`` /
-``wt hint`` decode on read; ``wt solution-set`` encodes on write; ``wt check``
+``wt hint`` decode on read; ``wt solution-edit`` encodes on write; ``wt check``
 verifies that no solution cell was accidentally committed in plaintext.
 """
 

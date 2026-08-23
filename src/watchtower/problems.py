@@ -12,7 +12,7 @@ options that hide it from the rendered site (``#| echo: false``,
 ``#| eval: false``, ``#| output: false``) followed by the ROT18-obfuscated
 body with each non-empty line prefixed ``# `` (see ``obfuscate``), so it is
 unreadable at a glance in JupyterLab; ``wt solution`` / ``wt hint`` decode on
-read, ``wt solution-set`` encodes on write, and ``wt check`` validates the
+read, ``wt solution-edit`` encodes on write, and ``wt check`` validates the
 pairing and the encoding.
 
 The problem id doubles as the locator: chapter number + '-' + problem
@@ -288,7 +288,7 @@ def format_solution_body(solution: dict) -> str:
     """Plaintext markdown for a solution dict, without a heading.
 
     This is the canonical solution body: the agent writes it via
-    ``wt solution-set`` (which encodes it) and it is what a decode yields.
+    ``wt solution-edit`` (which encodes it) and it is what a decode yields.
     Mirrors the section markers used by ``wt hint`` and ``wt check``.
     """
     sections: list[str] = []
@@ -323,7 +323,7 @@ def solution_plaintext(problem: dict) -> str:
     if problem["solution_source"] is None:
         raise ValueError(
             f"no solution cell for {problem['id']} — create one with "
-            f"`wt solution-set {problem['course']} {problem['id']}`"
+            f"`wt solution-edit {problem['course']} {problem['id']}`"
         )
     return decode_solution_source(problem["solution_source"])
 
@@ -464,7 +464,7 @@ def add_exercise(
     if _unique_or_none(nb, {"problem", pid}, "problem") is not None:
         raise ValueError(
             f"problem {pid} already exists in chapter '{stem}' — "
-            f"use `wt solution-set` to edit its solution instead"
+            f"use `wt solution-edit` to edit its solution instead"
         )
     stmt_cell = nbformat.v4.new_markdown_cell(statement)
     stmt_cell.metadata["tags"] = ["problem", pid]
@@ -593,6 +593,6 @@ def check_course(course: str) -> list[str]:
                 warnings.append(
                     f"{stem}: solution {pid} appears to be stored in plaintext "
                     "(found the solution markers unencoded — re-encode with "
-                    "`wt solution-set`)"
+                    "`wt solution-edit`)"
                 )
     return warnings

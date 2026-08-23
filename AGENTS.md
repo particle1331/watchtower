@@ -244,13 +244,13 @@ position.
   problem + solution pair. It numbers the problem automatically (next in the
   chapter) and encodes the solution on write as a hidden code cell (tags
   `solution` + id), so plaintext never reaches the notebook through this path.
-- Updating a solution: `wt solution-set <course> <locator> --content X`
+- Updating a solution: `wt solution-edit <course> <locator> --content X`
   (plaintext in, encoded stored). Reading: `wt solution` (decodes),
   `wt hint` (progressive hint). 
 - NEVER hand-write a solution cell with `edit-cell`/`insert-cell` in
   plaintext — a plaintext solution fails `wt check <course>`. If you must
   edit an existing solution cell directly, read it decoded first
-  (`wt cat --tag <id> --decode`), then re-encode via `wt solution-set`.
+  (`wt cat --tag <id> --decode`), then re-encode via `wt solution-edit`.
 - Run `wt check <course>` after any problem/solution work.
 
 ## CLI command reference (for the agent)
@@ -307,8 +307,8 @@ position.
   false` / `eval: false` / `output: false` header), so plaintext never reaches
   the notebook through this path. Number defaults to
   the next one in the chapter. This is the ONLY sanctioned way to add a new
-  exercise, besides `wt solution-set` for updating an existing solution.
-- `wt solution-set <course> <locator> --content X` — create or replace a
+  exercise, besides `wt solution-edit` for updating an existing solution.
+- `wt solution-edit <course> <locator> --content X` — create or replace a
   problem's solution cell (encodes on write; plaintext in, encoded stored).
 - `wt check <course>` — validate every chapter: problem cells are markdown and
   solution cells are hidden code cells, both with unique id tags matching

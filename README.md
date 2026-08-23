@@ -256,7 +256,7 @@ spoil the rendered chapters.
 | `wt solution <course> <locator>`     | print a problem's decoded solution (worked text, answer, checks, reference code) |
 | `wt hint <course> <locator> [--level 1\|2]` | progressive hint (checks without expected values, worked-text excerpt) |
 | `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X [--number N]` | append a new problem + solution pair (solution encoded on write) |
-| `wt solution-set <course> <locator> --content X` | create/replace a solution cell (plaintext in, encoded stored) |
+| `wt solution-edit <course> <locator> --content X` | create/replace a solution cell (plaintext in, encoded stored) |
 | `wt check <course>`                  | validate tagging, pairing, and encoding across all chapters |
 
 Locator forms: `7.3`, `07-3`, `07 3`, `07-projection-and-orthogonalization 3`,

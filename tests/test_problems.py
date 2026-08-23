@@ -224,7 +224,7 @@ def test_hint_invalid_level(course):
 
 
 # ---------------------------------------------------------------------------
-# writes: add-exercise / solution-set
+# writes: add-exercise / solution-edit
 # ---------------------------------------------------------------------------
 
 def test_add_exercise_auto_number(course):
@@ -314,7 +314,7 @@ def test_set_solution_creates_for_missing(course):
         "cla", "07", "### [P7.4] Gap\n\nFill it.", "**Solution.** Filled.",
         number=4,
     )
-    # replace it via solution-set
+    # replace it via solution-edit
     problems.set_solution("cla", "7.4", "**Solution.** Replaced.")
     prob = problems.resolve_problem("cla", "7.4")
     assert problems.solution_plaintext(prob) == "**Solution.** Replaced."
@@ -448,9 +448,9 @@ def test_cli_add_exercise_stdin_solution(course):
     assert problems.solution_plaintext(problems.resolve_problem("cla", "2.2")) == "**Solution.** Piped in."
 
 
-def test_cli_solution_set(course):
+def test_cli_solution_edit(course):
     result = runner.invoke(
-        cli.app, ["solution-set", "cla", "7.3", "--content", "**Solution.** Updated."]
+        cli.app, ["solution-edit", "cla", "7.3", "--content", "**Solution.** Updated."]
     )
     assert result.exit_code == 0
     assert problems.solution_plaintext(problems.resolve_problem("cla", "7.3")) == "**Solution.** Updated."

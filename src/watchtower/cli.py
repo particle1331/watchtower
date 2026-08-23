@@ -266,7 +266,7 @@ def solution(
         if prob["solution_source"] is None:
             console.print(
                 f"[red]no solution cell for {prob['id']} — create one with "
-                f"`wt solution-set {course} {locator}`[/red]"
+                f"`wt solution-edit {course} {locator}`[/red]"
             )
             raise typer.Exit(1)
         print(prob["solution_source"], end="")
@@ -333,8 +333,8 @@ def add_exercise(
     console.print(f"[green]added {pid} to {out}[/green]")
 
 
-@app.command(name="solution-set")
-def solution_set(
+@app.command(name="solution-edit")
+def solution_edit(
     course: str,
     locator: str,
     content: str | None = typer.Option(None, "--content", "-c", help="plaintext markdown solution body (if omitted, read from stdin)"),
