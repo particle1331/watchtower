@@ -3017,8 +3017,10 @@ dev = [
 ]
 ml = [
     { name = "datasets" },
+    { name = "networkx" },
     { name = "pandas" },
     { name = "scikit-learn" },
+    { name = "scipy" },
     { name = "torch" },
 ]
 
@@ -3050,8 +3052,10 @@ dev = [
 ]
 ml = [
     { name = "datasets", specifier = ">=5.0.1" },
+    { name = "networkx", specifier = ">=3.4" },
     { name = "pandas", specifier = ">=3.0.5" },
     { name = "scikit-learn", specifier = ">=1.9.0" },
+    { name = "scipy", specifier = ">=1.15.0" },
     { name = "torch", specifier = ">=2.13.0" },
 ]
 
