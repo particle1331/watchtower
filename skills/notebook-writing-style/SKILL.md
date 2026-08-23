@@ -23,6 +23,20 @@ good example.
 - **No restating code.** The sentence after a code block adds new information
   — interpretation, connection to theory, a consequence. It never paraphrases
   the code the reader just saw.
+- **No salesmanship.** Drop hype adjectives ("powerful," "elegant,"
+  "seamless," "beautiful"). If a sentence would fit a product landing page,
+  rewrite it as the plain claim it is dressing up.
+- **No aphorisms.** Rhetorically compressed contrasts read as slogans and
+  hide the mechanism they summarize. Avoid the fingerprint shapes: "X
+  changes; Y stays," "It's not X; it's Y," "Not X, but Y," and slide-deck
+  fragments ("Small change. Large consequence."). State literally what
+  changes, what does not, and by what mechanism; keep caveats instead of
+  rounding them off for rhythm. A contrast earns its place when it names
+  concrete referents, not when it lands a line.
+- **No poetic abstraction.** Metaphorical stand-ins ("substrate," "the
+  machinery moves") in place of the literal thing ("the hosting platform,"
+  "the implementation is rewritten") force the reader to decode. Use the
+  literal noun.
 
 ## Emphasis
 
