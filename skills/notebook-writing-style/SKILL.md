@@ -9,7 +9,7 @@ Conventions for the canonical content in `notes/`, `articles/`, and `courses/`.
 The watchtower source walk-through (`notes/005-wt-src-walkthrough`) and the
 Maximum Likelihood note (`notes/006-maximum-likelihood-estimation`) are the reference
 exemplars; consult them when the rules below need a concrete instance. For an example
-of a larger article see the Weak Supervision article (articles/weak-supervision) as a
+of a larger article see the Weak Supervision article (articles/003-weak-supervision) as a
 good example.
 
 ## Voice

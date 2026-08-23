@@ -2,7 +2,7 @@
 
 A deliberately small, low-ops ML platform for a team of ML engineers who are not
 full-time platform engineers. Built step by step in the
-[MLOps course](../../courses/mlops/) on this site; the source here is the real
+[ML platform course](../../courses/ml-platform/) on this site; the source here is the real
 implementation each chapter references.
 
 **Design rule:** use the fewest moving parts that deliver reproducible training,

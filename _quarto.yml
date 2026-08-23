@@ -58,58 +58,57 @@ website:
         aria-label: watchtower source on GitHub
 
   sidebar:
-    - id: mlops
+    - id: ml-platform
       style: "floating"
       collapse-level: 2
       align: left
       contents:
-        - section: ""
-          href: courses/mlops/index.ipynb
+        - text: "Building an ML Platform"
+          href: courses/ml-platform/index.ipynb
+        - section: "Part I — Local platform (Compose)"
+          href: courses/ml-platform/01-overview.ipynb
           contents:
-            - text: "01. Overview & the golden path"
-              href: courses/mlops/01-overview.ipynb
-        - section: "Phase 0: Foundation"
-          href: courses/mlops/02-platform-foundation.ipynb
-          contents:
-            - text: "02. Platform foundation"
-              href: courses/mlops/02-platform-foundation.ipynb
-        - section: "Phase 1: Reproducible ML"
-          href: courses/mlops/03-reproducible-training.ipynb
-          contents:
+            - text: "01. Overview & golden path"
+              href: courses/ml-platform/01-overview.ipynb
+            - text: "02. Local platform foundation"
+              href: courses/ml-platform/02-local-foundation.ipynb
             - text: "03. Reproducible training & registry"
-              href: courses/mlops/03-reproducible-training.ipynb
-        - section: "Phase 2: Batch & scheduling"
-          href: courses/mlops/04-results-db-and-batch.ipynb
-          contents:
+              href: courses/ml-platform/03-reproducible-training.ipynb
             - text: "04. Results DB & batch workflows"
-              href: courses/mlops/04-results-db-and-batch.ipynb
-        - section: "Phase 3: Serving"
-          href: courses/mlops/05-online-serving.ipynb
-          contents:
+              href: courses/ml-platform/04-results-db-and-batch.ipynb
             - text: "05. Online serving & promotion"
-              href: courses/mlops/05-online-serving.ipynb
-        - section: "Phase 4: Operations"
-          href: courses/mlops/06-observability-and-dashboard.ipynb
-          contents:
+              href: courses/ml-platform/05-online-serving.ipynb
             - text: "06. Observability & dashboard"
-              href: courses/mlops/06-observability-and-dashboard.ipynb
-        - section: "Phase 5: LLM apps"
-          href: courses/mlops/07-llm-release-artifacts.ipynb
-          contents:
+              href: courses/ml-platform/06-observability-and-dashboard.ipynb
             - text: "07. LLM release artifacts"
-              href: courses/mlops/07-llm-release-artifacts.ipynb
+              href: courses/ml-platform/07-llm-release-artifacts.ipynb
+            - text: "08. The environment contract"
+              href: courses/ml-platform/08-environment-contract.ipynb
+        - section: "Part II — Production (Azure)"
+          href: courses/ml-platform/09-just-enough-terraform.ipynb
+          contents:
+            - text: "09. Just enough Terraform"
+              href: courses/ml-platform/09-just-enough-terraform.ipynb
+            - text: "10. Azure platform foundation"
+              href: courses/ml-platform/10-azure-foundation.ipynb
+            - text: "11. Porting jobs & apps to ACA"
+              href: courses/ml-platform/11-porting-to-aca.ipynb
+            - text: "12. CI/CD: build, scan, deploy"
+              href: courses/ml-platform/12-ci-cd.ipynb
+            - text: "13. Operations on Azure"
+              href: courses/ml-platform/13-azure-operations.ipynb
         - section: "Off the critical path"
-          href: courses/mlops/08-multi-gpu-training.ipynb
+          href: courses/ml-platform/14-multi-gpu-training.ipynb
           contents:
-            - text: "08. Multi-GPU training (exception)"
-              href: courses/mlops/08-multi-gpu-training.ipynb
-            - text: "09. Broker upgrade (only if forced)"
-              href: courses/mlops/09-broker-upgrade.ipynb
+            - text: "14. Multi-GPU training (exception)"
+              href: courses/ml-platform/14-multi-gpu-training.ipynb
+            - text: "15. Broker upgrade (only if forced)"
+              href: courses/ml-platform/15-broker-upgrade.ipynb
         - section: "Capstone"
-          href: courses/mlops/10-e2e-integration.ipynb
+          href: courses/ml-platform/16-e2e-integration.ipynb
           contents:
-            - text: "10. End-to-end integration"
-              href: courses/mlops/10-e2e-integration.ipynb
+            - text: "16. End-to-end integration"
+              href: courses/ml-platform/16-e2e-integration.ipynb
     - id: cla
       style: floating
       collapse-level: 2
@@ -126,40 +125,32 @@ website:
           href: courses/cla/02-spectral-theorem.ipynb
           contents:
             - text: "02. The spectral theorem"
-              href: 
-                courses/cla/02-spectral-theorem.ipynb
+              href: courses/cla/02-spectral-theorem.ipynb
             - text: "03. The singular value decomposition"
               href: courses/cla/03-svd.ipynb
         - section: "Structure"
-          href: 
-            courses/cla/04-rank-and-four-subspaces.ipynb
+          href: courses/cla/04-rank-and-four-subspaces.ipynb
           contents:
             - text: "04. Rank & the four fundamental subspaces"
-              href: 
-                courses/cla/04-rank-and-four-subspaces.ipynb
+              href: courses/cla/04-rank-and-four-subspaces.ipynb
             - text: "05. Determinant"
               href: courses/cla/05-determinant.ipynb
             - text: "06. Inverse & pseudoinverse"
-              href: 
-                courses/cla/06-inverse-and-pseudoinverse.ipynb
+              href: courses/cla/06-inverse-and-pseudoinverse.ipynb
         - section: "Computation"
-          href: 
-            courses/cla/07-projection-and-orthogonalization.ipynb
+          href: courses/cla/07-projection-and-orthogonalization.ipynb
           contents:
             - text: "07. Projection & orthogonalization"
-              href: 
-                courses/cla/07-projection-and-orthogonalization.ipynb
+              href: courses/cla/07-projection-and-orthogonalization.ipynb
             - text: "08. Least squares"
               href: courses/cla/08-least-squares.ipynb
         - section: "The eigenworld"
           href: courses/cla/09-eigendecomposition.ipynb
           contents:
             - text: "09. Eigendecomposition"
-              href: 
-                courses/cla/09-eigendecomposition.ipynb
+              href: courses/cla/09-eigendecomposition.ipynb
             - text: "10. Quadratic forms"
-              href: 
-                courses/cla/10-quadratic-forms.ipynb
+              href: courses/cla/10-quadratic-forms.ipynb
         - section: Applications
           contents:
             - text: 11. Topic modeling with SVD and NMF
@@ -169,6 +160,5 @@ website:
             - text: 13. Robust PCA
               href: courses/cla/13-robust-pca.ipynb
             - text: 14. Compressed sensing
-              href: 
-                courses/cla/14-compressed-sensing.ipynb
+              href: courses/cla/14-compressed-sensing.ipynb
           href: courses/cla/11-topic-modeling.ipynb

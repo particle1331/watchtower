@@ -6,7 +6,7 @@ description: End-to-end workflow for building courses under courses/ in this rep
 # Course builder
 
 Workflow for creating and extending courses in `courses/`. The existing
-courses (`courses/cla`, `courses/mlops`) follow these conventions and can be
+courses (`courses/cla`, `courses/ml-platform`) follow these conventions and can be
 consulted as concrete instances.
 
 ## Course anatomy
