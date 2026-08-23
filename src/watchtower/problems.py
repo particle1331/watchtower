@@ -534,7 +534,8 @@ def check_course(course: str) -> list[str]:
 
     Checks per chapter: problem cells are markdown and solution cells are
     code, both carry an id tag matching ``<chapter>-<n>``, ids are unique,
-    every problem has a solution pair (and vice versa), solution cells start
+    every problem has a solution pair (and vice versa) in consecutive cells
+    (problem, optional starter code cell, solution), solution cells start
     with the ``#| echo: false / eval: false / output: false`` header, and
     the body decodes to something that was actually obfuscated (no plaintext
     commits).
@@ -594,5 +595,23 @@ def check_course(course: str) -> list[str]:
                     f"{stem}: solution {pid} appears to be stored in plaintext "
                     "(found the solution markers unencoded — re-encode with "
                     "`wt solution-edit`)"
+                )
+            p = problems.get(pid)
+            if p is None:
+                continue  # orphan; already reported above
+            adjacent = i == p + 1
+            if i == p + 2:
+                mid = nb["cells"][p + 1]
+                mid_tags = cell_tags(mid)
+                adjacent = (
+                    mid["cell_type"] == "code"
+                    and "problem" not in mid_tags
+                    and "solution" not in mid_tags
+                )
+            if i < p or not adjacent:
+                warnings.append(
+                    f"{stem}: solution {pid} must sit in consecutive cells after "
+                    f"its problem (problem cell, optional starter code cell, "
+                    f"solution cell); problem is at cell {p}, solution at cell {i}"
                 )
     return warnings

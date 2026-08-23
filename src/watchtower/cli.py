@@ -361,10 +361,11 @@ def check(course: str) -> None:
 
     Warns on: problem cells that are not markdown, solution cells that are
     not code, missing or duplicated id tags, solutions without a problem
-    pair (and vice versa), solution cells not wrapped in the `#| echo:
-    false / eval: false / output: false` header, empty solution bodies,
-    and solutions stored in plaintext instead of ROT18-obfuscated. Exits 1
-    when anything is wrong.
+    pair (and vice versa), pairs that are not consecutive cells (problem,
+    optional starter code cell, solution), solution cells not wrapped in
+    the `#| echo: false / eval: false / output: false` header, empty
+    solution bodies, and solutions stored in plaintext instead of
+    ROT18-obfuscated. Exits 1 when anything is wrong.
     """
     from . import problems
 

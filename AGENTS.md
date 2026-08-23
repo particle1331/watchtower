@@ -312,7 +312,8 @@ position.
   problem's solution cell (encodes on write; plaintext in, encoded stored).
 - `wt check <course>` — validate every chapter: problem cells are markdown and
   solution cells are hidden code cells, both with unique id tags matching
-  `<chapter>-<n>`; each problem has a solution pair (and vice versa), solutions
+  `<chapter>-<n>`; each problem has a solution pair (and vice versa) in
+  consecutive cells (problem, optional starter code cell, solution); solutions
   are wrapped and encoded. Exit 1 on any warning.
 - `wt diff <name> [--base REF]` — markdown diff of a notebook vs a git ref
   (default HEAD): both sides rendered like `wt cat` (JSON-stripped, no
