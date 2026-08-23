@@ -211,47 +211,15 @@ if present (project-specific rules stack on top of these).
 - `wt vault export` emits export lines — projects use it via
   `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
 
-## Course problems & solutions
+## Course building & problems
 
-Problems and solutions live entirely in the course chapter notebooks — there
-is no `problems.json`. The identification layer is cell tags:
-
-- **Problem statement** — markdown cell tagged `problem` + the problem id
-  (e.g. `07-3`); the heading `### [PNN.N] title` is the statement title
-  (chapter from the notebook filename, number per-chapter, e.g.
-  `### [P11.4] Energy retention in practice`).
-- **Starter code** — the code cell immediately after the statement (optional;
-  theory problems have none).
-- **Solution** — code cell tagged `solution` + the same id, right after the
-  starter (or the statement). Its source is a `#| echo: false` /
-  `#| eval: false` / `#| output: false` Quarto cell-options header followed by
-  the ROT18-obfuscated body (letters shifted by 13, digits by 5), with each
-  non-empty line prefixed `# ` (blank lines stay blank). The `#|` options hide
-  the cell entirely on the rendered site (echo:false hides input, eval:false
-  prevents execution, output:false hides output), so solutions stay in the
-  notebook for self-grading but never spoil the rendered chapters. ROT18 keeps
-  solutions unreadable at a glance in JupyterLab. Obfuscation is a spoiler
-  guard, not security.
-
-The id doubles as the locator (`7.3`, `07-3`, `07 3`, `projection 3` all
-resolve to the same problem). Pairing is by the shared id tag, never by
-position.
-
-**Authoring rules for agents:**
-
-- Adding a problem: `wt add-exercise <course> <chapter> --statement ... 
-  [--starter ...] --solution ...` — the only sanctioned way to create a
-  problem + solution pair. It numbers the problem automatically (next in the
-  chapter) and encodes the solution on write as a hidden code cell (tags
-  `solution` + id), so plaintext never reaches the notebook through this path.
-- Updating a solution: `wt solution-edit <course> <locator> --content X`
-  (plaintext in, encoded stored). Reading: `wt solution` (decodes),
-  `wt hint` (progressive hint). 
-- NEVER hand-write a solution cell with `edit-cell`/`insert-cell` in
-  plaintext — a plaintext solution fails `wt check <course>`. If you must
-  edit an existing solution cell directly, read it decoded first
-  (`wt cat --tag <id> --decode`), then re-encode via `wt solution-edit`.
-- Run `wt check <course>` after any problem/solution work.
+Course scaffolding, index/sidebar/chapter conventions, and the full
+problems-and-solutions authoring workflow (tag-based ids, ROT18-encoded
+solution cells, sanctioned commands) live in the shared skill
+`skills/course-builder/SKILL.md`. Load it whenever creating or extending a
+course under `courses/`. Hard rules it enforces: create problems only via
+`wt add-exercise`, update solutions only via `wt solution-edit`, and run
+`wt check <course>` after any problem/solution work.
 
 ## CLI command reference (for the agent)
 - `wt kernels` — list installed Jupyter kernel names and languages; use the
