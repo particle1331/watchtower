@@ -94,6 +94,7 @@ services:
     environment:
       <<: *job-environment
       MODEL_NAME: wine-quality
+      BATCH_CHUNK_SIZE: "100"
     depends_on:
       train:
         condition: service_completed_successfully
@@ -116,7 +117,7 @@ services:
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       MODEL_NAME: wine-quality
-      MODEL_VERSION: "1"
+      MODEL_VERSION: "${DEMO_MODEL_VERSION:-1}"
       PORT: "8080"
     depends_on:
       train:

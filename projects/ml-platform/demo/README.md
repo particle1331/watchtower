@@ -112,6 +112,30 @@ docker compose down -v
 docker compose up --build
 ```
 
+## Promote a model and verify the golden path
+
+Promotion never rebuilds images: it flips the MLflow `production` alias to the
+chosen version and recreates only the serving container with that version
+pinned. From this directory:
+
+```bash
+python promote.py --backend local --version 2
+```
+
+The same script with `--backend aca` targets Azure Container Apps; it prints
+the `az containerapp update` command and only runs it with `--execute`.
+
+With a promoted version in place, exercise the whole golden path end to end
+(train, promote, serve, batch, results assertions):
+
+```bash
+python golden_path.py
+```
+
+Both scripts assume the stack is up (`docker compose up --build`). To lint the
+environment-variable contract between `src/` and this Compose file, run
+`python tools/check_env_contract.py`; exit code 1 lists any drift.
+
 The Compose services are intentionally a demonstration environment, not a
 production security boundary. The credentials in the file are local demo
 credentials only.

@@ -47,3 +47,6 @@ htmlcov/
 # gitignored, auto-loaded *.auto.tfvars (template: *.auto.tfvars.example).
 *.auto.tfvars
 !*.auto.tfvars.example
+
+# Project-local env files (written by ml-platform demo/promote.py)
+projects/ml-platform/demo/.env
