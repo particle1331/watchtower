@@ -5,7 +5,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 
-
 BG = "#101827"
 EDGE = "#7AA7B5"
 MUTED = "#B7D1D5"
@@ -41,7 +40,7 @@ def box(ax, center, size, label, fill, stroke, text_color, fontsize=16):
 
 
 def arrow(ax, points, label=None, label_xy=None, color=EDGE):
-    for start, end in zip(points, points[1:]):
+    for start, end in zip(points, points[1:], strict=True):
         x1, y1 = start
         x2, y2 = end
         if x1 != x2 and y1 != y2:

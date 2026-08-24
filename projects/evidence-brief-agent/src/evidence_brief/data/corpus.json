@@ -1,0 +1,53 @@
+[
+  {
+    "id": "vendor-security-2026",
+    "title": "AtlasVector security and compliance guide",
+    "published": "2026-03-01",
+    "tags": ["security", "vendor"],
+    "text": "AtlasVector encrypts data in transit and at rest. Administrative actions are recorded in an exportable audit log. The guide states that EU data residency is available for enterprise deployments."
+  },
+  {
+    "id": "independent-audit-2026",
+    "title": "Independent AtlasVector deployment audit",
+    "published": "2026-05-15",
+    "tags": ["security", "independent"],
+    "text": "The audit verified encryption and audit-log export. It found that production indexes were stored only in the US region during the assessment, so EU data residency was not yet available."
+  },
+  {
+    "id": "internal-benchmark-2026",
+    "title": "Northstar regulated-search benchmark",
+    "published": "2026-06-10",
+    "tags": ["performance", "internal"],
+    "text": "On the representative corpus, AtlasVector achieved recall at ten of 0.91 and p95 query latency of 182 milliseconds. Both results passed the pilot thresholds of 0.88 recall and 250 milliseconds."
+  },
+  {
+    "id": "operations-review-2026",
+    "title": "AtlasVector operations review",
+    "published": "2026-06-18",
+    "tags": ["operations", "independent"],
+    "text": "Incremental indexing recovered automatically after a worker restart. Bulk reindexing required manual throttling, and the reviewer recommends a capacity run before production adoption."
+  },
+  {
+    "id": "regulatory-policy-2026",
+    "title": "Northstar regulated-data deployment policy",
+    "published": "2026-01-20",
+    "tags": ["policy", "internal"],
+    "text": "Production search services containing regulated documents require verified regional residency, encryption, exportable administrative audit logs, and a documented recovery test."
+  },
+  {
+    "id": "vendor-benchmark-2024",
+    "title": "AtlasVector launch benchmark",
+    "published": "2024-02-11",
+    "tags": ["performance", "vendor"],
+    "text": "The launch benchmark reported p95 latency below 100 milliseconds on a small synthetic corpus.",
+    "outdated": true
+  },
+  {
+    "id": "travel-expense-policy",
+    "title": "Northstar travel and expense policy",
+    "published": "2026-02-01",
+    "tags": ["irrelevant"],
+    "text": "Employees must submit travel receipts within thirty days.",
+    "in_scope": false
+  }
+]
