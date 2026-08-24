@@ -29,13 +29,20 @@ For a larger example, see the Weak Supervision article
   paraphrase the code.
 - **Specific claims over salesmanship.** Replace hype adjectives ("powerful,"
   "elegant," "seamless," "beautiful") with the concrete property being claimed.
-- **Fully explained contrasts.** Compressed forms such as "X changes; Y stays"
+- **Headings may carry voice.** Section titles can be concise, evocative, or
+  lightly stylized when they give the material a memorable shape. Prefer titles
+  such as "The golden path," "Fixed invariants," or "The phased build, in two
+  parts" over generic labels such as "Overview" or "Architecture." Avoid
+  promotional claims, exaggerated benefits, urgency, and slogan-like promises.
+- **Fully explained contrasts in prose.** Compressed forms such as "X changes; Y stays"
   or "Not X, but Y" are useful only when the surrounding prose names the
   concrete referents, mechanism, and caveats. Avoid slogan-like fragments that
   stand in for that explanation.
-- **Concrete language.** Prefer the literal noun ("the hosting platform," "the
-  implementation") to a metaphorical stand-in ("the substrate," "the
-  machinery") when the metaphor makes the mechanism less precise.
+- **Concrete language in prose.** Prefer the literal noun ("the hosting platform,"
+  "the implementation") to a metaphorical stand-in ("the substrate," "the
+  machinery") when the metaphor makes the mechanism less precise. A controlled
+  metaphor is fine in a heading when the following prose makes its referent
+  clear.
 
 ## Emphasis
 
