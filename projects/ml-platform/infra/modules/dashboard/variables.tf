@@ -45,9 +45,40 @@ variable "mlflow_url" {
   description = "Public URL of the self-hosted MLflow App (for deep-links)."
 }
 
-variable "grafana_url" {
+variable "auth_tenant_id" {
   type        = string
-  description = "Azure Managed Grafana endpoint URL (for deep-links)."
+  description = "Entra tenant ID used as the Easy Auth OpenID issuer."
+}
+
+variable "auth_client_id" {
+  type        = string
+  description = "Client ID of the Entra app registration used by Easy Auth."
+}
+
+variable "auth_client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Client secret for the dashboard Entra app registration."
+}
+
+variable "operator_group_id" {
+  type        = string
+  description = "Entra group object ID allowed to trigger workflows."
+}
+
+variable "train_job_name" {
+  type        = string
+  description = "Deployed ACA training Job resource name."
+}
+
+variable "eval_job_name" {
+  type        = string
+  description = "Deployed ACA evaluation Job resource name."
+}
+
+variable "batch_job_name" {
+  type        = string
+  description = "Deployed ACA batch Job resource name."
 }
 
 variable "subscription_id" {

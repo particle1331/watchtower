@@ -1,4 +1,4 @@
-# Batch scoring ACA Job image (docs/04).
+# Batch scoring ACA Job image.
 # Mirrors the train_job image structure: pinned base, deps layer, then sources.
 FROM python:3.11-slim
 

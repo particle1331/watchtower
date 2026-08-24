@@ -13,8 +13,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger(__name__)
 
 _DATA_SOURCE = (
-    "https://raw.githubusercontent.com/mlflow/mlflow/master/"
-    "tests/datasets/winequality-white.csv"
+    "https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv"
 )
 _MODEL_NAME = os.environ.get("MODEL_NAME", "wine-quality")
 _MODEL_VERSION = os.environ.get("MODEL_VERSION", "1")
@@ -23,6 +22,18 @@ _COMMANDS: dict[str, list[str]] = {
     "train": [
         "python",
         "train.py",
+        "--data-source",
+        _DATA_SOURCE,
+        "--delimiter",
+        ";",
+    ],
+    "eval": [
+        "python",
+        "evaluate.py",
+        "--registered-name",
+        _MODEL_NAME,
+        "--version",
+        _MODEL_VERSION,
         "--data-source",
         _DATA_SOURCE,
         "--delimiter",
@@ -52,6 +63,17 @@ _ALLOWED_PARAMETERS: dict[str, set[str]] = {
         "target",
         "alpha",
         "l1_ratio",
+        "test_size",
+        "random_state",
+    },
+    "eval": {
+        "registered_name",
+        "version",
+        "data_source",
+        "delimiter",
+        "experiment",
+        "target",
+        "max_rmse",
         "test_size",
         "random_state",
     },
@@ -142,17 +164,13 @@ def run_job(job_name: str, body: dict[str, Any] | None = None) -> dict[str, str]
     # misleading RUNNING entry in the in-memory execution catalog.
     _command_for(job_name, parameters)
     with _lock:
-        if any(
-            job["job_name"] == job_name and job["status"] == "RUNNING"
-            for job in _jobs.values()
-        ):
-            raise HTTPException(status_code=409, detail=f"{job_name} is already running")
         execution = f"local-{job_name}-{uuid.uuid4().hex[:8]}"
         _jobs[execution] = {
             "execution": execution,
             "job_name": job_name,
             "status": "RUNNING",
             "triggered_by": triggered_by,
+            "parameters": dict(parameters),
         }
     threading.Thread(
         target=_execute,

@@ -1,4 +1,4 @@
-"""Batch scoring entrypoint — ACA Job that fans out over data (docs/04).
+"""Batch scoring entrypoint: an ACA Job that fans out over data.
 
 Flow:
   1. Load a pinned model version from MLflow Model Registry.
@@ -8,12 +8,11 @@ Flow:
      per-chunk status; distinguish transient (RETRY) from permanent (FAILURE).
   5. Finalize the parent row (SUCCESS if no permanent failures, else FAILURE).
 
-Invariants (docs/04):
+Invariants:
   - This Job NEVER writes MLflow runs or registers models (read-only to MLflow).
   - Auth is via the ``id-jobs-batch`` managed identity; no passwords in the image.
   - All connection info comes from env vars; the image is pinned by digest.
 """
-
 
 import argparse
 import os
@@ -51,7 +50,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Pinned model version; omit to use the production alias.",
     )
-    p.add_argument("--experiment", default="wine-quality", help="MLflow experiment (tracking context)")
+    p.add_argument(
+        "--experiment", default="wine-quality", help="MLflow experiment (tracking context)"
+    )
     p.add_argument("--chunk-size", type=int, default=_CHUNK_SIZE, help="Rows per child chunk")
     p.add_argument("--max-attempts", type=int, default=3, help="Max RETRY attempts per chunk")
     p.add_argument("--triggered-by", default=_TRIGGERED_BY, help="Caller identity or 'schedule'")
@@ -106,7 +107,9 @@ def main(argv: list[str] | None = None) -> None:
     # --- (3) Create parent + child rows ---
     batch_name = f"batch:score-{args.model_name}"
     # The local runner sets RESULTS_RUN_ID to the execution name, making the
-    # trigger response directly usable with GET /api/results/{result_id}.
+    # trigger response directly usable with GET /api/results/{result_id}. An
+    # invocation without RESULTS_RUN_ID intentionally creates a fresh batch;
+    # cross-execution resume is outside the Phase 1 contract.
     batch_id = os.environ.get("RESULTS_RUN_ID") or str(uuid.uuid4())
     parent_id = store.create_run(
         batch_name,

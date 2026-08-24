@@ -1,10 +1,10 @@
-"""Celery task for broker-upgraded batch workers (docs/04 upgrade path).
+"""Celery task for the optional broker-upgraded batch workers.
 
 This module is adopted ONLY when the parent/child + continuation model from
 Ch 04 can no longer keep up with fan-out (sustained hundreds of concurrent
 units or real queue backpressure). It is **not part of the baseline**.
 
-Design (docs/04 upgrade, invariant 3):
+Design:
   - Workers are Celery *as a library* inside ACA Jobs — not a long-running fleet.
   - Each Job execution: KEDA scales it up on queue depth → it drains tasks and
     exits. A code deploy is a digest bump; the next scaled execution runs new code.

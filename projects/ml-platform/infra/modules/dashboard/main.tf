@@ -1,10 +1,18 @@
 ###############################################################################
-# Workflow catalog + launcher dashboard ACA App (docs/06).
+# Workflow catalog + authorized launcher dashboard ACA App.
 # Reads results DB (read-only) and starts Jobs via the ACA execution API.
 # Runs as `id-dashboard`; human access is via Entra ID Easy Auth — operators
 # can launch Jobs, viewers can read. The triggered_by identity is the
 # signed-in user's Entra UPN (from Easy Auth), not the machine identity.
 ###############################################################################
+
+terraform {
+  required_providers {
+    azapi = {
+      source = "Azure/azapi"
+    }
+  }
+}
 
 resource "azurerm_container_app" "dashboard" {
   name                         = "${var.name_prefix}-dashboard"
@@ -12,6 +20,18 @@ resource "azurerm_container_app" "dashboard" {
   container_app_environment_id = var.container_app_environment_id
   revision_mode                = "Single"
   tags                         = var.tags
+
+  lifecycle {
+    precondition {
+      condition = (
+        var.auth_tenant_id != "" &&
+        var.auth_client_id != "" &&
+        var.auth_client_secret != "" &&
+        var.operator_group_id != ""
+      )
+      error_message = "Dashboard deployment requires an Entra tenant, client ID, client secret, and operator group ID."
+    }
+  }
 
   identity {
     type         = "UserAssigned"
@@ -21,6 +41,11 @@ resource "azurerm_container_app" "dashboard" {
   registry {
     server   = var.acr_login_server
     identity = var.identity_id
+  }
+
+  secret {
+    name  = "dashboard-auth-client-secret"
+    value = var.auth_client_secret
   }
 
   ingress {
@@ -61,14 +86,18 @@ resource "azurerm_container_app" "dashboard" {
         name  = "RESULTS_DB"
         value = "results"
       }
-      # Deep-link targets (no auth stored here — links open in the browser).
+      # Deep-link target (auth happens in the browser).
       env {
         name  = "MLFLOW_TRACKING_URI"
         value = var.mlflow_url
       }
       env {
-        name  = "GRAFANA_URL"
-        value = var.grafana_url
+        name        = "DASHBOARD_AUTH_CLIENT_SECRET"
+        secret_name = "dashboard-auth-client-secret"
+      }
+      env {
+        name  = "DASHBOARD_OPERATOR_GROUP_ID"
+        value = var.operator_group_id
       }
       # ACA execution API context (for triggering Jobs).
       env {
@@ -78,6 +107,18 @@ resource "azurerm_container_app" "dashboard" {
       env {
         name  = "AZURE_RESOURCE_GROUP"
         value = var.resource_group_name
+      }
+      env {
+        name  = "TRAIN_JOB_NAME"
+        value = var.train_job_name
+      }
+      env {
+        name  = "EVAL_JOB_NAME"
+        value = var.eval_job_name
+      }
+      env {
+        name  = "BATCH_JOB_NAME"
+        value = var.batch_job_name
       }
       env {
         name  = "PORT"
@@ -105,6 +146,44 @@ resource "azurerm_container_app" "dashboard" {
       period_seconds          = 30
       timeout                 = 5
       failure_count_threshold = 3
+    }
+  }
+}
+
+# Easy Auth authenticates all dashboard traffic except the probe endpoint.
+# Fine-grained operator authorization stays in the app because viewers must be
+# able to read while only one Entra group may call mutation routes.
+resource "azapi_resource" "auth" {
+  type      = "Microsoft.App/containerApps/authConfigs@2025-07-01"
+  name      = "current"
+  parent_id = azurerm_container_app.dashboard.id
+
+  body = {
+    properties = {
+      platform = {
+        enabled = true
+      }
+      globalValidation = {
+        excludedPaths               = ["/healthz"]
+        redirectToProvider          = "azureActiveDirectory"
+        unauthenticatedClientAction = "RedirectToLoginPage"
+      }
+      httpSettings = {
+        requireHttps = true
+      }
+      identityProviders = {
+        azureActiveDirectory = {
+          enabled = true
+          registration = {
+            clientId                = var.auth_client_id
+            clientSecretSettingName = "DASHBOARD_AUTH_CLIENT_SECRET"
+            openIdIssuer            = "https://login.microsoftonline.com/${var.auth_tenant_id}/v2.0"
+          }
+          validation = {
+            allowedAudiences = [var.auth_client_id]
+          }
+        }
+      }
     }
   }
 }

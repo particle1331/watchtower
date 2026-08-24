@@ -1,4 +1,4 @@
-# Serving ACA App image (docs/05).
+# Serving ACA App image.
 # Own image: we control framework, runtime, and dependencies (no framework lock-in).
 FROM python:3.11-slim
 

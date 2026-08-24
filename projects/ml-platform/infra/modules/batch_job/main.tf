@@ -1,5 +1,5 @@
 ###############################################################################
-# Batch scoring ACA Job (docs/04). An ephemeral, image-pinned Container Apps
+# Batch scoring ACA Job. An ephemeral, image-pinned Container Apps
 # Job that runs as `id-jobs-batch`: reads a pinned model from MLflow (never
 # writes MLflow runs), writes per-chunk results-DB rows, and applies the
 # stateless continuation rule. Both a scheduled trigger (cron) and a manual
@@ -33,7 +33,7 @@ resource "azurerm_container_app_job" "batch" {
     replica_completion_count = 1
   }
 
-  # Scheduled batch (docs/04). Cron is UTC; disabled when schedule_cron == "".
+  # Scheduled batch. Cron is UTC; disabled when schedule_cron == "".
   dynamic "schedule_trigger_config" {
     for_each = var.schedule_cron == "" ? [] : [var.schedule_cron]
     content {

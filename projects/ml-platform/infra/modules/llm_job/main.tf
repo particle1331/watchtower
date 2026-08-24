@@ -1,5 +1,5 @@
 ###############################################################################
-# Shared LLM ACA Job adapter (docs/03).
+# Shared LLM ACA Job adapter.
 #
 # The workload image is the same train image used by Compose and the local
 # runner. Only the command and cloud connection environment differ between the

@@ -1,4 +1,4 @@
-"""Online serving ACA App — loads an exact MLflow model version (docs/05).
+"""Online serving ACA App — loads an exact MLflow model version.
 
 Startup:
   1. Load ``models:/<MODEL_NAME>/<MODEL_VERSION>`` from the self-hosted registry.

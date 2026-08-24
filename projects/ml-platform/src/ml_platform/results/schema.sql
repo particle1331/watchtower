@@ -1,4 +1,4 @@
--- infra/results/schema.sql — Results DB DDL (docs/04).
+-- infra/results/schema.sql — Results DB DDL.
 -- Idempotent: wrapped in IF NOT EXISTS guards so it can be run on every deploy.
 -- The deploy administrator creates this table; grants.sql applies workload
 -- privileges after this file runs. The Compose init copy mirrors this DDL.

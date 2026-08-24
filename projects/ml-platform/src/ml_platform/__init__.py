@@ -5,7 +5,7 @@ The ML platform is built up chapter by chapter in the `ml-platform` course
 independent of the notebooks, and the notebooks reference these modules and
 scripts when they demo each stage.
 
-Package layout as the course builds it (see `docs/` for the production contract):
+Package layout as the course builds it:
 
     src/ml_platform/
         common/      # results-DB client, MLflow helpers, hashing, schemas

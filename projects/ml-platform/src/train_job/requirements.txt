@@ -1,4 +1,4 @@
-# Training/eval job image dependencies — pinned for reproducible runs (docs/02).
+# Training/eval job image dependencies — pinned for reproducible runs.
 # MLflow is pinned to the SAME version as the self-hosted server (src/mlflow_app).
 mlflow==3.15.1
 scikit-learn==1.5.2

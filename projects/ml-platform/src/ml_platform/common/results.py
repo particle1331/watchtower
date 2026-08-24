@@ -1,4 +1,4 @@
-"""Write an operational run record to the generic results DB (docs/02, docs/04).
+"""Write an operational run record to the generic results DB.
 
 Every job — training, eval, batch — writes a uniform results-DB record so the
 dashboard sees all workflows the same way, while MLflow holds the ML-specific

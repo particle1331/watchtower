@@ -1,8 +1,9 @@
-"""Stateless continuation rule for batch workflows (docs/04).
+"""Stateless continuation rule for bounded retries in batch workflows.
 
 "Run until done" without an orchestration engine: all per-item state lives in the
-results DB, so a batch Job (or a cron sweeper) can re-evaluate this rule after a
-crash and pick up exactly where it left off.
+results DB, so retries within one Job execution do not lose settled children.
+Cross-execution resume requires the caller to reuse the same parent ID and input
+snapshot; the Phase 1 entrypoint intentionally starts a fresh parent by default.
 
 Rule (applied in a loop):
     1. Fetch children still in PENDING/RETRY with attempts < max_attempts.
@@ -25,7 +26,6 @@ Usage::
 
     final = run_until_done(parent_id, process)
 """
-
 
 import logging
 from collections.abc import Callable
@@ -75,7 +75,12 @@ def run_until_done(
                 progress = True  # progressed (settled a child)
             except Exception as exc:  # noqa: BLE001
                 store.mark(child_id, "RETRY", error=str(exc))
-                log.warning("Item %s transient failure (attempt %d): %s", child_id, child["attempts"] + 1, exc)
+                log.warning(
+                    "Item %s transient failure (attempt %d): %s",
+                    child_id,
+                    child["attempts"] + 1,
+                    exc,
+                )
                 # RETRY is a state change.  Keep iterating so an item that
                 # failed transiently can consume its remaining attempts.
                 progress = True

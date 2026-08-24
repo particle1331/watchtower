@@ -102,13 +102,11 @@ website:
           contents:
             - text: "14. Multi-GPU training (exception)"
               href: courses/ml-platform/14-multi-gpu-training.ipynb
-            - text: "15. Broker upgrade (only if forced)"
-              href: courses/ml-platform/15-broker-upgrade.ipynb
         - section: "Capstone"
-          href: courses/ml-platform/16-e2e-integration.ipynb
+          href: courses/ml-platform/15-e2e-integration.ipynb
           contents:
-            - text: "16. End-to-end integration"
-              href: courses/ml-platform/16-e2e-integration.ipynb
+            - text: "15. End-to-end integration"
+              href: courses/ml-platform/15-e2e-integration.ipynb
     - id: cla
       style: floating
       collapse-level: 2

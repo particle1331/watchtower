@@ -1,5 +1,5 @@
 ###############################################################################
-# Azure ML workspace + min-zero GPU cluster (docs/08).
+# Azure ML workspace + min-zero GPU cluster.
 # Provisioned ONLY when the multi-GPU exception is admitted — not part of the
 # baseline. The workspace is wired to the same self-hosted MLflow and Blob
 # storage as everything else, so distributed-trained versions land in the

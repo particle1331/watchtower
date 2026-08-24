@@ -1,4 +1,4 @@
-"""Package and register an LLM app as an MLflow pyfunc version (docs/03).
+"""Package and register an LLM app as an MLflow pyfunc version.
 
 Usage (as an ACA Job or local script):
     python register_llm.py \\

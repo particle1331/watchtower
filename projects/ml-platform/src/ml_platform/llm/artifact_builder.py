@@ -1,4 +1,4 @@
-"""Build and register a pyfunc LLM artifact in the self-hosted MLflow registry (docs/03).
+"""Build and register a pyfunc LLM artifact in the self-hosted MLflow registry.
 
 Usage::
 

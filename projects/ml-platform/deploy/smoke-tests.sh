@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# smoke-tests.sh — End-to-end smoke tests for the ML platform golden path (docs/07, Ch 10).
+# smoke-tests.sh — Azure adapter checks for the ML platform golden path.
 #
 # Verifies acceptance evidence for each phase against a running deployed platform.
 # Run after deploy.sh has completed all passes.
 #
 #   Phase 0 (Foundation):    MLflow reachable.
-#   Phase 1 (Training):      Trigger train Job; poll until Succeeded/Failed.
+#   Phase 1 (Training/eval): Trigger train, resolve its version, evaluate it.
 #   Phase 2 (Batch):         Trigger batch Job; poll execution + results to SUCCESS.
 #   Phase 3 (Serving):       /readyz reports exact version.
-#   Phase 4 (Observability): Dashboard /healthz alive; /api/runs returns a response.
+#   Phase 4 (Operations):    Dashboard health is public; data routes require auth.
 #
 # Usage:
 #   ./deploy/smoke-tests.sh [--tf-vars FILE] [--timeout-secs N]
@@ -66,23 +66,6 @@ wait_for_execution() {
   printf '%s\n' "$status"
 }
 
-assert_latest_batch_result() {
-  if [[ -z "$DASH_URL" ]]; then
-    fail "Dashboard URL is empty; cannot verify the batch results row"
-    return
-  fi
-  local runs
-  if ! runs=$(curl -sf --max-time 10 "$DASH_URL/api/runs?limit=50" 2>/dev/null); then
-    fail "Dashboard results API is not reachable after batch execution"
-    return
-  fi
-  local result
-  result=$(echo "$runs" | python3 -c \
-    "import sys,json; rows=json.load(sys.stdin); print(any(str(r.get('name','')).startswith('batch:score-') and r.get('status') == 'SUCCESS' for r in rows))" \
-    2>/dev/null || echo false)
-  assert "$result" "Dashboard results API contains a successful batch parent row"
-}
-
 tf_output() {
   # Returns empty string (not an error) when the output doesn't exist yet.
   terraform output -raw "$1" 2>/dev/null || true
@@ -96,6 +79,7 @@ MLFLOW_URL=$(tf_output mlflow_url)
 SERVING_URL=$(tf_output serving_url)
 DASH_URL=$(tf_output dashboard_url)
 TRAIN_JOB=$(tf_output train_job_name)
+EVAL_JOB=$(tf_output eval_job_name)
 BATCH_JOB=$(tf_output batch_job_name)
 RG=$(tf_output resource_group_name)
 
@@ -127,11 +111,36 @@ if [[ -n "$TRAIN_JOB" ]]; then
   if [[ -n "$exec_json" ]]; then
     exec_name=$(echo "$exec_json" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
     wait_for_execution "$TRAIN_JOB" "$exec_name" "Train Job"
+
+    model_json=$(curl -sf --max-time 10 \
+      "$MLFLOW_URL/api/2.0/mlflow/registered-models/get-latest-versions?name=wine-quality" \
+      2>/dev/null || true)
+    MODEL_VERSION=$(echo "$model_json" | python3 -c \
+      "import sys,json; rows=json.load(sys.stdin).get('model_versions', []); print(max(int(r['version']) for r in rows))" \
+      2>/dev/null || true)
+    assert "$([[ -n "$MODEL_VERSION" ]] && echo true || echo false)" \
+      "Training produced a resolvable wine-quality version (got: $MODEL_VERSION)"
   else
     fail "Train Job start returned no execution"
   fi
 else
   echo "  (train_job_name empty, skipping Phase 1)"
+fi
+
+if [[ -n "$EVAL_JOB" && -n "${MODEL_VERSION:-}" ]]; then
+  echo "  Triggering eval Job ($EVAL_JOB) for version $MODEL_VERSION..."
+  eval_json=$(az containerapp job start \
+    --name "$EVAL_JOB" --resource-group "$RG" --container-name eval \
+    --args "--version" "$MODEL_VERSION" "--registered-name" "wine-quality" \
+    --output json 2>/dev/null || true)
+  if [[ -n "$eval_json" ]]; then
+    eval_name=$(echo "$eval_json" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
+    wait_for_execution "$EVAL_JOB" "$eval_name" "Evaluation Job"
+  else
+    fail "Evaluation Job start returned no execution"
+  fi
+else
+  fail "Evaluation Job or candidate model version is unavailable"
 fi
 
 # ---------------------------------------------------------------------------
@@ -146,7 +155,6 @@ if [[ -n "$BATCH_JOB" ]]; then
   if [[ -n "$exec_json" ]]; then
     exec_name=$(echo "$exec_json" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
     wait_for_execution "$BATCH_JOB" "$exec_name" "Batch Job"
-    assert_latest_batch_result
   else
     fail "Batch Job start returned no execution"
   fi
@@ -194,12 +202,12 @@ if [[ -n "$DASH_URL" ]]; then
     fail "Dashboard /healthz not reachable at $DASH_URL"
   fi
 
-  if runs=$(curl -sf --max-time 10 "$DASH_URL/api/runs?limit=5" 2>/dev/null); then
-    assert "$([[ -n "$runs" ]] && echo true || echo false)" \
-      "Dashboard /api/runs returns a response"
-  else
-    fail "Dashboard /api/runs not reachable"
-  fi
+  anonymous_status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+    "$DASH_URL/api/runs?limit=5" 2>/dev/null || true)
+  case "$anonymous_status" in
+    302|401|403) pass "Dashboard data routes reject or redirect anonymous access (HTTP $anonymous_status)" ;;
+    *) fail "Dashboard data route should require Easy Auth (HTTP $anonymous_status)" ;;
+  esac
 else
   echo "  (dashboard_url empty, skipping Phase 4)"
 fi

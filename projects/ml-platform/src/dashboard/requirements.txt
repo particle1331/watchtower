@@ -1,4 +1,4 @@
-# Dashboard ACA App image dependencies — pinned for reproducible deployments (docs/06).
+# Dashboard ACA App image dependencies — pinned for reproducible deployments.
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 # Results DB read (Entra auth — same stack as other jobs).

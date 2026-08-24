@@ -4,10 +4,11 @@ Drives the whole path over plain HTTP (stdlib urllib only):
 
   1. trigger training via the dashboard and poll it to a terminal status
   2. resolve the newest registered model version from the MLflow REST API
-  3. promote that version through demo/promote.py in a subprocess (the real path)
-  4. poll serving /readyz until it reports exactly the promoted version
-  5. trigger batch scoring pinned to that version and poll to terminal
-  6. assert the batch parent row shows SUCCESS in the results API
+  3. evaluate that exact version and require a passing result
+  4. promote it through demo/promote.py in a subprocess (the real path)
+  5. poll serving /readyz until it reports exactly the promoted version
+  6. trigger batch scoring pinned to that version and poll to terminal
+  7. assert the batch parent row shows SUCCESS in the results API
 
 Requires a running demo stack: from projects/ml-platform/demo run
 ``docker compose up --build``. The ACA backend is out of scope here; use
@@ -86,18 +87,14 @@ def _result_url(dashboard_url: str, response: dict[str, Any]) -> str:
     relative = response.get("result_url")
     if relative:
         return urljoin(f"{dashboard_url}/", relative)
-    return (
-        f"{dashboard_url}/api/results/{quote(str(response['execution']), safe='')}"
-    )
+    return f"{dashboard_url}/api/results/{quote(str(response['execution']), safe='')}"
 
 
-def _wait_for_terminal(
-    result_url: str, label: str, timeout: float
-) -> dict[str, Any]:
+def _wait_for_terminal(result_url: str, label: str, timeout: float) -> dict[str, Any]:
     def check() -> dict[str, Any] | None:
         try:
             row = _get_json(result_url)
-        except (HTTPError, URLError):
+        except HTTPError, URLError:
             return None  # results row not visible yet; keep polling
         status = str(row.get("status", "")).upper()
         if status == "SUCCESS":
@@ -121,6 +118,7 @@ def _tail(text: str, limit: int = 500) -> str:
 # Steps
 # ---------------------------------------------------------------------------
 
+
 def _step_train(state: _RunState) -> tuple[bool, str]:
     payload = {"parameters": {"alpha": 0.25, "l1_ratio": 0.8, "random_state": 7}}
     url = f"{state.args.dashboard_url}/api/runs/train/trigger"
@@ -134,10 +132,7 @@ def _step_train(state: _RunState) -> tuple[bool, str]:
 def _step_newest_version(state: _RunState) -> tuple[bool, str]:
     name = state.args.model_name
     query = urlencode({"name": name})
-    url = (
-        f"{state.args.mlflow_uri}/api/2.0/mlflow/registered-models/"
-        f"get-latest-versions?{query}"
-    )
+    url = f"{state.args.mlflow_uri}/api/2.0/mlflow/registered-models/get-latest-versions?{query}"
     body = _get_json(url)
     versions = [int(entry["version"]) for entry in body.get("model_versions", [])]
     if not versions:
@@ -145,6 +140,27 @@ def _step_newest_version(state: _RunState) -> tuple[bool, str]:
         raise RuntimeError(msg)
     state.model_version = max(versions)
     return True, f"newest version of '{name}' is {state.model_version}"
+
+
+def _step_evaluate(state: _RunState) -> tuple[bool, str]:
+    payload = {
+        "parameters": {
+            "registered_name": state.args.model_name,
+            "version": str(state.model_version),
+            "data_source": state.args.eval_data_source,
+            "experiment": state.args.evaluation_experiment,
+            "max_rmse": state.args.eval_max_rmse,
+        }
+    }
+    url = f"{state.args.dashboard_url}/api/runs/eval/trigger"
+    response = _post_json(url, payload)
+    execution = response["execution"]
+    result_url = _result_url(state.args.dashboard_url, response)
+    _wait_for_terminal(result_url, f"eval {execution}", state.args.timeout)
+    return True, (
+        f"evaluation {execution} passed for version {state.model_version} "
+        f"(max_rmse={state.args.eval_max_rmse})"
+    )
 
 
 def _step_promote(state: _RunState) -> tuple[bool, str]:
@@ -157,6 +173,8 @@ def _step_promote(state: _RunState) -> tuple[bool, str]:
         state.args.model_name,
         "--version",
         str(state.model_version),
+        "--evaluation-experiment",
+        state.args.evaluation_experiment,
     ]
     completed = subprocess.run(command, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
@@ -200,11 +218,7 @@ def _step_serving_ready(state: _RunState) -> tuple[bool, str]:
 def _step_prediction(state: _RunState) -> tuple[bool, str]:
     body = _post_json(
         f"{state.args.serving_url}/v1/predictions",
-        {
-            "instances": [
-                [7.0, 0.27, 0.36, 20.7, 0.045, 45.0, 170.0, 1.001, 3.0, 0.45, 8.8]
-            ]
-        },
+        {"instances": [[7.0, 0.27, 0.36, 20.7, 0.045, 45.0, 170.0, 1.001, 3.0, 0.45, 8.8]]},
     )
     predictions = body.get("predictions")
     if not isinstance(predictions, list) or len(predictions) != 1:
@@ -230,9 +244,7 @@ def _step_batch(state: _RunState) -> tuple[bool, str]:
 
 def _step_results_parent(state: _RunState) -> tuple[bool, str]:
     rows = _get_json(f"{state.args.dashboard_url}/api/results?limit=50")
-    parent = next(
-        (row for row in rows if row.get("id") == state.batch_execution), None
-    )
+    parent = next((row for row in rows if row.get("id") == state.batch_execution), None)
     if parent is None:
         detail = f"no results row for batch execution {state.batch_execution} in last 50"
         return False, detail
@@ -245,6 +257,7 @@ def _step_results_parent(state: _RunState) -> tuple[bool, str]:
 _STEPS: list[tuple[str, Callable[[_RunState], tuple[bool, str]]]] = [
     ("train: trigger and reach terminal status", _step_train),
     ("registry: resolve newest model version", _step_newest_version),
+    ("evaluate: exact candidate passes threshold", _step_evaluate),
     ("promote: flip alias and redeploy serving", _step_promote),
     ("serving: readyz reports promoted version", _step_serving_ready),
     ("serving: prediction returns the promoted version", _step_prediction),
@@ -258,18 +271,55 @@ def _parse_args() -> argparse.Namespace:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--dashboard-url", default="http://localhost:18000",
-                        help="dashboard base URL (default: %(default)s)")
-    parser.add_argument("--serving-url", default="http://localhost:18080",
-                        help="serving base URL (default: %(default)s)")
-    parser.add_argument("--mlflow-uri", default="http://localhost:15000",
-                        help="MLflow base URL (default: %(default)s)")
-    parser.add_argument("--backend", choices=("local", "aca"), default="local",
-                        help="promotion backend passed to promote.py (default: %(default)s)")
-    parser.add_argument("--model-name", default="wine-quality",
-                        help="registered model name (default: %(default)s)")
-    parser.add_argument("--timeout", type=float, default=600.0,
-                        help="per-phase wait budget in seconds (default: %(default)s)")
+    parser.add_argument(
+        "--dashboard-url",
+        default="http://localhost:18000",
+        help="dashboard base URL (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--serving-url",
+        default="http://localhost:18080",
+        help="serving base URL (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--mlflow-uri",
+        default="http://localhost:15000",
+        help="MLflow base URL (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("local", "aca"),
+        default="local",
+        help="promotion backend passed to promote.py (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--model-name", default="wine-quality", help="registered model name (default: %(default)s)"
+    )
+    parser.add_argument(
+        "--eval-data-source",
+        default=(
+            "https://raw.githubusercontent.com/mlflow/mlflow/master/"
+            "tests/datasets/winequality-white.csv"
+        ),
+        help="held-out CSV used by evaluation",
+    )
+    parser.add_argument(
+        "--evaluation-experiment",
+        default="wine-quality-eval",
+        help="MLflow experiment containing evaluation evidence",
+    )
+    parser.add_argument(
+        "--eval-max-rmse",
+        type=float,
+        default=0.8,
+        help="maximum RMSE accepted by the promotion gate",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=600.0,
+        help="per-phase wait budget in seconds (default: %(default)s)",
+    )
     return parser.parse_args()
 
 

@@ -1,5 +1,5 @@
--- infra/grants.sql — idempotent Postgres grants (docs/01, the one deliberate
--- exception to pure declarative IaC). Run post-provision by deploy.ps1, AFTER the
+-- infra/grants.sql — idempotent Postgres grants, the one deliberate exception
+-- to pure declarative IaC. Run post-provision by deploy.ps1, AFTER the
 -- server and the `mlflow`/`results` databases exist, as the AAD administrator.
 --
 -- Per-workload objectIds are injected by deploy.ps1 from `terraform output`:

@@ -1,9 +1,9 @@
-"""Boundary data validation with Pandera (docs/02).
+"""Boundary data validation with Pandera.
 
 Input data is validated at the **start** of a job, before training, so malformed
 data fails fast with a clear error (and a ``FAILURE`` results-DB record) rather
 than silently training on garbage. The wine-quality schema below matches the
-runnable demonstration in docs/02; real workloads swap in their own contract.
+runnable wine-quality demonstration; real workloads swap in their own schema.
 """
 
 

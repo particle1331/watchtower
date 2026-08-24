@@ -1,4 +1,4 @@
-# AML command job definition (docs/08).
+# AML command job definition.
 # Submitted via `az ml job create -f job.yml` or the AML SDK.
 # Uses our own container image (pinned digest) to preserve implementation freedom.
 # Logs to the self-hosted MLflow — not AML managed MLflow.

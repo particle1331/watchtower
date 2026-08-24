@@ -1,14 +1,14 @@
 ###############################################################################
-# Foundation module — the entire Phase 0 footprint (docs/01).
+# Foundation module — the entire Phase 0 footprint.
 #
 # Everything every later phase depends on: registry, container-apps environment
 # + Log Analytics, a two-database Postgres flexible server, a storage account
-# with per-concern containers, Key Vault, and Grafana. Per-workload managed
+# with per-concern containers, Key Vault, and Log Analytics. Per-workload managed
 # identities and their role assignments live in identities.tf.
 #
 # Baseline networking is PUBLIC endpoints protected by identity (managed-identity
 # auth to Postgres/Blob/Key Vault, ACR pull via identity). Private endpoints are
-# a deferred prod-hardening step (docs/01 — Networking).
+# a deferred production-hardening step.
 ###############################################################################
 
 resource "azurerm_resource_group" "this" {
@@ -122,8 +122,8 @@ resource "azurerm_key_vault" "kv" {
 # Postgres flexible server — one small server, two logical databases
 # (`mlflow` + `results`). Entra-only auth (no password auth): each workload
 # connects with its own managed identity. Per-database privileges are applied
-# post-provision by infra/grants.sql (see docs/01 — the one deliberate exception
-# to pure declarative IaC).
+# post-provision by infra/grants.sql, the one deliberate exception to pure
+# declarative IaC.
 #------------------------------------------------------------------------------
 resource "azurerm_postgresql_flexible_server" "pg" {
   name                          = "${local.base}-pg-${random_string.suffix.result}"
@@ -180,30 +180,4 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "deployer" {
   server_id        = azurerm_postgresql_flexible_server.pg.id
   start_ip_address = var.deployer_ip
   end_ip_address   = var.deployer_ip
-}
-
-#------------------------------------------------------------------------------
-# Azure Managed Grafana — deep operational dashboards over Log Analytics.
-#------------------------------------------------------------------------------
-resource "azurerm_dashboard_grafana" "grafana" {
-  name                              = "${local.base}-graf-${random_string.suffix.result}"
-  resource_group_name               = azurerm_resource_group.this.name
-  location                          = azurerm_resource_group.this.location
-  grafana_major_version             = 11
-  api_key_enabled                   = false
-  deterministic_outbound_ip_enabled = false
-  public_network_access_enabled     = true
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  tags = var.tags
-}
-
-# Let Grafana read Log Analytics for dashboards.
-resource "azurerm_role_assignment" "grafana_law_reader" {
-  scope                = azurerm_log_analytics_workspace.law.id
-  role_definition_name = "Log Analytics Reader"
-  principal_id         = azurerm_dashboard_grafana.grafana.identity[0].principal_id
 }

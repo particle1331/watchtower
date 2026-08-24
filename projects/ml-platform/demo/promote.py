@@ -1,9 +1,10 @@
 """Promote a trained model version to production: one entrypoint, two backends.
 
-The promotion flow always flips the MLflow registry alias ``production`` to
-``--version N`` against ``MLFLOW_TRACKING_URI`` (default
-http://localhost:15000), then redeploys the long-running serving consumer
-pinned to that exact version:
+The promotion flow first requires a passing evaluation record for the exact
+``models:/<name>/<version>`` candidate. It then flips the MLflow registry alias
+``production`` to ``--version N`` against ``MLFLOW_TRACKING_URI`` (default
+http://localhost:15000) and redeploys the long-running serving consumer pinned
+to that exact version:
 
 - ``--backend local`` (default): writes ``DEMO_MODEL_VERSION=N`` into
   ``demo/.env`` (created or merged; unrelated lines are preserved) and runs
@@ -11,8 +12,8 @@ pinned to that exact version:
   interpolates the serving service's ``MODEL_VERSION`` from that variable.
 - ``--backend aca``: requires ``--resource-group`` and ``--app-name``, then
   prints the ``az containerapp update`` command that repins ``MODEL_VERSION``
-  on the serving App. The command runs only with ``--execute``; the default is
-  a dry run because no Azure environment exists yet.
+  on the serving App. Without ``--execute`` it validates the evaluation gate
+  and prints the command without changing the alias or App.
 
 Examples:
     python demo/promote.py --version 3
@@ -36,19 +37,13 @@ ENV_FILE = DEMO_DIR / ".env"
 
 DEFAULT_TRACKING_URI = "http://localhost:15000"
 DEFAULT_MODEL_NAME = "wine-quality"
+DEFAULT_EVALUATION_EXPERIMENT = "wine-quality-eval"
 PRODUCTION_ALIAS = "production"
 VERSION_ENV_VAR = "DEMO_MODEL_VERSION"
 
 
-def _flip_alias(model_name: str, version: int, tracking_uri: str) -> None:
-    """Point the registry alias ``production`` at ``version``."""
-    log.info(
-        "Setting MLflow alias '%s' on model '%s' to version %d (%s)",
-        PRODUCTION_ALIAS,
-        model_name,
-        version,
-        tracking_uri,
-    )
+def _mlflow_client(tracking_uri: str):
+    """Create the registry client without importing MLflow at module import time."""
     try:
         # The installed mlflow package wins over the local demo/mlflow/ dir at
         # runtime (regular packages beat namespace portions), but pyright
@@ -61,9 +56,73 @@ def _flip_alias(model_name: str, version: int, tracking_uri: str) -> None:
             "or run this script where mlflow is available."
         )
         raise RuntimeError(msg) from exc
-    client = MlflowClient(tracking_uri=tracking_uri)
+    return MlflowClient(tracking_uri=tracking_uri)
+
+
+def _require_passing_evaluation(
+    client,
+    model_name: str,
+    version: int,
+    evaluation_experiment: str,
+) -> None:
+    """Reject promotion unless MLflow contains a passing eval for this version."""
+    experiment = client.get_experiment_by_name(evaluation_experiment)
+    model_uri = f"models:/{model_name}/{version}"
+    if experiment is None:
+        raise RuntimeError(
+            f"No evaluation experiment named {evaluation_experiment!r}; "
+            f"evaluate {model_uri} before promotion"
+        )
+
+    runs = client.search_runs(
+        experiment_ids=[experiment.experiment_id],
+        filter_string=(f"tags.`eval.model_uri` = '{model_uri}' AND tags.`eval.passed` = 'True'"),
+        order_by=["attributes.start_time DESC"],
+        max_results=1,
+    )
+    if not runs:
+        raise RuntimeError(
+            f"No passing evaluation found for {model_uri} in experiment {evaluation_experiment!r}"
+        )
+    log.info("Evaluation gate passed for %s (run %s)", model_uri, runs[0].info.run_id)
+
+
+def _flip_alias(
+    model_name: str,
+    version: int,
+    tracking_uri: str,
+    evaluation_experiment: str,
+):
+    """Gate the candidate, then point ``production`` at ``version``."""
+    client = _mlflow_client(tracking_uri)
+    _require_passing_evaluation(client, model_name, version, evaluation_experiment)
+    registered_model = client.get_registered_model(model_name)
+    previous_version = (registered_model.aliases or {}).get(PRODUCTION_ALIAS)
+    log.info(
+        "Setting MLflow alias '%s' on model '%s' to version %d (%s)",
+        PRODUCTION_ALIAS,
+        model_name,
+        version,
+        tracking_uri,
+    )
     client.set_registered_model_alias(model_name, PRODUCTION_ALIAS, str(version))
     log.info("Alias '%s' now points at version %d", PRODUCTION_ALIAS, version)
+    return client, previous_version
+
+
+def _restore_alias(client, model_name: str, previous_version: str | None) -> None:
+    """Compensate for a failed consumer update after the alias was moved."""
+    if previous_version is None:
+        client.delete_registered_model_alias(model_name, PRODUCTION_ALIAS)
+        log.warning("Removed newly created alias '%s' after deployment failure", PRODUCTION_ALIAS)
+        return
+    client.set_registered_model_alias(model_name, PRODUCTION_ALIAS, previous_version)
+    log.warning(
+        "Restored alias '%s' on '%s' to version %s after deployment failure",
+        PRODUCTION_ALIAS,
+        model_name,
+        previous_version,
+    )
 
 
 def _write_demo_env(version: int) -> None:
@@ -86,9 +145,7 @@ def _redeploy_compose_serving() -> None:
         raise RuntimeError(msg)
 
 
-def _redeploy_aca_serving(
-    resource_group: str, app_name: str, version: int, execute: bool
-) -> None:
+def _redeploy_aca_serving(resource_group: str, app_name: str, version: int, execute: bool) -> None:
     """Print (and optionally run) the ACA update that repins MODEL_VERSION."""
     command = [
         "az",
@@ -117,23 +174,39 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--version", type=int, required=True, metavar="N",
-                        help="model version to promote")
-    parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME,
-                        help="registered model name (default: %(default)s)")
-    parser.add_argument("--backend", choices=("local", "aca"), default="local",
-                        help="redeployment target (default: %(default)s)")
+    parser.add_argument(
+        "--version", type=int, required=True, metavar="N", help="model version to promote"
+    )
+    parser.add_argument(
+        "--model-name",
+        default=DEFAULT_MODEL_NAME,
+        help="registered model name (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("local", "aca"),
+        default="local",
+        help="redeployment target (default: %(default)s)",
+    )
     parser.add_argument(
         "--tracking-uri",
         default=os.environ.get("MLFLOW_TRACKING_URI", DEFAULT_TRACKING_URI),
         help="MLflow tracking/registry URL (default: MLFLOW_TRACKING_URI or %(default)s)",
     )
-    parser.add_argument("--resource-group",
-                        help="Azure resource group (required for --backend aca)")
-    parser.add_argument("--app-name",
-                        help="serving Container App name (required for --backend aca)")
-    parser.add_argument("--execute", action="store_true",
-                        help="actually run the az command (aca backend only)")
+    parser.add_argument(
+        "--evaluation-experiment",
+        default=DEFAULT_EVALUATION_EXPERIMENT,
+        help="experiment containing the candidate's passing evaluation (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--resource-group", help="Azure resource group (required for --backend aca)"
+    )
+    parser.add_argument(
+        "--app-name", help="serving Container App name (required for --backend aca)"
+    )
+    parser.add_argument(
+        "--execute", action="store_true", help="actually run the az command (aca backend only)"
+    )
     return parser.parse_args(argv)
 
 
@@ -142,21 +215,52 @@ def main(argv: list[str] | None = None) -> int:
     if args.version < 1:
         log.error("--version must be a positive integer")
         return 1
+    if args.backend == "aca" and (not args.resource_group or not args.app_name):
+        log.error("--backend aca requires --resource-group and --app-name")
+        return 1
 
+    if args.backend == "aca" and not args.execute:
+        try:
+            dry_run_client = _mlflow_client(args.tracking_uri)
+            _require_passing_evaluation(
+                dry_run_client,
+                args.model_name,
+                args.version,
+                args.evaluation_experiment,
+            )
+            _redeploy_aca_serving(
+                args.resource_group,
+                args.app_name,
+                args.version,
+                execute=False,
+            )
+        except (RuntimeError, FileNotFoundError, OSError) as exc:
+            log.error("%s", exc)
+            return 1
+        log.info("Dry run complete; registry alias and serving App were not changed")
+        return 0
+
+    client = None
+    previous_version = None
     try:
-        _flip_alias(args.model_name, args.version, args.tracking_uri)
+        client, previous_version = _flip_alias(
+            args.model_name,
+            args.version,
+            args.tracking_uri,
+            args.evaluation_experiment,
+        )
         if args.backend == "local":
             _write_demo_env(args.version)
             _redeploy_compose_serving()
         else:
-            if not args.resource_group or not args.app_name:
-                log.error("--backend aca requires --resource-group and --app-name")
-                return 1
-            _redeploy_aca_serving(
-                args.resource_group, args.app_name, args.version, args.execute
-            )
+            _redeploy_aca_serving(args.resource_group, args.app_name, args.version, args.execute)
     except (RuntimeError, FileNotFoundError, OSError) as exc:
         log.error("%s", exc)
+        if client is not None:
+            try:
+                _restore_alias(client, args.model_name, previous_version)
+            except Exception as restore_exc:  # noqa: BLE001
+                log.error("Failed to restore the previous registry alias: %s", restore_exc)
         return 1
 
     log.info("Promotion of '%s' version %d complete", args.model_name, args.version)

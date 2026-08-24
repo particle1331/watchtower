@@ -1,8 +1,8 @@
-"""Distributed training entrypoint for Azure ML command jobs (docs/08).
+"""Distributed training entrypoint for Azure ML command jobs.
 
 This script runs on an AML compute cluster under our own container image.
-Lineage and model identity are exactly the same as the ACA training job
-(docs/02): dataset digest, code image digest, params, metrics, and a
+Lineage and model identity are exactly the same as the ACA training job:
+dataset digest, code image digest, params, metrics, and a
 registered version in the **self-hosted** MLflow — not AML managed MLflow.
 
 Usage (submitted via AML SDK or job.yml):

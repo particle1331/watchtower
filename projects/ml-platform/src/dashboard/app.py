@@ -1,28 +1,31 @@
-"""Workflow catalog + launcher dashboard (docs/06).
+"""Workflow catalog, results view, and authorized launcher dashboard.
 
 A lightweight FastAPI app that is the human surface over the ML platform.
 It is a **catalog + launcher**, not a new source of truth:
 
-  - GET  /         — HTML catalog of all workflows with recent run status,
-                     deep-links to Grafana and MLflow.
+  - GET  /         — HTML catalog of all workflows with recent run status and
+                     a deep-link to MLflow.
   - GET  /api/runs — JSON: recent rows from the results DB (read-only).
   - POST /api/runs/{job_name}/trigger
                    — Start an ACA Job execution; records triggered_by from
                      the Entra Easy Auth header.
   - GET  /healthz  — Liveness probe.
 
-Auth: Entra ID Easy Auth sits in front (configured in the ACA App definition).
-The signed-in user's UPN is injected as X-MS-CLIENT-PRINCIPAL-NAME; the app
-records it as triggered_by on every manual launch.
+Auth: Entra ID Easy Auth sits in front (configured in the ACA App definition)
+and authenticates every non-health request. This app decodes the trusted
+principal header and requires membership in DASHBOARD_OPERATOR_GROUP_ID for
+manual launches; authenticated viewers remain read-only.
 
 Identity: id-dashboard — read-only on results DB + ACA execution-start (scoped).
 No write access to the registry or training data.
 """
 
-
+import base64
+import binascii
 import json
 import logging
 import os
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 from urllib.request import Request as UrlRequest
@@ -46,23 +49,24 @@ _RESULTS_DB = os.environ.get("RESULTS_DB", "results")
 # link is opened by a browser, so deployments may need a different,
 # browser-reachable URL (for example, localhost instead of the Compose DNS
 # name).  Keep the old fallback for existing deployments.
-_MLFLOW_URL = os.environ.get("MLFLOW_UI_URL") or os.environ.get(
-    "MLFLOW_TRACKING_URI", ""
-)
-_GRAFANA_URL = os.environ.get("GRAFANA_URL", "")
+_MLFLOW_URL = os.environ.get("MLFLOW_UI_URL") or os.environ.get("MLFLOW_TRACKING_URI", "")
 _SUBSCRIPTION_ID = os.environ.get("AZURE_SUBSCRIPTION_ID", "")
 _RESOURCE_GROUP = os.environ.get("AZURE_RESOURCE_GROUP", "")
-_ACA_ENV_NAME = os.environ.get("ACA_ENV_NAME", "")
 _TRIGGER_BACKEND = os.environ.get("TRIGGER_BACKEND", "aca")
 _RUNNER_URL = os.environ.get("RUNNER_URL", "http://runner:8090")
+_OPERATOR_GROUP_ID = os.environ.get("DASHBOARD_OPERATOR_GROUP_ID", "")
+_ACA_JOB_NAMES = {
+    "train": os.environ.get("TRAIN_JOB_NAME", ""),
+    "eval": os.environ.get("EVAL_JOB_NAME", ""),
+    "batch": os.environ.get("BATCH_JOB_NAME", ""),
+}
 _OSSRDBMS_SCOPE = "https://ossrdbms-aad.database.windows.net/.default"
 
 app = FastAPI(title="ml-platform dashboard")
 
 
 _DEFAULT_DATA_SOURCE = (
-    "https://raw.githubusercontent.com/mlflow/mlflow/master/"
-    "tests/datasets/winequality-white.csv"
+    "https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv"
 )
 
 
@@ -98,14 +102,28 @@ class BatchParameters(BaseModel):
     max_attempts: int = Field(default=3, ge=1, description="Maximum attempts per chunk")
 
 
+class EvalParameters(BaseModel):
+    """Evaluation overrides for one exact registered model candidate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    registered_name: str = Field(default="wine-quality", description="Registered model name")
+    version: str = Field(default="1", description="Exact registered model version")
+    data_source: str = Field(default=_DEFAULT_DATA_SOURCE, description="Held-out CSV URL or path")
+    delimiter: str = Field(default=";", description="CSV delimiter")
+    experiment: str = Field(default="wine-quality-eval", description="Evaluation experiment")
+    target: str = Field(default="quality", description="Target column")
+    max_rmse: float = Field(default=0.8, gt=0, description="Maximum accepted RMSE")
+    test_size: float = Field(default=0.25, gt=0, lt=1, description="Held-out fraction")
+    random_state: int = Field(default=42, description="Split seed")
+
+
 class JobTrigger(BaseModel):
     """Optional command-line parameters for a local job execution."""
 
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": [
-                {"parameters": {"alpha": 0.25, "l1_ratio": 0.8, "random_state": 7}}
-            ]
+            "examples": [{"parameters": {"alpha": 0.25, "l1_ratio": 0.8, "random_state": 7}}]
         }
     )
 
@@ -120,9 +138,7 @@ class TrainTrigger(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": [
-                {"parameters": {"alpha": 0.25, "l1_ratio": 0.8, "random_state": 7}}
-            ]
+            "examples": [{"parameters": {"alpha": 0.25, "l1_ratio": 0.8, "random_state": 7}}]
         }
     )
 
@@ -136,16 +152,25 @@ class BatchTrigger(BaseModel):
     """Batch trigger payload. All fields show their runtime defaults in Swagger."""
 
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {"parameters": {"model_version": "1", "chunk_size": 500}}
-            ]
-        }
+        json_schema_extra={"examples": [{"parameters": {"model_version": "1", "chunk_size": 500}}]}
     )
 
     parameters: BatchParameters = Field(
         default_factory=BatchParameters,
         description="Batch-job parameters. Omit fields to use the defaults below.",
+    )
+
+
+class EvalTrigger(BaseModel):
+    """Evaluation trigger payload."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"parameters": {"version": "7", "max_rmse": 0.75}}]}
+    )
+
+    parameters: EvalParameters = Field(
+        default_factory=EvalParameters,
+        description="Evaluate one exact model version against a held-out CSV.",
     )
 
 
@@ -190,6 +215,23 @@ _JOB_CATALOG: list[dict[str, Any]] = [
         "example": {"alpha": 0.25, "l1_ratio": 0.8, "random_state": 7},
     },
     {
+        "job_name": "eval",
+        "description": "Evaluate one exact registered version and record promotion evidence.",
+        "endpoint": "/api/runs/eval/trigger",
+        "parameters": {
+            "registered_name": "Registered model name, default 'wine-quality'",
+            "version": "Exact registered version to evaluate",
+            "data_source": "Held-out CSV URL or path",
+            "delimiter": "CSV delimiter, default ';'",
+            "experiment": "Evaluation experiment, default 'wine-quality-eval'",
+            "target": "Target column, default 'quality'",
+            "max_rmse": "Maximum accepted RMSE, default 0.8",
+            "test_size": "Held-out fraction, default 0.25",
+            "random_state": "Integer split seed, default 42",
+        },
+        "example": {"version": "7", "max_rmse": 0.75},
+    },
+    {
         "job_name": "batch",
         "description": "Load a registered MLflow model and score a CSV in chunks.",
         "endpoint": "/api/runs/batch/trigger",
@@ -207,10 +249,13 @@ _JOB_CATALOG: list[dict[str, Any]] = [
     },
 ]
 
+_ALLOWED_PARAMETERS = {entry["job_name"]: frozenset(entry["parameters"]) for entry in _JOB_CATALOG}
+
 
 # ---------------------------------------------------------------------------
 # DB helpers (read-only; no-op if PGHOST unset)
 # ---------------------------------------------------------------------------
+
 
 def _db_connect():
     import psycopg
@@ -309,8 +354,92 @@ def _serialize_result(result: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Entra principal + authorization helpers
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class _Principal:
+    name: str
+    groups: frozenset[str]
+
+
+def _decode_principal_header(encoded: str, fallback_name: str = "") -> _Principal:
+    """Decode the Easy Auth client-principal header into the claims we use."""
+    try:
+        padded = encoded + "=" * (-len(encoded) % 4)
+        raw = base64.b64decode(padded, validate=True)
+        payload = json.loads(raw)
+        claims = payload.get("claims", [])
+        if not isinstance(claims, list):
+            raise ValueError("claims must be a list")
+    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=401, detail="Invalid Easy Auth principal header") from exc
+
+    names: list[str] = []
+    groups: set[str] = set()
+    for claim in claims:
+        if not isinstance(claim, dict):
+            continue
+        claim_type = str(claim.get("typ", ""))
+        value = str(claim.get("val", ""))
+        if not value:
+            continue
+        if claim_type in {
+            "name",
+            "preferred_username",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn",
+        }:
+            names.append(value)
+        if claim_type == "groups" or claim_type.endswith("/groups"):
+            groups.add(value)
+
+    name = fallback_name or (names[0] if names else "unknown")
+    return _Principal(name=name, groups=frozenset(groups))
+
+
+def _require_operator(request: Request) -> str:
+    """Return the caller name after enforcing operator access for mutations."""
+    fallback_name = request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME", "")
+    if _TRIGGER_BACKEND == "local":
+        return fallback_name or "demo-user"
+
+    encoded = request.headers.get("X-MS-CLIENT-PRINCIPAL", "")
+    if not encoded:
+        raise HTTPException(status_code=401, detail="Easy Auth principal is missing")
+    principal = _decode_principal_header(encoded, fallback_name)
+    if not _OPERATOR_GROUP_ID:
+        raise HTTPException(
+            status_code=503,
+            detail="DASHBOARD_OPERATOR_GROUP_ID is not configured",
+        )
+    if _OPERATOR_GROUP_ID not in principal.groups:
+        raise HTTPException(status_code=403, detail="Operator group membership required")
+    return principal.name
+
+
+# ---------------------------------------------------------------------------
 # ACA Jobs trigger helper
 # ---------------------------------------------------------------------------
+
+
+def _arguments_for(job_name: str, parameters: dict[str, Any]) -> list[str]:
+    allowed = _ALLOWED_PARAMETERS.get(job_name)
+    if allowed is None:
+        raise RuntimeError(f"Unknown job: {job_name}")
+    unknown = set(parameters) - allowed
+    if unknown:
+        names = ", ".join(sorted(unknown))
+        raise RuntimeError(f"Unsupported parameters for {job_name}: {names}")
+
+    arguments: list[str] = []
+    for name, value in parameters.items():
+        if isinstance(value, (dict, list)):
+            raise RuntimeError(f"Parameter {name!r} must be a scalar value")
+        arguments.extend([f"--{name.replace('_', '-')}", str(value)])
+    return arguments
+
 
 def _trigger_job(
     job_name: str,
@@ -320,9 +449,7 @@ def _trigger_job(
     """Start an ACA Job execution; returns the execution name."""
     parameters = parameters or {}
     if _TRIGGER_BACKEND == "local":
-        payload = json.dumps(
-            {"triggered_by": triggered_by, "parameters": parameters}
-        ).encode()
+        payload = json.dumps({"triggered_by": triggered_by, "parameters": parameters}).encode()
         request = UrlRequest(
             f"{_RUNNER_URL}/api/jobs/{job_name}/run",
             data=payload,
@@ -333,14 +460,9 @@ def _trigger_job(
             result = json.loads(response.read())
         return result["execution"]
 
-    if parameters:
-        raise RuntimeError(
-            "Parameterized triggers require TRIGGER_BACKEND=local in this POC"
-        )
-
     from azure.identity import DefaultAzureCredential
     from azure.mgmt.appcontainers import ContainerAppsAPIClient
-    from azure.mgmt.appcontainers.models import JobExecutionTemplate, JobStartConfiguration
+    from azure.mgmt.appcontainers.models import EnvironmentVar, JobStartConfiguration
 
     if not _SUBSCRIPTION_ID or not _RESOURCE_GROUP:
         raise RuntimeError("AZURE_SUBSCRIPTION_ID and AZURE_RESOURCE_GROUP must be set")
@@ -348,20 +470,30 @@ def _trigger_job(
     credential = DefaultAzureCredential()
     client = ContainerAppsAPIClient(credential, _SUBSCRIPTION_ID)
 
-    # Pass triggered_by as an env override so it lands in the results DB record.
-    start_config = JobStartConfiguration(
-        template=JobExecutionTemplate(
-            containers=[
-                {
-                    "name": job_name,
-                    "env": [{"name": "TRIGGERED_BY", "value": triggered_by}],
-                }
-            ]
-        )
-    )
+    actual_job_name = _ACA_JOB_NAMES.get(job_name, "")
+    if not actual_job_name:
+        raise RuntimeError(f"ACA Job {job_name!r} is not configured")
+
+    # ACA replaces the entire execution template when overrides are supplied,
+    # so begin with the deployed template and mutate only this execution's
+    # caller and CLI arguments. This preserves image, resources, and identity
+    # settings from Terraform.
+    deployed = client.jobs.get(_RESOURCE_GROUP, actual_job_name)
+    template = deployed.template
+    containers = list(template.containers or []) if template else []
+    container = next((item for item in containers if item.name == job_name), None)
+    if container is None:
+        raise RuntimeError(f"ACA Job {actual_job_name!r} has no container named {job_name!r}")
+    environment = list(container.env or [])
+    environment = [item for item in environment if item.name != "TRIGGERED_BY"]
+    environment.append(EnvironmentVar(name="TRIGGERED_BY", value=triggered_by))
+    container.env = environment
+    if parameters:
+        container.args = _arguments_for(job_name, parameters)
+    start_config = JobStartConfiguration(template=template)
     poller = client.jobs.begin_start(
         resource_group_name=_RESOURCE_GROUP,
-        job_name=job_name,
+        job_name=actual_job_name,
         template=start_config,
     )
     result = poller.result()
@@ -371,6 +503,7 @@ def _trigger_job(
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @app.get("/healthz", status_code=200)
 def healthz() -> dict[str, str]:
@@ -415,7 +548,7 @@ def _submit_trigger(
     parameters: dict[str, Any],
 ) -> TriggerResponse:
     """Submit a job while keeping all trigger routes on one implementation."""
-    triggered_by = request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME", "unknown")
+    triggered_by = _require_operator(request)
     log.info("Manual trigger: job=%s triggered_by=%s", job_name, triggered_by)
     try:
         execution_name = _trigger_job(job_name, triggered_by, parameters)
@@ -457,6 +590,24 @@ async def trigger_train(
 ) -> TriggerResponse:
     parameters = body.parameters.model_dump(exclude_unset=True) if body else {}
     return _submit_trigger("train", request, parameters)
+
+
+@app.post(
+    "/api/runs/eval/trigger",
+    response_model=TriggerResponse,
+    tags=["Jobs"],
+    summary="Trigger evaluation",
+    description=(
+        "Evaluate one exact registered version. A threshold rejection ends the "
+        "execution as FAILURE and cannot satisfy the promotion gate."
+    ),
+)
+async def trigger_eval(
+    request: Request,
+    body: EvalTrigger | None = None,
+) -> TriggerResponse:
+    parameters = body.parameters.model_dump(exclude_unset=True) if body else {}
+    return _submit_trigger("eval", request, parameters)
 
 
 @app.post(
@@ -508,7 +659,7 @@ def api_execution(execution: str) -> dict[str, Any]:
     summary="Trigger a named job",
     description=(
         "Generic trigger for ACA-compatible job names. For the local POC, "
-        "prefer the explicit train or batch routes above because they document "
+        "prefer the explicit train, eval, or batch routes because they document "
         "their parameters and defaults."
     ),
 )
@@ -524,7 +675,7 @@ async def trigger_run(
 
 @app.get("/", response_class=HTMLResponse)
 async def catalog() -> Response:
-    """Lightweight HTML catalog — reads results DB and deep-links to Grafana/MLflow."""
+    """Lightweight HTML catalog that reads results DB and links to MLflow."""
     runs = [_serialize_result(result) for result in _query_results(20)]
 
     rows_html = "\n".join(
@@ -543,6 +694,7 @@ async def catalog() -> Response:
         demo_controls = """<section style='margin:1rem 0;padding:1rem;background:#e9f2ff;border:1px solid #b6d4fe;border-radius:6px'>
   <strong>Local POC controls</strong>
   <button onclick=\"triggerJob('train')\" style='margin-left:1rem'>Run training</button>
+  <button onclick=\"triggerJob('eval')\" style='margin-left:.5rem'>Run evaluation</button>
   <button onclick=\"triggerJob('batch')\" style='margin-left:.5rem'>Run batch scoring</button>
   <span id='trigger-result' style='margin-left:1rem'></span>
 </section>
@@ -557,7 +709,6 @@ async function triggerJob(job) {
 }
 </script>"""
 
-    grafana_link = f'<a href="{_GRAFANA_URL}" target="_blank">Grafana</a>' if _GRAFANA_URL else "—"
     mlflow_link = f'<a href="{_MLFLOW_URL}" target="_blank">MLflow</a>' if _MLFLOW_URL else "—"
 
     html = f"""<!DOCTYPE html>
@@ -581,7 +732,7 @@ async function triggerJob(job) {
 </head>
 <body>
   <h1>ML Platform — Workflow Dashboard</h1>
-  <nav>Deep links: {grafana_link} &nbsp; {mlflow_link}</nav>
+  <nav>Deep link: {mlflow_link}</nav>
   {demo_controls}
   <h2>Recent runs</h2>
   <table>
@@ -599,4 +750,5 @@ async function triggerJob(job) {
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))

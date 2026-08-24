@@ -3,6 +3,18 @@ variable "name_prefix" {
   description = "Base name prefix, e.g. mlpdev."
 }
 
+variable "job_suffix" {
+  type        = string
+  default     = "train"
+  description = "Logical Job/container name appended to name_prefix."
+}
+
+variable "command" {
+  type        = list(string)
+  default     = []
+  description = "Optional command override; empty uses the image ENTRYPOINT."
+}
+
 variable "resource_group_name" {
   type = string
 }
@@ -53,6 +65,30 @@ variable "schedule_cron" {
   type        = string
   default     = ""
   description = "UTC cron for the nightly retrain; empty disables the schedule."
+}
+
+variable "data_source" {
+  type        = string
+  default     = ""
+  description = "Default CSV source for an evaluation Job; harmless on training."
+}
+
+variable "model_name" {
+  type        = string
+  default     = "wine-quality"
+  description = "Default registered model name for an evaluation Job."
+}
+
+variable "model_version" {
+  type        = string
+  default     = "1"
+  description = "Default registered model version for an evaluation Job."
+}
+
+variable "eval_max_rmse" {
+  type        = number
+  default     = 0.8
+  description = "Default evaluation threshold."
 }
 
 variable "replica_timeout_seconds" {

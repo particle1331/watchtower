@@ -1,6 +1,6 @@
-"""Training entrypoint — ACA Job that produces a registered model version (docs/02).
+"""Training entrypoint — ACA Job that produces a registered model version.
 
-Flow (matches docs/02 steps 1-5):
+Flow:
   1. Load the source data and validate it at the boundary (Pandera).
   2. Build an MLflow-tracked dataset (source + content digest + schema).
   3. Start an MLflow run; log the dataset, params, and the code image digest.
@@ -26,7 +26,7 @@ from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
-# The runnable demonstration from docs/02 (UCI wine-quality, white).
+# The runnable demonstration uses the UCI white wine-quality dataset.
 DEFAULT_SOURCE = (
     "https://raw.githubusercontent.com/mlflow/mlflow/master/"
     "tests/datasets/winequality-white.csv"

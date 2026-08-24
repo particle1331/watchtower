@@ -1,7 +1,7 @@
 #requires -Version 7.0
 <#
 .SYNOPSIS
-  Full platform deploy — all phases (docs/01–docs/06, Ch 02–Ch 06).
+  Full platform deploy — foundation, workloads, and observability.
 
 .DESCRIPTION
   Multi-pass deploy that brings up the whole platform incrementally:

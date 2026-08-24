@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy.sh — Full platform deploy, all phases (docs/01–docs/06, Ch 02–Ch 06).
+# deploy.sh — Full platform deploy: foundation, workloads, and observability.
 #
 # Multi-pass deploy that brings up the whole platform incrementally:
 #   1. terraform apply — foundation only (ACR, Postgres, storage, identities)

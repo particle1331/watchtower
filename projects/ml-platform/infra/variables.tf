@@ -84,6 +84,30 @@ variable "train_schedule_cron" {
   description = "UTC cron for the nightly retrain Job; empty disables the schedule."
 }
 
+variable "eval_data_source" {
+  type        = string
+  default     = "https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv"
+  description = "Default held-out CSV source for the classical evaluation Job."
+}
+
+variable "eval_model_name" {
+  type        = string
+  default     = "wine-quality"
+  description = "Default registered model evaluated by the ACA evaluation Job."
+}
+
+variable "eval_model_version" {
+  type        = string
+  default     = "1"
+  description = "Fallback evaluation version when no execution override is supplied."
+}
+
+variable "eval_max_rmse" {
+  type        = number
+  default     = 0.8
+  description = "Default maximum RMSE accepted by evaluation."
+}
+
 variable "batch_image" {
   type        = string
   default     = ""
@@ -118,6 +142,25 @@ variable "dashboard_image" {
   type        = string
   default     = ""
   description = "Pinned dashboard image (by digest). Empty until the dashboard image is built."
+}
+
+variable "dashboard_auth_client_id" {
+  type        = string
+  default     = ""
+  description = "Entra app-registration client ID for dashboard Easy Auth."
+}
+
+variable "dashboard_auth_client_secret" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Entra app-registration client secret for dashboard Easy Auth."
+}
+
+variable "dashboard_operator_group_id" {
+  type        = string
+  default     = ""
+  description = "Entra group object ID allowed to trigger dashboard workflows."
 }
 
 variable "alert_action_group_id" {

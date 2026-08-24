@@ -30,10 +30,6 @@ output "postgres_server_name" {
   value = module.foundation.postgres_server_name
 }
 
-output "grafana_endpoint" {
-  value = module.foundation.grafana_endpoint
-}
-
 output "identity_client_ids" {
   value = module.foundation.identity_client_ids
 }
@@ -53,6 +49,11 @@ output "train_job_name" {
   description = "Empty until the training image is built and applied."
 }
 
+output "eval_job_name" {
+  value       = length(module.eval_job) > 0 ? module.eval_job[0].job_name : ""
+  description = "Empty until the train/eval image is built and applied."
+}
+
 output "batch_job_name" {
   value       = length(module.batch_job) > 0 ? module.batch_job[0].batch_job_name : ""
   description = "Empty until the batch image is built and applied."
@@ -66,6 +67,16 @@ output "serving_url" {
 output "dashboard_url" {
   value       = length(module.dashboard) > 0 ? module.dashboard[0].dashboard_url : ""
   description = "Empty until the dashboard image is built and applied."
+}
+
+output "dashboard_auth_client_id" {
+  value       = var.dashboard_auth_client_id
+  description = "Audience/client ID used for authenticated dashboard API calls."
+}
+
+output "dashboard_auth_callback_url" {
+  value       = length(module.dashboard) > 0 ? module.dashboard[0].auth_callback_url : ""
+  description = "Web redirect URI required by the dashboard Entra app registration."
 }
 
 output "llm_register_job_name" {

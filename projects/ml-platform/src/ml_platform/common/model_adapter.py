@@ -1,4 +1,4 @@
-"""Shared model loading and input/output adaptation (docs/05, docs/03).
+"""Shared model loading and input/output adaptation.
 
 The local Compose demo and the ACA workloads use the same MLflow model
 artifacts.  ``pyfunc`` is the common loading interface: sklearn models expose

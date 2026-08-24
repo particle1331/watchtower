@@ -1,5 +1,5 @@
 ###############################################################################
-# Managed Redis broker + KEDA scale rule (docs/04 upgrade path — Ch 09).
+# Optional managed Redis broker + KEDA scale rule.
 # Adopted ONLY when the results-DB continuation model can no longer keep up
 # with fan-out. Do not provision this in the baseline.
 ###############################################################################

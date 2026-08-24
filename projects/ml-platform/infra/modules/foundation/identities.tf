@@ -1,5 +1,5 @@
 ###############################################################################
-# Per-workload managed identities + least-privilege role assignments (docs/01).
+# Per-workload managed identities + least-privilege role assignments.
 #
 # Every workload gets its OWN user-assigned identity with the minimum roles it
 # needs. No workload shares an identity; none gets broad Contributor. Two
@@ -8,8 +8,8 @@
 # roles for exactly those actions.
 #
 # NOTE: writing role assignments needs Owner or User Access Administrator on the
-# scope. Contributor cannot. See docs/01 — Open decisions (grant requested,
-# RG-scoped, by objectId).
+# scope. Contributor cannot. Request the grant at resource-group scope by
+# object ID.
 ###############################################################################
 
 locals {

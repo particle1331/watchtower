@@ -47,10 +47,6 @@ output "postgres_server_name" {
   value = azurerm_postgresql_flexible_server.pg.name
 }
 
-output "grafana_endpoint" {
-  value = azurerm_dashboard_grafana.grafana.endpoint
-}
-
 output "log_analytics_workspace_id" {
   value       = azurerm_log_analytics_workspace.law.id
   description = "Log Analytics workspace ID; used by the observability module for alert rules."

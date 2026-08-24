@@ -1,7 +1,7 @@
 # Self-hosted MLflow tracking + registry server.
 #
-# Pinned MLflow and driver versions (docs/00: we control the exact version, unlike
-# Azure ML managed MLflow). Postgres metadata backend + Blob artifact store, both
+# Pinned MLflow and driver versions let us control the exact version instead of
+# inheriting Azure ML's managed version. Postgres metadata backend + Blob artifact store, both
 # reached with the id-mlflow managed identity (no passwords). Pin the base image
 # by digest in real builds; a tag is shown here for readability.
 FROM python:3.11-slim

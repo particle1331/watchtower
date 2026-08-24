@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ml_platform ./ml_platform
 COPY src/train_job/train.py ./train.py
+COPY src/train_job/evaluate.py ./evaluate.py
 COPY src/batch_job/score.py ./score.py
 COPY demo/runner/app.py ./app.py
 

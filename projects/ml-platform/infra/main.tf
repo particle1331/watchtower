@@ -1,6 +1,6 @@
 ###############################################################################
 # Root — composes the Phase 0 foundation and (once its image exists) the
-# self-hosted MLflow App. See docs/01. Deploy in two passes via deploy.ps1:
+# self-hosted MLflow App. Deploy in two passes via deploy.ps1:
 #   1. apply with mlflow_image = ""     -> foundation only (creates ACR)
 #   2. build+push MLflow image to ACR, run grants.sql, then apply with the digest
 ###############################################################################
@@ -17,6 +17,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.0"
+    }
   }
 
   # Local state for the dev MVP; prod uses a remote azurerm (Storage) backend.
@@ -27,6 +31,8 @@ provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
 }
+
+data "azurerm_client_config" "current" {}
 
 module "foundation" {
   source = "./modules/foundation"
@@ -59,7 +65,7 @@ module "mlflow_app" {
   tags                         = var.tags
 }
 
-# Training / evaluation ACA Job (Phase 1, docs/02). Deployed once its image is
+# Training ACA Job. Deployed once its image is
 # built AND the MLflow App exists (it needs the tracking URI). Same two-pass
 # pattern: foundation + MLflow first, then supply train_image.
 module "train_job" {
@@ -81,7 +87,34 @@ module "train_job" {
   tags                         = var.tags
 }
 
-# Shared LLM registration/evaluation entrypoints (Phase 5, docs/03). These
+# Classical evaluation is a separate manual execution of the same pinned
+# image. Dashboard execution overrides can select the candidate version and
+# threshold without creating another Job definition per request.
+module "eval_job" {
+  source = "./modules/train_job"
+  count  = var.train_image == "" || var.mlflow_image == "" ? 0 : 1
+
+  name_prefix                  = "${var.prefix}${var.environment}"
+  job_suffix                   = "eval"
+  command                      = ["python", "evaluate.py"]
+  resource_group_name          = module.foundation.resource_group_name
+  location                     = var.location
+  container_app_environment_id = module.foundation.container_app_environment_id
+  acr_login_server             = module.foundation.acr_login_server
+  train_image                  = var.train_image
+  identity_id                  = module.foundation.identity_ids["id-jobs-train"]
+  identity_client_id           = module.foundation.identity_client_ids["id-jobs-train"]
+  mlflow_tracking_uri          = module.mlflow_app[0].mlflow_url
+  postgres_fqdn                = module.foundation.postgres_fqdn
+  results_pg_principal         = "id-jobs-train"
+  data_source                  = var.eval_data_source
+  model_name                   = var.eval_model_name
+  model_version                = var.eval_model_version
+  eval_max_rmse                = var.eval_max_rmse
+  tags                         = var.tags
+}
+
+# Shared LLM registration/evaluation entrypoints. These
 # are the same scripts copied into the local runner and train image. The only
 # adapter-specific values here are the managed identity, tracking URI, Key
 # Vault URI, and optional cloud eval dataset.
@@ -128,7 +161,7 @@ module "llm_evaluate_job" {
   tags                          = var.tags
 }
 
-# Batch scoring ACA Job (Phase 2, docs/04). Deployed once its image is built AND
+# Batch scoring ACA Job. Deployed once its image is built AND
 # the MLflow App + train Job exist (it reads model versions produced by training).
 # Same two-pass pattern: supply batch_image after the image is built.
 module "batch_job" {
@@ -150,7 +183,7 @@ module "batch_job" {
   tags                         = var.tags
 }
 
-# Online serving ACA App (Phase 3, docs/05). Optional — skip if the workload is
+# Online serving ACA App. Optional — skip if the workload is
 # batch-only. Deployed once its image is built AND a concrete model version is
 # pinned. Two-pass: supply serving_image + serving_model_version.
 module "serving_app" {
@@ -170,7 +203,7 @@ module "serving_app" {
   tags                         = var.tags
 }
 
-# Observability alert rules (Phase 4, docs/06). Always provisioned once the
+# Observability alert rules. Always provisioned once the
 # foundation exists; action_group_id is optional (empty = no notifications).
 module "observability" {
   source = "./modules/observability"
@@ -184,7 +217,7 @@ module "observability" {
   tags                       = var.tags
 }
 
-# Workflow dashboard ACA App (Phase 4, docs/06). Deployed once its image is
+# Workflow dashboard ACA App. Deployed once its image is
 # built; two-pass on dashboard_image.
 module "dashboard" {
   source = "./modules/dashboard"
@@ -200,7 +233,13 @@ module "dashboard" {
   postgres_fqdn                = module.foundation.postgres_fqdn
   results_pg_principal         = "id-dashboard"
   mlflow_url                   = length(module.mlflow_app) > 0 ? module.mlflow_app[0].mlflow_url : ""
-  grafana_url                  = module.foundation.grafana_endpoint
+  auth_tenant_id               = data.azurerm_client_config.current.tenant_id
+  auth_client_id               = var.dashboard_auth_client_id
+  auth_client_secret           = var.dashboard_auth_client_secret
+  operator_group_id            = var.dashboard_operator_group_id
   subscription_id              = var.subscription_id
+  train_job_name               = try(module.train_job[0].job_name, "")
+  eval_job_name                = try(module.eval_job[0].job_name, "")
+  batch_job_name               = try(module.batch_job[0].batch_job_name, "")
   tags                         = var.tags
 }

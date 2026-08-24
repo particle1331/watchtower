@@ -1,4 +1,4 @@
-# Training / evaluation ACA Job image (docs/02).
+# Training / evaluation ACA Job image.
 # Pinned base + deps + the ml_platform package. The image digest is what makes a
 # run reproducible, so builds are content-addressed and referenced by digest.
 FROM python:3.11-slim

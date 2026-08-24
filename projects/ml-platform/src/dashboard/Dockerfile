@@ -1,5 +1,5 @@
-# Dashboard ACA App image (docs/06).
-# Catalog + launcher: reads results DB, starts Jobs, deep-links to Grafana/MLflow.
+# Dashboard ACA App image.
+# Catalog + launcher: reads results DB, starts Jobs, and deep-links to MLflow.
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \

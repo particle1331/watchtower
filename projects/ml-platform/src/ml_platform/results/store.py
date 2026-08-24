@@ -1,4 +1,4 @@
-"""Results DB store — insert/update rows with parent/child helpers (docs/04).
+"""Results DB store — insert/update rows with parent/child helpers.
 
 All writes go through this module; the connection uses the same Entra managed-
 identity token as ``common/results.py``.  A no-op guard (``PGHOST`` unset) keeps

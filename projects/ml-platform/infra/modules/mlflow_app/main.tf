@@ -1,6 +1,6 @@
 ###############################################################################
-# Self-hosted MLflow — an ACA App running our own pinned MLflow image (docs/00,
-# docs/02). Postgres `mlflow` DB is the metadata backend; a Blob container is the
+# Self-hosted MLflow — an ACA App running our own pinned MLflow image. Postgres
+# `mlflow` DB is the metadata backend; a Blob container is the
 # artifact store. The App runs as `id-mlflow` and authenticates to both with that
 # managed identity (no passwords). The registered model VERSION produced here is
 # the canonical model identity used by serving and batch inference.

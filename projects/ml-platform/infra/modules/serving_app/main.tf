@@ -1,5 +1,5 @@
 ###############################################################################
-# Online serving ACA App (docs/05). A long-running ACA App that loads an exact
+# Online serving ACA App. A long-running ACA App that loads an exact
 # MLflow model version at startup and exposes an HTTP inference endpoint. Runs
 # as `id-serving` with read-only access to MLflow artefacts — no write access
 # to the registry or training data. The served version is pinned in the App

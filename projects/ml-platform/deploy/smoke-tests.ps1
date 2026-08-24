@@ -1,17 +1,17 @@
 #requires -Version 7.0
 <#
 .SYNOPSIS
-  End-to-end smoke tests for the ML platform golden path (docs/07, Ch 10).
+  Azure adapter smoke tests for the ML platform golden path.
 
 .DESCRIPTION
   Verifies acceptance evidence for each phase against a running deployed platform.
   Run after `deploy.ps1` has completed all passes.
 
   Phase 0 (Foundation):    MLflow reachable; ACR, Postgres, Storage exist.
-  Phase 1 (Training):      Trigger train Job; confirm registered version + results row.
+  Phase 1 (Training/eval): Trigger train, resolve its version, then evaluate it.
   Phase 2 (Batch):         Trigger batch Job; poll execution + parent row to SUCCESS.
   Phase 3 (Serving):       /readyz reports exact version; test a prediction.
-  Phase 4 (Observability): Dashboard /api/runs returns rows; /healthz alive.
+  Phase 4 (Operations):    Dashboard /healthz is public; data routes require auth.
   Phase 5 (LLM):           pyfunc version loads via models:/ URI (structure check only).
 
 .EXAMPLE
@@ -33,6 +33,7 @@ try {
   $servingUrl  = terraform output -raw serving_url 2>$null
   $dashUrl     = terraform output -raw dashboard_url 2>$null
   $trainJob    = terraform output -raw train_job_name 2>$null
+  $evalJob     = terraform output -raw eval_job_name 2>$null
   $batchJob    = terraform output -raw batch_job_name 2>$null
 }
 finally { Pop-Location }
@@ -56,17 +57,6 @@ function Wait-JobExecution([string]$jobName, [string]$executionName, [string]$la
   return $status
 }
 
-function Assert-LatestBatchResult([string]$dashboardUrl) {
-  if ($dashboardUrl -eq '') { Assert $false 'Dashboard URL is empty; cannot verify the batch results row'; return }
-  try {
-    $runs = Invoke-RestMethod "$dashboardUrl/api/runs?limit=50" -TimeoutSec 10
-    $success = @($runs | Where-Object {
-      $_.name -like 'batch:score-*' -and $_.status -eq 'SUCCESS'
-    }).Count -gt 0
-    Assert $success 'Dashboard results API contains a successful batch parent row'
-  } catch { Assert $false "Dashboard results API after batch execution: $_" }
-}
-
 # --- Phase 0: Foundation + MLflow reachable ---------------------------------
 Write-Host "`n[Phase 0] Foundation" -ForegroundColor Cyan
 Assert ($mlflowUrl -ne "") "MLflow URL is non-empty"
@@ -77,6 +67,7 @@ try {
 
 # --- Phase 1: Training Job --------------------------------------------------
 Write-Host "`n[Phase 1] Training" -ForegroundColor Cyan
+$modelVersion = 0
 if ($trainJob -ne "") {
   Write-Host "  Triggering train Job ($trainJob)..."
   $execJson = az containerapp job start --name $trainJob --resource-group (
@@ -91,8 +82,24 @@ if ($trainJob -ne "") {
       $status = az containerapp job execution show --name $trainJob --job-execution-name $execName --output tsv --query "properties.status" 2>$null
     } while ($status -notin @('Succeeded','Failed','Stopped','Degraded') -and (Get-Date) -lt $deadline)
     Assert ($status -eq 'Succeeded') "Train Job execution succeeded (status=$status)"
+    try {
+      $modelVersions = Invoke-RestMethod "$mlflowUrl/api/2.0/mlflow/registered-models/get-latest-versions?name=wine-quality" -TimeoutSec 10
+      $modelVersion = ($modelVersions.model_versions | ForEach-Object { [int]$_.version } | Measure-Object -Maximum).Maximum
+      Assert ($modelVersion -gt 0) "Training produced a resolvable wine-quality version (got: $modelVersion)"
+    } catch { Assert $false "Resolve trained model version: $_" }
   } else { Write-Host "  (train job not deployed, skipping)" -ForegroundColor Yellow }
 } else { Write-Host "  (train_job_name empty, skipping Phase 1)" -ForegroundColor Yellow }
+
+if ($evalJob -ne '' -and $modelVersion -gt 0) {
+  Write-Host "  Triggering eval Job ($evalJob) for version $modelVersion..."
+  $evalJson = az containerapp job start --name $evalJob --resource-group (
+    Push-Location $InfraDir; terraform output -raw resource_group_name; Pop-Location
+  ) --container-name eval --args '--version' "$modelVersion" '--registered-name' 'wine-quality' --output json 2>$null
+  if ($evalJson) {
+    $evalName = ($evalJson | ConvertFrom-Json).name
+    Wait-JobExecution $evalJob $evalName 'Evaluation Job' | Out-Null
+  } else { Assert $false 'Evaluation Job start returned no execution' }
+} else { Assert $false 'Evaluation Job or candidate model version is unavailable' }
 
 # --- Phase 2: Batch Job -----------------------------------------------------
 Write-Host "`n[Phase 2] Batch" -ForegroundColor Cyan
@@ -103,7 +110,6 @@ if ($batchJob -ne "") {
   if ($batchExecJson) {
     $batchExecName = ($batchExecJson | ConvertFrom-Json).name
     Wait-JobExecution $batchJob $batchExecName 'Batch Job' | Out-Null
-    Assert-LatestBatchResult $dashUrl
   } else {
     Assert $false 'Batch Job start returned no execution'
   }
@@ -128,9 +134,14 @@ if ($dashUrl -ne "") {
   try {
     $health = Invoke-RestMethod "$dashUrl/healthz" -TimeoutSec 10
     Assert ($health.status -eq 'alive') "Dashboard /healthz status=alive"
-    $runs = Invoke-RestMethod "$dashUrl/api/runs?limit=5" -TimeoutSec 10
-    Assert ($null -ne $runs) "Dashboard /api/runs returns a response"
   } catch { Assert $false "Dashboard reachable: $_" }
+  try {
+    Invoke-WebRequest "$dashUrl/api/runs?limit=5" -MaximumRedirection 0 -TimeoutSec 10 | Out-Null
+    Assert $false 'Dashboard data route unexpectedly allowed anonymous access'
+  } catch {
+    $statusCode = [int]$_.Exception.Response.StatusCode
+    Assert ($statusCode -in @(302, 401, 403)) "Dashboard data route requires Easy Auth (status=$statusCode)"
+  }
 } else { Write-Host "  (dashboard_url empty, skipping Phase 4)" -ForegroundColor Yellow }
 
 # --- Summary ----------------------------------------------------------------

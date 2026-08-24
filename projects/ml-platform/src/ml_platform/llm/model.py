@@ -1,4 +1,4 @@
-"""MLflow pyfunc PythonModel for an LLM app (docs/03).
+"""MLflow pyfunc PythonModel for an LLM app.
 
 The artifact bundles everything that defines the app:
   - ``prompt.yaml``  — system prompt + user template (Jinja2-compatible).

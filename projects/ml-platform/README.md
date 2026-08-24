@@ -20,8 +20,10 @@ operations — and only add machinery when a concrete need forces it.
 | **Operational state** | Generic results DB (Postgres `results`) — one table for every job type |
 | **Serving** | ACA App — loads an exact `models:/name/version` at startup |
 
-Auth is managed-identity / Entra throughout — **no passwords in images or Git**.
-Infrastructure is Terraform (`azurerm ~> 4.0`), two-pass deploy, local state for dev.
+Machine auth uses managed identities; dashboard users authenticate with Entra
+Easy Auth. No passwords or client secrets live in images or Git. Development
+Terraform state is local and contains the dashboard app-registration secret, so
+protect it before sharing or moving deployment into CI.
 
 ---
 
@@ -36,7 +38,7 @@ ml-platform/
 │   │   └── llm/            # pyfunc model, artifact_builder, evaluator
 │   ├── mlflow_app/         # self-hosted MLflow container image
 │   ├── train_job/          # train.py, evaluate.py, register_llm.py, Dockerfile
-│   ├── batch_job/          # score.py, worker.py (broker upgrade), Dockerfile
+│   ├── batch_job/          # score.py + Dockerfile (worker.py is a dormant upgrade path)
 │   ├── serving_app/        # FastAPI serving App — /healthz, /readyz, /v1/predictions
 │   ├── dashboard/          # FastAPI catalog + launcher — reads results DB, starts Jobs
 │   └── train_aml/          # distributed training via AML command job (exception only)
@@ -48,20 +50,19 @@ ml-platform/
 │   ├── environments/
 │   │   └── dev.tfvars
 │   └── modules/
-│       ├── foundation/     # RG, ACR, ACA env, Postgres, storage, Grafana, 6 identities
+│       ├── foundation/     # RG, ACR, ACA env, Postgres, storage, logs, 6 identities
 │       ├── mlflow_app/     # self-hosted MLflow ACA App
-│       ├── train_job/      # training/eval ACA Job (id-jobs-train)
+│       ├── train_job/      # reusable training/eval ACA Job adapter
 │       ├── batch_job/      # batch scoring ACA Job (id-jobs-batch)
 │       ├── llm_job/        # shared register/evaluate ACA Job adapter
 │       ├── serving_app/    # online serving ACA App (id-serving)
-│       ├── observability/  # 4 Log Analytics alert rules
-│       ├── dashboard/      # workflow catalog + launcher ACA App (id-dashboard)
+│       ├── observability/  # 2 batch-signal Log Analytics alert rules
+│       ├── dashboard/      # catalog/launcher ACA App + Easy Auth
 │       ├── aml/            # AML workspace + min-zero GPU cluster (exception only)
 │       └── broker/         # managed Redis + KEDA scale rule (conditional upgrade)
 ├── deploy/
 │   ├── deploy.ps1          # full 4-pass platform deploy
 │   └── smoke-tests.ps1     # end-to-end golden path verification
-├── docs/                   # design documents (00–08)
 └── .github/workflows/
     └── ci.yml              # build / Trivy scan / push / update ACA definitions (OIDC)
 ```
@@ -71,7 +72,7 @@ ml-platform/
 ## Prerequisites
 
 - Azure CLI (`az login`) with **User Access Administrator** on the target resource
-  group (needed for role assignments in `identities.tf`; see `docs/01` open decisions)
+  group (needed for role assignments in `identities.tf`)
 - Terraform ≥ 1.6
 - `psql` client
 - Docker (or `az acr build` for server-side builds)
@@ -89,7 +90,17 @@ Create `infra/secret.auto.tfvars` (gitignored, auto-loaded by Terraform):
 subscription_id               = "<your-subscription-id>"
 postgres_admin_object_id      = "<your-entra-object-id>"
 postgres_admin_principal_name = "you@example.com"
+dashboard_auth_client_id      = "<dashboard-app-client-id>"
+dashboard_auth_client_secret  = "<dashboard-app-client-secret>"
+dashboard_operator_group_id   = "<operator-group-object-id>"
 ```
+
+The app registration can be created without a redirect URI initially. After the
+first dashboard apply, add the value of
+`terraform output -raw dashboard_auth_callback_url` as a Web redirect URI, then
+configure its token to emit security-group claims and verify sign-in. The group
+claim is what lets the app distinguish operators from authenticated viewers.
+This breaks the hostname/app-registration bootstrap cycle.
 
 Set your deployer IP in `infra/environments/dev.tfvars`:
 
@@ -109,13 +120,17 @@ cd projects/ml-platform
 
 Four passes run automatically:
 
-1. **Foundation** — ACR, Postgres, storage, 6 managed identities
+1. **Foundation** — ACR, Postgres, storage, Log Analytics, 6 managed identities
 2. **MLflow** — build + push image; run `grants.sql` (Postgres principals) and
    `schema.sql` (results table DDL); apply MLflow App
 3. **Images** — build + push train, batch, serving, and dashboard images
 4. **Full apply** — all modules active; smoke tests run at the end
 
-To promote a model version to serving after training:
+Evaluate a candidate before promoting it. The same train image supplies the
+separate eval Job, and `demo/promote.py` rejects a version without a passing
+evaluation record for its exact `models:/name/version` URI.
+
+To pin an already evaluated version during deployment:
 
 ```powershell
 ./deploy/deploy.ps1 ... -ServingModelVersion 3
@@ -127,9 +142,10 @@ To promote a model version to serving after training:
 ./deploy/smoke-tests.ps1 -TfVarsFile infra/environments/dev.tfvars
 ```
 
-Checks all phases: MLflow `/health`, train and batch Job executions to terminal
-success, the batch results row, serving `/readyz` and prediction model identity,
-and dashboard `/api/runs`.
+Checks MLflow health, train/eval/batch executions, serving readiness and model
+identity, dashboard health, and the anonymous-access boundary. Authenticated
+operator/viewer checks use real Entra principals and remain deployment
+acceptance steps.
 
 ---
 
@@ -166,7 +182,9 @@ Every job writes to one `results` table. Valid `status` values:
 
 Batch workflows use **parent/child rows**: one parent per batch, one child per
 chunk/item. The continuation rule (`ml_platform/results/continuation.py`) drives
-"run until done" as a stateless SQL query — no orchestration engine.
+bounded retries during one execution. A fresh invocation creates a fresh parent
+unless its caller deliberately reuses `RESULTS_RUN_ID`; automatic cross-execution
+crash resume is not part of the baseline.
 
 ---
 
@@ -190,17 +208,3 @@ not an implementation detail.
    `infra/modules/aml/` are provisioned only when explicitly approved.
 
 ---
-
-## Design documents
-
-| Doc | Covers |
-|---|---|
-| `docs/00-production-architecture.md` | Target planes, fixed decisions, cross-document invariants |
-| `docs/01-platform-foundation.md` | Azure resources, identities, RBAC, IaC, networking |
-| `docs/02-reproducible-ml.md` | Training/eval as ACA Jobs, self-hosted MLflow, lineage |
-| `docs/03-llm-release-artifacts.md` | MLflow `pyfunc` artifact, LLM evaluator |
-| `docs/04-periodic-and-batch-workflows.md` | Scheduling, results DB, continuation rule |
-| `docs/05-online-serving.md` | ACA App HTTP serving, exact version pinning, rollback |
-| `docs/06-release-and-operations.md` | CI/CD, promotion, rollback, observability, dashboard |
-| `docs/07-delivery-journey.md` | Golden path and phased progress register |
-| `docs/08-multi-gpu-training.md` | Admission-gated AML clusters for distributed training |

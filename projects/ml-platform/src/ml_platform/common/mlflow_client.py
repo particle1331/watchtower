@@ -4,7 +4,7 @@ The training and batch job images call :func:`configure_mlflow` at startup. The
 tracking URI is the self-hosted MLflow App's HTTPS ingress (Phase 0); the same
 server serves the model registry and proxies artifact access, so a single URI is
 enough. MLflow is self-hosted at a pinned version, so this lineage path is under
-our control and not subject to a managed provider's version lag (docs/00, docs/02).
+our control and not subject to a managed provider's version lag.
 """
 
 

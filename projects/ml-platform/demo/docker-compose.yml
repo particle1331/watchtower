@@ -200,7 +200,6 @@ services:
       RESULTS_DB: results
       MLFLOW_TRACKING_URI: http://mlflow:5000
       MLFLOW_UI_URL: http://localhost:${DEMO_MLFLOW_PORT:-15000}
-      GRAFANA_URL: ""
       TRIGGER_BACKEND: local
       RUNNER_URL: http://runner:8090
       PORT: "8080"

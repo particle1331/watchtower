@@ -1,4 +1,4 @@
-"""Build MLflow-tracked datasets from a source (docs/02).
+"""Build MLflow-tracked datasets from a source.
 
 ``mlflow.data.from_pandas(...)`` captures the source location, a content
 **digest** (hash), and the schema, so a run records the *exact* data it consumed

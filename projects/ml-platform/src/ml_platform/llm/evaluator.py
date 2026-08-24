@@ -1,4 +1,4 @@
-"""LLM evaluator — scores a candidate pyfunc version against a fixed eval set (docs/03).
+"""LLM evaluator — scores a candidate pyfunc version against a fixed eval set.
 
 The evaluator runs as an ACA Job bound to ``id-jobs-train``. It:
   1. Loads the candidate ``models:/<name>/<version>`` (pyfunc).
@@ -13,10 +13,10 @@ Eval JSONL format (one JSON object per line):
   ``expected`` may be omitted if only latency/token metrics are needed.
 """
 
-
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -26,6 +26,10 @@ import pandas as pd
 
 from ml_platform.common.mlflow_client import configure_mlflow
 from ml_platform.common.results import record_run
+
+
+class EvaluationGateFailed(RuntimeError):
+    """Raised inside run contexts so a rejected candidate is recorded as failed."""
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -67,100 +71,114 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def load_eval_dataset(path: str) -> list[dict[str, Any]]:
     if path.startswith("http://") or path.startswith("https://"):
         import httpx
+
         rows = [json.loads(line) for line in httpx.get(path).text.splitlines() if line.strip()]
     else:
-        rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+        rows = [
+            json.loads(line)
+            for line in Path(path).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
     if not rows:
         raise ValueError(f"Eval dataset is empty: {path!r}")
     return rows
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     configure_mlflow(args.experiment)
 
     model_uri = f"models:/{args.model_name}/{args.model_version}"
     run_name = f"eval:{args.model_name}/{args.model_version}"
 
-    with record_run(run_name) as rec, mlflow.start_run(run_name=run_name):
-        mlflow.log_params({
-            "model_name": args.model_name,
-            "model_version": args.model_version,
-            "eval_dataset": args.eval_dataset,
-        })
-
-        # (1) Load candidate version.
-        model = mlflow.pyfunc.load_model(model_uri)
-
-        # (2) Load eval dataset.
-        rows = load_eval_dataset(args.eval_dataset)
-        inputs = pd.DataFrame([{"input": r["input"]} for r in rows])
-        expected = [r.get("expected") for r in rows]
-
-        # (3) Run predictions with latency measurement.
-        t0 = time.perf_counter()
-        preds_df: pd.DataFrame = model.predict(inputs)
-        elapsed = time.perf_counter() - t0
-
-        predictions = preds_df["content"].tolist()
-        prompt_tokens = preds_df["prompt_tokens"].tolist()
-        completion_tokens = preds_df["completion_tokens"].tolist()
-
-        # (4) Compute metrics.
-        n = len(rows)
-        avg_latency = elapsed / n
-        avg_prompt_tokens = sum(prompt_tokens) / n
-        avg_completion_tokens = sum(completion_tokens) / n
-
-        exact_matches = sum(
-            1 for pred, exp in zip(predictions, expected, strict=True)
-            if exp is not None and pred.strip() == str(exp).strip()
-        )
-        n_with_expected = sum(1 for e in expected if e is not None)
-        exact_match_frac = exact_matches / n_with_expected if n_with_expected > 0 else 0.0
-
-        metrics = {
-            "exact_match": exact_match_frac,
-            "n_samples": n,
-            "avg_latency_s": avg_latency,
-            "avg_prompt_tokens": avg_prompt_tokens,
-            "avg_completion_tokens": avg_completion_tokens,
-        }
-        mlflow.log_metrics(metrics)
-
-        # Log the eval dataset + per-row results as artifacts.
-        results_df = inputs.copy()
-        results_df["prediction"] = predictions
-        results_df["expected"] = expected
-        results_df["exact_match"] = [
-            pred.strip() == str(exp).strip() if exp is not None else None
-            for pred, exp in zip(predictions, expected, strict=True)
-        ]
-        results_path = "/tmp/eval_results.csv"  # noqa: S108
-        results_df.to_csv(results_path, index=False)
-        mlflow.log_artifact(results_path, artifact_path="eval")
-
-        # (5) Threshold gate.
-        failures = []
-        if args.min_exact_match > 0 and exact_match_frac < args.min_exact_match:
-            failures.append(
-                f"exact_match {exact_match_frac:.3f} < required {args.min_exact_match:.3f}"
-            )
-        if args.max_avg_tokens > 0 and avg_completion_tokens > args.max_avg_tokens:
-            failures.append(
-                f"avg_completion_tokens {avg_completion_tokens:.1f} > max {args.max_avg_tokens:.1f}"
+    try:
+        with record_run(run_name) as rec, mlflow.start_run(run_name=run_name):
+            mlflow.log_params(
+                {
+                    "model_name": args.model_name,
+                    "model_version": args.model_version,
+                    "eval_dataset": args.eval_dataset,
+                }
             )
 
-        rec.update(metrics)
+            # (1) Load candidate version.
+            model = mlflow.pyfunc.load_model(model_uri)
 
-        if failures:
-            msg = "; ".join(failures)
-            mlflow.set_tag("gate_result", "FAIL")
-            mlflow.set_tag("gate_failures", msg)
-            raise SystemExit(f"Evaluation gate failed: {msg}")
+            # (2) Load eval dataset.
+            rows = load_eval_dataset(args.eval_dataset)
+            inputs = pd.DataFrame([{"input": r["input"]} for r in rows])
+            expected = [r.get("expected") for r in rows]
 
-        mlflow.set_tag("gate_result", "PASS")
+            # (3) Run predictions with latency measurement.
+            t0 = time.perf_counter()
+            preds_df: pd.DataFrame = model.predict(inputs)
+            elapsed = time.perf_counter() - t0
+
+            predictions = preds_df["content"].tolist()
+            prompt_tokens = preds_df["prompt_tokens"].tolist()
+            completion_tokens = preds_df["completion_tokens"].tolist()
+
+            # (4) Compute metrics.
+            n = len(rows)
+            avg_latency = elapsed / n
+            avg_prompt_tokens = sum(prompt_tokens) / n
+            avg_completion_tokens = sum(completion_tokens) / n
+
+            exact_matches = sum(
+                1
+                for pred, exp in zip(predictions, expected, strict=True)
+                if exp is not None and pred.strip() == str(exp).strip()
+            )
+            n_with_expected = sum(1 for e in expected if e is not None)
+            exact_match_frac = exact_matches / n_with_expected if n_with_expected > 0 else 0.0
+
+            metrics = {
+                "exact_match": exact_match_frac,
+                "n_samples": n,
+                "avg_latency_s": avg_latency,
+                "avg_prompt_tokens": avg_prompt_tokens,
+                "avg_completion_tokens": avg_completion_tokens,
+            }
+            mlflow.log_metrics(metrics)
+
+            # Log the eval dataset + per-row results as artifacts.
+            results_df = inputs.copy()
+            results_df["prediction"] = predictions
+            results_df["expected"] = expected
+            results_df["exact_match"] = [
+                pred.strip() == str(exp).strip() if exp is not None else None
+                for pred, exp in zip(predictions, expected, strict=True)
+            ]
+            results_path = "/tmp/eval_results.csv"  # noqa: S108
+            results_df.to_csv(results_path, index=False)
+            mlflow.log_artifact(results_path, artifact_path="eval")
+
+            # (5) Threshold gate.
+            failures = []
+            if args.min_exact_match > 0 and exact_match_frac < args.min_exact_match:
+                failures.append(
+                    f"exact_match {exact_match_frac:.3f} < required {args.min_exact_match:.3f}"
+                )
+            if args.max_avg_tokens > 0 and avg_completion_tokens > args.max_avg_tokens:
+                failures.append(
+                    f"avg_completion_tokens {avg_completion_tokens:.1f} > max "
+                    f"{args.max_avg_tokens:.1f}"
+                )
+
+            rec.update(metrics)
+
+            if failures:
+                msg = "; ".join(failures)
+                mlflow.set_tag("gate_result", "FAIL")
+                mlflow.set_tag("gate_failures", msg)
+                raise EvaluationGateFailed(f"Evaluation gate failed: {msg}")
+
+            mlflow.set_tag("gate_result", "PASS")
+    except EvaluationGateFailed as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

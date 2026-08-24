@@ -1,5 +1,5 @@
 ###############################################################################
-# Training / evaluation ACA Job (docs/02). An ephemeral, image-pinned Container
+# Training / evaluation ACA Job. An ephemeral, image-pinned Container
 # Apps Job that runs as `id-jobs-train`: it logs to the self-hosted MLflow and
 # writes a results-DB record. Manual trigger for ad-hoc/backfill runs; a
 # scheduled trigger drives the nightly retrain. No secrets in the image — all
@@ -7,7 +7,7 @@
 ###############################################################################
 
 resource "azurerm_container_app_job" "train" {
-  name                         = "${var.name_prefix}-job-train"
+  name                         = "${var.name_prefix}-job-${var.job_suffix}"
   resource_group_name          = var.resource_group_name
   location                     = var.location
   container_app_environment_id = var.container_app_environment_id
@@ -32,7 +32,7 @@ resource "azurerm_container_app_job" "train" {
     replica_completion_count = 1
   }
 
-  # Nightly retrain (docs/02). Cron is UTC; disabled when schedule_cron == "".
+  # Optional schedule. Cron is UTC; disabled when schedule_cron == "".
   dynamic "schedule_trigger_config" {
     for_each = var.schedule_cron == "" ? [] : [var.schedule_cron]
     content {
@@ -44,10 +44,11 @@ resource "azurerm_container_app_job" "train" {
 
   template {
     container {
-      name   = "train"
-      image  = var.train_image
-      cpu    = var.cpu
-      memory = var.memory
+      name    = var.job_suffix
+      image   = var.train_image
+      cpu     = var.cpu
+      memory  = var.memory
+      command = length(var.command) == 0 ? null : var.command
 
       # DefaultAzureCredential inside the container selects THIS identity.
       env {
@@ -76,6 +77,22 @@ resource "azurerm_container_app_job" "train" {
       env {
         name  = "IMAGE_DIGEST"
         value = var.train_image
+      }
+      env {
+        name  = "DATA_SOURCE"
+        value = var.data_source
+      }
+      env {
+        name  = "MODEL_NAME"
+        value = var.model_name
+      }
+      env {
+        name  = "MODEL_VERSION"
+        value = var.model_version
+      }
+      env {
+        name  = "EVAL_MAX_RMSE"
+        value = tostring(var.eval_max_rmse)
       }
     }
   }

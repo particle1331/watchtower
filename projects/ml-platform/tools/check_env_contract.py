@@ -35,14 +35,18 @@ ALLOWED_MISSING: dict[str, str] = {
     # Dashboard production configuration, set on the ACA App definition.
     "AZURE_SUBSCRIPTION_ID": "dashboard ACA App definition (production)",
     "AZURE_RESOURCE_GROUP": "dashboard ACA App definition (production)",
-    "ACA_ENV_NAME": "dashboard ACA App definition (production)",
-    # LLM release-artifact secrets (docs/03); Key Vault-backed in production.
+    "TRAIN_JOB_NAME": "dashboard ACA App definition from Terraform output",
+    "EVAL_JOB_NAME": "dashboard ACA App definition from Terraform output",
+    "BATCH_JOB_NAME": "dashboard ACA App definition from Terraform output",
+    "DASHBOARD_OPERATOR_GROUP_ID": "dashboard ACA App definition from Entra config",
+    "EVAL_MAX_RMSE": "evaluation ACA Job default; evaluate.py defaults locally",
+    # LLM release-artifact secrets; Key Vault-backed in production.
     "MODEL_API_KEY": "Key Vault secret, injected into the LLM evaluation job",
     "MODEL_API_KEY_SECRET": "Key Vault secret name, set by the job definition",
     "KEY_VAULT_URL": "job definition pointing at the platform Key Vault",
-    # Broker upgrade path (docs/04); adopted only when infra/modules/broker deploys.
+    # Dormant broker upgrade path; absent from the baseline deployment.
     "REDIS_URL": "managed Redis connection, set when the broker module is deployed",
-    # Distributed-training runtime variables (train_aml exception path, docs/08).
+    # Distributed-training runtime variables (chapter 14 exception path).
     "LOCAL_RANK": "torch distributed launcher, injected at process start",
     "OMPI_COMM_WORLD_LOCAL_RANK": "OpenMPI launcher, injected at process start",
     # Per-execution correlation id, injected at runtime rather than statically:
@@ -147,15 +151,11 @@ def _print_table(title: str, headers: tuple[str, ...], rows: list[tuple[str, ...
         max(len(header), *(len(row[column]) for row in rows))
         for column, header in enumerate(headers)
     ]
-    ruler = "  ".join(
-        header.ljust(width) for header, width in zip(headers, widths, strict=True)
-    )
+    ruler = "  ".join(header.ljust(width) for header, width in zip(headers, widths, strict=True))
     print(f"  {ruler}")
     print(f"  {'-' * len(ruler)}")
     for row in rows:
-        cells = (
-            cell.ljust(width) for cell, width in zip(row, widths, strict=True)
-        )
+        cells = (cell.ljust(width) for cell, width in zip(row, widths, strict=True))
         print(f"  {'  '.join(cells).rstrip()}")
     print()
 
