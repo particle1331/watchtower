@@ -52,6 +52,7 @@ ml-platform/
 │       ├── mlflow_app/     # self-hosted MLflow ACA App
 │       ├── train_job/      # training/eval ACA Job (id-jobs-train)
 │       ├── batch_job/      # batch scoring ACA Job (id-jobs-batch)
+│       ├── llm_job/        # shared register/evaluate ACA Job adapter
 │       ├── serving_app/    # online serving ACA App (id-serving)
 │       ├── observability/  # 4 Log Analytics alert rules
 │       ├── dashboard/      # workflow catalog + launcher ACA App (id-dashboard)
@@ -126,8 +127,9 @@ To promote a model version to serving after training:
 ./deploy/smoke-tests.ps1 -TfVarsFile infra/environments/dev.tfvars
 ```
 
-Checks all phases: MLflow `/health`, train Job execution, serving `/readyz` version
-report, dashboard `/api/runs`.
+Checks all phases: MLflow `/health`, train and batch Job executions to terminal
+success, the batch results row, serving `/readyz` and prediction model identity,
+and dashboard `/api/runs`.
 
 ---
 

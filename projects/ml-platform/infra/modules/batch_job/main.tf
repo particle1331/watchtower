@@ -83,7 +83,7 @@ resource "azurerm_container_app_job" "batch" {
         name  = "DATA_SOURCE"
         value = var.data_source
       }
-      # Model name to score with (reads the @champion alias by default).
+      # Model name to score with (reads the @production alias by default).
       env {
         name  = "MODEL_NAME"
         value = var.model_name

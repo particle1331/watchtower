@@ -22,17 +22,23 @@ import uuid
 import mlflow
 import pandas as pd
 from ml_platform.common.mlflow_client import configure_mlflow
+from ml_platform.common.model_adapter import frame_for_batch
 from ml_platform.results import store
 from ml_platform.results.continuation import BatchItemFailure, run_until_done
 
 _CHUNK_SIZE = int(os.environ.get("BATCH_CHUNK_SIZE", "100"))
+_DATA_SOURCE = os.environ.get("DATA_SOURCE")
 _MODEL_NAME = os.environ.get("MODEL_NAME", "wine-quality")
 _TRIGGERED_BY = os.environ.get("TRIGGERED_BY", "schedule")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Batch scoring ACA Job.")
-    p.add_argument("--data-source", required=True, help="CSV URL or path to score")
+    p.add_argument(
+        "--data-source",
+        default=_DATA_SOURCE,
+        help="CSV URL or path to score; defaults to DATA_SOURCE",
+    )
     p.add_argument("--delimiter", default=";", help="CSV delimiter")
     p.add_argument(
         "--target",
@@ -43,13 +49,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--model-version",
         default=None,
-        help="Pinned model version; omit to use latest Production alias.",
+        help="Pinned model version; omit to use the production alias.",
     )
     p.add_argument("--experiment", default="wine-quality", help="MLflow experiment (tracking context)")
     p.add_argument("--chunk-size", type=int, default=_CHUNK_SIZE, help="Rows per child chunk")
     p.add_argument("--max-attempts", type=int, default=3, help="Max RETRY attempts per chunk")
     p.add_argument("--triggered-by", default=_TRIGGERED_BY, help="Caller identity or 'schedule'")
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    if not args.data_source:
+        p.error("--data-source or DATA_SOURCE is required")
+    if args.chunk_size < 1:
+        p.error("--chunk-size must be positive")
+    if args.max_attempts < 1:
+        p.error("--max-attempts must be positive")
+    return args
 
 
 def _load_model(model_name: str, model_version: str | None):
@@ -57,8 +70,8 @@ def _load_model(model_name: str, model_version: str | None):
     if model_version:
         uri = f"models:/{model_name}/{model_version}"
     else:
-        uri = f"models:/{model_name}@champion"
-    return mlflow.sklearn.load_model(uri)
+        uri = f"models:/{model_name}@production"
+    return mlflow.pyfunc.load_model(uri)
 
 
 def _chunks(df: pd.DataFrame, size: int) -> list[pd.DataFrame]:
@@ -76,11 +89,17 @@ def main(argv: list[str] | None = None) -> None:
 
     # --- (1) Load pinned model (read-only) ---
     model = _load_model(args.model_name, args.model_version)
-    model_ref = f"{args.model_name}/{args.model_version or 'champion'}"
+    # Keep the stored reference in the same syntax accepted by MLflow. Alias
+    # references use ``name@alias``; version references use ``name/version``.
+    model_ref = (
+        f"{args.model_name}/{args.model_version}"
+        if args.model_version
+        else f"{args.model_name}@production"
+    )
 
     # --- (2) Load data ---
     df = pd.read_csv(args.data_source, delimiter=args.delimiter)
-    feature_df = df.drop(columns=[args.target], errors="ignore")
+    feature_df = frame_for_batch(model, df, args.target)
     chunks = _chunks(feature_df, args.chunk_size)
     n_chunks = len(chunks)
 

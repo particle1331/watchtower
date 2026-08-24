@@ -8,4 +8,7 @@ pandera==0.20.4
 # Results-DB record (Entra auth) — same stack as the MLflow app entrypoint.
 psycopg[binary]==3.2.3
 azure-identity==1.17.1
+azure-keyvault-secrets==4.8.0
 azure-storage-blob==12.22.0
+httpx==0.28.1
+pyyaml==6.0.2

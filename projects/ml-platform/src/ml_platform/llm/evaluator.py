@@ -16,6 +16,7 @@ Eval JSONL format (one JSON object per line):
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -29,9 +30,21 @@ from ml_platform.common.results import record_run
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Evaluate a pyfunc LLM version.")
-    p.add_argument("--model-name", required=True, help="Registered model name")
-    p.add_argument("--model-version", required=True, help="Version to evaluate")
-    p.add_argument("--eval-dataset", required=True, help="Path or URL to eval JSONL file")
+    p.add_argument(
+        "--model-name",
+        default=os.environ.get("LLM_MODEL_NAME", "llm-app"),
+        help="Registered model name",
+    )
+    p.add_argument(
+        "--model-version",
+        default=os.environ.get("LLM_MODEL_VERSION", "1"),
+        help="Version to evaluate",
+    )
+    p.add_argument(
+        "--eval-dataset",
+        default=os.environ.get("LLM_EVAL_DATASET"),
+        help="Path or URL to eval JSONL file; defaults to LLM_EVAL_DATASET",
+    )
     p.add_argument("--experiment", default="llm-eval", help="MLflow experiment name")
     p.add_argument(
         "--min-exact-match",
@@ -45,7 +58,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=0.0,
         help="Maximum average completion_tokens allowed; 0 = skip gate",
     )
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    if not args.eval_dataset:
+        p.error("--eval-dataset or LLM_EVAL_DATASET is required")
+    return args
 
 
 def load_eval_dataset(path: str) -> list[dict[str, Any]]:

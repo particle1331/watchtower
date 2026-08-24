@@ -211,11 +211,12 @@ def pending_children(
     ]
 
 
-def finalize_parent(parent_id: str) -> str:
-    """Mark the parent SUCCESS if no children are non-terminal, else FAILURE.
+def finalize_parent(parent_id: str, *, max_attempts: int = 3) -> str:
+    """Mark the parent SUCCESS if no children are eligible, else FAILURE.
 
-    A child is non-terminal if its status is PENDING, STARTED, or RETRY.
-    Any permanent FAILURE child causes the parent to be marked FAILURE.
+    A RETRY child is still active only while it has attempts remaining. An
+    exhausted RETRY is treated as a permanent failure so a batch cannot remain
+    stuck in STARTED after the continuation loop has given up on it.
     Returns the final status string.
     """
     if not _configured():
@@ -226,12 +227,18 @@ def finalize_parent(parent_id: str) -> str:
             cur.execute(
                 """
                 SELECT
-                    COUNT(*) FILTER (WHERE status IN ('PENDING', 'STARTED', 'RETRY')) AS still_running,
-                    COUNT(*) FILTER (WHERE status = 'FAILURE') AS failures
+                    COUNT(*) FILTER (
+                        WHERE status IN ('PENDING', 'STARTED')
+                           OR (status = 'RETRY' AND attempts < %s)
+                    ) AS still_running,
+                    COUNT(*) FILTER (
+                        WHERE status = 'FAILURE'
+                           OR (status IN ('PENDING', 'RETRY') AND attempts >= %s)
+                    ) AS failures
                 FROM results
                 WHERE parent_id = %s
                 """,
-                (parent_id,),
+                (max_attempts, max_attempts, parent_id),
             )
             row = cur.fetchone()
         still_running, failures = row[0], row[1]

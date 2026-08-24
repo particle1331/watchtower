@@ -34,6 +34,11 @@ output "key_vault_id" {
   value = azurerm_key_vault.kv.id
 }
 
+output "key_vault_url" {
+  value       = azurerm_key_vault.kv.vault_uri
+  description = "Key Vault URI used by workloads to resolve runtime secrets."
+}
+
 output "postgres_fqdn" {
   value = azurerm_postgresql_flexible_server.pg.fqdn
 }

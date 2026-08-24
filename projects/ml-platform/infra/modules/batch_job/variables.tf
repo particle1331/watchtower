@@ -57,14 +57,14 @@ variable "schedule_cron" {
 
 variable "data_source" {
   type        = string
-  default     = ""
-  description = "Default data source URL/path for the scheduled run."
+  default     = "https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv"
+  description = "Default data source URL/path for the scheduled run; matches the local Compose demo."
 }
 
 variable "model_name" {
   type        = string
   default     = "wine-quality"
-  description = "Registered model name to score with (@champion alias by default)."
+  description = "Registered model name to score with (@production alias by default)."
 }
 
 variable "replica_timeout_seconds" {

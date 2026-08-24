@@ -1,6 +1,7 @@
 -- infra/results/schema.sql — Results DB DDL (docs/04).
 -- Idempotent: wrapped in IF NOT EXISTS guards so it can be run on every deploy.
--- Owned by id-jobs-train; batch/dashboard privileges are in grants.sql.
+-- The deploy administrator creates this table; grants.sql applies workload
+-- privileges after this file runs. The Compose init copy mirrors this DDL.
 
 CREATE TABLE IF NOT EXISTS results (
     id           TEXT PRIMARY KEY,                        -- UUID or deterministic hash for idempotent items

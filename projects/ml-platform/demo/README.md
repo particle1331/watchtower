@@ -9,6 +9,7 @@ same planes and job images while replacing Azure-only infrastructure:
 | Blob Storage | MinIO S3-compatible object storage |
 | MLflow ACA App | MLflow container |
 | ACA train/batch Jobs | One-shot Compose services plus the local runner |
+| Shared LLM Jobs | Profile-gated Compose Jobs using the train image |
 | Serving ACA App | FastAPI serving container |
 | Dashboard ACA App | FastAPI dashboard with local trigger buttons |
 
@@ -103,7 +104,23 @@ curl http://localhost:18000/api/results/<result-id>
 ```
 
 The local POC supports parameterized triggers; the ACA backend rejects them
-until production job argument overrides are wired in.
+for this MVP's dashboard path. Scheduled ACA Jobs receive their effective
+defaults through the Job template environment, including `DATA_SOURCE` and the
+`production` model alias. Manual cloud parameter overrides remain an explicit
+control-plane adapter decision.
+
+The LLM release path uses the same train image and entrypoints locally and in
+cloud. With `MODEL_API_KEY` set, run the profile-gated Compose Jobs:
+
+```bash
+docker compose --profile llm run --rm llm-register
+
+docker compose --profile llm run --rm llm-evaluate
+```
+
+Cloud Terraform creates manual `llm-register` and optional `llm-evaluate` ACA
+Jobs from the same train image. Set `LLM_EVAL_DATASET` for the cloud evaluator;
+its model credential is resolved from Key Vault through the workload identity.
 
 To reset the demo and get model version 1 again:
 
@@ -119,14 +136,14 @@ chosen version and recreates only the serving container with that version
 pinned. From this directory:
 
 ```bash
-python promote.py --backend local --version 2
+python promote.py --backend local --tracking-uri http://localhost:15000 --version 2
 ```
 
 The same script with `--backend aca` targets Azure Container Apps; it prints
 the `az containerapp update` command and only runs it with `--execute`.
 
-With a promoted version in place, exercise the whole golden path end to end
-(train, promote, serve, batch, results assertions):
+With a promoted version in place, exercise the local Compose golden path end to
+end (train, promote, serve, batch, results assertions):
 
 ```bash
 python golden_path.py
@@ -135,6 +152,12 @@ python golden_path.py
 Both scripts assume the stack is up (`docker compose up --build`). To lint the
 environment-variable contract between `src/` and this Compose file, run
 `python tools/check_env_contract.py`; exit code 1 lists any drift.
+
+The Azure validation adapter is separate because its trigger and authentication
+mechanisms are different. Run `deploy/smoke-tests.sh` or
+`deploy/smoke-tests.ps1` after deployment; it polls ACA executions and checks
+the same terminal status, results, readiness, model identity, and prediction
+behavior.
 
 The Compose services are intentionally a demonstration environment, not a
 production security boundary. The credentials in the file are local demo

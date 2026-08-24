@@ -23,7 +23,9 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import mlflow
+import pandas as pd
 from fastapi import FastAPI, HTTPException, Response
+from ml_platform.common.model_adapter import frame_for_instances, model_kind, prediction_values
 from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -77,12 +79,16 @@ async def _lifespan(app: FastAPI):
     log.info("Loading model from %s", model_uri)
 
     try:
-        _state.model = mlflow.sklearn.load_model(model_uri)
+        _state.model = mlflow.pyfunc.load_model(model_uri)
         _state.model_version = _MODEL_VERSION
 
         # Canary: run one prediction to confirm the model is callable.
-        import pandas as pd
-        canary = pd.DataFrame([[7.0, 0.27, 0.36, 20.7, 0.045, 45.0, 170.0, 1.001, 3.0, 0.45, 8.8]])
+        if model_kind(_state.model) == "text":
+            canary = pd.DataFrame({"input": ["health check"]})
+        else:
+            canary = pd.DataFrame(
+                [[7.0, 0.27, 0.36, 20.7, 0.045, 45.0, 170.0, 1.001, 3.0, 0.45, 8.8]]
+            )
         _state.model.predict(canary)
 
         _state.ready = True
@@ -103,11 +109,11 @@ app = FastAPI(title="ml-platform serving", lifespan=_lifespan)
 
 
 class _PredictRequest(BaseModel):
-    instances: list[list[float]]
+    instances: list[Any]
 
 
 class _PredictResponse(BaseModel):
-    predictions: list[float]
+    predictions: list[Any]
     model_name: str
     model_version: str
 
@@ -139,15 +145,15 @@ def predict(req: _PredictRequest) -> _PredictResponse:
     if not req.instances:
         raise HTTPException(status_code=422, detail="instances must be non-empty")
 
-    import pandas as pd
-    df = pd.DataFrame(req.instances)
     try:
+        df = frame_for_instances(_state.model, req.instances)
         preds = _state.model.predict(df)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        status_code = 422 if isinstance(exc, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
     return _PredictResponse(
-        predictions=preds.tolist(),
+        predictions=prediction_values(preds),
         model_name=_MODEL_NAME,
         model_version=_state.model_version,
     )

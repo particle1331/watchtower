@@ -59,7 +59,7 @@ def run_until_done(
     for iteration in range(1, max_iterations + 1):
         pending = store.pending_children(parent_id, max_attempts=max_attempts)
         if not pending:
-            break
+            return store.finalize_parent(parent_id, max_attempts=max_attempts)
 
         progress = False
         for child in pending:
@@ -76,6 +76,9 @@ def run_until_done(
             except Exception as exc:  # noqa: BLE001
                 store.mark(child_id, "RETRY", error=str(exc))
                 log.warning("Item %s transient failure (attempt %d): %s", child_id, child["attempts"] + 1, exc)
+                # RETRY is a state change.  Keep iterating so an item that
+                # failed transiently can consume its remaining attempts.
+                progress = True
 
         if not progress:
             log.error(
@@ -87,9 +90,9 @@ def run_until_done(
             return "FAILURE"
 
         log.info("Batch %s: iteration %d complete.", parent_id, iteration)
-    else:
-        log.error("Batch %s: reached max_iterations=%d — circuit breaking.", parent_id, max_iterations)
-        store.mark(parent_id, "FAILURE", error=f"circuit-breaker: max_iterations={max_iterations}")
-        return "FAILURE"
+    if not store.pending_children(parent_id, max_attempts=max_attempts):
+        return store.finalize_parent(parent_id, max_attempts=max_attempts)
 
-    return store.finalize_parent(parent_id)
+    log.error("Batch %s: reached max_iterations=%d — circuit breaking.", parent_id, max_iterations)
+    store.mark(parent_id, "FAILURE", error=f"circuit-breaker: max_iterations={max_iterations}")
+    return "FAILURE"

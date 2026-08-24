@@ -18,6 +18,10 @@ output "key_vault_name" {
   value = module.foundation.key_vault_name
 }
 
+output "key_vault_url" {
+  value = module.foundation.key_vault_url
+}
+
 output "postgres_fqdn" {
   value = module.foundation.postgres_fqdn
 }
@@ -62,4 +66,14 @@ output "serving_url" {
 output "dashboard_url" {
   value       = length(module.dashboard) > 0 ? module.dashboard[0].dashboard_url : ""
   description = "Empty until the dashboard image is built and applied."
+}
+
+output "llm_register_job_name" {
+  value       = length(module.llm_register_job) > 0 ? module.llm_register_job[0].job_name : ""
+  description = "Manual ACA Job for registering the shared LLM pyfunc entrypoint."
+}
+
+output "llm_evaluate_job_name" {
+  value       = length(module.llm_evaluate_job) > 0 ? module.llm_evaluate_job[0].job_name : ""
+  description = "Manual ACA Job for evaluating the shared LLM pyfunc entrypoint."
 }

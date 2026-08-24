@@ -54,6 +54,30 @@ variable "train_image" {
   description = "Pinned train/eval image (by digest). Empty until the training image is built."
 }
 
+variable "llm_image" {
+  type        = string
+  default     = ""
+  description = "Pinned train image used by the shared LLM register/evaluate ACA Jobs. Empty disables those Jobs."
+}
+
+variable "llm_eval_dataset" {
+  type        = string
+  default     = ""
+  description = "Path or URL for the LLM evaluator's JSONL dataset. Empty disables the evaluation Job."
+}
+
+variable "llm_model_name" {
+  type        = string
+  default     = "llm-app"
+  description = "Registered LLM model name supplied to the shared evaluator entrypoint."
+}
+
+variable "llm_model_version" {
+  type        = string
+  default     = "1"
+  description = "LLM model version supplied to the shared evaluator entrypoint."
+}
+
 variable "train_schedule_cron" {
   type        = string
   default     = ""

@@ -30,6 +30,9 @@ param(
   [string] $DashImageRepo    = "dashboard",
   [string] $ServingModelName    = "wine-quality",
   [string] $ServingModelVersion = "",
+  [string] $LlmEvalDataset       = "",
+  [string] $LlmModelName         = "llm-app",
+  [string] $LlmModelVersion      = "1",
   [switch] $SkipSmokeTests
 )
 
@@ -54,7 +57,7 @@ try {
   terraform init -input=false
   terraform apply -input=false -auto-approve -var-file $TfVars `
     -var 'mlflow_image=' -var 'train_image=' -var 'batch_image=' `
-    -var 'serving_image=' -var 'dashboard_image='
+    -var 'serving_image=' -var 'dashboard_image=' -var 'llm_image='
 
   $acrName  = terraform output -raw acr_name
   $acrLogin = terraform output -raw acr_login_server
@@ -71,7 +74,8 @@ try {
   $env:PGPASSWORD = $pgToken
   $oidMap = terraform output -json identity_principal_ids | ConvertFrom-Json
 
-  # grants.sql — Postgres principals + least-priv grants
+  # grants.sql — create principals and schema privileges. Re-run after
+  # schema.sql so workload table grants include newly-created tables.
   psql "host=$pgFqdn port=5432 dbname=postgres user=$PgAdminUpn sslmode=require" `
     -v oid_jobs_train=$($oidMap.'id-jobs-train') `
     -v oid_jobs_batch=$($oidMap.'id-jobs-batch') `
@@ -83,13 +87,19 @@ try {
   $schemaPath = "$PSScriptRoot/../src/ml_platform/results/schema.sql"
   if (Test-Path $schemaPath) {
     psql "host=$pgFqdn port=5432 dbname=results user=$PgAdminUpn sslmode=require" -f $schemaPath
+    psql "host=$pgFqdn port=5432 dbname=postgres user=$PgAdminUpn sslmode=require" `
+      -v oid_jobs_train=$($oidMap.'id-jobs-train') `
+      -v oid_jobs_batch=$($oidMap.'id-jobs-batch') `
+      -v oid_mlflow=$($oidMap.'id-mlflow') `
+      -v oid_dashboard=$($oidMap.'id-dashboard') `
+      -f grants.sql
   }
   Remove-Item Env:PGPASSWORD
 
   # Apply with MLflow image so the App goes live.
   terraform apply -input=false -auto-approve -var-file $TfVars `
     -var "mlflow_image=$mlflowImage" -var 'train_image=' -var 'batch_image=' `
-    -var 'serving_image=' -var 'dashboard_image='
+    -var 'serving_image=' -var 'dashboard_image=' -var 'llm_image='
 
   # -----------------------------------------------------------------------
   # Pass 3: build remaining images in parallel (sequential here for clarity)
@@ -115,7 +125,9 @@ try {
   $cmd = "terraform apply -input=false -auto-approve -var-file $TfVars " +
     "-var `"mlflow_image=$mlflowImage`" -var `"train_image=$trainImage`" " +
     "-var `"batch_image=$batchImage`" -var `"serving_image=$servingImage`" " +
-    "-var `"dashboard_image=$dashImage`" $servVars"
+    "-var `"dashboard_image=$dashImage`" -var `"llm_image=$trainImage`" " +
+    "-var `"llm_eval_dataset=$LlmEvalDataset`" -var `"llm_model_name=$LlmModelName`" " +
+    "-var `"llm_model_version=$LlmModelVersion`" $servVars"
   Invoke-Expression $cmd
 
   Write-Host "`nDone. Endpoints:" -ForegroundColor Green

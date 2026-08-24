@@ -155,7 +155,7 @@ Celery-result-backend-shaped, so this upgrade reuses the same run store.
 - **Continuation rule** — stateless "process PENDING/RETRY until done or
   circuit-breaker"; replaces durable orchestration.
 
-## Target design
+## Implemented path
 
 - A results-DB module in `src/ml_platform/` with helpers: `create_run`,
   `create_children`, `mark(status, output|error)`, `pending_children`,
@@ -163,13 +163,16 @@ Celery-result-backend-shaped, so this upgrade reuses the same run store.
 - Batch Jobs bound to `id-jobs-batch`; they read a pinned `models:/name/version`,
   write outputs to Blob, and drive the continuation rule.
 - Scheduled Jobs (cron) and manual Jobs (dashboard/API) share the same results-DB
-  contract, so the dashboard shows all workflows uniformly.
+  contract, so the dashboard shows all workflows uniformly. The batch Job
+  template injects `DATA_SOURCE` and `MODEL_NAME`; `score.py` accepts the former
+  as the environment equivalent of `--data-source` and uses the `production`
+  alias when no exact model version is supplied.
 
 ## Runnable demonstration
 
-Not yet demonstrated. Acceptance requires a batch Job that creates a parent +
-children, processes items idempotently, distinguishes RETRY/FAILURE, and completes
-via the continuation rule — verifiable by querying the results DB.
+The Compose batch service and local runner exercise the parent/child path. The
+Azure smoke adapter starts the cloud Job, polls its execution to completion, and
+then checks the dashboard/results API for a successful parent row.
 
 ## Failure modes and acceptance evidence
 

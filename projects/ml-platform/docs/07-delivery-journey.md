@@ -33,8 +33,10 @@ flowchart TD
     SERVE --> OBS
 ```
 
-Every step is an ACA workload, every model is a registry version, every run is a
-results-DB record, and every human action is audited.
+Every step has a complete Compose implementation first. The Azure adapter then
+uses ACA workloads, managed identities, and the same model/results contracts;
+every model is a registry version, every run is a results-DB record, and every
+human action is audited.
 
 ## Phased plan
 
@@ -48,9 +50,10 @@ identity.
 
 ### Phase 1 — Reproducible training + registry
 
-Ship the train/eval ACA Jobs ([02](./02-reproducible-ml.md)) logging to MLflow and
-writing results-DB records. **Useful because:** the team gets reproducible models
-with recoverable lineage, independent of serving.
+Ship the train/eval workload image ([02](./02-reproducible-ml.md)) first through
+Compose, then as ACA Jobs logging to MLflow and writing results-DB records.
+**Useful because:** the team gets reproducible models with recoverable lineage,
+independent of serving.
 
 ### Phase 2 — Results DB + first scheduled/batch workflow
 
@@ -94,12 +97,12 @@ long-running workers.
 
 | Phase | Scope | State |
 |---|---|---|
-| 0 | Foundation + self-hosted MLflow | Not started (local demo only) |
-| 1 | Train/eval Jobs + MLflow lineage | Not started |
-| 2 | Results DB + first workflow | Not started |
-| 3 | Serving + promotion/rollback | Not started |
-| 4 | Observability + dashboard | Mockup only ([`mockups/workflow-dashboard.html`](./mockups/workflow-dashboard.html)) |
-| 5 | LLM artifacts | Not started |
+| 0 | Foundation + self-hosted MLflow | Compose runnable; Terraform/ACA adapter implemented |
+| 1 | Train/eval Jobs + MLflow lineage | Shared image and entrypoints implemented |
+| 2 | Results DB + first workflow | Compose and ACA batch paths implemented |
+| 3 | Serving + promotion/rollback | Compose and ACA serving paths implemented |
+| 4 | Observability + dashboard | Dashboard, alerts, and smoke checks implemented |
+| 5 | LLM artifacts | Shared pyfunc entrypoints and local/cloud adapters implemented |
 | Exc. | Multi-GPU (AML) | Not started (exception) |
 | Upg. | Broker (Celery/Redis) | Not started (only if forced) |
 

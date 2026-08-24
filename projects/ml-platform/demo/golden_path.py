@@ -22,7 +22,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode, urljoin
 from urllib.request import Request, urlopen
@@ -61,7 +61,10 @@ def _post_json(url: str, payload: dict[str, Any]) -> Any:
         return json.loads(response.read())
 
 
-def _wait_until[T](check: Callable[[], T | None], description: str, timeout: float) -> T:
+T = TypeVar("T")
+
+
+def _wait_until(check: Callable[[], T | None], description: str, timeout: float) -> T:  # noqa: UP047
     """Poll ``check`` until it returns non-None or the timeout elapses.
 
     The check function signals transient unavailability by returning None and
@@ -194,6 +197,26 @@ def _step_serving_ready(state: _RunState) -> tuple[bool, str]:
     return True, f"serving is ready on version {expected_version}"
 
 
+def _step_prediction(state: _RunState) -> tuple[bool, str]:
+    body = _post_json(
+        f"{state.args.serving_url}/v1/predictions",
+        {
+            "instances": [
+                [7.0, 0.27, 0.36, 20.7, 0.045, 45.0, 170.0, 1.001, 3.0, 0.45, 8.8]
+            ]
+        },
+    )
+    predictions = body.get("predictions")
+    if not isinstance(predictions, list) or len(predictions) != 1:
+        return False, f"prediction response has unexpected predictions={predictions!r}"
+    if body.get("model_version") != str(state.model_version):
+        return False, (
+            f"prediction response reports model_version={body.get('model_version')!r}, "
+            f"expected {state.model_version!r}"
+        )
+    return True, "serving prediction endpoint returned one result for the promoted version"
+
+
 def _step_batch(state: _RunState) -> tuple[bool, str]:
     payload = {"parameters": {"model_version": str(state.model_version)}}
     url = f"{state.args.dashboard_url}/api/runs/batch/trigger"
@@ -224,6 +247,7 @@ _STEPS: list[tuple[str, Callable[[_RunState], tuple[bool, str]]]] = [
     ("registry: resolve newest model version", _step_newest_version),
     ("promote: flip alias and redeploy serving", _step_promote),
     ("serving: readyz reports promoted version", _step_serving_ready),
+    ("serving: prediction returns the promoted version", _step_prediction),
     ("batch: score pinned version to terminal", _step_batch),
     ("results API: parent row is SUCCESS", _step_results_parent),
 ]
@@ -253,8 +277,9 @@ def main() -> int:
     args = _parse_args()
     if args.backend == "aca":
         raise SystemExit(
-            "golden_path.py drives the local Compose stack only. For the Azure "
-            "backend use deploy/smoke-tests.ps1 (the suites are unified in Part II)."
+            "golden_path.py drives the local Compose stack only. For Azure, run "
+            "deploy/smoke-tests.sh or deploy/smoke-tests.ps1; those adapters use "
+            "the same terminal-status, readiness, prediction, and results checks."
         )
 
     state = _RunState(args=args)

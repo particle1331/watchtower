@@ -9,7 +9,7 @@
 
   Phase 0 (Foundation):    MLflow reachable; ACR, Postgres, Storage exist.
   Phase 1 (Training):      Trigger train Job; confirm registered version + results row.
-  Phase 2 (Batch):         Trigger batch Job; confirm parent + child rows terminal.
+  Phase 2 (Batch):         Trigger batch Job; poll execution + parent row to SUCCESS.
   Phase 3 (Serving):       /readyz reports exact version; test a prediction.
   Phase 4 (Observability): Dashboard /api/runs returns rows; /healthz alive.
   Phase 5 (LLM):           pyfunc version loads via models:/ URI (structure check only).
@@ -43,6 +43,30 @@ function Assert([bool]$cond, [string]$msg) {
   else       { Write-Host "  FAIL $msg" -ForegroundColor Red; $script:Errors++ }
 }
 
+function Wait-JobExecution([string]$jobName, [string]$executionName, [string]$label) {
+  Write-Host "  Execution: $executionName — waiting up to ${TimeoutSecs}s..."
+  $deadline = (Get-Date).AddSeconds($TimeoutSecs)
+  do {
+    $status = az containerapp job execution show --name $jobName --job-execution-name $executionName --output tsv --query "properties.status" 2>$null
+    if ($status -in @('Succeeded','Failed','Stopped','Degraded')) { break }
+    Start-Sleep 15
+  } while ((Get-Date) -lt $deadline)
+  if ($status -notin @('Succeeded','Failed','Stopped','Degraded')) { $status = 'Timeout' }
+  Assert ($status -eq 'Succeeded') "$label execution reached SUCCESS (status=$status)"
+  return $status
+}
+
+function Assert-LatestBatchResult([string]$dashboardUrl) {
+  if ($dashboardUrl -eq '') { Assert $false 'Dashboard URL is empty; cannot verify the batch results row'; return }
+  try {
+    $runs = Invoke-RestMethod "$dashboardUrl/api/runs?limit=50" -TimeoutSec 10
+    $success = @($runs | Where-Object {
+      $_.name -like 'batch:score-*' -and $_.status -eq 'SUCCESS'
+    }).Count -gt 0
+    Assert $success 'Dashboard results API contains a successful batch parent row'
+  } catch { Assert $false "Dashboard results API after batch execution: $_" }
+}
+
 # --- Phase 0: Foundation + MLflow reachable ---------------------------------
 Write-Host "`n[Phase 0] Foundation" -ForegroundColor Cyan
 Assert ($mlflowUrl -ne "") "MLflow URL is non-empty"
@@ -65,7 +89,7 @@ if ($trainJob -ne "") {
     do {
       Start-Sleep 15
       $status = az containerapp job execution show --name $trainJob --job-execution-name $execName --output tsv --query "properties.status" 2>$null
-    } while ($status -notin @('Succeeded','Failed') -and (Get-Date) -lt $deadline)
+    } while ($status -notin @('Succeeded','Failed','Stopped','Degraded') -and (Get-Date) -lt $deadline)
     Assert ($status -eq 'Succeeded') "Train Job execution succeeded (status=$status)"
   } else { Write-Host "  (train job not deployed, skipping)" -ForegroundColor Yellow }
 } else { Write-Host "  (train_job_name empty, skipping Phase 1)" -ForegroundColor Yellow }
@@ -75,9 +99,14 @@ Write-Host "`n[Phase 2] Batch" -ForegroundColor Cyan
 if ($batchJob -ne "") {
   Write-Host "  Triggering batch Job ($batchJob)..."
   $rg = Push-Location $InfraDir; terraform output -raw resource_group_name; Pop-Location
-  az containerapp job start --name $batchJob --resource-group $rg --output none 2>$null
-  Write-Host "  Batch Job triggered (row verification requires DB access — manual step)."
-  Assert $true "Batch Job trigger accepted by ACA"
+  $batchExecJson = az containerapp job start --name $batchJob --resource-group $rg --output json 2>$null
+  if ($batchExecJson) {
+    $batchExecName = ($batchExecJson | ConvertFrom-Json).name
+    Wait-JobExecution $batchJob $batchExecName 'Batch Job' | Out-Null
+    Assert-LatestBatchResult $dashUrl
+  } else {
+    Assert $false 'Batch Job start returned no execution'
+  }
 } else { Write-Host "  (batch_job_name empty, skipping Phase 2)" -ForegroundColor Yellow }
 
 # --- Phase 3: Serving App ---------------------------------------------------
@@ -88,6 +117,8 @@ if ($servingUrl -ne "") {
     Assert ($readyz.status -eq 'ready') "Serving /readyz status=ready"
     Assert ($readyz.model_version -ne '') "Serving /readyz reports a model_version"
     Write-Host "  Loaded version: $($readyz.model_version)"
+    $prediction = Invoke-RestMethod "$servingUrl/v1/predictions" -Method Post -ContentType 'application/json' -Body '{"instances":[[7.0,0.27,0.36,20.7,0.045,45.0,170.0,1.001,3.0,0.45,8.8]]}' -TimeoutSec 10
+    Assert ($prediction.model_version -eq $readyz.model_version) "Serving prediction reports the ready model_version"
   } catch { Assert $false "Serving /readyz reachable: $_" }
 } else { Write-Host "  (serving_url empty, skipping Phase 3)" -ForegroundColor Yellow }
 

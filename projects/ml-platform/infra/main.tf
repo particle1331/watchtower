@@ -81,6 +81,53 @@ module "train_job" {
   tags                         = var.tags
 }
 
+# Shared LLM registration/evaluation entrypoints (Phase 5, docs/03). These
+# are the same scripts copied into the local runner and train image. The only
+# adapter-specific values here are the managed identity, tracking URI, Key
+# Vault URI, and optional cloud eval dataset.
+module "llm_register_job" {
+  source = "./modules/llm_job"
+  count  = var.llm_image == "" || var.mlflow_image == "" ? 0 : 1
+
+  name_prefix                  = "${var.prefix}${var.environment}"
+  job_suffix                   = "llm-register"
+  resource_group_name          = module.foundation.resource_group_name
+  location                     = var.location
+  container_app_environment_id = module.foundation.container_app_environment_id
+  acr_login_server              = module.foundation.acr_login_server
+  image                         = var.llm_image
+  identity_id                   = module.foundation.identity_ids["id-jobs-train"]
+  identity_client_id           = module.foundation.identity_client_ids["id-jobs-train"]
+  mlflow_tracking_uri           = module.mlflow_app[0].mlflow_url
+  postgres_fqdn                 = module.foundation.postgres_fqdn
+  key_vault_url                 = module.foundation.key_vault_url
+  command                       = ["python", "register_llm.py"]
+  tags                          = var.tags
+}
+
+module "llm_evaluate_job" {
+  source = "./modules/llm_job"
+  count  = var.llm_image == "" || var.mlflow_image == "" || var.llm_eval_dataset == "" ? 0 : 1
+
+  name_prefix                  = "${var.prefix}${var.environment}"
+  job_suffix                   = "llm-evaluate"
+  resource_group_name          = module.foundation.resource_group_name
+  location                     = var.location
+  container_app_environment_id = module.foundation.container_app_environment_id
+  acr_login_server              = module.foundation.acr_login_server
+  image                         = var.llm_image
+  identity_id                   = module.foundation.identity_ids["id-jobs-train"]
+  identity_client_id           = module.foundation.identity_client_ids["id-jobs-train"]
+  mlflow_tracking_uri           = module.mlflow_app[0].mlflow_url
+  postgres_fqdn                 = module.foundation.postgres_fqdn
+  key_vault_url                 = module.foundation.key_vault_url
+  command                       = ["python", "-m", "ml_platform.llm.evaluator"]
+  eval_dataset                  = var.llm_eval_dataset
+  model_name                    = var.llm_model_name
+  model_version                 = var.llm_model_version
+  tags                          = var.tags
+}
+
 # Batch scoring ACA Job (Phase 2, docs/04). Deployed once its image is built AND
 # the MLflow App + train Job exist (it reads model versions produced by training).
 # Same two-pass pattern: supply batch_image after the image is built.

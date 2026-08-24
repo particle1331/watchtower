@@ -47,7 +47,9 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     model_uri = f"models:/{args.registered_name}/{args.version}"
-    model = mlflow.sklearn.load_model(model_uri)
+    # pyfunc keeps evaluation on the same loading contract as serving and
+    # batch scoring while preserving the tabular DataFrame input here.
+    model = mlflow.pyfunc.load_model(model_uri)
 
     with results.record_run(f"eval:{args.registered_name}") as rec, mlflow.start_run() as run:
         preds = model.predict(x_test)

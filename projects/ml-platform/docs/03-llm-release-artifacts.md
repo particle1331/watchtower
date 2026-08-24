@@ -60,18 +60,23 @@ answer "what is live and where did it come from" (see
 - **Uniform identity** — an LLM release is a registry version, indistinguishable
   operationally from a classical model version.
 
-## Target design
+## Implemented path
 
-- A `llm-eval` ACA Job bound to `id-jobs-train`, reading a candidate version and
-  an evaluation dataset, writing metrics to MLflow and a results-DB record.
-- Packaging helper in `src/ml_platform/` that builds and registers the pyfunc
+- `src/train_job/register_llm.py` and `ml_platform.llm.evaluator` are copied
+  into the shared train image. The Compose profile and the
+  `infra/modules/llm_job` adapter invoke those exact entrypoints.
+- The optional cloud evaluation Job is bound to `id-jobs-train`, reads the
+  configured dataset, writes metrics to MLflow, and records the result.
+- The packaging helper in `src/ml_platform/` builds and registers the pyfunc
   version from prompt/config source under version control.
 
 ## Runnable demonstration
 
-Not yet demonstrated. Acceptance requires registering a pyfunc version and running
-the evaluator as an ACA Job that logs metrics to the self-hosted MLflow and emits
-a results-DB record.
+Compose exposes `llm-register` and `llm-evaluate` as profile-gated Jobs using
+the shared train image and the bundled `demo/llm/eval.jsonl` fixture. Azure uses
+manual ACA Jobs from that same train image; set `LLM_EVAL_DATASET` to enable the
+evaluation Job and let the managed identity resolve the model credential from
+Key Vault.
 
 ## Failure modes and acceptance evidence
 

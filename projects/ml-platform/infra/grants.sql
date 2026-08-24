@@ -45,12 +45,14 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO "id-jobs-train";
 ALTER DEFAULT PRIVILEGES FOR ROLE "id-mlflow" IN SCHEMA public
   GRANT SELECT ON TABLES TO "id-jobs-train";
 
--- results DB: train/batch read+write; dashboard read-only. The `results` table
--- itself is created by the results migration in Chapter 04 (owned by id-jobs-train).
+-- results DB: train/batch read+write; dashboard read-only. The deployment
+-- applies this file once before and once after schema.sql: the first pass
+-- creates principals, and the second pass grants access to newly-created tables.
 \connect results
 GRANT USAGE, CREATE ON SCHEMA public TO "id-jobs-train";
 GRANT USAGE ON SCHEMA public TO "id-jobs-batch";
 GRANT USAGE ON SCHEMA public TO "id-dashboard";
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO "id-jobs-train";
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO "id-jobs-batch";
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO "id-dashboard";
 ALTER DEFAULT PRIVILEGES FOR ROLE "id-jobs-train" IN SCHEMA public

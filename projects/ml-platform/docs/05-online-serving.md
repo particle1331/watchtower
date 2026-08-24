@@ -60,24 +60,26 @@ otherwise a minimum replica count keeps it warm.
 - **BYO image** — serving runtime is ours, not a managed provider's.
 - **Version rollback** — revert the App definition; no rebuild.
 
-## Target design
+## Implemented path
 
-- A serving image in the repo and an IaC-defined ACA App bound to `id-serving`.
-- Startup loads the pinned `models:/name/version`; `/health` reports the resolved
-  version and load status.
-- CI updates the App definition on promotion; rollback is a definition revert.
+- `src/serving_app/` is the shared serving image used by Compose and the
+  IaC-defined ACA App bound to `id-serving`.
+- Startup loads the pinned `models:/name/version` through `mlflow.pyfunc`, runs a
+  tabular or text canary, and reports the resolved version on `/readyz`.
+- Promotion updates the local Compose consumer or ACA App definition; rollback
+  is the same operation aimed at a known-good version.
 
 ## Runnable demonstration
 
-The current repo has a stubbed inference path locally. Acceptance requires an ACA
-App loading a real registered version from the self-hosted MLflow and reporting it
-on `/health`, plus a demonstrated version rollback.
+Compose exercises the serving image against the local MLflow registry. The Azure
+smoke adapter checks `/readyz` and `/v1/predictions` after deployment, including
+the exact model version returned by both responses.
 
 ## Failure modes and acceptance evidence
 
 | Failure mode | Prevented by | Acceptance evidence |
 |---|---|---|
-| Ambiguous live model | Exact version pin + health report | `/health` shows the exact served version |
+| Ambiguous live model | Exact version pin + readiness report | `/readyz` shows the exact served version |
 | Rollback requires rebuild | Version/digest revert in App definition | Revert restores prior version without rebuilding |
 | Framework lock-in | BYO serving image | Serving runtime/deps chosen freely |
 | Over-privileged serving | `id-serving` read-only roles | No write access to registry/training data |

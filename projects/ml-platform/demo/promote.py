@@ -16,6 +16,7 @@ pinned to that exact version:
 
 Examples:
     python demo/promote.py --version 3
+    python demo/promote.py --tracking-uri https://mlflow.example --version 3
     python demo/promote.py --backend aca --version 3 --resource-group rg-mlp --app-name app-serving
     python demo/promote.py --backend aca --version 3 --resource-group rg-mlp --app-name app-serving --execute
 """
@@ -122,6 +123,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help="registered model name (default: %(default)s)")
     parser.add_argument("--backend", choices=("local", "aca"), default="local",
                         help="redeployment target (default: %(default)s)")
+    parser.add_argument(
+        "--tracking-uri",
+        default=os.environ.get("MLFLOW_TRACKING_URI", DEFAULT_TRACKING_URI),
+        help="MLflow tracking/registry URL (default: MLFLOW_TRACKING_URI or %(default)s)",
+    )
     parser.add_argument("--resource-group",
                         help="Azure resource group (required for --backend aca)")
     parser.add_argument("--app-name",
@@ -137,9 +143,8 @@ def main(argv: list[str] | None = None) -> int:
         log.error("--version must be a positive integer")
         return 1
 
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", DEFAULT_TRACKING_URI)
     try:
-        _flip_alias(args.model_name, args.version, tracking_uri)
+        _flip_alias(args.model_name, args.version, args.tracking_uri)
         if args.backend == "local":
             _write_demo_env(args.version)
             _redeploy_compose_serving()

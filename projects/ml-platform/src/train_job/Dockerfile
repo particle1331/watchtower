@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # The shared platform package (common/ helpers) and the job entrypoints.
 COPY src/ml_platform ./ml_platform
-COPY src/train_job/train.py src/train_job/evaluate.py ./
+COPY src/train_job/train.py src/train_job/evaluate.py src/train_job/register_llm.py ./
 
 # Default to training; the eval Job overrides the command to `evaluate.py`.
 ENTRYPOINT ["python", "train.py"]

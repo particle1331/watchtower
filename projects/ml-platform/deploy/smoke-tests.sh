@@ -6,7 +6,7 @@
 #
 #   Phase 0 (Foundation):    MLflow reachable.
 #   Phase 1 (Training):      Trigger train Job; poll until Succeeded/Failed.
-#   Phase 2 (Batch):         Trigger batch Job; confirm ACA accepts the start.
+#   Phase 2 (Batch):         Trigger batch Job; poll execution + results to SUCCESS.
 #   Phase 3 (Serving):       /readyz reports exact version.
 #   Phase 4 (Observability): Dashboard /healthz alive; /api/runs returns a response.
 #
@@ -40,6 +40,47 @@ section() { echo -e "\n\033[0;36m$*\033[0m"; }
 assert() {
   local cond="$1" msg="$2"
   if [[ "$cond" == true || "$cond" == "0" ]]; then pass "$msg"; else fail "$msg"; fi
+}
+
+wait_for_execution() {
+  local job_name="$1" execution_name="$2" label="$3"
+  local deadline=$(( $(date +%s) + TIMEOUT_SECS ))
+  local status=""
+  echo "  Execution: $execution_name — waiting up to ${TIMEOUT_SECS}s..."
+  while true; do
+    status=$(az containerapp job execution show \
+      --name "$job_name" \
+      --job-execution-name "$execution_name" \
+      --output tsv --query "properties.status" 2>/dev/null || true)
+    case "$status" in
+      Succeeded|Failed|Stopped|Degraded) break ;;
+    esac
+    if [[ $(date +%s) -ge $deadline ]]; then
+      status="Timeout"
+      break
+    fi
+    sleep 15
+  done
+  assert "$([[ "$status" == "Succeeded" ]] && echo true || echo false)" \
+    "$label execution reached SUCCESS (status=$status)"
+  printf '%s\n' "$status"
+}
+
+assert_latest_batch_result() {
+  if [[ -z "$DASH_URL" ]]; then
+    fail "Dashboard URL is empty; cannot verify the batch results row"
+    return
+  fi
+  local runs
+  if ! runs=$(curl -sf --max-time 10 "$DASH_URL/api/runs?limit=50" 2>/dev/null); then
+    fail "Dashboard results API is not reachable after batch execution"
+    return
+  fi
+  local result
+  result=$(echo "$runs" | python3 -c \
+    "import sys,json; rows=json.load(sys.stdin); print(any(str(r.get('name','')).startswith('batch:score-') and r.get('status') == 'SUCCESS' for r in rows))" \
+    2>/dev/null || echo false)
+  assert "$result" "Dashboard results API contains a successful batch parent row"
 }
 
 tf_output() {
@@ -85,22 +126,9 @@ if [[ -n "$TRAIN_JOB" ]]; then
 
   if [[ -n "$exec_json" ]]; then
     exec_name=$(echo "$exec_json" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
-    echo "  Execution: $exec_name — waiting up to ${TIMEOUT_SECS}s..."
-    deadline=$(( $(date +%s) + TIMEOUT_SECS ))
-    status=""
-    while true; do
-      status=$(az containerapp job execution show \
-        --name "$TRAIN_JOB" \
-        --job-execution-name "$exec_name" \
-        --output tsv --query "properties.status" 2>/dev/null || true)
-      [[ "$status" == "Succeeded" || "$status" == "Failed" ]] && break
-      [[ $(date +%s) -ge $deadline ]] && { status="Timeout"; break; }
-      sleep 15
-    done
-    assert "$([[ "$status" == "Succeeded" ]] && echo true || echo false)" \
-      "Train Job execution succeeded (status=$status)"
+    wait_for_execution "$TRAIN_JOB" "$exec_name" "Train Job"
   else
-    echo "  (train job start returned empty — not deployed or failed to start)"
+    fail "Train Job start returned no execution"
   fi
 else
   echo "  (train_job_name empty, skipping Phase 1)"
@@ -112,11 +140,16 @@ fi
 section "[Phase 2] Batch"
 if [[ -n "$BATCH_JOB" ]]; then
   echo "  Triggering batch Job ($BATCH_JOB)..."
-  az containerapp job start \
+  exec_json=$(az containerapp job start \
     --name "$BATCH_JOB" --resource-group "$RG" \
-    --output none 2>/dev/null && pass "Batch Job trigger accepted by ACA" \
-                               || fail "Batch Job trigger rejected"
-  echo "  (row verification requires DB access — manual step)"
+    --output json 2>/dev/null || true)
+  if [[ -n "$exec_json" ]]; then
+    exec_name=$(echo "$exec_json" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
+    wait_for_execution "$BATCH_JOB" "$exec_name" "Batch Job"
+    assert_latest_batch_result
+  else
+    fail "Batch Job start returned no execution"
+  fi
 else
   echo "  (batch_job_name empty, skipping Phase 2)"
 fi
@@ -134,6 +167,13 @@ if [[ -n "$SERVING_URL" ]]; then
     assert "$([[ -n "$version_val" ]] && echo true || echo false)" \
       "Serving /readyz reports a model_version (got: $version_val)"
     echo "  Loaded version: $version_val"
+    prediction=$(curl -sf --max-time 10 \
+      -H 'Content-Type: application/json' \
+      -d '{"instances":[[7.0,0.27,0.36,20.7,0.045,45.0,170.0,1.001,3.0,0.45,8.8]]}' \
+      "$SERVING_URL/v1/predictions" 2>/dev/null || true)
+    prediction_version=$(echo "$prediction" | python3 -c "import sys,json; print(json.load(sys.stdin).get('model_version',''))" 2>/dev/null || true)
+    assert "$([[ "$prediction_version" == "$version_val" ]] && echo true || echo false)" \
+      "Serving prediction reports the ready model_version (got: $prediction_version)"
   else
     fail "Serving /readyz not reachable at $SERVING_URL"
   fi

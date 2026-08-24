@@ -87,12 +87,47 @@ services:
       - --delimiter
       - ";"
 
+  # Optional LLM Jobs use the actual train workload image, just like the ACA
+  # llm_job module. They are profile-gated because evaluation needs an external
+  # model credential and should not run during the default bootstrap.
+  llm-register:
+    profiles: ["llm"]
+    build:
+      context: ..
+      dockerfile: src/train_job/Dockerfile
+    entrypoint: ["python", "register_llm.py"]
+    environment:
+      <<: *job-environment
+      MODEL_API_KEY: "${MODEL_API_KEY:-}"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+
+  llm-evaluate:
+    profiles: ["llm"]
+    build:
+      context: ..
+      dockerfile: src/train_job/Dockerfile
+    entrypoint: ["python", "-m", "ml_platform.llm.evaluator"]
+    environment:
+      <<: *job-environment
+      LLM_MODEL_NAME: "${LLM_MODEL_NAME:-llm-app}"
+      LLM_MODEL_VERSION: "${LLM_MODEL_VERSION:-1}"
+      LLM_EVAL_DATASET: /app/llm-eval.jsonl
+      MODEL_API_KEY: "${MODEL_API_KEY:-}"
+    volumes:
+      - ./llm/eval.jsonl:/app/llm-eval.jsonl:ro
+    depends_on:
+      mlflow:
+        condition: service_healthy
+
   batch:
     build:
       context: ..
       dockerfile: src/batch_job/Dockerfile
     environment:
       <<: *job-environment
+      DATA_SOURCE: https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-white.csv
       MODEL_NAME: wine-quality
       BATCH_CHUNK_SIZE: "100"
     depends_on:

@@ -30,15 +30,29 @@ jobs:
 
       - name: Install dev dependencies
         working-directory: projects/ml-platform
-        run: pip install -r src/train_job/requirements.txt ruff pytest
+        run: pip install -r src/train_job/requirements.txt -r demo/runner/requirements.txt ruff pytest
 
       - name: Lint
         working-directory: projects/ml-platform
-        run: ruff check src/
+        run: ruff check src/ demo/ tools/ tests/
+
+      - name: Environment contract
+        working-directory: projects/ml-platform
+        run: python tools/check_env_contract.py
+
+      - name: Shell syntax
+        working-directory: projects/ml-platform
+        run: bash -n deploy/*.sh demo/minio-init.sh
+
+      - name: Compose validation
+        working-directory: projects/ml-platform
+        run: |
+          docker compose -f demo/docker-compose.yml config --quiet
+          docker compose -f demo/docker-compose.yml --profile llm config --quiet
 
       - name: Unit tests
         working-directory: projects/ml-platform
-        run: pytest tests/ -q --tb=short || true   # non-blocking until tests are added
+        run: pytest tests/ -q --tb=short
 
   # -------------------------------------------------------------------------
   # Build images, run Trivy security scan, push to ACR on main

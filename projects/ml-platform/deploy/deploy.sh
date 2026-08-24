@@ -27,6 +27,9 @@ SERVING_IMAGE_REPO="${SERVING_IMAGE_REPO:-serving-app}"
 DASH_IMAGE_REPO="${DASH_IMAGE_REPO:-dashboard}"
 SERVING_MODEL_NAME="${SERVING_MODEL_NAME:-wine-quality}"
 SERVING_MODEL_VERSION="${SERVING_MODEL_VERSION:-}"
+LLM_EVAL_DATASET="${LLM_EVAL_DATASET:-}"
+LLM_MODEL_NAME="${LLM_MODEL_NAME:-llm-app}"
+LLM_MODEL_VERSION="${LLM_MODEL_VERSION:-1}"
 SKIP_SMOKE_TESTS="${SKIP_SMOKE_TESTS:-false}"
 PG_ADMIN_UPN=""
 
@@ -78,7 +81,7 @@ cd "$INFRA_DIR"
 terraform init -input=false
 terraform apply -input=false -auto-approve -var-file "$TF_VARS" \
   -var 'mlflow_image=' -var 'train_image=' -var 'batch_image=' \
-  -var 'serving_image=' -var 'dashboard_image='
+  -var 'serving_image=' -var 'dashboard_image=' -var 'llm_image='
 
 ACR_NAME=$(terraform output -raw acr_name)
 ACR_LOGIN=$(terraform output -raw acr_login_server)
@@ -99,7 +102,9 @@ OID_BATCH=$(terraform output -json identity_principal_ids | python3 -c "import s
 OID_MLFLOW=$(terraform output -json identity_principal_ids | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['id-mlflow'])")
 OID_DASH=$(terraform output -json identity_principal_ids | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['id-dashboard'])")
 
-# grants.sql — Postgres principals + least-priv grants
+# grants.sql — Postgres principals + schema privileges. It runs once before
+# schema.sql so the workload principals exist, then again below so grants on
+# newly-created results tables are applied.
 psql "host=$PG_FQDN port=5432 dbname=postgres user=$PG_ADMIN_UPN sslmode=require" \
   -v oid_jobs_train="$OID_TRAIN" \
   -v oid_jobs_batch="$OID_BATCH" \
@@ -111,13 +116,19 @@ psql "host=$PG_FQDN port=5432 dbname=postgres user=$PG_ADMIN_UPN sslmode=require
 SCHEMA_PATH="$SCRIPT_DIR/../src/ml_platform/results/schema.sql"
 if [[ -f "$SCHEMA_PATH" ]]; then
   psql "host=$PG_FQDN port=5432 dbname=results user=$PG_ADMIN_UPN sslmode=require" -f "$SCHEMA_PATH"
+  psql "host=$PG_FQDN port=5432 dbname=postgres user=$PG_ADMIN_UPN sslmode=require" \
+    -v oid_jobs_train="$OID_TRAIN" \
+    -v oid_jobs_batch="$OID_BATCH" \
+    -v oid_mlflow="$OID_MLFLOW" \
+    -v oid_dashboard="$OID_DASH" \
+    -f grants.sql
 fi
 unset PGPASSWORD
 
 # Apply with MLflow image so the App goes live.
 terraform apply -input=false -auto-approve -var-file "$TF_VARS" \
   -var "mlflow_image=$MLFLOW_IMAGE" -var 'train_image=' -var 'batch_image=' \
-  -var 'serving_image=' -var 'dashboard_image='
+  -var 'serving_image=' -var 'dashboard_image=' -var 'llm_image='
 
 # ---------------------------------------------------------------------------
 # Pass 3: build remaining images
@@ -150,6 +161,10 @@ terraform apply -input=false -auto-approve -var-file "$TF_VARS" \
   -var "batch_image=$BATCH_IMAGE" \
   -var "serving_image=$SERVING_IMAGE" \
   -var "dashboard_image=$DASH_IMAGE" \
+  -var "llm_image=$TRAIN_IMAGE" \
+  -var "llm_eval_dataset=$LLM_EVAL_DATASET" \
+  -var "llm_model_name=$LLM_MODEL_NAME" \
+  -var "llm_model_version=$LLM_MODEL_VERSION" \
   "${SERV_VARS[@]+"${SERV_VARS[@]}"}"
 
 echo ""
