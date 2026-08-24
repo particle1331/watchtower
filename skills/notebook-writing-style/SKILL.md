@@ -7,36 +7,35 @@ description: Prose and formatting conventions for watchtower notes, articles, an
 
 Conventions for the canonical content in `notes/`, `articles/`, and `courses/`.
 The watchtower source walk-through (`notes/005-wt-src-walkthrough`) and the
-Maximum Likelihood note (`notes/006-maximum-likelihood-estimation`) are the reference
-exemplars; consult them when the rules below need a concrete instance. For an example
-of a larger article see the Weak Supervision article (articles/003-weak-supervision) as a
-good example.
+Maximum Likelihood note (`notes/006-maximum-likelihood-estimation`) are the
+reference exemplars; consult them when the rules below need a concrete instance.
+For a larger example, see the Weak Supervision article
+(`articles/003-weak-supervision`).
 
 ## Voice
 
-- **Impersonal, declarative.** No "you," "the reader," or "your" as the default
-  voice. Minimal "we" — at most once in a tight logical aside ("we obtain,"
-  "we write"). Prefer "Recall," "Observe," "Notice," "It turns out."
+- **Direct and declarative.** Prefer impersonal exposition for definitions and
+  technical explanations. Use "you" when an outcome or instruction genuinely
+  addresses the learner, and use "we" sparingly for a shared derivation. The
+  voice should read naturally rather than reveal a mechanical pronoun rule.
 - **Action-first.** Lead with the action, not the agent: "To implement X:
   (1) ... and (2) ..." over "X is implemented by ...." Describe what the code
   does, not what the author did.
-- **No restating code.** The sentence after a code block adds new information
-  — interpretation, connection to theory, a consequence. It never paraphrases
-  the code the reader just saw.
-- **No salesmanship.** Drop hype adjectives ("powerful," "elegant,"
-  "seamless," "beautiful"). If a sentence would fit a product landing page,
-  rewrite it as the plain claim it is dressing up.
-- **No aphorisms.** Rhetorically compressed contrasts read as slogans and
-  hide the mechanism they summarize. Avoid the fingerprint shapes: "X
-  changes; Y stays," "It's not X; it's Y," "Not X, but Y," and slide-deck
-  fragments ("Small change. Large consequence."). State literally what
-  changes, what does not, and by what mechanism; keep caveats instead of
-  rounding them off for rhythm. A contrast earns its place when it names
-  concrete referents, not when it lands a line.
-- **No poetic abstraction.** Metaphorical stand-ins ("substrate," "the
-  machinery moves") in place of the literal thing ("the hosting platform,"
-  "the implementation is rewritten") force the reader to decode. Use the
-  literal noun.
+- **Explanatory density.** Keep the motivation, mechanism, and consequence when
+  they matter. Concision removes repetition; it does not remove concrete facts,
+  reasoning, caveats, or useful transitions.
+- **Interpret code and outputs.** Prose after a code block adds information:
+  interpretation, a connection to theory, or a consequence. It does not merely
+  paraphrase the code.
+- **Specific claims over salesmanship.** Replace hype adjectives ("powerful,"
+  "elegant," "seamless," "beautiful") with the concrete property being claimed.
+- **Fully explained contrasts.** Compressed forms such as "X changes; Y stays"
+  or "Not X, but Y" are useful only when the surrounding prose names the
+  concrete referents, mechanism, and caveats. Avoid slogan-like fragments that
+  stand in for that explanation.
+- **Concrete language.** Prefer the literal noun ("the hosting platform," "the
+  implementation") to a metaphorical stand-in ("the substrate," "the
+  machinery") when the metaphor makes the mechanism less precise.
 
 ## Emphasis
 
@@ -53,9 +52,14 @@ good example.
 - **Counter-example before correct approach.** When teaching a method that
   supersedes a simpler one, present the simpler one first, expose its flaw,
   then introduce the correct approach. The contrast is the lesson.
-- **Tables over bullets** for parallel comparative content. Use inline
-  enumeration ("(1) ..., (2) ..., (3) ...") when prose flows; switch to a
-  table when three or more items share the same attributes.
+- **Tables summarize; prose teaches.** Use inline enumeration when prose flows
+  and tables when three or more items share the same attributes. Keep the
+  surrounding rationale and causal links; do not turn an explanatory section
+  or a meaningful "why it matters" comparison into status labels.
+- **Preserve narrative continuity.** When revising existing course prose,
+  retain accurate details, examples, rationale, transitions, cross-links, and
+  teaching sequence. Correct stale claims in place instead of replacing a
+  sound explanation with a terse summary.
 - **Every code cell preceded by descriptive markdown.** A bold structural
   label or a short terse intro — never an orphan code cell.
 - **Post-code commentary** connects the output to the theory. It never
