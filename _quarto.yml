@@ -162,3 +162,43 @@ website:
             - text: 14. Compressed sensing
               href: courses/cla/14-compressed-sensing.ipynb
           href: courses/cla/11-topic-modeling.ipynb
+    - id: langgraph
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/langgraph/index.ipynb
+          contents:
+            - text: Overview
+              href: courses/langgraph/index.ipynb
+        - section: Foundations
+          href: courses/langgraph/01-task-boundary.ipynb
+          contents:
+            - text: "01. Where LangGraph belongs"
+              href: courses/langgraph/01-task-boundary.ipynb
+            - text: "02. State and graph control"
+              href: courses/langgraph/02-state-and-graph.ipynb
+        - section: Evidence workflow
+          href: courses/langgraph/03-tools-and-evidence.ipynb
+          contents:
+            - text: "03. Tools, evidence, and skills"
+              href: courses/langgraph/03-tools-and-evidence.ipynb
+            - text: "04. Routing and recovery"
+              href: courses/langgraph/04-routing-and-recovery.ipynb
+            - text: "05. Parallel research and fan-in"
+              href: courses/langgraph/05-parallel-research.ipynb
+        - section: Governance
+          href: courses/langgraph/06-review-and-revision.ipynb
+          contents:
+            - text: "06. Review gates and interrupts"
+              href: courses/langgraph/06-review-and-revision.ipynb
+            - text: "07. Persistence, replay, and memory"
+              href: courses/langgraph/07-persistence-and-memory.ipynb
+            - text: "08. Evaluation and contracts"
+              href: courses/langgraph/08-evaluation.ipynb
+        - section: Capstone
+          href: courses/langgraph/09-capstone-evidence-brief.ipynb
+          contents:
+            - text: "09. Evidence brief agent"
+              href: courses/langgraph/09-capstone-evidence-brief.ipynb
