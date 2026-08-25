@@ -9,9 +9,27 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "agent-harness",
     "evidence-brief-agent",
     "ml-platform",
     "watchtower",
+]
+
+[[package]]
+name = "agent-harness"
+version = "0.1.0"
+source = { editable = "projects/agent-harness" }
+dependencies = [
+    { name = "openai" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "openai", specifier = ">=3.0.0" },
+    { name = "platformdirs", specifier = ">=4" },
+    { name = "pydantic", specifier = ">=2" },
 ]
 
 [[package]]
@@ -3303,6 +3321,7 @@ name = "watchtower"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "agent-harness" },
     { name = "ipykernel" },
     { name = "ipython" },
     { name = "jinja2" },
@@ -3338,6 +3357,7 @@ ml = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-harness", editable = "projects/agent-harness" },
     { name = "ipykernel", specifier = ">=7.3.0" },
     { name = "ipython", specifier = ">=9.15.0" },
     { name = "jinja2", specifier = ">=3.1.0" },

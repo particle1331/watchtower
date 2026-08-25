@@ -1,0 +1,37 @@
+[project]
+name = "agent-harness"
+version = "0.1.0"
+description = "Headless coding agent harness built in the agent-harness course"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "openai>=3.0.0",
+    "pydantic>=2",
+    "platformdirs>=4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+venvPath = "../.."
+venv = ".venv"
+
+[build-system]
+requires = ["uv_build>=0.11.29,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "agent_harness"
