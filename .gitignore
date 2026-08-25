@@ -50,3 +50,8 @@ htmlcov/
 
 # Project-local env files (written by ml-platform demo/promote.py)
 projects/ml-platform/demo/.env
+
+# BEGIN oh-my-opencode-slim worktrees
+.slim/worktrees/
+.slim/worktrees.json
+# END oh-my-opencode-slim worktrees
