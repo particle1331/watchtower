@@ -58,6 +58,53 @@ website:
         aria-label: watchtower source on GitHub
 
   sidebar:
+    - id: llm-training
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/llm-training/index.ipynb
+          contents:
+            - text: "00. Overview"
+              href: courses/llm-training/00-overview.ipynb
+        - section: "Phase I: Data and foundations"
+          href: courses/llm-training/01-introduction.ipynb
+          contents:
+            - text: "01. Corpus and data systems"
+              href: courses/llm-training/01-introduction.ipynb
+            - text: "02. Tokenization and batching"
+              href: courses/llm-training/02-tokenization.ipynb
+            - text: "03. PyTorch foundations and baselines"
+              href: courses/llm-training/03-baselines.ipynb
+            - text: "04. Decoder-only Transformer"
+              href: courses/llm-training/04-transformer.ipynb
+            - text: "05. Causal pretraining"
+              href: courses/llm-training/05-pretraining.ipynb
+            - text: "06. Optimization and systems"
+              href: courses/llm-training/06-optimization.ipynb
+            - text: "07. Checkpoint evaluation"
+              href: courses/llm-training/07-evaluation.ipynb
+        - section: "Phase II: Posttraining and adaptation"
+          href: courses/llm-training/08-sft.ipynb
+          contents:
+            - text: "08. Proof supervised fine-tuning"
+              href: courses/llm-training/08-sft.ipynb
+            - text: "09. Preference learning and DPO"
+              href: courses/llm-training/09-preferences.ipynb
+            - text: "10. Verifier-guided RL"
+              href: courses/llm-training/10-rl.ipynb
+            - text: "11. Proof-tool calling"
+              href: courses/llm-training/11-tools.ipynb
+            - text: "12. LoRA and full fine-tuning"
+              href: courses/llm-training/12-lora.ipynb
+        - section: "Phase III: Reliability and capstone"
+          href: courses/llm-training/13-failure-modes.ipynb
+          contents:
+            - text: "13. Measured failure modes"
+              href: courses/llm-training/13-failure-modes.ipynb
+            - text: "14. End-to-end proof-model study"
+              href: courses/llm-training/14-capstone.ipynb
     - id: ml-platform
       style: "floating"
       collapse-level: 2
@@ -200,3 +247,49 @@ website:
           contents:
             - text: "09. Evidence brief agent"
               href: courses/langgraph/09-capstone-evidence-brief.ipynb
+    - id: agent-harness
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/agent-harness/index.ipynb
+          contents:
+            - text: Overview
+              href: courses/agent-harness/index.ipynb
+        - section: 'Part I: The Engine Exposed'
+          href: courses/agent-harness/01-foundations.ipynb
+          contents:
+            - text: "01. Model vs. harness"
+              href: courses/agent-harness/01-foundations.ipynb
+            - text: "02. Streaming client"
+              href: courses/agent-harness/02-streaming-client.ipynb
+            - text: "03. Tool protocol"
+              href: courses/agent-harness/03-tool-protocol.ipynb
+        - section: 'Part II: Making It a Coding Agent'
+          href: courses/agent-harness/04-coding-tools.ipynb
+          contents:
+            - text: "04. Coding tools"
+              href: courses/agent-harness/04-coding-tools.ipynb
+            - text: "05. Agent loop"
+              href: courses/agent-harness/05-agent-loop.ipynb
+        - section: 'Part III: Controlling It'
+          href: courses/agent-harness/06-context-management.ipynb
+          contents:
+            - text: "06. Context management"
+              href: courses/agent-harness/06-context-management.ipynb
+            - text: "07. Instructions & memory"
+              href: courses/agent-harness/07-instructions-and-memory.ipynb
+            - text: "08. Permissions & sandboxing"
+              href: courses/agent-harness/08-permissions-and-sandboxing.ipynb
+            - text: "09. Hooks"
+              href: courses/agent-harness/09-hooks.ipynb
+        - section: 'Part IV: Scaling Out, Then Proving It'
+          href: courses/agent-harness/10-subagents-and-patterns.ipynb
+          contents:
+            - text: "10. Sub-agents & patterns"
+              href: courses/agent-harness/10-subagents-and-patterns.ipynb
+            - text: "11. Model Context Protocol"
+              href: courses/agent-harness/11-model-context-protocol.ipynb
+            - text: "12. Capstone"
+              href: courses/agent-harness/12-capstone.ipynb
