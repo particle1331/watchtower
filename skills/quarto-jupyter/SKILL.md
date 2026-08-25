@@ -25,6 +25,7 @@ When authoring article content, read [references/article-authoring.md](reference
 - For a real Markdown display from Python, use `IPython.display.Markdown` and `display`. For a string printed as raw Markdown, use `#| output: asis` and `print`.
 - Treat cell-option values as YAML. LaTeX backslashes such as `\infty` must be in a YAML-safe single-quoted value or be escaped inside a double-quoted value.
 - Preserve stable labels and captions when splitting a cell. Put the figure label/caption on the cell that actually produces the figure.
+- For Mermaid diagrams in Markdown cells, use the Quarto fence ```` ```{mermaid} ```` with curly braces. A bare ```` ```mermaid ```` fence can be parsed inconsistently by the Jupyter-to-Quarto pipeline and cause rendering failures; keep the diagram source in the Markdown cell and validate it with a preview or render.
 
 ## Validation
 
