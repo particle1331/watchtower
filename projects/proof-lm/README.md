@@ -1,7 +1,7 @@
 # ProofLM
 
 Backing project for the Watchtower course [Training Language Models from
-Scratch: From Pretraining to Proof Tools](../../courses/llm-training/index.html).
+Scratch: From Pretraining to Proof Tools](../../nb/courses/llm-training/index.html).
 
 The package owns the reusable implementation and the notebooks own the
 derivations, experiments, and interpretation. The migration keeps a compact

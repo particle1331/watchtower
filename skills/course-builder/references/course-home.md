@@ -98,8 +98,8 @@ Keep this preview accessible at the prerequisite level:
 | How do I derive, implement, test, and interpret this stage? | The relevant numbered chapter |
 
 The canonical example is the pair
-`courses/llm-training/index.ipynb` and
-`courses/llm-training/00-overview.ipynb`. Consult it for the division between
+`nb/courses/llm-training/index.ipynb` and
+`nb/courses/llm-training/00-overview.ipynb`. Consult it for the division between
 course-home orientation and technical overview, and for the expected technical
 altitude. Reuse the pattern, not its language-model-specific contents.
 

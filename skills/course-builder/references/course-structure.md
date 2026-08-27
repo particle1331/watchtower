@@ -5,7 +5,7 @@ registering or renaming sidebar entries, or changing course-level navigation.
 
 ## Course anatomy
 
-A course lives at `courses/<name>/`:
+A course lives at `nb/courses/<name>/`:
 
 - `index.ipynb`: the learner-facing course home and README.
 - `00-overview.ipynb`: an optional whole-course technical overview.
@@ -16,7 +16,7 @@ The sidebar registration lives in `_quarto.yml` under `website.sidebar`.
 Rendering never executes notebook code because `execute.enabled: false`; the
 site uses the outputs last stored by `wt run`.
 
-The existing `courses/cla` and `courses/ml-platform` courses remain concrete
+The existing `nb/courses/cla` and `nb/courses/ml-platform` courses remain concrete
 examples of course structure and phased sidebar organization.
 
 ## Scaffolding
@@ -53,10 +53,10 @@ scaffold initially derives placeholder text from the filename.
 
   ```yaml
   - section: ''
-    href: courses/<name>/index.ipynb
+    href: nb/courses/<name>/index.ipynb
     contents:
       - text: "00. Overview"
-        href: courses/<name>/00-overview.ipynb
+        href: nb/courses/<name>/00-overview.ipynb
   ```
 
   Do not render the course home and `00-overview.ipynb` as sibling `text`

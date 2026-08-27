@@ -1,3 +1,4 @@
 # Applied to all .qmd files in this directory when rendered.
 filters:
-  - ../filters/center-images.lua
+  - ../../filters/center-images.lua
+  - ../../filters/date-pills.lua

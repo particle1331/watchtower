@@ -2,9 +2,10 @@
 
 ## Architecture
 This repo is a personal system with three tiers of content with DIFFERENT visibility:
-- `notes/*.ipynb` — atomic, focused explorations: a single definition, technique, or concept with a minimal live demo
-- `articles/*.ipynb` — self-contained long-form articles and deep dives
-- `courses/` — full course notes
+- `nb/notes/*.ipynb` — atomic, focused explorations: a single definition, technique, or concept with a minimal live demo
+- `nb/articles/*.ipynb` — self-contained long-form articles and deep dives
+- `nb/courses/` — full course notes
+- `nb/photos/photos.ipynb` — personal photo gallery
 - `projects/<name>/` — code projects (each a uv workspace member)
 
 ## Agent skills
@@ -25,7 +26,7 @@ to the website using **inline outputs, no re-execution** — so heavy compute
 done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Knowledge base
-- The canonical knowledge base is `notes/*.ipynb`, `articles/*.ipynb`, and `courses/**/*.ipynb`.
+- The canonical knowledge base is `nb/notes/*.ipynb`, `nb/articles/*.ipynb`, and `nb/courses/**/*.ipynb`.
 - Raw `.ipynb` JSON is noisy — do NOT `grep`/`read` it directly. Use the
   `wt` wrappers below, which expose cell sources as plain markdown.
 - `.ipynb_checkpoints/` is excluded from listings and resolution.
@@ -42,7 +43,7 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 - Run `wt ls notes|articles|courses|projects` for plain listings of notebooks.
 - `<name>` for any cell command (`cat`, `edit-cell`, `append-cell`, `insert-cell`,
   `remove-cell`, `tag`, `count`, `render`) resolves as: bare stem (`001-testnote`),
-  tier-prefixed stem (`notes/001-testnote`), or full path (`notes/001-testnote.ipynb`).
+  tier-prefixed stem (`nb/notes/001-testnote`), or full path (`nb/notes/001-testnote.ipynb`).
 
 ## Reading notebooks
 - `wt cat <name>` — print all cells as markdown (`> cell N [code|markdown] ...` headers; `>` marks tool meta, not notebook content).
@@ -143,7 +144,7 @@ opencode, Claude Code, ...). The loop:
   outputs. Quarto will render with those outputs, no re-execution.
 - `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]` —
   import as a chapter of an existing course: copies to
-  `courses/<course>/<chapter>.ipynb` and registers it in the course's sidebar in
+  `nb/courses/<course>/<chapter>.ipynb` and registers it in the course's sidebar in
   `_quarto.yml` (last section by default, or the section named by `--section`).
 - Import strips a leading `# Title` heading that duplicates the frontmatter
   `title` (Quarto renders that title as the page's H1), so the imported
@@ -155,7 +156,7 @@ opencode, Claude Code, ...). The loop:
   :4200; publishing is handled by the `publish.yml` GitHub Action on push to
   `main`). The command prints the preview URL before blocking.
 - `wt render <tier> <name> | <path.ipynb>` renders one notebook to PDF
-  (`notes/pdf/` or `articles/pdf/`) using inline outputs.
+  (`nb/notes/pdf/` or `nb/articles/pdf/`) using inline outputs.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
   code at render time — it uses whatever outputs already live in the `.ipynb`.
 
@@ -172,7 +173,7 @@ it works. Common traps to avoid regardless: `x in some_list` inside a loop
 (use a `set`), repeated string `+=` in a loop (use `join`), and building
 throwaway intermediate lists you iterate once (use a generator).
 
-**Course & note content (`notes/`, `articles/`, `courses/`).** Here the
+**Course & note content (`nb/notes/`, `nb/articles/`, `nb/courses/`).** Here the
 algorithm is often the lesson, so the priorities differ. Implement the
 complexity you claim: code in a note about an O(n log n) method must actually
 be that — a stray O(n²) is a teaching bug even if the outputs are right. State
@@ -218,7 +219,7 @@ Course scaffolding, index/sidebar/chapter conventions, and the full
 problems-and-solutions authoring workflow (tag-based ids, ROT18-encoded
 solution cells, sanctioned commands) live in the shared skill
 `skills/course-builder/SKILL.md`. Load it whenever creating or extending a
-course under `courses/`. Hard rules it enforces: create problems only via
+course under `nb/courses/`. Hard rules it enforces: create problems only via
 `wt add-exercise`, update solutions only via `wt solution-edit`, and run
 `wt check <course>` after any problem/solution work.
 
@@ -235,7 +236,7 @@ overwrite a dirty primary checkout to create the worktree.
   `name` column with `wt run --kernel`.
 - `wt new note|article <name> [--title <title>]` — scaffold a notebook stub (note or article); <title> defaults to a placeholder derived from <name>
 - `wt new project <name>` — `uv init` workspace member
-- `wt new course <name> <title>` — scaffold `courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
+- `wt new course <name> <title>` — scaffold `nb/courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
 - `wt new chapter <course> <name> [--title <title>] [--section <name>]` — scaffold a course chapter (notebook) and register it in the course's sidebar in `_quarto.yml`; <title> defaults to a placeholder derived from <name> (sidebar text and notebook frontmatter are independent surfaces — edit either or both after scaffolding)
 - `wt new section <course> <name>` — add a section header to a course's sidebar in `_quarto.yml`
 - `wt map` — JSON repo structure (orientation)

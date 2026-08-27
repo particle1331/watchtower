@@ -1,7 +1,7 @@
 """ml_platform — MVP MLOps platform package.
 
 The ML platform is built up chapter by chapter in the `ml-platform` course
-(`courses/ml-platform/`). The course is documentation; the runnable source lives here,
+(`nb/courses/ml-platform/`). The course is documentation; the runnable source lives here,
 independent of the notebooks, and the notebooks reference these modules and
 scripts when they demo each stage.
 
