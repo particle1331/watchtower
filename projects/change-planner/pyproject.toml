@@ -1,0 +1,44 @@
+[project]
+name = "change-planner"
+version = "0.1.0"
+description = "Evidence-first repository search and change planning agent for the Watchtower LangGraph course"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "langgraph>=1.2.11,<2",
+    "langgraph-checkpoint-sqlite>=3.1.1,<4",
+    "pydantic>=2.13,<3",
+]
+
+[project.scripts]
+change-planner = "change_planner.cli:main"
+
+[project.optional-dependencies]
+live = ["openai>=3.0.0,<4"]
+
+[dependency-groups]
+dev = ["pytest>=9.0.0", "ruff>=0.8.0", "pyright>=1.1.390.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+
+[build-system]
+requires = ["uv_build>=0.11.29,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "change_planner"
