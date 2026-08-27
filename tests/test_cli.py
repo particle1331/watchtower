@@ -67,7 +67,7 @@ def test_cli_kernels_lists_kernel_names(monkeypatch):
 
 def test_cli_run_kernel_error_lists_available_names(tmp_path, monkeypatch, cli_console, invoke):
     monkeypatch.chdir(tmp_path)
-    _write_code_notebook(tmp_path / "notes" / "test.ipynb", ["print('hello')"])
+    _write_code_notebook(tmp_path / "nb" / "notes" / "test.ipynb", ["print('hello')"])
 
     from watchtower import execute, kernels
 
@@ -97,7 +97,7 @@ def test_cli_run_success_exit_0(nb_file):
 
 def test_cli_run_errors_exit_1(tmp_path, monkeypatch, cli_console):
     monkeypatch.chdir(tmp_path)
-    _write_code_notebook(tmp_path / "notes" / "err.ipynb", ["1/0"])
+    _write_code_notebook(tmp_path / "nb" / "notes" / "err.ipynb", ["1/0"])
     result = runner.invoke(cli.app, ["run", "err"])
     assert result.exit_code == 1
     assert "ZeroDivisionError" in cli_console.getvalue()

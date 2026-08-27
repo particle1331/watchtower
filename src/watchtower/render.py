@@ -6,9 +6,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-NOTES_PDF_DIR = Path("notes/pdf")
-ARTICLES_PDF_DIR = Path("articles/pdf")
-ARTICLES_DIR = Path("articles").resolve()
+from .paths import ARTICLES_DIR as ARTICLES_SOURCE_DIR
+from .paths import NOTES_DIR
+
+NOTES_PDF_DIR = NOTES_DIR / "pdf"
+ARTICLES_PDF_DIR = ARTICLES_SOURCE_DIR / "pdf"
+ARTICLES_DIR = ARTICLES_SOURCE_DIR.resolve()
 
 
 def _pdf_dir_for(qmd: Path) -> Path:
@@ -33,7 +36,7 @@ def _find_output_pdf(qmd: Path) -> Path | None:
 
 
 def render_pdf(source: str) -> Path:
-    """Render a .qmd file to PDF under notes/pdf/ or articles/pdf/."""
+    """Render a .qmd file to PDF under nb/notes/pdf/ or nb/articles/pdf/."""
     src = Path(source).resolve()
     if not src.exists():
         raise FileNotFoundError(src)

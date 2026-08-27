@@ -18,14 +18,14 @@ def populated_repo(tmp_path, monkeypatch):
     nb.cells = [nbformat.v4.new_markdown_cell("hello")]
 
     # notes tier — flat
-    (tmp_path / "notes").mkdir()
-    nbformat.write(nb, tmp_path / "notes" / "001-test.ipynb")
-    nbformat.write(nb, tmp_path / "notes" / "index.ipynb")  # must be excluded
+    (tmp_path / "nb" / "notes").mkdir(parents=True)
+    nbformat.write(nb, tmp_path / "nb" / "notes" / "001-test.ipynb")
+    nbformat.write(nb, tmp_path / "nb" / "notes" / "index.ipynb")  # must be excluded
 
-    # courses tier — one level deeper: courses/<course>/<chapter>.ipynb
-    (tmp_path / "courses" / "ml").mkdir(parents=True)
-    nbformat.write(nb, tmp_path / "courses" / "ml" / "01-intro.ipynb")
-    nbformat.write(nb, tmp_path / "courses" / "ml" / "index.ipynb")  # must be excluded
+    # courses tier — one level deeper: nb/courses/<course>/<chapter>.ipynb
+    (tmp_path / "nb" / "courses" / "ml").mkdir(parents=True)
+    nbformat.write(nb, tmp_path / "nb" / "courses" / "ml" / "01-intro.ipynb")
+    nbformat.write(nb, tmp_path / "nb" / "courses" / "ml" / "index.ipynb")  # must be excluded
 
     return tmp_path
 
@@ -35,19 +35,19 @@ def populated_repo(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_list_ipynb_notes(populated_repo):
-    items = wt_inspect.list_ipynb(Path("notes"))
+    items = wt_inspect.list_ipynb(Path("nb") / "notes")
     names = [Path(i).name for i in items]
     assert "001-test.ipynb" in names
 
 
 def test_list_ipynb_excludes_index(populated_repo):
-    items = wt_inspect.list_ipynb(Path("notes"))
+    items = wt_inspect.list_ipynb(Path("nb") / "notes")
     names = [Path(i).name for i in items]
     assert "index.ipynb" not in names
 
 
 def test_list_ipynb_courses_nested(populated_repo):
-    items = wt_inspect.list_ipynb(Path("courses"))
+    items = wt_inspect.list_ipynb(Path("nb") / "courses")
     names = [Path(i).name for i in items]
     assert "01-intro.ipynb" in names
     assert "index.ipynb" not in names
@@ -73,6 +73,10 @@ def test_repo_map_json_is_valid(populated_repo):
     assert "notes" in data
 
 
+def test_repo_map_portfolio_path(populated_repo):
+    assert wt_inspect.repo_map()["portfolio"] == "nb/portfolio/portfolio.ipynb"
+
+
 def test_repo_map_notes_content(populated_repo):
     m = wt_inspect.repo_map()
     assert any("001-test.ipynb" in n for n in m["notes"])
@@ -94,19 +98,24 @@ def test_resolve_bare_stem(populated_repo):
 
 
 def test_resolve_tier_prefix_notes(populated_repo):
-    p = wt_inspect.resolve_ipynb("notes/001-test")
+    p = wt_inspect.resolve_ipynb("nb/notes/001-test")
     assert p.exists()
 
 
+def test_resolve_short_tier_prefix_notes(populated_repo):
+    p = wt_inspect.resolve_ipynb("notes/001-test")
+    assert p == (Path("nb") / "notes" / "001-test.ipynb").resolve()
+
+
 def test_resolve_tier_prefix_course(populated_repo):
-    # courses are one level deeper: courses/<course>/<chapter>
-    p = wt_inspect.resolve_ipynb("courses/ml/01-intro")
+    # courses are one level deeper: nb/courses/<course>/<chapter>
+    p = wt_inspect.resolve_ipynb("nb/courses/ml/01-intro")
     assert p.exists()
     assert p.name == "01-intro.ipynb"
 
 
 def test_resolve_full_path(populated_repo):
-    full = str(populated_repo / "notes" / "001-test.ipynb")
+    full = str(populated_repo / "nb" / "notes" / "001-test.ipynb")
     p = wt_inspect.resolve_ipynb(full)
     assert p.exists()
 

@@ -364,7 +364,7 @@ def _git_init_and_commit(path: str) -> None:
 
 
 def test_diff_notebook_shows_changes(nb_file, tmp_path):
-    _git_init_and_commit("notes/test.ipynb")
+    _git_init_and_commit("nb/notes/test.ipynb")
     notebook.edit_cell("test", "# Updated title", index=0)
     out = notebook.diff_notebook("test")
     assert out is not None
@@ -374,7 +374,7 @@ def test_diff_notebook_shows_changes(nb_file, tmp_path):
 
 def test_diff_notebook_decodes_solution_without_fence(nb_file, tmp_path):
     _append_solution_cell(nb_file)
-    _git_init_and_commit("notes/test.ipynb")
+    _git_init_and_commit("nb/notes/test.ipynb")
     notebook.edit_cell("test", obfuscate.wrap("**Solution.** Updated."), tag="solution")
     out = notebook.diff_notebook("test")
     assert out is not None
@@ -383,7 +383,7 @@ def test_diff_notebook_decodes_solution_without_fence(nb_file, tmp_path):
 
 
 def test_diff_notebook_unchanged_returns_none(nb_file, tmp_path):
-    _git_init_and_commit("notes/test.ipynb")
+    _git_init_and_commit("nb/notes/test.ipynb")
     assert notebook.diff_notebook("test") is None
 
 

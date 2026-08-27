@@ -42,7 +42,7 @@ def new_note(
         help="display title (default: derived from name)",
     ),
 ) -> None:
-    """Create notes/<name>.ipynb with a minimal frontmatter stub."""
+    """Create nb/notes/<name>.ipynb with a minimal frontmatter stub."""
     from . import scaffold
 
     path = scaffold.new_note(name, title=title)
@@ -59,7 +59,7 @@ def new_article(
         help="display title (default: derived from name)",
     ),
 ) -> None:
-    """Create articles/<name>.ipynb with a date and title frontmatter."""
+    """Create nb/articles/<name>.ipynb with a date and title frontmatter."""
     from . import scaffold
 
     path = scaffold.new_article(name, title=title)
@@ -71,7 +71,7 @@ def new_course(
     name: str = typer.Argument(..., help="course folder name (e.g. llm)"),
     title: str = typer.Argument(..., help='display title (e.g. "Large Language Models")'),
 ) -> None:
-    """Create courses/<name>/ with an index notebook and a first lesson stub."""
+    """Create nb/courses/<name>/ with an index notebook and a first lesson stub."""
     from . import scaffold
 
     path = scaffold.new_course(name, title=title)
@@ -104,7 +104,7 @@ def new_chapter(
         help="section name to place this chapter under (default: last section)",
     ),
 ) -> None:
-    """Scaffold courses/<course>/<name>.ipynb and register it in the course sidebar."""
+    """Scaffold nb/courses/<course>/<name>.ipynb and register it in the course sidebar."""
     from . import scaffold
 
     path = scaffold.new_course_chapter(course, name, title=title, section=section)
@@ -487,13 +487,14 @@ def _print_diff(out: str) -> None:
 def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projects")) -> None:
     """List source `.ipynb` notebooks in a tier."""
     from . import inspect
+    from .paths import ARTICLES_DIR, COURSES_DIR, NOTES_DIR
 
     if tier == "notes":
-        items = inspect.list_ipynb(Path("notes"))
+        items = inspect.list_ipynb(NOTES_DIR)
     elif tier == "articles":
-        items = inspect.list_ipynb(Path("articles"))
+        items = inspect.list_ipynb(ARTICLES_DIR)
     elif tier == "courses":
-        items = inspect.list_ipynb(Path("courses"))
+        items = inspect.list_ipynb(COURSES_DIR)
     elif tier == "projects":
         items = [p["name"] for p in inspect.list_projects()]
     else:
@@ -533,8 +534,8 @@ def import_cmd(
 ) -> None:
     """Import an external notebook into a content tier (preserves outputs).
 
-    For notes/articles: writes to <tier>/<name>.ipynb.
-    For courses: writes to courses/<course>/<chapter>.ipynb and registers
+    For notes/articles: writes to nb/<tier>/<name>.ipynb.
+    For courses: writes to nb/courses/<course>/<chapter>.ipynb and registers
     in the course's sidebar in _quarto.yml.
     """
     from . import convert
@@ -747,16 +748,27 @@ def render_cmd(
     tier_or_path: str = typer.Argument(..., help="tier (notes|articles) or ipynb path"),
     name: str | None = typer.Argument(None, help="source name (omit if path given)"),
 ) -> None:
-    """Render a source .ipynb to PDF (notes/pdf/ or articles/pdf/) and open it.
+    """Render a source .ipynb to PDF (nb/notes/pdf/ or nb/articles/pdf/) and open it.
 
     Usage:
-      wt render notes test          -> render notes/test.ipynb
-      wt render articles test       -> render articles/test.ipynb
-      wt render notes/test.ipynb    -> full path
+      wt render notes test          -> render nb/notes/test.ipynb
+      wt render articles test       -> render nb/articles/test.ipynb
+      wt render nb/notes/test.ipynb    -> full path
     """
     from . import render
 
-    source = f"{tier_or_path}/{name}.ipynb" if name else tier_or_path
+    if name:
+        from .paths import ARTICLES_DIR, NOTES_DIR
+
+        tier_dirs = {"notes": NOTES_DIR, "articles": ARTICLES_DIR}
+        try:
+            source = str(tier_dirs[tier_or_path] / f"{name}.ipynb")
+        except KeyError as e:
+            raise ValueError(
+                f"render tier must be notes or articles, got: {tier_or_path}"
+            ) from e
+    else:
+        source = tier_or_path
     pdf = render.render_pdf(source)
     console.print(f"[green]rendered {pdf}[/green]")
     _open(pdf)

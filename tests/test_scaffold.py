@@ -13,7 +13,7 @@ from watchtower import scaffold
 def test_new_note_creates_file(repo):
     path = scaffold.new_note("my-note")
     assert path == scaffold.NOTES_DIR / "my-note.ipynb"
-    assert (repo / "notes" / "my-note.ipynb").exists()
+    assert (repo / "nb" / "notes" / "my-note.ipynb").exists()
 
 
 def test_new_note_custom_title(repo):
@@ -42,7 +42,7 @@ def test_new_note_default_title_is_name(repo):
 
 def test_new_article_creates_file(repo):
     scaffold.new_article("svd")
-    assert (repo / "articles" / "svd.ipynb").exists()
+    assert (repo / "nb" / "articles" / "svd.ipynb").exists()
 
 
 def test_new_article_derives_title(repo):
@@ -63,9 +63,9 @@ def test_new_article_custom_title(repo):
 
 def test_new_course_creates_directory(repo):
     scaffold.new_course("ml", "Machine Learning")
-    assert (repo / "courses" / "ml").is_dir()
-    assert (repo / "courses" / "ml" / "index.ipynb").exists()
-    assert (repo / "courses" / "ml" / "01-introduction.ipynb").exists()
+    assert (repo / "nb" / "courses" / "ml").is_dir()
+    assert (repo / "nb" / "courses" / "ml" / "index.ipynb").exists()
+    assert (repo / "nb" / "courses" / "ml" / "01-introduction.ipynb").exists()
 
 
 def test_new_course_registers_sidebar(repo):
@@ -91,7 +91,7 @@ def test_new_course_idempotent_registration(repo):
 def test_new_chapter_creates_file(repo):
     scaffold.new_course("ml", "Machine Learning")
     scaffold.new_course_chapter("ml", "02-regression")
-    assert (repo / "courses" / "ml" / "02-regression.ipynb").exists()
+    assert (repo / "nb" / "courses" / "ml" / "02-regression.ipynb").exists()
 
 
 def test_new_chapter_derives_title(repo):
@@ -120,7 +120,7 @@ def test_new_chapter_registered_in_sidebar(repo):
         for c in section.get("contents", [])
         if isinstance(c, dict)
     ]
-    assert "courses/ml/02-regression.ipynb" in hrefs
+    assert "nb/courses/ml/02-regression.ipynb" in hrefs
 
 
 def test_new_chapter_missing_course_raises(repo):

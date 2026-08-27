@@ -53,7 +53,7 @@ def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = ""
 
 
 def new_note(name: str, title: str | None = None) -> Path:
-    """Create notes/<name>.ipynb with a date and title frontmatter.
+    """Create nb/notes/<name>.ipynb with a date and title frontmatter.
 
     If `title` is None, the notebook name is used as the title.
     """
@@ -66,7 +66,7 @@ def new_note(name: str, title: str | None = None) -> Path:
 
 
 def new_article(name: str, title: str | None = None) -> Path:
-    """Create articles/<name>.ipynb with a date and title frontmatter.
+    """Create nb/articles/<name>.ipynb with a date and title frontmatter.
 
     If `title` is None, a title is derived from the name by replacing
     separators with spaces and title-casing (e.g. "my-article" -> "My Article").
@@ -90,6 +90,11 @@ def _find_course_sidebar_entry(data: Any, name: str) -> dict | None:
     return None
 
 
+def _course_href(course: str, filename: str) -> str:
+    """Return a Quarto href for a notebook in a course."""
+    return f"{COURSES_DIR.as_posix()}/{course}/{filename}"
+
+
 def _register_course(name: str) -> None:
     """Add a sidebar entry for course *name* to _quarto.yml if not present."""
     quarto = Path("_quarto.yml")
@@ -106,12 +111,12 @@ def _register_course(name: str) -> None:
         "contents": [
             {
                 "section": "",
-                "href": f"courses/{name}/index.ipynb",
+                "href": _course_href(name, "index.ipynb"),
                 "contents": [
-                    {"text": "Overview", "href": f"courses/{name}/index.ipynb"},
+                    {"text": "Overview", "href": _course_href(name, "index.ipynb")},
                     {
                         "text": "01. Introduction",
-                        "href": f"courses/{name}/01-introduction.ipynb",
+                        "href": _course_href(name, "01-introduction.ipynb"),
                     },
                 ],
             }
@@ -122,7 +127,7 @@ def _register_course(name: str) -> None:
 
 
 def new_course(name: str, title: str) -> Path:
-    """Create courses/<name>/ with an index notebook and a first lesson stub."""
+    """Create nb/courses/<name>/ with an index notebook and a first lesson stub."""
     course_dir = COURSES_DIR / name
     course_dir.mkdir(parents=True, exist_ok=True)
 
@@ -148,7 +153,7 @@ def new_course_chapter(
     title: str | None = None,
     section: str | None = None,
 ) -> Path:
-    """Create courses/<course>/<name>.ipynb and register it in the course sidebar.
+    """Create nb/courses/<course>/<name>.ipynb and register it in the course sidebar.
 
     If `title` is None, a placeholder is derived from `name` for both the
     notebook frontmatter and the sidebar text. The two are independent
@@ -219,12 +224,12 @@ def _register_chapter_in_sidebar(
     section_contents: list = target.setdefault("contents", [])
     section_contents.append({
         "text": title,
-        "href": f"courses/{course}/{name}.ipynb",
+        "href": _course_href(course, f"{name}.ipynb"),
     })
 
     # If the section has no href, set it to this chapter
     if "href" not in target or target["href"] is None:
-        target["href"] = f"courses/{course}/{name}.ipynb"
+        target["href"] = _course_href(course, f"{name}.ipynb")
 
     _dump_yaml(quarto, data)
 

@@ -35,7 +35,7 @@ def _write_output_notebook(path):
 
 def test_get_cell_outputs_normalizes_text_and_images(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    path, png = _write_output_notebook(tmp_path / "notes" / "plot.ipynb")
+    path, png = _write_output_notebook(tmp_path / "nb" / "notes" / "plot.ipynb")
 
     values = outputs.get_cell_outputs(path, 0)
 
@@ -49,7 +49,7 @@ def test_get_cell_outputs_normalizes_text_and_images(tmp_path, monkeypatch):
 def test_save_cell_images_writes_decoded_payload(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(outputs, "ROOT_PATH", tmp_path)
-    path, png = _write_output_notebook(tmp_path / "notes" / "plot.ipynb")
+    path, png = _write_output_notebook(tmp_path / "nb" / "notes" / "plot.ipynb")
 
     saved = outputs.save_cell_images(path, 0)
 
@@ -59,8 +59,8 @@ def test_save_cell_images_writes_decoded_payload(tmp_path, monkeypatch):
 
 def test_markdown_cell_has_no_outputs(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    path = tmp_path / "notes" / "plain.ipynb"
-    path.parent.mkdir()
+    path = tmp_path / "nb" / "notes" / "plain.ipynb"
+    path.parent.mkdir(parents=True)
     nb = nbformat.v4.new_notebook()
     nb.cells = [nbformat.v4.new_markdown_cell("text")]
     nbformat.write(nb, path)
@@ -70,7 +70,7 @@ def test_markdown_cell_has_no_outputs(tmp_path, monkeypatch):
 
 def test_get_cell_output_missing_raises(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    path, _ = _write_output_notebook(tmp_path / "notes" / "plot.ipynb")
+    path, _ = _write_output_notebook(tmp_path / "nb" / "notes" / "plot.ipynb")
 
     try:
         outputs.get_cell_output(path, 0, output_index=10)
@@ -83,7 +83,7 @@ def test_get_cell_output_missing_raises(tmp_path, monkeypatch):
 def test_cli_output_extracts_image(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(outputs, "ROOT_PATH", tmp_path)
-    _write_output_notebook(tmp_path / "notes" / "plot.ipynb")
+    _write_output_notebook(tmp_path / "nb" / "notes" / "plot.ipynb")
 
     result = runner.invoke(cli.app, ["output", "plot", "--index", "0"])
 

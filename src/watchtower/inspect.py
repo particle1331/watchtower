@@ -12,7 +12,14 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .paths import ARTICLES_DIR, CONTENT_DIRS, COURSES_DIR, NOTES_DIR
+from .paths import (
+    ARTICLES_DIR,
+    CONTENT_DIRS,
+    COURSES_DIR,
+    NB_DIR,
+    NOTES_DIR,
+    PORTFOLIO_PATH,
+)
 
 
 def list_ipynb(src_dir: Path) -> list[str]:
@@ -48,7 +55,7 @@ def repo_map() -> dict:
         "notes": list_ipynb(NOTES_DIR),
         "courses": list_ipynb(COURSES_DIR),
         "projects": list_projects(),
-        "portfolio": "portfolio.ipynb",
+        "portfolio": str(PORTFOLIO_PATH),
         "rules": "AGENTS.md",
     }
 
@@ -120,23 +127,29 @@ def resolve_ipynb(name: str) -> Path:
 
     Accepted forms:
       - 001-testnote                 bare stem (searched across tiers)
-      - notes/001-testnote           tier-prefixed stem (--index, --limit: 0)
-      - notes/001-testnote.ipynb     full path
+      - nb/notes/001-testnote           tier-prefixed stem (--index, --limit: 0)
+      - nb/notes/001-testnote.ipynb     full path
     """
     # Full path: direct check
     maybe = Path(name)
     if maybe.exists() and maybe.suffix == ".ipynb":
         return maybe.resolve()
-    # Tier-prefixed stem: strip the tier dir prefix
-    parts = name.split("/", 1)
-    if len(parts) == 2 and parts[0] in {"notes", "articles", "courses"}:
-        tier, stem = parts
-        # Strip optional .ipynb suffix
-        if stem.endswith(".ipynb"):
-            stem = stem[:-len(".ipynb")]
-        path = Path(tier) / f"{stem}.ipynb"
+    # Tier-prefixed stems retain their short public form for CLI ergonomics,
+    # while resolving into the new nb/ content root. Full nb/... paths also
+    # work, including a stem without the .ipynb suffix.
+    parts = Path(name).parts
+    if parts and parts[0] in {"notes", "articles", "courses"}:
+        path = NB_DIR.joinpath(*parts)
+        if path.suffix != ".ipynb":
+            path = path.with_suffix(".ipynb")
         if path.exists():
-            return path
+            return path.resolve()
+    if parts and parts[0] == NB_DIR.name and len(parts) > 1:
+        path = Path(*parts)
+        if path.suffix != ".ipynb":
+            path = path.with_suffix(".ipynb")
+        if path.exists():
+            return path.resolve()
     # Bare stem: search across tiers
     for base in CONTENT_DIRS:
         for p in base.rglob(f"{name}.ipynb"):

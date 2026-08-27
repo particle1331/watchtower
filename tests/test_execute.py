@@ -24,7 +24,7 @@ def _output_text(cell) -> str:
 
 def test_run_uses_notebook_kernelspec_unless_overridden(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    path = tmp_path / "notes" / "kernel.ipynb"
+    path = tmp_path / "nb" / "notes" / "kernel.ipynb"
     path.parent.mkdir(parents=True, exist_ok=True)
     nb = nbformat.v4.new_notebook()
     nb.metadata["kernelspec"] = {"name": "watchtower"}
@@ -62,7 +62,7 @@ def test_run_writes_stdout_output(nb_file):
 
 def test_run_captures_error_and_continues(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    path = _write_code_notebook(tmp_path / "notes" / "err.ipynb", ["1/0", "print('after')"])
+    path = _write_code_notebook(tmp_path / "nb" / "notes" / "err.ipynb", ["1/0", "print('after')"])
     result = execute.run_notebook("err")
     assert result["ran"] == 2
     assert result["errors"] == [
@@ -79,7 +79,7 @@ def test_run_captures_error_and_continues(tmp_path, monkeypatch):
 def test_run_single_cell_writes_only_requested_cell(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     path = _write_code_notebook(
-        tmp_path / "notes" / "single.ipynb", ["print('first')", "print('second')"]
+        tmp_path / "nb" / "notes" / "single.ipynb", ["print('first')", "print('second')"]
     )
     result = execute.run_notebook("single", index=0)
     assert result["ran"] == 1
@@ -93,7 +93,7 @@ def test_run_single_cell_writes_only_requested_cell(tmp_path, monkeypatch):
 def test_run_single_cell_has_state_from_earlier_cells(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     path = _write_code_notebook(
-        tmp_path / "notes" / "context.ipynb", ["value = 41", "print(value + 1)"]
+        tmp_path / "nb" / "notes" / "context.ipynb", ["value = 41", "print(value + 1)"]
     )
 
     result = execute.run_notebook("context", index=1)
@@ -113,7 +113,7 @@ def test_run_single_cell_out_of_bounds(nb_file):
 
 def test_run_zero_code_cells_skips_kernel(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    path = tmp_path / "notes" / "mdonly.ipynb"
+    path = tmp_path / "nb" / "notes" / "mdonly.ipynb"
     path.parent.mkdir(parents=True, exist_ok=True)
     nb = nbformat.v4.new_notebook()
     nb.cells = [nbformat.v4.new_markdown_cell("# only markdown")]

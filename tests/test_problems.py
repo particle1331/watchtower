@@ -71,9 +71,9 @@ def heading(chapter: int, num: int, title: str) -> str:
 
 
 def build_course(base):
-    """Build courses/demo chapter notebooks from SPECS using wt add-exercise."""
+    """Build nb/courses/demo chapter notebooks from SPECS using wt add-exercise."""
     for stem, probs in SPECS.items():
-        chapter = base / "courses" / "demo" / f"{stem}.ipynb"
+        chapter = base / "nb" / "courses" / "demo" / f"{stem}.ipynb"
         if not chapter.exists():
             make_notebook(
                 chapter,
@@ -95,7 +95,7 @@ def build_course(base):
 def course(tmp_path, monkeypatch):
     """cwd = tmp_path with a synthetic demo course built from SPECS."""
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "courses" / "demo").mkdir(parents=True)
+    (tmp_path / "nb" / "courses" / "demo").mkdir(parents=True)
     build_course(tmp_path)
     return tmp_path
 

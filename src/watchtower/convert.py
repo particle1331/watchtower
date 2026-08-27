@@ -5,7 +5,7 @@ elsewhere — Colab, Kaggle, a teammate's machine) into the chosen tier dir.
 Outputs are preserved as-is; Quarto renders them without re-execution.
 
 `wt import <src.ipynb> courses <course> [<chapter>]` imports a notebook as
-a chapter of an existing course, copying it to `courses/<course>/<stem>.ipynb`
+a chapter of an existing course, copying it to `nb/courses/<course>/<stem>.ipynb`
 and registering it in the course's sidebar in `_quarto.yml`.
 """
 
@@ -146,7 +146,7 @@ def import_chapter(
 ) -> Path:
     """Import a notebook as a chapter of a course.
 
-    Copies `<src>.ipynb` to `courses/<course>/<chapter>.ipynb` (default
+    Copies `<src>.ipynb` to `nb/courses/<course>/<chapter>.ipynb` (default
     chapter name = source filename without extension) and registers it
     in the course's sidebar in `_quarto.yml` under the last section, or
     under `section` if given. The sidebar text is derived from the chapter

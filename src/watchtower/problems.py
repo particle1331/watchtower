@@ -28,6 +28,7 @@ import nbformat
 
 from . import obfuscate
 from .notebook import cell_tags, check_source_limit, read_notebook
+from .paths import COURSES_DIR
 
 #: A problem id tag: chapter number + '-' + problem number, e.g. '07-3'.
 ID_RE = re.compile(r"^\d{1,3}-\d+$")
@@ -52,8 +53,8 @@ def problem_counts(course: str) -> tuple[int, int]:
 
 
 def chapter_notebooks(course: str) -> list[Path]:
-    """Sorted chapter notebooks ``courses/<course>/NN-*.ipynb``."""
-    course_dir = Path("courses") / course
+    """Sorted chapter notebooks ``nb/courses/<course>/NN-*.ipynb``."""
+    course_dir = COURSES_DIR / course
     chapters = sorted(course_dir.glob("[0-9][0-9]-*.ipynb"))
     if not chapters:
         raise FileNotFoundError(
@@ -128,7 +129,7 @@ def _resolve_chapter(course: str, chapter_part: str) -> str:
 
 
 def _chapter_path(course: str, stem: str) -> Path:
-    return Path("courses") / course / f"{stem}.ipynb"
+    return COURSES_DIR / course / f"{stem}.ipynb"
 
 
 def _id_tags(cell: nbformat.NotebookNode) -> list[str]:

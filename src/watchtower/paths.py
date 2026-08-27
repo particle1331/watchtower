@@ -8,10 +8,15 @@ from pathlib import Path
 # here rather than whichever directory happens to be the caller's cwd.
 ROOT_PATH = Path(__file__).parents[2]
 
-# Tier directories (relative to repo root / cwd).
-NOTES_DIR    = Path("notes")
-COURSES_DIR  = Path("courses")
-ARTICLES_DIR = Path("articles")
+# Notebook content is grouped under one root-level directory. These paths are
+# relative so the CLI and its isolated tests continue to follow the caller's
+# current working directory.
+NB_DIR       = Path("nb")
+NOTES_DIR    = NB_DIR / "notes"
+COURSES_DIR  = NB_DIR / "courses"
+ARTICLES_DIR = NB_DIR / "articles"
+PORTFOLIO_DIR = NB_DIR / "portfolio"
+PORTFOLIO_PATH = PORTFOLIO_DIR / "portfolio.ipynb"
 PROJECTS_DIR = Path("projects")
 
 CONTENT_DIRS: tuple[Path, ...] = (ARTICLES_DIR, NOTES_DIR, COURSES_DIR)

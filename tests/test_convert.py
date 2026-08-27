@@ -39,20 +39,20 @@ def test_import_notebook_to_notes(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
     dest = convert.import_notebook(str(external_nb), "notes")
     assert dest.exists()
-    assert dest == Path("notes") / "external.ipynb"
+    assert dest == Path("nb") / "notes" / "external.ipynb"
 
 
 def test_import_notebook_to_articles(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
     dest = convert.import_notebook(str(external_nb), "articles")
     assert dest.exists()
-    assert dest == Path("articles") / "external.ipynb"
+    assert dest == Path("nb") / "articles" / "external.ipynb"
 
 
 def test_import_notebook_custom_name(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
     dest = convert.import_notebook(str(external_nb), "notes", "my-note")
-    assert dest == Path("notes") / "my-note.ipynb"
+    assert dest == Path("nb") / "notes" / "my-note.ipynb"
 
 
 def test_import_notebook_preserves_cells(tmp_path, monkeypatch, external_nb):
@@ -140,7 +140,7 @@ def test_import_notebook_missing_source_raises(tmp_path, monkeypatch):
 
 def test_import_chapter_default_name(repo_with_course, external_nb):
     dest = convert.import_chapter(str(external_nb), "ml")
-    # result is at courses/ml/<stem>.ipynb
+    # result is at nb/courses/ml/<stem>.ipynb
     assert dest.exists()
     assert dest.parent.name == "ml"
     assert dest.name == "external.ipynb"
@@ -148,7 +148,7 @@ def test_import_chapter_default_name(repo_with_course, external_nb):
 
 def test_import_chapter_custom_name(repo_with_course, external_nb):
     dest = convert.import_chapter(str(external_nb), "ml", chapter="02-regression")
-    assert dest == Path("courses") / "ml" / "02-regression.ipynb"
+    assert dest == Path("nb") / "courses" / "ml" / "02-regression.ipynb"
     assert dest.exists()
 
 

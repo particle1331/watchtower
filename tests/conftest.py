@@ -49,10 +49,10 @@ def invoke(monkeypatch):
 
 @pytest.fixture
 def nb_file(tmp_path, monkeypatch):
-    """A 3-cell notebook at notes/test.ipynb with cwd = tmp_path."""
+    """A 3-cell notebook at nb/notes/test.ipynb with cwd = tmp_path."""
     monkeypatch.chdir(tmp_path)
     return make_notebook(
-        tmp_path / "notes" / "test.ipynb",
+        tmp_path / "nb" / "notes" / "test.ipynb",
         [
             nbformat.v4.new_markdown_cell("# Title"),
             nbformat.v4.new_code_cell("print('hello')"),
