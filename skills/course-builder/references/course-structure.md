@@ -21,6 +21,12 @@ examples of course structure and phased sidebar organization.
 
 ## Scaffolding
 
+Before scaffolding or revising a course, use a dedicated Git worktree when the
+environment permits it. Run the preview from that worktree on a separate port,
+for example `.venv/bin/wt docs --port 4300`, and report the resulting URL in
+agent updates. A separate port alone is insufficient when two agents share the
+same checkout because they still share the source files and `_site` output.
+
 1. Run `wt new course <name> "<Title>"` to create the course home and first
    chapter stub.
 2. If the course needs a whole-system orientation before Chapter 01, run

@@ -8,6 +8,11 @@ problems, starter code, solutions, or hints.
 Exercise identity is stored in Jupyter tags; pairing is by shared id, never by
 position.
 
+Every chapter's problem set belongs under a dedicated `## Exercises` section,
+placed after the chapter's summary or final teaching section and before the
+first problem statement. Do not leave problems as an unheaded continuation of
+`## Summary`.
+
 - A problem statement is a Markdown cell tagged `problem` and `<chapter>-<n>`,
   for example `07-3`.
 - Its heading is `### [P<NN>.<N>] Title`, where `NN` is the chapter number and

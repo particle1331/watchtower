@@ -89,8 +89,6 @@ Keep this preview accessible at the prerequisite level:
 - Connect each technical preview to the chapter that makes it operational.
 - Distinguish planning estimates from values learners will measure.
 
-End Chapter 00 by explaining why Chapter 01 begins where it does.
-
 ## Content routing test
 
 | Reader question | Location |

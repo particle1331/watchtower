@@ -27,6 +27,34 @@ For notebook prose, also use `notebook-writing-style`. For Quarto options,
 figures, tables, Markdown outputs, Mermaid, or render troubleshooting, also use
 `quarto-jupyter`.
 
+## Workspace and preview isolation
+
+For a new course or a multi-file course revision, work from a dedicated Git
+worktree whenever the environment permits it. This keeps the user's primary
+checkout and its site preview usable while the course is being authored. Use an
+existing task worktree when one is provided; otherwise create a sibling
+worktree from the task's starting commit, for example:
+
+```bash
+git worktree add ../watchtower-course-<slug> -b codex/course-<slug>
+```
+
+Check `git status` before creating it. Do not reset, clean, or copy over a dirty
+primary checkout, and do not silently create a worktree from `HEAD` when the
+task depends on uncommitted user changes. Use a worktree that contains the
+needed starting state or say in the update that the changes cannot be isolated
+safely.
+
+Serve the isolated worktree on a non-default port, usually 4300:
+
+```bash
+.venv/bin/wt docs --port 4300
+```
+
+Include the exact preview URL, such as `http://localhost:4300/`, in progress
+updates and the final handoff. A different port without a different worktree
+does not isolate the files or Quarto's `_site` output.
+
 ## Course content after orientation
 
 Once a course has `index.ipynb` and `00-overview.ipynb`, those notebooks are the
