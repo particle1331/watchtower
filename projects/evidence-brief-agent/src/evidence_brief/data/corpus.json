@@ -1,53 +1,62 @@
 [
   {
-    "id": "vendor-security-2026",
-    "title": "AtlasVector security and compliance guide",
-    "published": "2026-03-01",
-    "tags": ["security", "vendor"],
-    "text": "AtlasVector encrypts data in transit and at rest. Administrative actions are recorded in an exportable audit log. The guide states that EU data residency is available for enterprise deployments."
+    "id": "constitution-art-viii",
+    "title": "1987 Constitution, Article VIII, Section 1",
+    "published": "1987-02-02",
+    "authority_type": "constitution",
+    "citation": "CONST. (1987), art. VIII, sec. 1",
+    "official_url": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/14/67374",
+    "tags": ["constitutional", "controlling-text", "jurisdiction"],
+    "text": "This course-authored fixture summary states that Philippine judicial power includes settling actual controversies involving enforceable rights. It also includes deciding whether a government branch or instrumentality committed grave abuse of discretion amounting to lack or excess of jurisdiction."
   },
   {
-    "id": "independent-audit-2026",
-    "title": "Independent AtlasVector deployment audit",
-    "published": "2026-05-15",
-    "tags": ["security", "independent"],
-    "text": "The audit verified encryption and audit-log export. It found that production indexes were stored only in the US region during the assessment, so EU data residency was not yet available."
+    "id": "rule-65-certiorari",
+    "title": "1997 Rules of Civil Procedure, Rule 65",
+    "published": "1997-04-08",
+    "authority_type": "rule",
+    "citation": "RULES OF COURT, Rule 65, secs. 1 and 4",
+    "official_url": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/11/374",
+    "tags": ["rule", "controlling-text", "certiorari", "remedy"],
+    "text": "This course-authored fixture summary states that certiorari addresses judicial or quasi-judicial action taken without jurisdiction, beyond jurisdiction, or with grave abuse of discretion. The petitioner must lack an appeal or another plain, speedy, and adequate remedy in the ordinary course of law. The petition ordinarily must be filed within sixty days from notice of the challenged judgment, order, or resolution."
   },
   {
-    "id": "internal-benchmark-2026",
-    "title": "Northstar regulated-search benchmark",
-    "published": "2026-06-10",
-    "tags": ["performance", "internal"],
-    "text": "On the representative corpus, AtlasVector achieved recall at ten of 0.91 and p95 query latency of 182 milliseconds. Both results passed the pilot thresholds of 0.88 recall and 250 milliseconds."
+    "id": "gsis-board-v-ca-2018",
+    "title": "GSIS Board of Trustees v. Court of Appeals-Cebu City",
+    "published": "2018-06-20",
+    "authority_type": "decision",
+    "citation": "GSIS Board of Trustees v. Court of Appeals-Cebu City, G.R. No. 230953, June 20, 2018",
+    "official_url": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/23/64286",
+    "tags": ["decision", "general-rule", "exception", "certiorari", "appeal"],
+    "text": "This course-authored fixture summary describes certiorari as an independent action available only when no appeal or other plain, speedy, and adequate remedy exists. It states the general rule that certiorari cannot replace a lost appeal and characterizes grave abuse as patent and gross. It also notes that a party relying on an exception must substantiate the reason for departing from the general rule."
   },
   {
-    "id": "operations-review-2026",
-    "title": "AtlasVector operations review",
-    "published": "2026-06-18",
-    "tags": ["operations", "independent"],
-    "text": "Incremental indexing recovered automatically after a worker restart. Bulk reindexing required manual throttling, and the reviewer recommends a capacity run before production adoption."
+    "id": "punongbayan-v-people-2018",
+    "title": "Punongbayan-Visitacion v. People",
+    "published": "2018-01-10",
+    "authority_type": "decision",
+    "citation": "Punongbayan-Visitacion v. People, G.R. No. 194214, January 10, 2018",
+    "official_url": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/63864",
+    "tags": ["decision", "exception", "substantial-justice", "appeal"],
+    "text": "This course-authored fixture summary states that appeal and certiorari are generally not interchangeable. On the case's particular facts, the Court treated the certiorari petition as an appeal because it was filed within the appeal period and substantial justice warranted review."
   },
   {
-    "id": "regulatory-policy-2026",
-    "title": "Northstar regulated-data deployment policy",
-    "published": "2026-01-20",
-    "tags": ["policy", "internal"],
-    "text": "Production search services containing regulated documents require verified regional residency, encryption, exportable administrative audit logs, and a documented recovery test."
+    "id": "ortigas-v-ca-2024",
+    "title": "Ortigas and Company Limited Partnership v. Court of Appeals",
+    "published": "2024-02-12",
+    "authority_type": "decision",
+    "citation": "Ortigas and Company Limited Partnership v. Court of Appeals, G.R. No. 260118, February 12, 2024",
+    "official_url": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/69439",
+    "tags": ["decision", "exception", "due-process", "adequate-remedy"],
+    "text": "This course-authored fixture summary explains that certiorari may remain available when ordinary appeal is not a plain, speedy, and adequate remedy. It identifies a properly supported denial-of-due-process claim and broader interests of justice among circumstances requiring careful exception analysis."
   },
   {
-    "id": "vendor-benchmark-2024",
-    "title": "AtlasVector launch benchmark",
-    "published": "2024-02-11",
-    "tags": ["performance", "vendor"],
-    "text": "The launch benchmark reported p95 latency below 100 milliseconds on a small synthetic corpus.",
-    "outdated": true
-  },
-  {
-    "id": "travel-expense-policy",
-    "title": "Northstar travel and expense policy",
-    "published": "2026-02-01",
-    "tags": ["irrelevant"],
-    "text": "Employees must submit travel receipts within thirty days.",
+    "id": "unverified-review-outline",
+    "title": "Unverified bar-review outline",
+    "published": "2026-01-01",
+    "authority_type": "secondary",
+    "citation": "Unverified course fixture",
+    "tags": ["exception", "secondary"],
+    "text": "An unattributed outline claims that certiorari is always available after an appeal deadline expires.",
     "in_scope": false
   }
 ]

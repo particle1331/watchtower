@@ -37,10 +37,10 @@ class TaskProfile:
 
 def boundary_examples() -> list[TaskProfile]:
     return [
-        TaskProfile("FAQ", False, False, False, False, False, False),
-        TaskProfile("refactoring", True, False, False, True, False, True),
-        TaskProfile("research brief", True, True, True, True, True, True),
-        TaskProfile("incident postmortem", True, True, True, True, True, True),
+        TaskProfile("case citation lookup", False, False, False, False, False, False),
+        TaskProfile("single-rule explanation", True, False, False, True, False, True),
+        TaskProfile("legal research memorandum", True, True, True, True, True, True),
+        TaskProfile("multi-issue case assessment", True, True, True, True, True, True),
     ]
 
 
@@ -66,7 +66,7 @@ def compare_baselines(question_id: str = "conflict-01") -> list[dict[str, object
         {"approach": "skill loop", "complete": True, "unsupported": 1, "resume_keys": 1, "events": 4},
         {
             "approach": "staged pipeline",
-            "complete": artifact.recommendation == "pilot_only",
+            "complete": artifact.recommendation == "requires_exception_analysis",
             "unsupported": 0,
             "resume_keys": 5,
             "events": len(events),

@@ -1,4 +1,4 @@
-"""Cumulative LangGraph workflow for the deterministic evidence brief."""
+"""Cumulative LangGraph workflow for a deterministic legal research memorandum."""
 
 # pyright: reportTypedDictNotRequiredAccess=false
 
@@ -128,7 +128,7 @@ def build_evidence_brief_graph(
             claims.extend(runtime.context.model.extract(passage))
         controller.record_effect(f"collect:{task.id}")
         controller.cost_units += 1 + len(passages)
-        latency = {"security": 30, "performance": 20, "operations": 10}[task.id]
+        latency = {"controlling_text": 20, "general_rule": 30, "exceptions": 40}[task.id]
         controller.simulated_latency_ms += latency if sequential else max(0, latency - controller.simulated_latency_ms)
         return {
             "task_id": task.id,
@@ -213,7 +213,9 @@ def build_evidence_brief_graph(
                     "recommendation": recommendation,
                     "version": artifact.version + 1,
                     "markdown": artifact.markdown.replace(
-                        f"**{artifact.recommendation}**", f"**{recommendation}**", 1
+                        f"**{artifact.recommendation.replace('_', ' ').capitalize()}**",
+                        f"**{recommendation.replace('_', ' ').capitalize()}**",
+                        1,
                     ),
                 }
             )
@@ -369,5 +371,5 @@ def run_fixture(
         "cost_units": context.controller.cost_units,
         "simulated_latency_ms": context.controller.simulated_latency_ms,
     }
-    state["oracle"] = question_record(question_id)
+    state["oracle"] = question_record(question_id).model_dump()
     return state

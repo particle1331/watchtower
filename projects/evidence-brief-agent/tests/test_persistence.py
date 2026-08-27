@@ -35,5 +35,5 @@ def test_sqlite_restart_resumes_same_thread(tmp_path: Path, monkeypatch) -> None
         )
         assert result.value["status"] == "complete"
         assert len(list(restarted.get_state_history(config))) >= 8
-    assert context.controller.effects.count("collect:security") == 1
+    assert context.controller.effects.count("collect:controlling_text") == 1
     assert context.controller.effects.count("export:artifact") == 1

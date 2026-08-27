@@ -1,4 +1,4 @@
-"""Offline scripted model and an explicitly opt-in live adapter."""
+"""Offline legal-research model and an explicitly opt-in live adapter."""
 
 import json
 from collections.abc import Sequence
@@ -9,6 +9,7 @@ from evidence_brief.schemas import (
     BriefRequest,
     Claim,
     Contradiction,
+    LegalRole,
     Passage,
     ResearchTask,
 )
@@ -37,51 +38,50 @@ class ScriptedModelAdapter:
             raise ValueError("question_id is required in deterministic mode")
         return [
             ResearchTask(
-                id="security",
-                query="encryption audit residency regulated policy",
-                source_tags=["security", "policy", "independent"],
-                expected_claim_types=["security", "residency"],
+                id="controlling_text",
+                query="judicial power grave abuse certiorari jurisdiction adequate remedy filing period sixty days",
+                source_tags=["constitutional", "rule"],
+                expected_claim_types=["constitutional_text", "rule_text"],
             ),
             ResearchTask(
-                id="performance",
-                query="recall latency benchmark representative corpus",
-                source_tags=["performance", "internal", "vendor"],
-                expected_claim_types=["quality", "latency"],
+                id="general_rule",
+                query="certiorari substitute appeal grave abuse jurisdiction remedy",
+                source_tags=["general-rule"],
+                expected_claim_types=["holding"],
             ),
             ResearchTask(
-                id="operations",
-                query="indexing recovery capacity production",
-                source_tags=["operations", "independent"],
-                expected_claim_types=["recovery", "capacity"],
+                id="exceptions",
+                query="exception substantial justice due process plain speedy adequate remedy",
+                source_tags=["exception"],
+                expected_claim_types=["exception"],
             ),
         ]
 
     def extract(self, passage: Passage) -> list[Claim]:
-        rules = {
-            "vendor-security-2026": [
-                ("security", "audit_log", "available", "AtlasVector exposes an exportable audit log."),
-                ("residency", "eu_available", "yes", "The vendor guide says EU residency is available."),
+        rules: dict[str, list[tuple[str, str, str, str, str, LegalRole]]] = {
+            "constitution-art-viii": [
+                ("grave abuse", "judicial_review", "grave_abuse_review", "constitutional", "Judicial power includes review of grave abuse amounting to lack or excess of jurisdiction.", "constitutional_text"),
             ],
-            "independent-audit-2026": [
-                ("security", "audit_log", "verified", "An independent audit verified audit-log export."),
-                ("residency", "eu_available", "no", "The audit found that EU residency was not available."),
+            "rule-65-certiorari": [
+                ("certiorari addresses", "certiorari", "jurisdictional_defect", "required", "Rule 65 addresses lack or excess of jurisdiction and grave abuse of discretion.", "rule_text"),
+                ("petitioner must lack", "certiorari", "adequate_remedy", "none", "The petitioner must lack an appeal or another plain, speedy, and adequate remedy.", "rule_text"),
+                ("sixty days", "certiorari", "filing_period", "sixty_days", "The petition ordinarily must be filed within sixty days from notice of the challenged judgment, order, or resolution.", "rule_text"),
             ],
-            "internal-benchmark-2026": [
-                ("retrieval", "pilot_thresholds", "passed", "Recall and p95 latency passed pilot thresholds."),
+            "gsis-board-v-ca-2018": [
+                ("cannot replace", "certiorari", "substitute_for_appeal", "no", "Certiorari is an independent action and ordinarily cannot replace a lost appeal.", "holding"),
+                ("substantiate", "certiorari", "exceptions", "must_be_substantiated", "A party invoking a recognized exception must establish facts that justify departing from the general rule.", "exception"),
             ],
-            "operations-review-2026": [
-                ("operations", "restart_recovery", "automatic", "Indexing recovered after a worker restart."),
-                ("operations", "capacity_test", "required", "A capacity run is recommended before production."),
+            "punongbayan-v-people-2018": [
+                ("treated", "certiorari", "treated_as_appeal", "exceptionally", "The Court exceptionally treated a certiorari petition as an appeal where it was timely and substantial justice warranted review.", "exception"),
             ],
-            "regulatory-policy-2026": [
-                ("policy", "verified_residency", "required", "Regulated production requires verified residency."),
-            ],
-            "vendor-benchmark-2024": [
-                ("retrieval", "p95_latency", "under_100ms", "An outdated vendor benchmark reports sub-100ms p95."),
+            "ortigas-v-ca-2024": [
+                ("identifies", "certiorari", "adequate_remedy", "context_dependent", "Certiorari may remain available when the ordinary appeal is not a plain, speedy, and adequate remedy, including a properly supported denial-of-due-process claim.", "exception"),
             ],
         }
         output: list[Claim] = []
-        for index, (subject, predicate, value, text) in enumerate(rules.get(passage.source_id, []), 1):
+        for index, (needle, subject, predicate, value, text, legal_role) in enumerate(rules.get(passage.source_id, []), 1):
+            if needle not in passage.text.lower():
+                continue
             output.append(
                 Claim(
                     id=f"{passage.source_id}-c{index}",
@@ -90,32 +90,26 @@ class ScriptedModelAdapter:
                     value=value,
                     text=text,
                     kind="evidence",
+                    legal_role=legal_role,
+                    authority_citation=passage.citation,
+                    official_url=passage.official_url,
                     passage_id=passage.id,
                     source_id=passage.source_id,
-                    uncertainty="outdated source" if passage.source_id.endswith("2024") else "none",
+                    uncertainty="none",
                 )
             )
         return output
 
     def reconcile(self, claims: Sequence[Claim]) -> list[Contradiction]:
-        residency = [claim for claim in claims if claim.predicate == "eu_available"]
-        if {claim.value for claim in residency} == {"yes", "no"}:
+        general_rule = [claim for claim in claims if claim.predicate == "substitute_for_appeal"]
+        exceptions = [claim for claim in claims if claim.legal_role == "exception"]
+        if general_rule and exceptions:
             return [
                 Contradiction(
-                    id="residency-conflict",
-                    claim_ids=[claim.id for claim in residency],
-                    subject="EU data residency",
-                    resolution="Treat residency as unverified until an independent deployment test resolves it.",
-                )
-            ]
-        latency = [claim for claim in claims if claim.predicate in {"p95_latency", "pilot_thresholds"}]
-        if len(latency) > 1:
-            return [
-                Contradiction(
-                    id="benchmark-scope-conflict",
-                    claim_ids=[claim.id for claim in latency],
-                    subject="benchmark representativeness",
-                    resolution="Prefer the newer internal representative-corpus result.",
+                    id="appeal-exception-tension",
+                    claim_ids=[claim.id for claim in [*general_rule, *exceptions]],
+                    subject="general no-substitute rule and narrow exceptions",
+                    resolution="Apply the general rule first, then test each claimed exception against its facts and authority.",
                 )
             ]
         return []
@@ -126,23 +120,31 @@ class ScriptedModelAdapter:
         claims: Sequence[Claim],
         contradictions: Sequence[Contradiction],
     ) -> BriefArtifact:
-        if request.question_id.startswith("insufficient"):
-            recommendation = "insufficient_evidence"
-        elif request.question_id.startswith("conflict") or request.question_id in {"scope-02", "scope-03"}:
-            recommendation = "pilot_only"
+        facts = request.facts
+        if not facts.record_complete:
+            recommendation = "insufficient_authority"
+        elif not facts.grave_abuse_supported:
+            recommendation = "not_available_on_record"
+        elif facts.adequate_appeal_available and facts.exception_facts_supported:
+            recommendation = "requires_exception_analysis"
+        elif facts.adequate_appeal_available:
+            recommendation = "not_available_on_record"
         else:
-            recommendation = "adopt_with_controls"
+            recommendation = "available_with_conditions"
         cited = [claim for claim in claims if claim.source_id and claim.passage_id]
         citations = []
         for claim in cited:
             assert claim.source_id is not None and claim.passage_id is not None
-            citations.append(f"{claim.source_id}#{claim.passage_id.split(':', 1)[1]}")
-        evidence_lines = "\n".join(f"- {claim.text} [{citations[index]}]" for index, claim in enumerate(cited))
-        conflict_lines = "\n".join(f"- {item.subject}: {item.resolution}" for item in contradictions)
+            citations.append(f"{claim.authority_citation}; fixture {claim.passage_id.split(':', 1)[1]}")
+        authority_lines = "\n".join(f"- {claim.text} [{citations[index]}]" for index, claim in enumerate(cited))
+        qualification_lines = "\n".join(f"- {item.subject}: {item.resolution}" for item in contradictions)
+        short_answer = recommendation.replace("_", " ").capitalize()
         markdown = (
-            f"## Recommendation\n\n**{recommendation}** for: {request.question}\n\n"
-            f"## Evidence\n\n{evidence_lines or '- No supporting fixture evidence was found.'}\n\n"
-            f"## Contradictions and uncertainty\n\n{conflict_lines or '- No material contradiction was detected.'}"
+            f"## Question presented\n\n{request.question}\n\n"
+            f"## Short answer\n\n**{short_answer}**\n\n"
+            f"## Authorities and analysis\n\n{authority_lines or '- No supporting authority was found in the pinned corpus.'}\n\n"
+            f"## Qualifications and unresolved issues\n\n{qualification_lines or '- No material qualification was detected.'}\n\n"
+            "> Educational fixture only. A qualified Philippine lawyer must verify the authorities and apply them to the complete record."
         )
         return BriefArtifact(recommendation=recommendation, markdown=markdown, citations=citations)
 
@@ -162,7 +164,7 @@ class OpenAIModelAdapter:
         return json.loads(response.output_text)
 
     def plan(self, request: BriefRequest) -> list[ResearchTask]:
-        data = self._json("Create three bounded research tasks.", request.model_dump())
+        data = self._json("Create three bounded Philippine legal-research tasks.", request.model_dump())
         return [ResearchTask.model_validate(item) for item in data]
 
     def extract(self, passage: Passage) -> list[Claim]:
@@ -170,7 +172,7 @@ class OpenAIModelAdapter:
         return [Claim.model_validate(item) for item in data]
 
     def reconcile(self, claims: Sequence[Claim]) -> list[Contradiction]:
-        data = self._json("Reconcile direct contradictions.", [item.model_dump() for item in claims])
+        data = self._json("Reconcile holdings, rules, and exceptions.", [item.model_dump() for item in claims])
         return [Contradiction.model_validate(item) for item in data]
 
     def draft(
@@ -180,7 +182,7 @@ class OpenAIModelAdapter:
         contradictions: Sequence[Contradiction],
     ) -> BriefArtifact:
         data = self._json(
-            "Draft a concise evidence brief.",
+            "Draft a concise Philippine legal research memorandum with an educational-use disclaimer.",
             {
                 "request": request.model_dump(),
                 "claims": [item.model_dump() for item in claims],

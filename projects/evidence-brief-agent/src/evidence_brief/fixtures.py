@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from evidence_brief.schemas import BriefRequest, SourceRecord
+from evidence_brief.schemas import BriefRequest, EvaluationCase, PublicBarRecord, SourceRecord
 
 DATA_DIR = Path(__file__).with_name("data")
 
@@ -17,14 +17,18 @@ def load_corpus() -> list[SourceRecord]:
     return [SourceRecord.model_validate(row) for row in _load("corpus.json")]
 
 
-def load_questions() -> list[dict[str, Any]]:
-    return _load("questions.json")
+def load_questions() -> list[EvaluationCase]:
+    return [EvaluationCase.model_validate(row) for row in _load("questions.json")]
 
 
-def question_record(question_id: str) -> dict[str, Any]:
-    return next(row for row in load_questions() if row["id"] == question_id)
+def load_public_bar_records() -> list[PublicBarRecord]:
+    return [PublicBarRecord.model_validate(row) for row in _load("public_bar_regression.json")]
+
+
+def question_record(question_id: str) -> EvaluationCase:
+    return next(row for row in load_questions() if row.id == question_id)
 
 
 def request_for(question_id: str) -> BriefRequest:
     row = question_record(question_id)
-    return BriefRequest(question_id=question_id, question=row["question"])
+    return BriefRequest(question_id=question_id, question=row.question, facts=row.facts)

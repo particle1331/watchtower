@@ -24,7 +24,7 @@ def _write_run(state: dict[str, Any], output_dir: Path) -> tuple[Path, Path]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="evidence-brief")
+    parser = argparse.ArgumentParser(prog="evidence-brief", description="Run the Philippine legal-research fixture agent")
     subparsers = parser.add_subparsers(dest="command", required=True)
     run = subparsers.add_parser("run")
     run.add_argument("--question-id", default="conflict-01")

@@ -1,4 +1,4 @@
-"""Deterministic source, retrieval, provenance, and citation tools."""
+"""Deterministic authority, retrieval, provenance, and citation tools."""
 
 import re
 from dataclasses import dataclass
@@ -23,7 +23,7 @@ class FixtureCatalog:
 
 
 def _keywords(text: str) -> set[str]:
-    stop = {"and", "the", "for", "does", "should", "with", "from", "atlasvector"}
+    stop = {"and", "the", "for", "does", "should", "with", "from", "philippine", "rule"}
     return {word for word in re.findall(r"[a-z0-9]+", text.lower()) if len(word) > 3 and word not in stop}
 
 
@@ -52,6 +52,9 @@ def retrieve(
                         end=start + len(sentence),
                         text=sentence,
                         query=task.query,
+                        authority_type=source.authority_type,
+                        citation=source.citation,
+                        official_url=source.official_url,
                     )
                 )
                 matched = True
@@ -68,7 +71,8 @@ def retrieve(
 def render_citation(claim: Claim) -> str:
     if not claim.source_id or not claim.passage_id:
         raise ValueError(f"claim {claim.id} has no resolvable provenance")
-    return f"[{claim.source_id}#{claim.passage_id.split(':', 1)[1]}]"
+    citation = claim.authority_citation or claim.source_id
+    return f"[{citation}; fixture {claim.passage_id.split(':', 1)[1]}]"
 
 
 def verify_claim(claim: Claim, passages: list[Passage]) -> bool:

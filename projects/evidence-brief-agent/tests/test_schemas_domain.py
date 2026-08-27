@@ -28,4 +28,6 @@ def test_retrieval_preserves_offsets_and_provenance() -> None:
         assert source.text[passage.start : passage.end] == passage.text
         for claim in model.extract(passage):
             assert verify_claim(claim, passages)
-            assert render_citation(claim).startswith(f"[{source.id}#")
+            citation = render_citation(claim)
+            assert citation.startswith(f"[{source.citation}; fixture ")
+            assert citation.endswith("]")

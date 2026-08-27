@@ -1,7 +1,7 @@
 [project]
 name = "evidence-brief-agent"
 version = "0.1.0"
-description = "Deterministic evidence-brief workflow for the Watchtower LangGraph course"
+description = "Deterministic Philippine legal-research workflow for the Watchtower LangGraph course"
 readme = "README.md"
 authors = [
     { name = "particle1331", email = "54845098+particle1331@users.noreply.github.com" }

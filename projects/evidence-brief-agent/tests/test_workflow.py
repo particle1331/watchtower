@@ -12,7 +12,7 @@ from evidence_brief.workflow import build_evidence_brief_graph, make_context, ru
 def test_happy_path_is_complete_and_traceable() -> None:
     state = run_fixture("conflict-01")
     assert state["status"] == "complete"
-    assert state["artifact"]["recommendation"] == "pilot_only"
+    assert state["artifact"]["recommendation"] == "requires_exception_analysis"
     assert state["contradictions"]
     assert len({row["task_id"] for row in state["branch_results"]}) == 3
     assert len(state["artifact"]["citations"]) == len(state["claims"])
@@ -23,11 +23,11 @@ def test_edit_changes_exported_recommendation() -> None:
     decision = ReviewDecision(
         action="edit",
         reason="narrow the recommendation",
-        edited_recommendation="pilot_with_residency_gate",
+        edited_recommendation="exception_not_established",
     )
     state = run_fixture("conflict-01", review_decision=decision)
-    assert state["artifact"]["recommendation"] == "pilot_with_residency_gate"
-    assert "pilot_with_residency_gate" in state["artifact"]["markdown"]
+    assert state["artifact"]["recommendation"] == "exception_not_established"
+    assert "Exception not established" in state["artifact"]["markdown"]
 
 
 def test_reject_then_approve_uses_bounded_revision() -> None:
@@ -59,9 +59,9 @@ def test_reject_then_approve_uses_bounded_revision() -> None:
 
 
 def test_faults_have_explicit_terminal_reasons() -> None:
-    missing = run_fixture("conflict-01", faults=FaultPlan(missing_task_id="operations"))
+    missing = run_fixture("conflict-01", faults=FaultPlan(missing_task_id="exceptions"))
     assert missing["status"] == "failed"
-    assert missing["terminal_reason"] == "missing branches: operations"
+    assert missing["terminal_reason"] == "missing branches: exceptions"
     exhausted = run_fixture(
         "conflict-01",
         review_decision={"action": "reject", "reason": "still unsafe"},
