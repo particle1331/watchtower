@@ -1,0 +1,44 @@
+[project]
+name = "autocode"
+version = "0.2.0"
+description = "Full-stack local-first coding-agent application built in the Watchtower course"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = ["agent-harness>=0.1.0"]
+
+[project.scripts]
+autocode = "autocode.cli:main"
+
+[project.optional-dependencies]
+service = ["fastapi>=0.115", "uvicorn>=0.34"]
+desktop = ["flet>=0.28"]
+storage = ["boto3>=1.35"]
+
+[dependency-groups]
+dev = ["httpx>=0.28", "pytest>=9.0.0", "ruff>=0.8.0", "pyright>=1.1.390.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+venvPath = "../.."
+venv = ".venv"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autocode", "src/autocode_service"]

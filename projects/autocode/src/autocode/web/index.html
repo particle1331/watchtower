@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>autocode</title>
+    <link rel="stylesheet" href="/static/app.css" />
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="session-panel" aria-label="Sessions">
+        <div class="brand-row">
+          <div class="brand-mark" aria-hidden="true">A</div>
+          <div>
+            <p class="eyebrow">local coding agent</p>
+            <h1>autocode</h1>
+          </div>
+        </div>
+
+        <button id="new-session" class="primary wide" type="button">New session</button>
+        <nav id="session-list" class="session-list" aria-label="Saved sessions"></nav>
+
+        <div class="stack-card">
+          <p class="eyebrow">Running stack</p>
+          <p>Browser → FastAPI → application service → SQLite</p>
+          <span id="mode-badge" class="mode-badge">loading</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">Current session</p>
+            <h2 id="session-title">Start a session</h2>
+          </div>
+          <div id="connection-status" class="connection" data-state="offline">
+            <span class="connection-dot" aria-hidden="true"></span>
+            <span id="connection-label">offline</span>
+          </div>
+        </header>
+
+        <section class="utility-bar" aria-label="Session tools">
+          <form id="search-form" class="search-form" role="search">
+            <label class="sr-only" for="search-query">Search session history</label>
+            <input id="search-query" type="search" placeholder="Search session history" maxlength="500" />
+            <button class="secondary" type="submit">Search</button>
+          </form>
+          <label class="secondary upload-label" for="artifact-file">Attach file</label>
+          <input id="artifact-file" class="sr-only" type="file" />
+          <span id="artifact-status" class="utility-status" aria-live="polite"></span>
+          <div id="search-results" class="search-results" aria-live="polite"></div>
+        </section>
+
+        <section id="timeline" class="timeline" aria-live="polite">
+          <div class="empty-state">
+            <p class="eyebrow">Full-stack course application</p>
+            <h3>Trace every task across the stack.</h3>
+            <p>Create a session, send a message, and refresh the page. The event history survives because the browser is a projection of durable state.</p>
+          </div>
+        </section>
+
+        <form id="composer" class="composer">
+          <label for="message">Task</label>
+          <div class="composer-row">
+            <textarea id="message" name="message" rows="2" maxlength="20000" placeholder="Ask autocode to inspect, explain, or change the workspace" disabled></textarea>
+            <button id="send-message" class="primary" type="submit" disabled>Send</button>
+            <button id="cancel-run" class="secondary" type="button" hidden>Cancel</button>
+          </div>
+          <p id="composer-help" class="composer-help">Create or select a session to connect.</p>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>
