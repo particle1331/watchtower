@@ -1,0 +1,44 @@
+[project]
+name = "proof-lm"
+version = "0.1.0"
+description = "Auditable from-scratch language-model training for the ProofLM course"
+readme = "README.md"
+authors = [
+    { name = "particle1331", email = "54845098+particle1331@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "pydantic>=2.13,<3",
+    "pyyaml>=6.0",
+    "tokenizers>=0.21,<1",
+    "torch>=2.13,<3",
+]
+
+[project.scripts]
+proof-lm = "proof_lm.benchmark:main"
+
+[dependency-groups]
+dev = ["pytest>=9.0", "ruff>=0.8", "pyright>=1.1.390"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+venvPath = "../.."
+venv = ".venv"
+
+[build-system]
+requires = ["uv_build>=0.11.29,<0.12.0"]
+build-backend = "uv_build"

@@ -1,0 +1,10 @@
+{
+  "workload": "validate and serialize one frozen artifact bundle",
+  "profile": "smoke",
+  "iterations": 256,
+  "elapsed_seconds": 0.0017937920056283474,
+  "records_per_second": 142714.42798092176,
+  "serialized_bytes": 97024,
+  "measured_on": "2026-08-26",
+  "note": "Contract-layer measurement only; not model-training throughput."
+}

@@ -1,0 +1,35 @@
+schema_version: proof-lm/v1/config
+name: smoke
+device: cpu
+artifact_root: artifacts
+output_namespace: prooflm/smoke
+model:
+  vocab_size: 8192
+  context_length: 256
+  n_layers: 4
+  d_model: 256
+  n_heads: 4
+  d_head: 64
+  d_ff: 1024
+  normalization: layer_norm
+  position_encoding: rope
+  activation: gelu
+  dropout: 0.1
+  tie_embeddings: true
+  bias: false
+training:
+  objective: causal_language_modeling
+  optimizer: adamw
+  precision: fp32
+  token_budget: 2000000
+  microbatch_size: 8
+  gradient_accumulation: 4
+  learning_rate: 0.0003
+  weight_decay: 0.1
+  warmup_updates: 100
+  max_updates: 10000
+  seed: 17
+data:
+  dataset_manifest_id: dataset-prooflm-v1
+  tokenizer_id: tokenizer-prooflm-v1
+  evaluator_id: evaluator-prooflm-v1

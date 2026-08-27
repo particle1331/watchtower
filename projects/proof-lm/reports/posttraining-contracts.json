@@ -1,0 +1,43 @@
+{
+  "report": "proof-lm/posttraining-contracts/v1",
+  "measured_on": "2026-08-26",
+  "profile": "cpu-smoke",
+  "sft": {
+    "serialized_tokens": 40,
+    "supervised_tokens": 21,
+    "response_mask_source": "role-span metadata"
+  },
+  "dpo": {
+    "beta": 0.2,
+    "mean_loss": 0.6685
+  },
+  "rl": {
+    "group_size": 4,
+    "advantage_mean": 0.0,
+    "verifier_positive_reward": 1.0,
+    "weak_checker_shortcut_reward": 1.0,
+    "weak_checker_shortcut_ground_truth": 0.0
+  },
+  "tools": {
+    "registry_id": "tools-0d40b519fe44f7c4",
+    "names": ["parse_formula", "check_proof", "find_countermodel"],
+    "malformed_error": "invalid_arguments"
+  },
+  "lora": {
+    "target_modules": 3,
+    "trainable_adapter_parameters": 256,
+    "adapter_tensors": 6,
+    "zero_impact_initialization": true,
+    "merge_unmerge_equivalent": true
+  },
+  "capstone": {
+    "proof_reward_checks": [1.0, 1.0],
+    "cuda_available": false,
+    "scale_gate": "standard 1B run not claimed by this CPU smoke"
+  },
+  "limitations": [
+    "No full SFT, DPO, RL, or tool-calling checkpoint is claimed.",
+    "No multi-seed post-training comparison is claimed.",
+    "No CUDA qualification or standard-scale throughput is claimed."
+  ]
+}

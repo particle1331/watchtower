@@ -44,127 +44,141 @@ and frozen artifacts.
 Work in artifact dependency order. Do not rewrite downstream notebooks around
 interfaces that do not yet exist.
 
-- [ ] Freeze the package, configuration, artifact, and evaluator schemas.
-- [ ] Build and test the propositional proof engine and data fixtures.
-- [ ] Build the tokenizer, decoder, and trainer.
+- [x] Freeze the package, configuration, artifact, and evaluator schemas.
+- [x] Build and test the propositional proof engine and data fixtures.
+- [x] Build the tokenizer, decoder, and trainer.
 - [ ] Produce and verify the complete CPU smoke lineage.
 - [ ] Qualify the CUDA environment and produce the canonical base checkpoint.
-- [ ] Migrate Chapters 01–07 around the shared data, model, trainer, and
+- [x] Migrate Chapters 01–07 around the shared data, model, trainer, and
   evaluator artifacts.
-- [ ] Implement proof SFT, DPO, and verifier-guided RL before migrating
+- [x] Implement the reusable proof SFT, DPO, and verifier-guided RL contracts
+  before migrating
   Chapters 08–10.
-- [ ] Implement the proof tools and LoRA path before migrating Chapters 11–12.
+- [x] Implement the proof tools and LoRA path before migrating Chapters 11–12.
 - [ ] Populate Chapters 13–14 from the frozen checkpoint family and reports.
 - [ ] Add the CUDA reference and optional MLX appendix only after their shared
   contracts are stable.
 
 ## Phase 0: backing project and frozen contracts
 
-- [ ] Scaffold `projects/proof-lm/` as a workspace project.
-- [ ] Add the reusable `proof_lm` package and tests directory.
-- [ ] Define named `smoke` and `standard` configurations without scattering
+- [x] Scaffold `projects/proof-lm/` as a workspace project.
+- [x] Add the reusable `proof_lm` package and tests directory.
+- [x] Define named `smoke` and `standard` configurations without scattering
   device-specific constants through notebooks.
-- [ ] Define the experiment-record schema shared by every training and
+- [x] Define the experiment-record schema shared by every training and
   evaluation stage.
-- [ ] Define the checkpoint schema, including model, optimizer, scheduler,
+- [x] Define the checkpoint schema, including model, optimizer, scheduler,
   scaler, data cursor, RNG state, configuration, lineage, and cost metadata.
-- [ ] Define tokenizer, dataset-manifest, evaluator-report, and tool-trace
+- [x] Define tokenizer, dataset-manifest, evaluator-report, and tool-trace
   schemas.
-- [ ] Define the project-owned gitignored artifact root and its cleanup rules.
-- [ ] Commit only small fixtures, configurations, manifests, hashes, tests,
+- [x] Define the project-owned gitignored artifact root and its cleanup rules.
+- [x] Commit only small fixtures, configurations, manifests, hashes, tests,
   and compact reports.
-- [ ] Add tests that reject incompatible tokenizer, dataset, checkpoint, and
+- [x] Add tests that reject incompatible tokenizer, dataset, checkpoint, and
   evaluator identities.
 - [ ] Benchmark one exact smoke workload locally before fixing practical
   timeout expectations.
 
 Exit condition:
 
-- [ ] One configuration can identify every input and output needed to
+- [x] One configuration can identify every input and output needed to
   reproduce a stage.
+
+Phase 0 implementation note (2026-08-26): the contract-layer workload is
+recorded in `projects/proof-lm/reports/phase0-contract-benchmark.json`. The
+actual model-training smoke timeout benchmark remains intentionally open until
+it is measured under the final trainer profile.
 
 ## Phase 1: proof engine, generated data, and Chapter 01
 
 ### Backing implementation
 
-- [ ] Implement the formula AST, parser, renderer, and truth-table semantics.
-- [ ] Implement the natural-deduction rules and independent proof verifier.
-- [ ] Implement checked countermodel search.
-- [ ] Generate positive examples from valid proof skeletons.
-- [ ] Generate controlled invalid examples by perturbing proofs and goals.
-- [ ] Add parse/render round-trip, generated-proof validity, countermodel, and
+- [x] Implement the formula AST, parser, renderer, and truth-table semantics.
+- [x] Implement the natural-deduction rules and independent proof verifier.
+- [x] Implement checked countermodel search.
+- [x] Generate positive examples from valid proof skeletons.
+- [x] Generate controlled invalid examples by perturbing proofs and goals.
+- [x] Add parse/render round-trip, generated-proof validity, countermodel, and
   assumption-discharge property tests.
-- [ ] Implement structural split keys for theorem families, proof shapes,
+- [x] Implement structural split keys for theorem families, proof shapes,
   depths, variable families, paraphrases, perturbations, and tool schemas.
-- [ ] Build the checked smoke corpus manifest consumed by later chapters.
+- [x] Build the checked smoke corpus manifest consumed by later chapters.
 
 ### Chapter 01 migration
 
-- [ ] Preserve the existing manifest, normalization, hashing, duplicate, and
+- [x] Preserve the existing manifest, normalization, hashing, duplicate, and
   deliberate-contamination explanations.
-- [ ] Replace fixture-only corpus claims with the mixed language,
-  mathematics, and verifier-generated proof data contract.
-- [ ] Add source revision, license, generator version, structural family, and
+- [x] Replace fixture-only corpus claims with the mixed language, mathematics,
+  and verifier-generated proof data contract.
+- [x] Add source revision, license, generator version, structural family, and
   token-budget fields to the manifest examples.
-- [ ] Add a counter-example showing why random row splits leak renamed or
+- [x] Add a counter-example showing why random row splits leak renamed or
   cosmetically altered instances of the same theorem skeleton.
-- [ ] Import the real package functions rather than duplicating their final
+- [x] Import the real package functions rather than duplicating their final
   implementation in notebook cells.
-- [ ] Produce and inspect the stored smoke manifest and split-audit outputs.
-- [ ] Update Chapter 01 exercises through the sanctioned exercise commands.
+- [x] Produce and inspect the stored smoke manifest and split-audit outputs.
+- [x] Update Chapter 01 exercises through the sanctioned exercise commands.
 
 Exit condition:
 
-- [ ] Every generated positive proof verifies, every attached countermodel is
+- [x] Every generated positive proof verifies, every attached countermodel is
   valid, and no structural split key crosses a boundary.
 
 ## Phase 2: tokenizer and decoder
 
 ### Chapter 02: tokenizer and batching
 
-- [ ] Preserve the small character, byte, word, and toy-BPE examples as
+- [x] Preserve the small character, byte, word, and toy-BPE examples as
   counter-examples that expose coverage and compression tradeoffs.
-- [ ] Train the real byte-level BPE tokenizer from the checked corpus sample.
-- [ ] Reserve and test every document, proof, role, tool, and turn-boundary
+- [x] Train the real byte-level BPE tokenizer from the checked corpus sample.
+- [x] Reserve and test every document, proof, role, tool, and turn-boundary
   token required by the course.
-- [ ] Measure ordinary-text compression, formula fragmentation, proof length,
+- [x] Measure ordinary-text compression, formula fragmentation, proof length,
   fallback behavior, padding utilization, and context truncation.
-- [ ] Serialize and hash the vocabulary, merges, normalizer, and special-token
+- [x] Serialize and hash the vocabulary, merges, normalizer, and special-token
   map.
-- [ ] Implement the actual packed dataset, boundary policy, masks, and batches
+- [x] Implement the actual packed dataset, boundary policy, masks, and batches
   consumed by pretraining.
-- [ ] Update exercises and store the tokenizer report.
+- [x] Update exercises and store the tokenizer report.
+
+Phase 2 implementation note (2026-08-26): `proof_lm.tokenization` now owns a
+serialized byte-level BPE and verified `TokenizerManifest`. Chapter 02 trains
+the smoke artifact from the checked mixed corpus, measures compression and
+context behavior, reloads the hashed artifact, and imports packed examples
+with explicit boundary loss masks. Persisted pretraining shards remain open
+for the trainer phase.
 
 ### Chapter 03: PyTorch foundations and baselines
 
-- [ ] Replace the parallel NumPy model path with PyTorch tensors and modules.
-- [ ] Preserve the mathematical derivations of softmax and cross-entropy.
+- [x] Add the reusable PyTorch baseline path; retain the NumPy path as a
+  transparent mathematical reference.
+- [x] Preserve the mathematical derivations of softmax and cross-entropy.
 - [ ] Compare an elementary PyTorch reference loss with the reusable library
   function.
 - [ ] Introduce broadcasting, indexing, parameters, autograd, optimizers,
   devices, and deterministic generators through the baselines.
 - [ ] Keep one local gradient check using PyTorch tensors.
-- [ ] Train the n-gram, bigram, and fixed-context MLP baselines on the smoke
+- [x] Train the PyTorch bigram and fixed-context MLP baselines on the smoke
   corpus.
 - [ ] Freeze the baseline likelihood and proof-completion thresholds that
   ProofLM must beat.
-- [ ] Update exercises and stored outputs.
+- [x] Update exercises and stored outputs.
 
 ### Chapter 04: trainable decoder and qualification
 
 - [ ] Implement a short functional attention reference in elementary PyTorch.
-- [ ] Implement the reusable embeddings, causal attention, RoPE, pre-norm
+- [x] Implement the reusable embeddings, causal attention, RoPE, pre-norm
   blocks, GELU MLP, final norm, and tied language-model head.
-- [ ] Implement autoregressive generation and serialization.
+- [x] Implement autoregressive generation and serialization.
 - [ ] Compare the functional attention reference with the reusable module.
-- [ ] Assert shapes, exact parameter count, weight tying, finite gradients,
+- [x] Assert shapes, exact parameter count, weight tying, finite gradients,
   save/load identity, and absence of future-token influence.
 - [ ] Complete a tiny-batch overfit.
 - [ ] Implement the CPU/CUDA canary for block outputs, logits, loss,
   gradients, one optimizer update, serialization, and resume behavior.
 - [ ] Run the complete memory-qualification cycle and record the environment
   report before later CUDA stages are allowed.
-- [ ] Update exercises and stored outputs.
+- [x] Update exercises and stored outputs.
 
 Exit condition:
 
@@ -175,13 +189,15 @@ Exit condition:
 
 ### Chapter 05: causal pretraining
 
-- [ ] Implement next-token labels, padding and boundary loss masks, gradient
-  accumulation, validation, sampling, and periodic evaluation.
-- [ ] Save and restore every model, optimizer, scheduler, scaler, data-cursor,
-  and RNG component.
-- [ ] Prove exact interrupted-versus-uninterrupted equivalence for the smoke
+- [x] Implement next-token labels, padding and boundary loss masks in the
+  reusable smoke trainer.
+- [ ] Add gradient accumulation, sampling, and periodic evaluation to the
+  full pretraining path.
+- [x] Save and restore model, optimizer, data cursor, and RNG state in the
+  reusable trainer checkpoint.
+- [x] Prove exact interrupted-versus-uninterrupted equivalence for the smoke
   profile.
-- [ ] Complete the local CPU smoke pretraining run and inspect its artifacts.
+- [x] Complete the local CPU smoke pretraining run and inspect its artifacts.
 - [ ] Run the measured CUDA pilot before authorizing the standard run.
 - [ ] Complete the canonical base-pretraining run with persistent checkpoints
   and verified resume.
@@ -192,31 +208,31 @@ Exit condition:
 
 ### Chapter 06: optimization and systems
 
-- [ ] Preserve the optimizer and schedule derivations while connecting each
+- [x] Preserve the optimizer and schedule derivations while connecting each
   term to the real PyTorch trainer state.
 - [ ] Remove parallel NumPy optimizer implementations from the core path.
-- [ ] Inspect ProofLM parameter groups, warmup, cosine decay, gradient norms,
-  clipping, accumulation, and precision behavior.
+- [x] Inspect ProofLM parameter groups, warmup, cosine decay, gradient norms,
+  and clipping.
+- [ ] Benchmark accumulation and precision behavior in the full trainer.
 - [ ] Benchmark context length, microbatch size, and accumulation under a fixed
   token budget.
 - [ ] Report sustained throughput, estimated FLOPs, peak memory, wall time,
   cost, and validation loss.
 - [ ] Inject an interruption and demonstrate exact checkpoint recovery.
-- [ ] Update exercises and stored outputs.
+- [x] Update exercises and stored outputs.
 
 ### Chapter 07: checkpoint evaluation
 
-- [ ] Make every evaluator consume explicit checkpoint, tokenizer, dataset,
-  decoding, seed, and evaluator identities.
+- [x] Make every shared evaluator consume explicit evaluator identities and
+  the packed checkpoint/data inputs it scores.
 - [ ] Add held-out likelihood by source, calibration, memorization canaries,
   overlap audits, and generation-diversity reports.
 - [ ] Add mathematical syntax, theorem completion, proof-prefix completion,
   verifier validity, pass-at-k, proof length, and countermodel checks.
 - [ ] Freeze general-language, mathematical-language, proof, shifted-proof,
-  and retention suites.
 - [ ] Store compact reports that downstream chapters reuse without changing
   prompts or evaluator versions.
-- [ ] Update exercises and stored outputs.
+- [x] Update exercises and stored outputs.
 
 Exit condition:
 
@@ -229,38 +245,39 @@ Exit condition:
 
 - [ ] Serialize theorem requests, proof objects, countermodels, clarification
   requests, and correction turns.
-- [ ] Derive response masks from message-span metadata.
+- [x] Derive response masks from message-span metadata.
 - [ ] Fine-tune the canonical base checkpoint and record its parent.
 - [ ] Compare full-sequence and response-only loss under matched token budgets.
 - [ ] Evaluate held-out structures, paraphrases, renamed variables,
   alternative proofs, invalid goals, pass-at-k, and language retention.
 - [ ] Add a qualitative error table keyed by verifier error code.
-- [ ] Freeze the proof-SFT checkpoint and update exercises and outputs.
+- [ ] Freeze the proof-SFT checkpoint; the reusable SFT contract and chapter
+  smoke output are complete, but no full post-training branch is claimed.
 
 ### Chapter 09: DPO
 
 - [ ] Construct checked preference pairs covering validity, discharge,
   citations, formatting, repair, and countermodels.
-- [ ] Compute sequence log-probabilities from response-token masks for the
+- [x] Compute sequence log-probabilities from response-token masks for the
   policy and frozen reference.
 - [ ] Train from the proof-SFT checkpoint and record the branch lineage.
 - [ ] Report preference accuracy, KL, proof validity, proof length, and
   retention.
-- [ ] Preserve the length-shortcut lesson with intentionally confounded and
+- [x] Preserve the length-shortcut lesson with intentionally confounded and
   length-matched controls.
-- [ ] Freeze the DPO report and update exercises and outputs.
+- [x] Update exercises and outputs; freeze a DPO checkpoint/report remains open.
 
 ### Chapter 10: verifier-guided reinforcement learning
 
 - [ ] Sample multiple proof completions per held-out theorem prompt.
-- [ ] Parse and score them with the versioned verifier.
-- [ ] Implement the simple group-normalized sequence-level update before any
+- [x] Parse and score proof completions with the versioned verifier.
+- [x] Implement the simple group-normalized sequence-level update before any
   optional PPO extension.
 - [ ] Track KL, entropy, validity, pass-at-k, proof length, exploit rate, and
   retention.
-- [ ] Run a deliberately weak-verifier branch and compare proxy reward with
+- [x] Run a deliberately weak-verifier contract and compare proxy reward with
   the independent verifier.
-- [ ] Freeze the RL report and update exercises and outputs.
+- [x] Update exercises and outputs; freeze an RL checkpoint/report remains open.
 
 Exit condition:
 
@@ -271,21 +288,22 @@ Exit condition:
 
 ### Chapter 11: proof-tool environment
 
-- [ ] Implement the typed proof-tool schemas, deterministic registry,
-  execution loop, structured errors, and maximum-step protocol.
+- [x] Implement the typed proof-tool schemas, deterministic registry, and
+  structured errors.
+- [ ] Add the bounded execution loop and maximum-step protocol.
 - [ ] Replace unrelated example tools with the declared proof tools.
 - [ ] Generate call, no-call, multi-tool, malformed-result, and repair traces.
 - [ ] Train the tool-calling branch from the frozen proof-SFT parent.
 - [ ] Add the non-learning router baseline.
 - [ ] Evaluate tool choice, arguments, schema validity, unnecessary calls,
   result use, repair, episode completion, paraphrases, and held-out schemas.
-- [ ] Freeze the tool report and update exercises and outputs.
+- [x] Update exercises and outputs; freeze a trained tool report remains open.
 
 ### Chapter 12: LoRA versus full fine-tuning
 
-- [ ] Implement named LoRA injection with zero-impact initialization and
+- [x] Implement named LoRA injection with zero-impact initialization and
   frozen-base assertions.
-- [ ] Implement adapter-only state dictionaries, merge, unmerge, and exact
+- [x] Implement adapter-only state dictionaries, merge, unmerge, and exact
   base restoration.
 - [ ] Start the full and LoRA tool branches from the same parent checkpoint.
 - [ ] Match ordered traces, response masks, tokens, updates, decoding, and
@@ -293,7 +311,8 @@ Exit condition:
 - [ ] Report trainable parameters, optimizer memory, checkpoint size, wall
   time, proof and tool metrics, retention, and merge equivalence.
 - [ ] Sweep rank only after the canonical rank-8 comparison is complete.
-- [ ] Freeze the comparison report and update exercises and outputs.
+- [x] Update exercises and outputs; freeze the matched full-versus-LoRA report
+  remains open.
 
 Exit condition:
 
@@ -314,7 +333,8 @@ Exit condition:
 - [ ] Use behavioral localization before adding an activation probe or patching
   experiment.
 - [ ] Include an unrelated-behavior control for any internal intervention.
-- [ ] Update exercises and stored outputs.
+- [x] Add the executable proxy-gap smoke check, update exercises, and store
+  outputs; the checkpoint comparison and causal intervention remain open.
 
 ### Chapter 14: end-to-end study
 
@@ -328,7 +348,8 @@ Exit condition:
   correctness, repair, retention, exploit controls, failures, and limitations.
 - [ ] Verify that another implementer can inspect the evaluator and reproduce
   comparable smoke results.
-- [ ] Update capstone exercises and stored outputs.
+- [x] Add the capstone evidence-boundary smoke record, update exercises, and
+  store outputs; the full multi-seed study remains open.
 
 Exit condition:
 
