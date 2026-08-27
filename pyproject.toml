@@ -21,6 +21,9 @@ dependencies = [
     "jupyterlab-quarto>=0.3.5",
     "openai>=3.0.0",
     "agent-harness",
+    "autocode",
+    "change-planner",
+    "proof-lm",
 ]
 
 [project.scripts]
@@ -32,6 +35,9 @@ members = ["projects/*"]
 
 [tool.uv.sources]
 agent-harness = { workspace = true }
+autocode = { workspace = true }
+change-planner = { workspace = true }
+proof-lm = { workspace = true }
 
 [dependency-groups]
 dev = [
