@@ -764,7 +764,7 @@ def render_cmd(
 
 @app.command(name="resume")
 def resume_cmd() -> None:
-    """Render assets/resume.yaml -> assets/resume.tex + index.ipynb, then pdflatex -> assets/resume.pdf."""
+    """Render assets/resume.yaml -> assets/resume.tex + index.qmd, then pdflatex -> assets/resume.pdf."""
     from . import resume
 
     pdf_path, index_path = resume.build_resume()
@@ -773,11 +773,20 @@ def resume_cmd() -> None:
 
 
 @app.command()
-def docs() -> None:
-    """Serve the Quarto site (blocking — previews in browser)."""
+def docs(
+    port: int = typer.Option(
+        4200,
+        "--port",
+        min=1,
+        max=65535,
+        help="Port for the local Quarto preview (default: 4200).",
+    ),
+) -> None:
+    """Serve the Quarto site on a chosen local port (blocking)."""
     from . import render
 
-    render.preview_site()
+    console.print(f"[green]preview: http://localhost:{port}/[/green]")
+    render.preview_site(port)
 
 
 def _open(path: Path) -> None:

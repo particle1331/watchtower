@@ -103,6 +103,19 @@ def test_cli_run_errors_exit_1(tmp_path, monkeypatch, cli_console):
     assert "ZeroDivisionError" in cli_console.getvalue()
 
 
+def test_cli_docs_passes_port_and_prints_preview_url(monkeypatch, cli_console):
+    from watchtower import render
+
+    seen = []
+    monkeypatch.setattr(render, "preview_site", lambda port: seen.append(port))
+
+    result = runner.invoke(cli.app, ["docs", "--port", "4300"])
+
+    assert result.exit_code == 0
+    assert seen == [4300]
+    assert "http://localhost:4300/" in cli_console.getvalue()
+
+
 # ---------------------------------------------------------------------------
 # wt diff
 # ---------------------------------------------------------------------------

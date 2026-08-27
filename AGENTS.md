@@ -151,8 +151,9 @@ opencode, Claude Code, ...). The loop:
   a bare `# Title` with no frontmatter is kept as-is.
 
 ## Rendering
-- `wt docs` serves the site on :4200 (publishing is handled by the
-  `publish.yml` GitHub Action on push to `main`).
+- `wt docs [--port <port>]` serves the site on the chosen local port (default
+  :4200; publishing is handled by the `publish.yml` GitHub Action on push to
+  `main`). The command prints the preview URL before blocking.
 - `wt render <tier> <name> | <path.ipynb>` renders one notebook to PDF
   (`notes/pdf/` or `articles/pdf/`) using inline outputs.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
@@ -220,6 +221,14 @@ solution cells, sanctioned commands) live in the shared skill
 course under `courses/`. Hard rules it enforces: create problems only via
 `wt add-exercise`, update solutions only via `wt solution-edit`, and run
 `wt check <course>` after any problem/solution work.
+
+For a new course or a multi-file course revision, use a dedicated Git worktree
+when the environment permits it so the user's primary checkout and site
+preview remain usable. Run the isolated preview with `.venv/bin/wt docs
+--port 4300` (or another unused port) and include the exact URL in progress
+updates and the final handoff. A separate port without a separate worktree
+does not isolate source files or Quarto's `_site` output. Never reset, clean, or
+overwrite a dirty primary checkout to create the worktree.
 
 ## CLI command reference (for the agent)
 - `wt kernels` — list installed Jupyter kernel names and languages; use the
@@ -298,9 +307,10 @@ course under `courses/`. Hard rules it enforces: create problems only via
   — import as a chapter of an existing course (copies into the course dir and
   registers in the course's sidebar)
 - `wt render <tier> <name> | <path.ipynb>` — render notebook -> PDF
-- `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.ipynb`
+- `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd`
   via Jinja2 templates, then `pdflatex` -> `assets/resume.pdf` (builds in a
   temp dir). The YAML is the single source; edit it, never the generated
-  `.tex`/`.ipynb`.
-- `wt docs` — serve the site (blocking; :4200)
+  `.tex`/`.qmd`.
+- `wt docs [--port <port>]` — serve the site on the chosen port (blocking;
+  default :4200)
 - `wt vault get|set|rm <key>` / `wt vault ls` — secret management

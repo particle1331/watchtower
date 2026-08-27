@@ -17,7 +17,7 @@ project:
   type: website
   output-dir: _site
   render:
-    - index.ipynb
+    - index.qmd
     - portfolio/portfolio.ipynb
     - notes/index.ipynb
     - notes/*.ipynb
@@ -110,7 +110,7 @@ website:
       collapse-level: 2
       align: left
       contents:
-        - text: "Building an ML Platform"
+        - text: ""
           href: courses/ml-platform/index.ipynb
         - section: "Part I — Local platform (Compose)"
           href: courses/ml-platform/01-overview.ipynb
@@ -162,7 +162,7 @@ website:
         - section: ''
           href: courses/cla/index.ipynb
           contents:
-            - text: Overview
+            - text: 00. Overview
               href: courses/cla/index.ipynb
             - text: 01. Foundations
               href: courses/cla/01-foundations.ipynb
@@ -215,8 +215,8 @@ website:
         - section: ''
           href: courses/langgraph/index.ipynb
           contents:
-            - text: Overview
-              href: courses/langgraph/index.ipynb
+            - text: "00. Architecture and contracts"
+              href: courses/langgraph/00-overview.ipynb
         - section: Foundations
           href: courses/langgraph/01-task-boundary.ipynb
           contents:
@@ -224,29 +224,29 @@ website:
               href: courses/langgraph/01-task-boundary.ipynb
             - text: "02. State and graph control"
               href: courses/langgraph/02-state-and-graph.ipynb
-        - section: Evidence workflow
+        - section: Search and evidence
           href: courses/langgraph/03-tools-and-evidence.ipynb
           contents:
-            - text: "03. Tools, evidence, and skills"
+            - text: "03. Repository search and evidence"
               href: courses/langgraph/03-tools-and-evidence.ipynb
             - text: "04. Routing and recovery"
               href: courses/langgraph/04-routing-and-recovery.ipynb
-            - text: "05. Parallel research and fan-in"
+            - text: "05. Parallel impact investigation"
               href: courses/langgraph/05-parallel-research.ipynb
-        - section: Governance
+        - section: Review and memory
           href: courses/langgraph/06-review-and-revision.ipynb
           contents:
             - text: "06. Review gates and interrupts"
               href: courses/langgraph/06-review-and-revision.ipynb
-            - text: "07. Persistence, replay, and memory"
+            - text: "07. Persistence and agent memory"
               href: courses/langgraph/07-persistence-and-memory.ipynb
             - text: "08. Evaluation and contracts"
               href: courses/langgraph/08-evaluation.ipynb
         - section: Capstone
-          href: courses/langgraph/09-capstone-evidence-brief.ipynb
+          href: courses/langgraph/09-capstone-change-planner.ipynb
           contents:
-            - text: "09. Evidence brief agent"
-              href: courses/langgraph/09-capstone-evidence-brief.ipynb
+            - text: "09. Change Planner Agent"
+              href: courses/langgraph/09-capstone-change-planner.ipynb
     - id: agent-harness
       style: floating
       collapse-level: 2
@@ -255,8 +255,8 @@ website:
         - section: ''
           href: courses/agent-harness/index.ipynb
           contents:
-            - text: Overview
-              href: courses/agent-harness/index.ipynb
+            - text: "00. Overview"
+              href: courses/agent-harness/00-overview.ipynb
         - section: 'Part I: The Engine Exposed'
           href: courses/agent-harness/01-foundations.ipynb
           contents:
@@ -293,3 +293,49 @@ website:
               href: courses/agent-harness/11-model-context-protocol.ipynb
             - text: "12. Capstone"
               href: courses/agent-harness/12-capstone.ipynb
+    - id: autocode
+      style: floating
+      collapse-level: 2
+      align: left
+      contents:
+        - section: ''
+          href: courses/autocode/index.ipynb
+          contents:
+            - text: "00. Overview"
+              href: courses/autocode/00-overview.ipynb
+        - section: 'Part I: End-to-End Slice'
+          href: courses/autocode/01-cli-product.ipynb
+          contents:
+            - text: "01. Application core & CLI"
+              href: courses/autocode/01-cli-product.ipynb
+            - text: "02. Browser app & REST"
+              href: courses/autocode/02-web-application.ipynb
+            - text: "03. WebSocket streaming"
+              href: courses/autocode/03-streaming-ux.ipynb
+        - section: 'Part II: Durable Data'
+          href: courses/autocode/04-durable-sessions.ipynb
+          contents:
+            - text: "04. SQLite & journaling"
+              href: courses/autocode/04-durable-sessions.ipynb
+            - text: "05. File & artifact flows"
+              href: courses/autocode/05-artifacts.ipynb
+            - text: "06. Search experience"
+              href: courses/autocode/06-semantic-layer.ipynb
+        - section: 'Part III: Services and Concurrency'
+          href: courses/autocode/07-sync-service.ipynb
+          contents:
+            - text: "07. Authentication & sync API"
+              href: courses/autocode/07-sync-service.ipynb
+            - text: "08. Multi-client realtime"
+              href: courses/autocode/08-realtime.ipynb
+            - text: "09. Background jobs"
+              href: courses/autocode/09-background-jobs.ipynb
+        - section: 'Part IV: Ship and Operate'
+          href: courses/autocode/10-packaging-and-updates.ipynb
+          contents:
+            - text: "10. Packaging & deployment"
+              href: courses/autocode/10-packaging-and-updates.ipynb
+            - text: "11. Operations"
+              href: courses/autocode/11-operations.ipynb
+            - text: "12. Full-stack capstone"
+              href: courses/autocode/12-capstone.ipynb

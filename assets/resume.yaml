@@ -1,7 +1,7 @@
 # Canonical résumé source. `wt resume` renders this into:
 #   - assets/resume.tex  (via assets/resume.tex.j2) -> assets/resume.pdf
-#   - index.ipynb        (via assets/index.ipynb.j2) -> site home page
-# Edit this file; never hand-edit the generated .tex / .ipynb.
+#   - index.qmd          (via assets/index.qmd.j2) -> site home page
+# Edit this file; never hand-edit the generated .tex / .qmd.
 
 name: Ron Medina
 

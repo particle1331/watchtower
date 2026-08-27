@@ -55,6 +55,10 @@ def render_pdf(source: str) -> Path:
     return dest_pdf
 
 
-def preview_site() -> None:
-    """Serve the site (blocking — previews in browser)."""
-    subprocess.run(["quarto", "preview"], check=True, env=_quarto_env())
+def preview_site(port: int = 4200) -> None:
+    """Serve the site on ``port`` (blocking — previews in browser)."""
+    subprocess.run(
+        ["quarto", "preview", "--port", str(port)],
+        check=True,
+        env=_quarto_env(),
+    )
