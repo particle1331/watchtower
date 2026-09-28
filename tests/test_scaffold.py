@@ -7,54 +7,31 @@ import pytest
 from watchtower import scaffold
 
 # ---------------------------------------------------------------------------
-# Notes and articles
+# Posts
 # ---------------------------------------------------------------------------
 
-def test_new_note_creates_file(repo):
-    path = scaffold.new_note("my-note")
-    assert path == scaffold.NOTES_DIR / "my-note.ipynb"
-    assert (repo / "nb" / "notes" / "my-note.ipynb").exists()
+def test_new_post_creates_file(repo):
+    path = scaffold.new_post("my-post")
+    assert path == scaffold.POSTS_DIR / "my-post.ipynb"
+    assert (repo / "nb" / "posts" / "my-post.ipynb").exists()
 
 
-def test_new_note_custom_title(repo):
-    path = scaffold.new_note("my-note", title="Custom Title")
+def test_new_post_custom_title(repo):
+    path = scaffold.new_post("my-post", title="Custom Title")
     nb = nbformat.read(path, as_version=nbformat.NO_CONVERT)
     assert 'title: "Custom Title"' in nb.cells[0].source
 
 
-def test_new_note_duplicate_raises(repo):
-    scaffold.new_note("my-note")
+def test_new_post_duplicate_raises(repo):
+    scaffold.new_post("my-post")
     with pytest.raises(FileExistsError):
-        scaffold.new_note("my-note")
+        scaffold.new_post("my-post")
 
 
-def test_new_article_duplicate_raises(repo):
-    scaffold.new_article("svd")
-    with pytest.raises(FileExistsError):
-        scaffold.new_article("svd")
-
-
-def test_new_note_default_title_is_name(repo):
-    path = scaffold.new_note("my-note")
+def test_new_post_default_title_is_titleized(repo):
+    path = scaffold.new_post("my-post")
     nb = nbformat.read(path, as_version=nbformat.NO_CONVERT)
-    assert 'title: "my-note"' in nb.cells[0].source
-
-
-def test_new_article_creates_file(repo):
-    scaffold.new_article("svd")
-    assert (repo / "nb" / "articles" / "svd.ipynb").exists()
-
-
-def test_new_article_derives_title(repo):
-    path = scaffold.new_article("singular-value-decomposition")
-    nb = nbformat.read(path, as_version=nbformat.NO_CONVERT)
-    assert 'title: "Singular Value Decomposition"' in nb.cells[0].source
-
-
-def test_new_article_custom_title(repo):
-    path = scaffold.new_article("svd", title="SVD Deep Dive")
-    nb = nbformat.read(path, as_version=nbformat.NO_CONVERT)
-    assert 'title: "SVD Deep Dive"' in nb.cells[0].source
+    assert 'title: "My Post"' in nb.cells[0].source
 
 
 # ---------------------------------------------------------------------------

@@ -3,16 +3,13 @@
 Submodules are imported inside each command body, not at module level:
 nbformat (pulled in by notebook/problems/convert/...) costs ~1.1s of
 jsonschema import on startup, and most commands never touch a notebook.
-Function-level imports keep commands like `wt vault ls` / `wt map` at
+Function-level imports keep commands like `wt map` at
 ~0.1s instead of ~1.5s.
 """
 
 
 import shlex
-import shutil
-import subprocess
 import sys
-from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -21,19 +18,19 @@ from rich.table import Table
 
 app = typer.Typer(
     name="wt",
-    help="Personal notes, articles, courses, and projects system.",
+    help="Notebook workflows and core tools.",
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
 
 
-new_app = typer.Typer(name="new", help="Scaffold new artifacts.", no_args_is_help=True)
+new_app = typer.Typer(name="new", help="Scaffold notebooks and courses.", no_args_is_help=True)
 app.add_typer(new_app)
 
 
-@new_app.command("note")
-def new_note(
+@new_app.command("post")
+def new_post(
     name: str,
     title: str | None = typer.Option(
         None,
@@ -42,27 +39,10 @@ def new_note(
         help="display title (default: derived from name)",
     ),
 ) -> None:
-    """Create nb/notes/<name>.ipynb with a minimal frontmatter stub."""
+    """Create nb/posts/<name>.ipynb with a dated frontmatter stub."""
     from . import scaffold
 
-    path = scaffold.new_note(name, title=title)
-    console.print(f"[green]created {path}[/green]")
-
-
-@new_app.command("article")
-def new_article(
-    name: str,
-    title: str | None = typer.Option(
-        None,
-        "--title",
-        "-t",
-        help="display title (default: derived from name)",
-    ),
-) -> None:
-    """Create nb/articles/<name>.ipynb with a date and title frontmatter."""
-    from . import scaffold
-
-    path = scaffold.new_article(name, title=title)
+    path = scaffold.new_post(name, title=title)
     console.print(f"[green]created {path}[/green]")
 
 
@@ -75,15 +55,6 @@ def new_course(
     from . import scaffold
 
     path = scaffold.new_course(name, title=title)
-    console.print(f"[green]created {path}[/green]")
-
-
-@new_app.command("project")
-def new_project(name: str) -> None:
-    """uv init projects/<name> and wire it into the workspace."""
-    from . import scaffold
-
-    path = scaffold.new_project(name)
     console.print(f"[green]created {path}[/green]")
 
 
@@ -229,159 +200,6 @@ def count(name: str) -> None:
 
 
 @app.command()
-def problem(course: str, locator: str) -> None:
-    """Print a problem statement (plus starter code) from the course notebooks.
-
-    Problems live in the chapter notebooks as `problem`-tagged cells with an
-    id tag like '07-3'. Locator forms: '7.3', '07-3', '07 3',
-    '07-projection-and-orthogonalization 3', or a fuzzy chapter name like
-    'projection 3'.
-    """
-    from . import problems
-
-    print(problems.format_problem(problems.resolve_problem(course, locator)))
-
-
-@app.command()
-def solution(
-    course: str,
-    locator: str,
-    raw: bool = typer.Option(
-        False,
-        "--raw",
-        help="print the stored encoded cell source instead of the decoded solution",
-    ),
-) -> None:
-    """Print a problem's decoded solution from the course notebooks.
-
-    Solutions are code cells tagged `solution` + the problem id, hidden from
-    the rendered site by `#| echo: false / eval: false / output: false`
-    options and ROT18-obfuscated; this command decodes them (--raw prints
-    the stored source as-is).
-    """
-    from . import problems
-
-    prob = problems.resolve_problem(course, locator)
-    if raw:
-        if prob["solution_source"] is None:
-            console.print(
-                f"[red]no solution cell for {prob['id']} — create one with "
-                f"`wt solution-edit {course} {locator}`[/red]"
-            )
-            raise typer.Exit(1)
-        print(prob["solution_source"], end="")
-        return
-    body = problems.solution_plaintext(prob)
-    title = prob["title"]
-    chapter = int(prob["id"].rsplit("-", 1)[0])
-    heading = f"### [P{chapter}.{prob['number']}]"
-    if title:
-        heading += f" {title}"
-    print(f"{heading}\n\n{body}")
-
-
-@app.command()
-def hint(
-    course: str,
-    locator: str,
-    level: int = typer.Option(1, "--level", help="hint level: 1 = checks + first sentence, 2 = full worked text"),
-) -> None:
-    """Print a progressive hint for a problem, derived from its solution.
-
-    Level 1 shows the checks to satisfy (descriptions only, no expected
-    values) and the first sentence of the worked solution; level 2 shows
-    the full worked solution text. Never reveals the answer.
-    """
-    from . import problems
-
-    prob = problems.resolve_problem(course, locator)
-    print(problems.hint_text(prob, level=level))
-
-
-@app.command(name="add-exercise")
-def add_exercise(
-    course: str,
-    locator: str,
-    statement: str | None = typer.Option(None, "--statement", "-s", help="plaintext problem statement (markdown; a `### [PNN.N]` heading is added if missing)"),
-    starter: str | None = typer.Option(None, "--starter", help="optional starter code cell"),
-    solution: str | None = typer.Option(None, "--solution", help="plaintext solution body (encoded on write)"),
-    number: int | None = typer.Option(None, "--number", "-n", help="problem number (default: next after the chapter's last problem)"),
-) -> None:
-    """Append a problem + solution pair to a chapter notebook (encodes on write).
-
-    The statement goes in plaintext (tagged `problem` + id); the solution is
-    ROT18-obfuscated into a code cell tagged `solution` + id, with a
-    `#| echo: false / eval: false / output: false` header that hides it from
-    the rendered site, so plaintext solutions never reach the notebook
-    through this path. The problem number defaults to the next one in the
-    chapter; `--starter` adds a code cell between statement and solution.
-    If exactly one of --statement / --solution is omitted, it is read from
-    stdin.
-    """
-    from . import problems
-
-    if statement is None and solution is None:
-        raise ValueError(
-            "pass --statement or --solution; stdin can feed only one of them."
-        )
-    src_stmt = sys.stdin.read() if statement is None else statement
-    src_sol = solution if solution is not None else sys.stdin.read()
-    pid, out = problems.add_exercise(
-        course, locator, src_stmt, src_sol,
-        starter=starter, number=number,
-    )
-    console.print(f"[green]added {pid} to {out}[/green]")
-
-
-@app.command(name="solution-edit")
-def solution_edit(
-    course: str,
-    locator: str,
-    content: str | None = typer.Option(None, "--content", "-c", help="plaintext markdown solution body (if omitted, read from stdin)"),
-) -> None:
-    """Create or replace a problem's solution cell (encodes on write).
-
-    Takes the *plaintext* solution body (Solution./Answer:/Checks:/Reference
-    code. sections) and stores it ROT18-obfuscated in a code cell tagged
-    `solution` + the problem id, with a `#| echo: false / eval: false /
-    output: false` header that hides it from the rendered site. Agents
-    writing a chapter use this command so plaintext solutions never reach
-    the notebook.
-    """
-    from . import problems
-
-    src = content if content is not None else sys.stdin.read()
-    out = problems.set_solution(course, locator, src)
-    console.print(f"[green]set solution in {out}[/green]")
-
-
-@app.command()
-def check(course: str) -> None:
-    """Validate a course's problem/solution tagging, pairing, and encoding.
-
-    Warns on: problem cells that are not markdown, solution cells that are
-    not code, missing or duplicated id tags, solutions without a problem
-    pair (and vice versa), pairs that are not consecutive cells (problem,
-    optional starter code cell, solution), solution cells not wrapped in
-    the `#| echo: false / eval: false / output: false` header, empty
-    solution bodies, and solutions stored in plaintext instead of
-    ROT18-obfuscated. Exits 1 when anything is wrong.
-    """
-    from . import problems
-
-    warnings = problems.check_course(course)
-    if warnings:
-        for w in warnings:
-            console.print(f"[yellow]{w}[/yellow]")
-        raise typer.Exit(1)
-    n_problems, n_solutions = problems.problem_counts(course)
-    console.print(
-        f"[green]checked {course}: {n_problems} problems, "
-        f"{n_solutions} solutions — all tagged and encoded.[/green]"
-    )
-
-
-@app.command()
 def cat(
     name: str,
     index: str | None = typer.Option(None, "--index", "-i", help="0-based cell index, or N:M range (Python-style slice; :M and N: also ok)"),
@@ -393,7 +211,6 @@ def cat(
     out_offset: int = typer.Option(0, "--out-offset", help="char offset into each output's text body"),
     out_limit: int | None = typer.Option(None, "--out-limit", help="max chars per output body"),
     context: int = typer.Option(0, "--context", "-C", help="include N cells before the first match and after the last (marked `context` in headers)"),
-    decode: bool = typer.Option(False, "--decode", help="decode solution-tagged cells to plaintext (spoiler opt-in)"),
 ) -> None:
     """Print notebook cell sources as markdown (JSON-stripped)."""
     from . import notebook
@@ -412,7 +229,7 @@ def cat(
             offset=offset, limit=effective_limit,
             with_outputs=with_outputs,
             out_offset=out_offset, out_limit=out_limit,
-            context=context, decode_solutions=decode,
+            context=context,
         ),
         end="",
     )
@@ -484,21 +301,19 @@ def _print_diff(out: str) -> None:
 
 
 @app.command()
-def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projects")) -> None:
-    """List source `.ipynb` notebooks in a tier."""
+def ls(tier: str = typer.Argument(..., help="posts | courses | projects")) -> None:
+    """List notebook sources or project directories."""
     from . import inspect
-    from .paths import ARTICLES_DIR, COURSES_DIR, NOTES_DIR
+    from .paths import COURSES_DIR, POSTS_DIR
 
-    if tier == "notes":
-        items = inspect.list_ipynb(NOTES_DIR)
-    elif tier == "articles":
-        items = inspect.list_ipynb(ARTICLES_DIR)
+    if tier == "posts":
+        items = inspect.list_ipynb(POSTS_DIR)
     elif tier == "courses":
         items = inspect.list_ipynb(COURSES_DIR)
     elif tier == "projects":
-        items = [p["name"] for p in inspect.list_projects()]
+        items = [project["path"] for project in inspect.list_projects()]
     else:
-        console.print(f"[red]unknown tier: {tier}. try notes|articles|courses|projects.[/red]")
+        console.print(f"[red]unknown tier: {tier}. try posts|courses|projects.[/red]")
         raise typer.Exit(2)
     if not items:
         console.print(f"[yellow]no {tier} yet.[/yellow]")
@@ -510,11 +325,11 @@ def ls(tier: str = typer.Argument(..., help="notes | articles | courses | projec
 @app.command(name="import")
 def import_cmd(
     ipynb: str = typer.Argument(..., help="path to source .ipynb to import"),
-    tier: str = typer.Argument(..., help="notes | articles | courses"),
+    tier: str = typer.Argument(..., help="posts | courses"),
     name: str | None = typer.Argument(
         None,
         help=(
-            "for notes|articles: destination name without .ipynb "
+            "for posts: destination name without .ipynb "
             "(default: source name); for courses: course slug (required)"
         ),
     ),
@@ -534,7 +349,7 @@ def import_cmd(
 ) -> None:
     """Import an external notebook into a content tier (preserves outputs).
 
-    For notes/articles: writes to nb/<tier>/<name>.ipynb.
+    For posts: writes to nb/posts/<name>.ipynb.
     For courses: writes to nb/courses/<course>/<chapter>.ipynb and registers
     in the course's sidebar in _quarto.yml.
     """
@@ -741,70 +556,6 @@ def run(
         console.print(f"[red]cell {err['index']} [{err['ename']}]: {evalue}[/red]")
     if result["errors"]:
         raise typer.Exit(1)
-
-
-@app.command(name="render")
-def render_cmd(
-    tier_or_path: str = typer.Argument(..., help="tier (notes|articles) or ipynb path"),
-    name: str | None = typer.Argument(None, help="source name (omit if path given)"),
-) -> None:
-    """Render a source .ipynb to PDF (nb/notes/pdf/ or nb/articles/pdf/) and open it.
-
-    Usage:
-      wt render notes test          -> render nb/notes/test.ipynb
-      wt render articles test       -> render nb/articles/test.ipynb
-      wt render nb/notes/test.ipynb    -> full path
-    """
-    from . import render
-
-    if name:
-        from .paths import ARTICLES_DIR, NOTES_DIR
-
-        tier_dirs = {"notes": NOTES_DIR, "articles": ARTICLES_DIR}
-        try:
-            source = str(tier_dirs[tier_or_path] / f"{name}.ipynb")
-        except KeyError as e:
-            raise ValueError(
-                f"render tier must be notes or articles, got: {tier_or_path}"
-            ) from e
-    else:
-        source = tier_or_path
-    pdf = render.render_pdf(source)
-    console.print(f"[green]rendered {pdf}[/green]")
-    _open(pdf)
-
-
-@app.command(name="resume")
-def resume_cmd() -> None:
-    """Render assets/resume.yaml -> assets/resume.tex + index.qmd, then pdflatex -> assets/resume.pdf."""
-    from . import resume
-
-    pdf_path, index_path = resume.build_resume()
-    console.print(f"[green]resume PDF: {pdf_path}[/green]")
-    console.print(f"[green]home page: {index_path}[/green]")
-
-
-@app.command()
-def docs(
-    port: int = typer.Option(
-        4200,
-        "--port",
-        min=1,
-        max=65535,
-        help="Port for the local Quarto preview (default: 4200).",
-    ),
-) -> None:
-    """Serve the Quarto site on a chosen local port (blocking)."""
-    from . import render
-
-    console.print(f"[green]preview: http://localhost:{port}/[/green]")
-    render.preview_site(port)
-
-
-def _open(path: Path) -> None:
-    opener = shutil.which("open") or shutil.which("xdg-open")
-    if opener:
-        subprocess.run([opener, str(path)], check=False)
 
 
 def main() -> None:

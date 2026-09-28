@@ -6,7 +6,7 @@ import subprocess
 import nbformat
 import pytest
 
-from watchtower import notebook, obfuscate
+from watchtower import notebook
 
 # ---------------------------------------------------------------------------
 # count_cells
@@ -319,38 +319,19 @@ def test_cat_context_ignored_without_locator(nb_file):
 
 
 # ---------------------------------------------------------------------------
-# cat_notebook --decode (solution cells)
+# diff_notebook
 # ---------------------------------------------------------------------------
 
 def _append_solution_cell(nb_file):
     nb = nbformat.read(nb_file, as_version=nbformat.NO_CONVERT)
-    cell = nbformat.v4.new_code_cell(obfuscate.wrap("**Solution.** Apply Cauchy-Schwarz."))
+    source = (
+        "#| echo: false\n#| eval: false\n#| output: false\n"
+        "# legacy encoded answer"
+    )
+    cell = nbformat.v4.new_code_cell(source)
     cell.metadata["tags"] = ["solution", "01-1"]
     nb.cells.append(cell)
     nbformat.write(nb, nb_file)
-
-
-def test_cat_decode_solutions_flag(nb_file):
-    _append_solution_cell(nb_file)
-    out = notebook.cat_notebook("test", tag="solution")
-    assert "Apply Cauchy-Schwarz" not in out
-    assert "#| echo: false" in out
-    decoded = notebook.cat_notebook("test", tag="solution", decode_solutions=True)
-    assert "Apply Cauchy-Schwarz" in decoded
-    assert "#| echo: false" not in decoded
-    assert "```{python}" not in decoded
-
-
-def test_cat_decode_solutions_plain_cells_unaffected(nb_file):
-    _append_solution_cell(nb_file)
-    out = notebook.cat_notebook("test", decode_solutions=True)
-    assert "# Title" in out
-    assert "print('hello')" in out
-
-
-# ---------------------------------------------------------------------------
-# diff_notebook
-# ---------------------------------------------------------------------------
 
 def _git_init_and_commit(path: str) -> None:
     for cmd in (
@@ -364,7 +345,7 @@ def _git_init_and_commit(path: str) -> None:
 
 
 def test_diff_notebook_shows_changes(nb_file, tmp_path):
-    _git_init_and_commit("nb/notes/test.ipynb")
+    _git_init_and_commit("nb/posts/test.ipynb")
     notebook.edit_cell("test", "# Updated title", index=0)
     out = notebook.diff_notebook("test")
     assert out is not None
@@ -372,18 +353,22 @@ def test_diff_notebook_shows_changes(nb_file, tmp_path):
     assert "-# Title" in out
 
 
-def test_diff_notebook_decodes_solution_without_fence(nb_file, tmp_path):
+def test_diff_notebook_shows_stored_solution_source(nb_file, tmp_path):
     _append_solution_cell(nb_file)
-    _git_init_and_commit("nb/notes/test.ipynb")
-    notebook.edit_cell("test", obfuscate.wrap("**Solution.** Updated."), tag="solution")
+    _git_init_and_commit("nb/posts/test.ipynb")
+    updated_source = (
+        "#| echo: false\n#| eval: false\n#| output: false\n"
+        "# updated legacy encoded answer"
+    )
+    notebook.edit_cell("test", updated_source, tag="solution")
     out = notebook.diff_notebook("test")
     assert out is not None
-    assert "+**Solution.** Updated." in out
-    assert "```{python}" not in out
+    assert "+# updated legacy encoded answer" in out
+    assert out.rstrip().endswith("```")
 
 
 def test_diff_notebook_unchanged_returns_none(nb_file, tmp_path):
-    _git_init_and_commit("nb/notes/test.ipynb")
+    _git_init_and_commit("nb/posts/test.ipynb")
     assert notebook.diff_notebook("test") is None
 
 

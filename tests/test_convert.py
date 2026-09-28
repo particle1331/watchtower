@@ -35,29 +35,22 @@ def repo_with_course(tmp_path, monkeypatch):
 # import_notebook (flat tiers)
 # ---------------------------------------------------------------------------
 
-def test_import_notebook_to_notes(tmp_path, monkeypatch, external_nb):
+def test_import_notebook_to_posts(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
-    dest = convert.import_notebook(str(external_nb), "notes")
+    dest = convert.import_notebook(str(external_nb), "posts")
     assert dest.exists()
-    assert dest == Path("nb") / "notes" / "external.ipynb"
-
-
-def test_import_notebook_to_articles(tmp_path, monkeypatch, external_nb):
-    monkeypatch.chdir(tmp_path)
-    dest = convert.import_notebook(str(external_nb), "articles")
-    assert dest.exists()
-    assert dest == Path("nb") / "articles" / "external.ipynb"
+    assert dest == Path("nb") / "posts" / "external.ipynb"
 
 
 def test_import_notebook_custom_name(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
-    dest = convert.import_notebook(str(external_nb), "notes", "my-note")
-    assert dest == Path("nb") / "notes" / "my-note.ipynb"
+    dest = convert.import_notebook(str(external_nb), "posts", "my-post")
+    assert dest == Path("nb") / "posts" / "my-post.ipynb"
 
 
 def test_import_notebook_preserves_cells(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
-    dest = convert.import_notebook(str(external_nb), "notes")
+    dest = convert.import_notebook(str(external_nb), "posts")
     nb = nbformat.read(dest, as_version=nbformat.NO_CONVERT)
     assert nb.cells[0].source == "# External"
 
@@ -76,7 +69,7 @@ def test_import_strips_duplicate_h1_same_cell(tmp_path, monkeypatch):
     ]
     nbformat.write(nb, src)
 
-    dest = convert.import_notebook(str(src), "notes")
+    dest = convert.import_notebook(str(src), "posts")
     out = nbformat.read(dest, as_version=nbformat.NO_CONVERT)
     assert out.cells[0].source.startswith("---")
     assert "# Weak Supervision" not in out.cells[0].source
@@ -95,7 +88,7 @@ def test_import_strips_duplicate_h1_next_cell(tmp_path, monkeypatch):
     ]
     nbformat.write(nb, src)
 
-    dest = convert.import_notebook(str(src), "notes")
+    dest = convert.import_notebook(str(src), "posts")
     out = nbformat.read(dest, as_version=nbformat.NO_CONVERT)
     # H1-only cell is removed; body cell becomes cell 1.
     assert out.cells[0].source.startswith("---")
@@ -110,16 +103,16 @@ def test_import_keeps_h1_without_frontmatter(tmp_path, monkeypatch):
     nb.cells = [nbformat.v4.new_markdown_cell("# Just A Title\n\nbody\n")]
     nbformat.write(nb, src)
 
-    dest = convert.import_notebook(str(src), "notes")
+    dest = convert.import_notebook(str(src), "posts")
     out = nbformat.read(dest, as_version=nbformat.NO_CONVERT)
     assert out.cells[0].source == "# Just A Title\n\nbody\n"
 
 
 def test_import_notebook_duplicate_raises(tmp_path, monkeypatch, external_nb):
     monkeypatch.chdir(tmp_path)
-    convert.import_notebook(str(external_nb), "notes")
+    convert.import_notebook(str(external_nb), "posts")
     with pytest.raises(FileExistsError):
-        convert.import_notebook(str(external_nb), "notes")
+        convert.import_notebook(str(external_nb), "posts")
 
 
 def test_import_notebook_courses_raises(tmp_path, monkeypatch, external_nb):
@@ -131,7 +124,7 @@ def test_import_notebook_courses_raises(tmp_path, monkeypatch, external_nb):
 def test_import_notebook_missing_source_raises(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with pytest.raises(FileNotFoundError):
-        convert.import_notebook("/nonexistent/path.ipynb", "notes")
+        convert.import_notebook("/nonexistent/path.ipynb", "posts")
 
 
 # ---------------------------------------------------------------------------

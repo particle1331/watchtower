@@ -1,14 +1,12 @@
-"""Scaffold new artifacts: notes, articles, courses, projects.
+"""Scaffold post and course notebooks.
 
-Notes and articles are Jupyter notebooks (`.ipynb`) — edited in JupyterLab
+Posts are Jupyter notebooks (`.ipynb`) — edited in JupyterLab
 as notebooks (agents read them through the `wt` CLI), and rendered by
 Quarto with inline outputs (no execution). Courses are directory trees with
-an index notebook and sequential lessons. Project scaffolding delegates to
-`uv init`.
+an index notebook and sequential lessons.
 """
 
 
-import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,8 +14,7 @@ from typing import Any
 import nbformat
 import ruamel.yaml
 
-from .paths import ARTICLES_DIR, COURSES_DIR, NOTES_DIR
-from .paths import PROJECTS_DIR as PROJECTS
+from .paths import COURSES_DIR, POSTS_DIR
 
 _yaml = ruamel.yaml.YAML(typ="rt")
 _yaml.indent(mapping=2, sequence=4, offset=2)
@@ -52,31 +49,18 @@ def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = ""
     nbformat.write(nb, path)
 
 
-def new_note(name: str, title: str | None = None) -> Path:
-    """Create nb/notes/<name>.ipynb with a date and title frontmatter.
-
-    If `title` is None, the notebook name is used as the title.
-    """
-    date = datetime.now().strftime("%Y-%m-%d")
-    path = NOTES_DIR / f"{name}.ipynb"
-    if path.exists():
-        raise FileExistsError(f"{path} already exists")
-    _write_ipynb(path, title if title is not None else name, date=date)
-    return path
-
-
-def new_article(name: str, title: str | None = None) -> Path:
-    """Create nb/articles/<name>.ipynb with a date and title frontmatter.
+def new_post(name: str, title: str | None = None) -> Path:
+    """Create nb/posts/<name>.ipynb with a date and title frontmatter.
 
     If `title` is None, a title is derived from the name by replacing
-    separators with spaces and title-casing (e.g. "my-article" -> "My Article").
+    separators with spaces and title-casing (e.g. "my-post" -> "My Post").
     """
     date = datetime.now().strftime("%Y-%m-%d")
-    path = ARTICLES_DIR / f"{name}.ipynb"
+    path = POSTS_DIR / f"{name}.ipynb"
     if path.exists():
         raise FileExistsError(f"{path} already exists")
     if title is None:
-        title = name.replace("-", " ").title()
+        title = name.replace("-", " ").replace("_", " ").title()
     _write_ipynb(path, title, date=date)
     return path
 
@@ -258,11 +242,3 @@ def new_course_section(course: str, name: str) -> None:
 
     contents.append({"section": name, "contents": []})
     _dump_yaml(quarto, data)
-
-
-def new_project(name: str) -> Path:
-    """uv init projects/<name> as a workspace member."""
-    path = PROJECTS / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["uv", "init", "--package", str(path)], check=True)
-    return path

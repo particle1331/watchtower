@@ -20,7 +20,6 @@ from pathlib import Path
 
 import nbformat
 
-from . import obfuscate
 from .inspect import resolve_ipynb
 
 CELL_TYPE_MD = "markdown"
@@ -99,7 +98,6 @@ def _render_cell(
     out_offset: int = 0,
     out_limit: int | None = None,
     context: bool = False,
-    decode_solutions: bool = False,
 ) -> str:
     """Render one cell as plain markdown with a header marker.
 
@@ -110,8 +108,7 @@ def _render_cell(
     reads without re-paying for bytes already seen.
 
     `context` marks the header of cells shown only as surrounding context
-    for a `--context` read. `decode_solutions` replaces the stored source
-    of solution-tagged cells with its decoded plaintext (spoiler opt-in).
+    for a `--context` read.
     """
     kind = cell["cell_type"]
     extras: list[str] = []
@@ -127,9 +124,6 @@ def _render_cell(
     if extras:
         header += " " + " ".join(extras)
     body = cell.get("source", "")
-    decoded_solution = decode_solutions and "solution" in tags
-    if decoded_solution:
-        body = obfuscate.deobfuscate(obfuscate.unwrap(body))
     total = len(body)
     if limit is not None:
         body = body[offset:offset + limit]
@@ -141,7 +135,7 @@ def _render_cell(
         shown = len(body)
         header += f" src[{offset}:{offset + shown}] of {total}"
     out: list[str] = []
-    if kind == "code" and not decoded_solution:
+    if kind == "code":
         fence = "```{python}\n"
         out.append(f"{header}\n\n{fence}{body}\n```" if body else f"{header}\n\n{fence}\n```")
     else:
@@ -328,7 +322,6 @@ def cat_notebook(
     out_offset: int = 0,
     out_limit: int | None = None,
     context: int = 0,
-    decode_solutions: bool = False,
 ) -> str:
     """Render notebook cell sources as markdown.
 
@@ -342,8 +335,7 @@ def cat_notebook(
 
     --context N expands a locator to include the N cells before the first
     match and after the last (context cells carry a `context` marker in
-    their header). --decode-solutions replaces the stored source of
-    solution-tagged cells with its decoded plaintext.
+    their header).
     """
     path = resolve_ipynb(name)
     nb = read_notebook(path)
@@ -354,7 +346,7 @@ def cat_notebook(
             offset=offset, limit=limit,
             with_outputs=with_outputs,
             out_offset=out_offset, out_limit=out_limit,
-            context=context, decode_solutions=decode_solutions,
+            context=context,
         )
 
     if index is None and tag is None and label is None:
@@ -571,9 +563,8 @@ def diff_notebook(name: str, base: str = "HEAD") -> str | None:
     """Markdown diff of a notebook against a git ref (default HEAD).
 
     Both sides are rendered with the same JSON-stripped cell rendering used
-    by ``wt cat`` (no outputs), so the diff shows content changes, not
-    `.ipynb` JSON noise. Solution-tagged cells are decoded on both sides so
-    content edits to an encoded solution show up as readable diff lines.
+    by ``wt cat`` (no outputs), so the diff shows stored cell source changes,
+    not `.ipynb` JSON noise.
 
     Returns the unified diff, or None when the notebook is unchanged.
     """
@@ -600,7 +591,7 @@ def diff_notebook(name: str, base: str = "HEAD") -> str | None:
     def render(nb: nbformat.NotebookNode) -> list[str]:
         lines: list[str] = []
         for i, c in enumerate(nb["cells"]):
-            block = _render_cell(c, i, limit=None, decode_solutions=True)
+            block = _render_cell(c, i, limit=None)
             lines.extend(block.splitlines())
         return lines
 

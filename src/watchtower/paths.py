@@ -12,14 +12,13 @@ ROOT_PATH = Path(__file__).parents[2]
 # relative so the CLI and its isolated tests continue to follow the caller's
 # current working directory.
 NB_DIR       = Path("nb")
-NOTES_DIR    = NB_DIR / "notes"
+POSTS_DIR    = NB_DIR / "posts"
 COURSES_DIR  = NB_DIR / "courses"
-ARTICLES_DIR = NB_DIR / "articles"
 PORTFOLIO_DIR = NB_DIR / "portfolio"
 PORTFOLIO_PATH = PORTFOLIO_DIR / "portfolio.ipynb"
 PROJECTS_DIR = Path("projects")
 
-CONTENT_DIRS: tuple[Path, ...] = (ARTICLES_DIR, NOTES_DIR, COURSES_DIR)
+CONTENT_DIRS: tuple[Path, ...] = (POSTS_DIR, COURSES_DIR)
 
 
 def repo_root() -> Path:

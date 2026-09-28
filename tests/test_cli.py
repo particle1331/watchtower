@@ -67,7 +67,7 @@ def test_cli_kernels_lists_kernel_names(monkeypatch):
 
 def test_cli_run_kernel_error_lists_available_names(tmp_path, monkeypatch, cli_console, invoke):
     monkeypatch.chdir(tmp_path)
-    _write_code_notebook(tmp_path / "nb" / "notes" / "test.ipynb", ["print('hello')"])
+    _write_code_notebook(tmp_path / "nb" / "posts" / "test.ipynb", ["print('hello')"])
 
     from watchtower import execute, kernels
 
@@ -97,23 +97,18 @@ def test_cli_run_success_exit_0(nb_file):
 
 def test_cli_run_errors_exit_1(tmp_path, monkeypatch, cli_console):
     monkeypatch.chdir(tmp_path)
-    _write_code_notebook(tmp_path / "nb" / "notes" / "err.ipynb", ["1/0"])
+    _write_code_notebook(tmp_path / "nb" / "posts" / "err.ipynb", ["1/0"])
     result = runner.invoke(cli.app, ["run", "err"])
     assert result.exit_code == 1
     assert "ZeroDivisionError" in cli_console.getvalue()
 
 
-def test_cli_docs_passes_port_and_prints_preview_url(monkeypatch, cli_console):
-    from watchtower import render
-
-    seen = []
-    monkeypatch.setattr(render, "preview_site", lambda port: seen.append(port))
-
-    result = runner.invoke(cli.app, ["docs", "--port", "4300"])
-
-    assert result.exit_code == 0
-    assert seen == [4300]
-    assert "http://localhost:4300/" in cli_console.getvalue()
+@pytest.mark.parametrize("args", [
+    ["docs"], ["resume"], ["render"], ["new", "project"],
+])
+def test_repository_tasks_are_not_notebook_commands(args):
+    result = runner.invoke(cli.app, args)
+    assert result.exit_code == 2
 
 
 # ---------------------------------------------------------------------------

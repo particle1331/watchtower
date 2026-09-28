@@ -3,7 +3,7 @@
 Code projects, each a uv workspace member. Create one with:
 
 ```bash
-wt new project my-app
+make project NAME=my-app
 ```
 
 That runs `uv init --package projects/my-app` and wires it into the workspace.

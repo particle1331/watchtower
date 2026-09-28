@@ -1,6 +1,6 @@
 """Import an external Jupyter notebook into a content tier.
 
-`wt import <src.ipynb> notes|articles` copies a notebook (usually one you ran
+`wt import <src.ipynb> posts` copies a notebook (usually one you ran
 elsewhere — Colab, Kaggle, a teammate's machine) into the chosen tier dir.
 Outputs are preserved as-is; Quarto renders them without re-execution.
 
@@ -16,12 +16,12 @@ from pathlib import Path
 import nbformat
 
 from . import scaffold
-from .paths import ARTICLES_DIR, NOTES_DIR
+from .paths import POSTS_DIR
 
-TIERS = ("notes", "articles", "courses")
-FLAT_TIERS = ("notes", "articles")
+TIERS = ("posts", "courses")
+FLAT_TIERS = ("posts",)
 
-_FLAT_DIRS = {"notes": NOTES_DIR, "articles": ARTICLES_DIR}
+_FLAT_DIRS = {"posts": POSTS_DIR}
 
 _FRONTMATTER_RE = re.compile(
     r"^---[ \t]*\r?\n.*?\r?\n(?:---|\.\.\.)[ \t]*\r?\n?", re.DOTALL
@@ -116,18 +116,18 @@ def _validate_source(src: str) -> Path:
 def import_notebook(src: str, tier: str, name: str | None = None) -> Path:
     """Copy <src.ipynb> into <tier>/<name>.ipynb (default: same stem as src).
 
-    For flat tiers (notes, articles). For courses, use `import_chapter`.
+    For the flat posts tier. For courses, use `import_chapter`.
     """
     if tier == "courses":
         raise ValueError(
-            "flat import only supports (notes, articles), got: courses. "
+            "flat import only supports posts, got: courses. "
             "For courses, use 'wt import <ipynb> courses <course-slug> "
             "[<chapter>] [--section <name>]'."
         )
     tier_dir = _FLAT_DIRS.get(tier)
     if tier_dir is None:
         raise ValueError(
-            f"unknown tier: {tier!r}. flat import supports notes|articles."
+            f"unknown tier: {tier!r}. flat import supports posts."
         )
     source = _validate_source(src)
     stem = name if name is not None else source.stem

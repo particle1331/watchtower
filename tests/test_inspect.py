@@ -12,15 +12,15 @@ from watchtower import inspect as wt_inspect
 
 @pytest.fixture
 def populated_repo(tmp_path, monkeypatch):
-    """Repo with one note and one course chapter (nested one level deeper)."""
+    """Repo with one post and one course chapter (nested one level deeper)."""
     monkeypatch.chdir(tmp_path)
     nb = nbformat.v4.new_notebook()
     nb.cells = [nbformat.v4.new_markdown_cell("hello")]
 
-    # notes tier — flat
-    (tmp_path / "nb" / "notes").mkdir(parents=True)
-    nbformat.write(nb, tmp_path / "nb" / "notes" / "001-test.ipynb")
-    nbformat.write(nb, tmp_path / "nb" / "notes" / "index.ipynb")  # must be excluded
+    # posts tier — flat
+    (tmp_path / "nb" / "posts").mkdir(parents=True)
+    nbformat.write(nb, tmp_path / "nb" / "posts" / "001-test.ipynb")
+    nbformat.write(nb, tmp_path / "nb" / "posts" / "index.ipynb")  # must be excluded
 
     # courses tier — one level deeper: nb/courses/<course>/<chapter>.ipynb
     (tmp_path / "nb" / "courses" / "ml").mkdir(parents=True)
@@ -34,14 +34,14 @@ def populated_repo(tmp_path, monkeypatch):
 # list_ipynb
 # ---------------------------------------------------------------------------
 
-def test_list_ipynb_notes(populated_repo):
-    items = wt_inspect.list_ipynb(Path("nb") / "notes")
+def test_list_ipynb_posts(populated_repo):
+    items = wt_inspect.list_ipynb(Path("nb") / "posts")
     names = [Path(i).name for i in items]
     assert "001-test.ipynb" in names
 
 
 def test_list_ipynb_excludes_index(populated_repo):
-    items = wt_inspect.list_ipynb(Path("nb") / "notes")
+    items = wt_inspect.list_ipynb(Path("nb") / "posts")
     names = [Path(i).name for i in items]
     assert "index.ipynb" not in names
 
@@ -64,22 +64,22 @@ def test_list_ipynb_missing_dir_returns_empty(tmp_path, monkeypatch):
 
 def test_repo_map_has_expected_keys(populated_repo):
     m = wt_inspect.repo_map()
-    assert {"articles", "notes", "courses", "projects"}.issubset(m.keys())
+    assert {"posts", "courses", "projects"}.issubset(m.keys())
 
 
 def test_repo_map_json_is_valid(populated_repo):
     out = wt_inspect.repo_map_json()
     data = json.loads(out)
-    assert "notes" in data
+    assert "posts" in data
 
 
 def test_repo_map_portfolio_path(populated_repo):
     assert wt_inspect.repo_map()["portfolio"] == "nb/portfolio/portfolio.ipynb"
 
 
-def test_repo_map_notes_content(populated_repo):
+def test_repo_map_posts_content(populated_repo):
     m = wt_inspect.repo_map()
-    assert any("001-test.ipynb" in n for n in m["notes"])
+    assert any("001-test.ipynb" in n for n in m["posts"])
 
 
 def test_repo_map_courses_nested(populated_repo):
@@ -97,14 +97,14 @@ def test_resolve_bare_stem(populated_repo):
     assert p.name == "001-test.ipynb"
 
 
-def test_resolve_tier_prefix_notes(populated_repo):
-    p = wt_inspect.resolve_ipynb("nb/notes/001-test")
+def test_resolve_tier_prefix_posts(populated_repo):
+    p = wt_inspect.resolve_ipynb("nb/posts/001-test")
     assert p.exists()
 
 
-def test_resolve_short_tier_prefix_notes(populated_repo):
-    p = wt_inspect.resolve_ipynb("notes/001-test")
-    assert p == (Path("nb") / "notes" / "001-test.ipynb").resolve()
+def test_resolve_short_tier_prefix_posts(populated_repo):
+    p = wt_inspect.resolve_ipynb("posts/001-test")
+    assert p == (Path("nb") / "posts" / "001-test.ipynb").resolve()
 
 
 def test_resolve_tier_prefix_course(populated_repo):
@@ -115,7 +115,7 @@ def test_resolve_tier_prefix_course(populated_repo):
 
 
 def test_resolve_full_path(populated_repo):
-    full = str(populated_repo / "nb" / "notes" / "001-test.ipynb")
+    full = str(populated_repo / "nb" / "posts" / "001-test.ipynb")
     p = wt_inspect.resolve_ipynb(full)
     assert p.exists()
 

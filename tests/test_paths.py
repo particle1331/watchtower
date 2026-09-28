@@ -12,7 +12,6 @@ def test_repo_root_contains_project_files():
 
 def test_notebook_content_is_grouped_under_nb():
     assert Path("nb") == paths.NB_DIR
-    assert Path("nb/notes") == paths.NOTES_DIR
-    assert Path("nb/articles") == paths.ARTICLES_DIR
+    assert Path("nb/posts") == paths.POSTS_DIR
     assert Path("nb/courses") == paths.COURSES_DIR
     assert Path("nb/portfolio/portfolio.ipynb") == paths.PORTFOLIO_PATH

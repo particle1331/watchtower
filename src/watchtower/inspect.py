@@ -13,12 +13,11 @@ import subprocess
 from pathlib import Path
 
 from .paths import (
-    ARTICLES_DIR,
     CONTENT_DIRS,
     COURSES_DIR,
     NB_DIR,
-    NOTES_DIR,
     PORTFOLIO_PATH,
+    POSTS_DIR,
 )
 
 
@@ -51,8 +50,7 @@ def list_projects() -> list[dict]:
 
 def repo_map() -> dict:
     return {
-        "articles": list_ipynb(ARTICLES_DIR),
-        "notes": list_ipynb(NOTES_DIR),
+        "posts": list_ipynb(POSTS_DIR),
         "courses": list_ipynb(COURSES_DIR),
         "projects": list_projects(),
         "portfolio": str(PORTFOLIO_PATH),
@@ -127,8 +125,8 @@ def resolve_ipynb(name: str) -> Path:
 
     Accepted forms:
       - 001-testnote                 bare stem (searched across tiers)
-      - nb/notes/001-testnote           tier-prefixed stem (--index, --limit: 0)
-      - nb/notes/001-testnote.ipynb     full path
+      - nb/posts/001-example           tier-prefixed stem (--index, --limit: 0)
+      - nb/posts/001-example.ipynb     full path
     """
     # Full path: direct check
     maybe = Path(name)
@@ -138,7 +136,7 @@ def resolve_ipynb(name: str) -> Path:
     # while resolving into the new nb/ content root. Full nb/... paths also
     # work, including a stem without the .ipynb suffix.
     parts = Path(name).parts
-    if parts and parts[0] in {"notes", "articles", "courses"}:
+    if parts and parts[0] in {"posts", "courses"}:
         path = NB_DIR.joinpath(*parts)
         if path.suffix != ".ipynb":
             path = path.with_suffix(".ipynb")
@@ -155,4 +153,4 @@ def resolve_ipynb(name: str) -> Path:
         for p in base.rglob(f"{name}.ipynb"):
             if p.exists() and ".ipynb_checkpoints" not in p.parts:
                 return p
-    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls notes|articles|courses`.")
+    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls posts|courses`.")

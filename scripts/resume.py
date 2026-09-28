@@ -1,9 +1,9 @@
-"""Resume builder — YAML is the single source for both outputs.
+"""Resume builder — YAML is the single source for résumé content.
 
-`wt resume` renders assets/resume.yaml -> assets/resume.tex (moderncv PDF)
-and index.qmd (site home page) via a Jinja2 template, then runs pdflatex
-to produce assets/resume.pdf. Edit the YAML; never hand-edit the generated
-.tex / .qmd.
+`make resume` renders assets/resume.yaml into the site home, résumé page,
+contact script, and moderncv LaTeX, then runs pdflatex for the PDF.
+The home and posts pages also select published posts. Edit the YAML
+for résumé content; never hand-edit generated files.
 """
 
 
@@ -12,13 +12,14 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
+from datetime import date
 from pathlib import Path
 
+import nbformat
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .paths import repo_root
+ROOT_PATH = Path(__file__).resolve().parents[1]
 
 RESUME_YAML     = Path("assets/resume.yaml")
 RESUME_TEX_J2   = Path("assets/resume.tex.j2")
@@ -26,6 +27,12 @@ RESUME_TEX      = Path("assets/resume.tex")
 RESUME_PDF      = Path("assets/resume.pdf")
 INDEX_QMD_J2    = Path("assets/index.qmd.j2")
 INDEX_QMD       = Path("index.qmd")
+RESUME_QMD_J2   = Path("assets/resume.qmd.j2")
+RESUME_QMD      = Path("resume.qmd")
+CONTACT_JS_J2   = Path("assets/contact.js.j2")
+CONTACT_JS      = Path("assets/contact.js")
+POSTS_QMD_J2    = Path("assets/posts.qmd.j2")
+POSTS_QMD       = Path("posts.qmd")
 
 LATEX_ENGINE = "pdflatex"
 
@@ -115,6 +122,33 @@ def _load_yaml(path: Path) -> dict:
     return data
 
 
+def _published_posts(root: Path) -> list[dict[str, str]]:
+    """Find dated, non-draft post notebooks for the site listings."""
+    posts: list[tuple[date, str, str]] = []
+    for path in (root / "nb" / "posts").glob("*.ipynb"):
+        notebook = nbformat.read(path, as_version=nbformat.NO_CONVERT)
+        if not notebook.cells or notebook.cells[0].cell_type != "markdown":
+            continue
+        source = notebook.cells[0].source
+        if not source.startswith("---\n"):
+            continue
+        frontmatter = source.split("---", 2)
+        if len(frontmatter) < 3:
+            continue
+        metadata = yaml.safe_load(frontmatter[1])
+        if not isinstance(metadata, dict) or metadata.get("draft"):
+            continue
+        if not metadata.get("title") or not metadata.get("date"):
+            continue
+        published = date.fromisoformat(str(metadata["date"]))
+        posts.append((published, str(metadata["title"]), path.relative_to(root).as_posix()))
+    posts.sort(reverse=True)
+    return [
+        {"title": title, "date": f"{published:%b} {published.day}, {published.year}", "url": url}
+        for published, title, url in posts
+    ]
+
+
 def _make_env(root: Path) -> Environment:
     env = Environment(
         loader=FileSystemLoader([str(root / "assets"), str(root)]),
@@ -127,6 +161,7 @@ def _make_env(root: Path) -> Environment:
     env.filters["md_escape"]     = _md_escape
     env.filters["latex_text"]    = _latex_text
     env.filters["html_entities"] = _html_entities
+    env.filters["char_codes"] = lambda value: ", ".join(str(ord(char)) for char in value)
     return env
 
 
@@ -150,12 +185,15 @@ def _run_pdflatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
 
 
 def build_resume() -> tuple[Path, Path]:
-    """Render YAML -> assets/resume.pdf and index.qmd. Returns (pdf, qmd)."""
-    root = repo_root()
+    """Render YAML into the site pages, contact script, and PDF."""
+    root = ROOT_PATH
     tex_src = root / RESUME_TEX_J2
     qmd_src = root / INDEX_QMD_J2
     yaml_path = root / RESUME_YAML
-    for p in (tex_src, qmd_src, yaml_path):
+    resume_qmd_src = root / RESUME_QMD_J2
+    contact_js_src = root / CONTACT_JS_J2
+    posts_qmd_src = root / POSTS_QMD_J2
+    for p in (tex_src, qmd_src, resume_qmd_src, contact_js_src, posts_qmd_src, yaml_path):
         if not p.exists():
             raise FileNotFoundError(f"resume source missing: {p}")
     if not shutil.which(LATEX_ENGINE):
@@ -167,13 +205,22 @@ def build_resume() -> tuple[Path, Path]:
     env = _make_env(root)
 
     # Pin PDF timestamps to the newest source mtime so reruns are reproducible.
-    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, qmd_src, yaml_path)))
+    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, qmd_src, resume_qmd_src, contact_js_src, yaml_path)))
 
     # Render index.qmd (web version with markdown escaping).
+    web_data = _escape_for_target(data, _md_escape)
+    web_data["posts"] = _published_posts(root)
+    web_data["latest_posts"] = web_data["posts"][:3]
     qmd_template = env.get_template(INDEX_QMD_J2.name)
-    qmd_rendered = qmd_template.render(**_escape_for_target(data, _md_escape))
+    qmd_rendered = qmd_template.render(**web_data)
     index_path = root / INDEX_QMD
     index_path.write_text(qmd_rendered, encoding="utf-8")
+    resume_template = env.get_template(RESUME_QMD_J2.name)
+    (root / RESUME_QMD).write_text(resume_template.render(**web_data), encoding="utf-8")
+    posts_template = env.get_template(POSTS_QMD_J2.name)
+    (root / POSTS_QMD).write_text(posts_template.render(**web_data), encoding="utf-8")
+    contact_template = env.get_template(CONTACT_JS_J2.name)
+    (root / CONTACT_JS).write_text(contact_template.render(**data), encoding="utf-8")
 
     # Render resume.tex (PDF version with LaTeX escaping).
     tex_template = env.get_template(RESUME_TEX_J2.name)
@@ -183,7 +230,7 @@ def build_resume() -> tuple[Path, Path]:
     # into the PDF /ID, so a random tmp suffix would make every run's bytes
     # differ. Combined with SOURCE_DATE_EPOCH (set in _run_pdflatex) this
     # makes reruns byte-identical when sources are unchanged.
-    tmp_dir = Path(tempfile.gettempdir()) / "watchtower-resume-build"
+    tmp_dir = root / ".tmp" / "resume-build"
     shutil.rmtree(tmp_dir, ignore_errors=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -215,6 +262,8 @@ def _escape_for_target(data: dict, esc) -> dict:
     out = copy.deepcopy(data)
     if "summary" in out:
         out["summary"] = esc(out["summary"])
+    if isinstance(out.get("homepage_intro"), list):
+        out["homepage_intro"] = [esc(value) for value in out["homepage_intro"]]
     for key in ("employment", "early_employment", "skills", "projects", "education"):
         items = out.get(key)
         if not isinstance(items, list):
@@ -235,6 +284,19 @@ def _escape_dict_fields(d: dict, esc) -> None:
             d[field] = esc(d[field])
 
 
-if __name__ == "__main__":  # pragma: no cover
-    pdf, _ = build_resume()
-    print(f"resume PDF: {pdf}", file=sys.stderr)
+def main() -> None:
+    try:
+        pdf, index = build_resume()
+    except (OSError, ValueError) as error:
+        sys.exit(str(error))
+    except subprocess.CalledProcessError as error:
+        print(f"command failed: {error.cmd[0]}", file=sys.stderr)
+        raise SystemExit(error.returncode) from error
+    print(f"resume PDF: {pdf}")
+    print(f"home page: {index}")
+    print(f"résumé page: {index.parent / RESUME_QMD}")
+    print(f"posts page: {index.parent / POSTS_QMD}")
+
+
+if __name__ == "__main__":
+    main()
