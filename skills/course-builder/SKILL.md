@@ -1,6 +1,6 @@
 ---
 name: course-builder
-description: Build and revise Watchtower courses under nb/courses/, including course homes and technical overviews, scaffolding and sidebar structure, chapter notebooks, exercises and encoded solutions, and multi-chapter orchestration. Use for any course-level creation, extension, migration, or authoring task.
+description: Build and revise Watchtower courses under nb/courses/, including course homes and technical overviews, scaffolding and sidebar structure, chapter notebooks, exercises and just-in-time assessment, and multi-chapter orchestration. Use for any course-level creation, extension, migration, or authoring task.
 ---
 
 # Course builder
@@ -20,7 +20,7 @@ that apply to the current task.
 | Scaffold a course or chapter; add, move, or rename sidebar entries | [Course structure and navigation](references/course-structure.md) |
 | Create or revise `index.ipynb`, `00-overview.ipynb`, the course promise, or the whole-course technical contract | [Course home and Chapter 00](references/course-home.md) and, for new files/navigation, [Course structure](references/course-structure.md) |
 | Write, edit, execute, or review an ordinary chapter | [Chapter authoring and notebook workflow](references/chapter-authoring.md) |
-| Add, edit, remove, or review problems, solutions, starter code, or hints | [Course problems and solutions](references/exercises.md) plus [Chapter authoring](references/chapter-authoring.md) |
+| Add, edit, remove, or review exercises, starter code, or existing solutions | [Course problems and solutions](references/exercises.md) plus [Chapter authoring](references/chapter-authoring.md) |
 | Build or migrate multiple chapters; coordinate parallel work or subagents | [Multi-chapter orchestration and subagents](references/orchestration.md), then the references for each delegated task |
 
 For notebook prose, also use `notebook-writing-style`. For Quarto options,
@@ -48,7 +48,7 @@ safely.
 Serve the isolated worktree on a non-default port, usually 4300:
 
 ```bash
-.venv/bin/wt docs --port 4300
+make docs PORT=4300
 ```
 
 Include the exact preview URL, such as `http://localhost:4300/`, in progress
@@ -72,7 +72,8 @@ course-wide contract must change.
   writes.
 - Mutate notebook cells only through `wt`; re-read indices after insertions or
   removals.
-- Add exercises only through `wt add-exercise` and update solutions only
-  through `wt solution-edit`. Never write a plaintext solution cell directly.
+- Add new exercises through the ordinary `wt` cell commands. Do not require
+  stored solutions; assess learner answers when asked. Preserve any existing
+  encoded solution cells unless the user requests a change to them.
 - Re-execute edited code cells, inspect stored outputs, review with `wt diff`,
-  run `wt check <course>` after exercise work, and render affected pages.
+  and render affected pages.

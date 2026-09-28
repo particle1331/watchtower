@@ -16,7 +16,7 @@ When authoring article content, read [references/article-authoring.md](reference
 3. For article edits, follow [references/article-authoring.md](references/article-authoring.md) and preserve the notebook's existing narrative style.
 4. Use the exact Jupyter cell-option names in [references/cell-options.md](references/cell-options.md). Do not invent aliases based on other Quarto engines.
 5. Re-execute edited code cells with the notebook's prior state available, so stored outputs match the source. In Watchtower, use `wt run <name> --index N`.
-6. Run the relevant Quarto preview or render after option changes. In Watchtower, use `wt docs`; if the sandbox blocks Quarto from listening on its preview port, retry through the approved elevated execution path.
+6. Run the relevant Quarto preview or render after option changes. In Watchtower, use `make docs`; if the sandbox blocks Quarto from listening on its preview port, retry through the approved elevated execution path.
 
 ## Cell-option rules
 
@@ -33,6 +33,6 @@ After changing code or cell options:
 
 - Inspect the source with `wt cat` and confirm the option names and cell types.
 - Run the edited cell and inspect stored outputs with `wt output` or `wt cat --with-outputs`.
-- Run `wt docs` or the project-equivalent Quarto build and resolve YAML, execution, and rendering errors before handing off.
+- Run `make docs` or the project-equivalent Quarto build and resolve YAML, execution, and rendering errors before handing off.
 
 Do not copy the entire Quarto manual into this skill. Consult the focused reference and the linked official documentation when an option is outside this skill's scope.

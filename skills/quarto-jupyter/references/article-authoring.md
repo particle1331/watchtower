@@ -153,7 +153,7 @@ HTML, PDF, and Typst do not implement every layout feature identically. Prefer n
 5. **Make outputs referenceable.** Give figures and tables stable type-prefixed labels and captions in the cell that produces them. Refer to them in prose with `@fig-name` or `@tbl-name`. Use equation and section labels when readers need to navigate back to a result.
 6. **Make figures and tables legible.** Add informative captions and alternative text where appropriate, format numeric columns deliberately, and use layout or margin placement only when it improves the argument. Check the target output format because layout behavior can differ across HTML, PDF, and Typst.
 7. **Add citations deliberately.** If the article cites external work, add the bibliography in front matter and use Quarto citation syntax. Keep citations near the claims they support; do not replace a citation with a bare URL when a bibliographic reference is appropriate.
-8. **Render from the canonical source.** In Watchtower, notebook outputs are stored inline and Quarto renders without re-execution. Run the relevant cells explicitly, inspect their outputs, then run `wt docs` or the project render command.
+8. **Render from the canonical source.** In Watchtower, notebook outputs are stored inline and Quarto renders without re-execution. Run the relevant cells explicitly, inspect their outputs, then run `make docs` or the project render command.
 
 ## Compact patterns
 

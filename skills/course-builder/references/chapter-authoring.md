@@ -69,4 +69,3 @@ change. `edit-cell` does not shift indices.
 - Equations, figures, tables, annotations, and internal links render correctly.
 - `wt diff` contains only intended notebook content changes.
 - Sidebar labels remain shorter than frontmatter titles.
-- Run `wt check <course>` when exercise cells changed.

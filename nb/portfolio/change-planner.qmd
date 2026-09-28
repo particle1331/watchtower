@@ -1,0 +1,32 @@
+---
+title: "Change Planner Agent"
+description: "A read-only agent that builds an evidence-backed plan for a code change."
+page-layout: article
+---
+
+[← Portfolio](portfolio.ipynb)
+
+The Change Planner Agent investigates a proposed code change before anyone edits
+the repository. It searches a versioned snapshot, connects implementation evidence
+to tests and history, forms regression hypotheses, and exports a plan that a human
+can review.
+
+## What it contains
+
+The project separates repository indexing and retrieval from the LangGraph workflow.
+The workflow plans an investigation, fans out research, retries failed steps,
+verifies evidence, and supports pauses and resumes. A deterministic offline scenario
+provides a repeatable way to inspect the default path.
+
+Its evaluation compares lexical, dense, hybrid, structural, and workflow variants
+on pinned repository fixtures. Reports include retrieval quality, estimated latency,
+and index cost. A local repository can also be indexed and investigated without
+changing its files.
+
+## Explore the project
+
+- [Source code, commands, and evaluation](https://github.com/particle1331/watchtower/tree/main/projects/change-planner)
+- [LangGraph course](../courses/langgraph/index.ipynb)
+
+The agent produces a reviewable plan. It does not edit code, merge changes, deploy
+systems, or certify that a snapshot captures the complete production environment.

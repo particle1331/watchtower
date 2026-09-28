@@ -14,6 +14,30 @@ table, thead, tbody, tr, td, th {
   hyphens: auto;
 }
 
+.contact-value {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.16em;
+}
+
+.copy-contact {
+  border: 0;
+  background: transparent;
+  color: #6c757d;
+  padding: 0 0.15em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.copy-contact:hover,
+.copy-contact:focus-visible {
+  color: #e95420;
+}
+
+.copy-contact.copied {
+  color: #38b44a;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -273,49 +297,230 @@ h2 {
   color: var(--bs-body-color);
 }
 
+.resume-intro {
+  background: #f1f1f1;
+  border: 1px solid #d2d2d2;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin: 0 0 2rem;
+}
+
+.resume-intro p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Homepage section previews --- */
+.home-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0 1rem;
+}
+
+.home-preview-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.home-preview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.home-preview-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.65rem;
+}
+
+.home-preview-card p,
+.home-preview-card li {
+  text-align: left;
+  hyphens: none;
+}
+
+.home-preview-card ul {
+  padding-left: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.home-preview-card > p:last-child {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+/* --- Portfolio project sections --- */
+.portfolio-project {
+  padding: 1.75rem 0 2.75rem;
+  border-bottom: 1px solid #dedede;
+}
+
+.portfolio-project:last-of-type {
+  border-bottom: 0;
+}
+
+.portfolio-project h2 {
+  margin-top: 0 !important;
+}
+
+.portfolio-project > p {
+  max-width: 82ch;
+  text-align: left;
+  hyphens: none;
+  line-height: 1.65;
+}
+
+.portfolio-project .quarto-figure {
+  max-width: 900px;
+  margin: 1.5rem 0;
+}
+
+.portfolio-project .figure-img {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  filter: none;
+}
+
+.portfolio-project figcaption {
+  text-align: left;
+}
+
+@media (max-width: 700px) {
+  .portfolio-project figure {
+    overflow-x: auto;
+  }
+
+  .portfolio-project .figure-img {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-preview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --- Resume hero banner --- */
 .resume-hero {
   position: relative;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fdfdfd 0%, #f4f4f4 100%);
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.03);
+  isolation: isolate;
+  padding: clamp(2rem, 5vw, 4.5rem) 0 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.resume-hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: center;
+  gap: clamp(2rem, 6vw, 6rem);
 }
 
 .resume-banner {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   z-index: 0;
-  opacity: 0.7;
+  opacity: 0.9;
   pointer-events: none;
-  -webkit-mask-image: radial-gradient(
-    circle at 73% 20%,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.55) 35%,
-    rgba(0, 0, 0, 0) 70%
-  );
-  mask-image: radial-gradient(
-    circle at 73% 20%,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.55) 35%,
-    rgba(0, 0, 0, 0) 70%
-  );
+  -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 85%, transparent);
+  mask-image: linear-gradient(transparent, #000 12%, #000 85%, transparent);
 }
 
 .resume-hero-content {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.25rem 0;
 }
 
-.resume-hero-content h1 {
+.resume-hero-links {
+  position: relative;
+  z-index: 1;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.resume-hero-links p {
+  margin: 0;
+  text-align: left;
+}
+
+.resume-hero-links p {
+  line-height: 2;
+}
+
+.resume-hero-links a > i,
+.resume-home-contact > i {
+  margin-right: 0.2rem;
+  color: #737c84;
+}
+
+.resume-home-contact {
+  white-space: nowrap;
+}
+
+.resume-link-separator {
+  display: inline-block;
+  margin: 0 0.4rem;
+  color: #8a8a8a;
+}
+
+.resume-hero .resume-intro {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  max-width: 50ch;
+  margin: 1.5rem 0;
+  padding: 0;
+  line-height: 1.65;
+}
+
+.resume-hero p {
+  text-align: left;
+  hyphens: none;
+}
+
+.resume-intro p:first-child {
+  font-size: 1.3rem;
+  line-height: 1.45;
+  margin-bottom: 1rem;
+}
+
+.resume-intro p + p {
+  color: #626970;
+}
+
+.resume-hero-content .lead {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 1.1rem;
+  color: #626970;
+}
+
+.resume-name-dot {
+  color: #e95420;
+}
+
+.resume-hero-title {
+  align-self: flex-start;
   margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: clamp(3rem, 5.5vw, 4.75rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
 }
 
 .resume-hero-content p:last-child {
@@ -324,4 +529,118 @@ h2 {
 
 .resume-hero canvas {
   display: block;
+}
+
+@media (max-width: 860px) {
+  .resume-hero-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .resume-hero-layout {
+    gap: 1rem;
+  }
+
+  .resume-hero-links {
+    margin-top: 1.5rem;
+    line-height: 1.9;
+  }
+}
+
+/* Résumé business card. */
+.resume-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(230px, 0.8fr);
+  align-items: start;
+  gap: 1.5rem;
+  margin: 0.75rem 0 2.5rem;
+  padding: 1.5rem;
+  border: 3px solid #777;
+  border-radius: 3px;
+}
+
+.resume-overview p {
+  text-align: left;
+  hyphens: none;
+}
+
+.resume-summary {
+  min-width: 0;
+  max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.resume-summary p {
+  margin: 0;
+}
+
+.resume-contact-links {
+  min-width: 0;
+  padding-left: 1.5rem;
+  border-left: 1px solid #e1e3e5;
+}
+
+.resume-card-links {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.resume-card-links li {
+  min-width: 0;
+}
+
+.resume-card-links a,
+.resume-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.resume-card-links a > i,
+.resume-contact-item > i {
+  flex: 0 0 1rem;
+  color: #737c84;
+  text-align: center;
+}
+
+.resume-card-links a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: #a6a6a6;
+  text-underline-offset: 0.2em;
+}
+
+.resume-card-links a:hover,
+.resume-card-links a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.resume-contact-item .contact-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.resume-contact-item .copy-contact {
+  padding: 0.15rem;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 700px) {
+  .resume-overview {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .resume-contact-links {
+    padding-top: 1.1rem;
+    padding-left: 0;
+    border-top: 1px solid #e1e3e5;
+    border-left: 0;
+  }
 }

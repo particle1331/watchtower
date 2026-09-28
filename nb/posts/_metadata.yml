@@ -2,3 +2,7 @@
 filters:
   - ../../filters/center-images.lua
   - ../../filters/date-pills.lua
+format:
+  html:
+    grid:
+      body-width: 850px

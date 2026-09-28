@@ -18,11 +18,11 @@ project:
   output-dir: _site
   render:
     - index.qmd
+    - resume.qmd
+    - posts.qmd
     - nb/portfolio/portfolio.ipynb
-    - nb/notes/index.ipynb
-    - nb/notes/*.ipynb
-    - nb/articles/index.ipynb
-    - nb/articles/*.ipynb
+    - nb/portfolio/*.qmd
+    - nb/posts/*.ipynb
     - nb/courses/index.ipynb
     - nb/courses/**/*.ipynb
     - nb/photos/photos.ipynb
@@ -31,7 +31,7 @@ project:
     browser: false
 
 website:
-  title: "Ron Medina ∷ Résumé"
+  title: "Ron Medina ∷ AI & ML"
   draft-mode: visible
   back-to-top-navigation: true
   page-navigation: true
@@ -41,16 +41,16 @@ website:
 
   navbar:
     left:
+      - href: resume.qmd
+        text: résumé
       - href: nb/portfolio/portfolio.ipynb
         text: portfolio
-      - href: nb/articles/index.ipynb
-        text: articles
-      - href: nb/notes/index.ipynb
-        text: notes
+      - href: posts.qmd
+        text: posts
       - href: nb/courses/index.ipynb
         text: courses
       - href: nb/photos/photos.ipynb
-        text: photos
+        text: personal
     right:
       - icon: github
         href: 

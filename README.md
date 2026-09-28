@@ -1,6 +1,6 @@
 # watchtower ⛫
 
-A personal system for notes, articles, projects, and course notes.
+A personal system for posts, projects, and course notes.
 
 This repository supports lifelong learning while also serving as a place to
 compile and document interesting projects into a portfolio. Jupyter
@@ -15,15 +15,16 @@ This repository takes its name from the [Watchtower structure in *Battle Realms*
 
 | Tier      | Where                       | Effort | Audience | Listing             |
 |-----------|-----------------------------|--------|----------|---------------------|
-| Home      | `index.qmd`                 | —      | public   | resume landing page |
-| Articles  | `nb/articles/*.ipynb`          | high   | public   | `nb/articles/index.ipynb` |
-| Portfolio | `nb/portfolio/portfolio.ipynb` | high   | public   | cards on one page         |
-| Notes     | `nb/notes/*.ipynb`             | low    | you      | `nb/notes/index.ipynb`    |
+| Home      | `index.qmd`                 | —      | public   | site landing page |
+| Résumé    | `resume.qmd`                | —      | public   | full web résumé and PDF link |
+| Posts     | `nb/posts/*.ipynb`          | mixed  | public   | `posts.qmd` |
+| Portfolio | `nb/portfolio/`            | high   | public   | project sections and full pages |
 | Courses   | `nb/courses/**/*.ipynb`        | mid    | you      | `nb/courses/index.ipynb`  |
-| Photos    | `nb/photos/photos.ipynb`       | —      | public   | single gallery page |
+| Personal  | `nb/photos/photos.ipynb`       | —      | public   | personal photos           |
 
 Site content is primarily stored as Jupyter notebooks (`.ipynb`); the generated
-résumé home page is `index.qmd`. Agents read notebook cell sources as plain
+home and résumé pages are `index.qmd` and `resume.qmd`. `posts.qmd` lists the
+post notebooks. Agents read notebook cell sources as plain
 markdown via the `wt` CLI (jupytext under the hood); they never see
 the raw JSON.
 
@@ -31,20 +32,20 @@ the raw JSON.
 
 ```bash
 make bootstrap                       # setup shared skills + uv sync (creates .venv)
-wt new note my-note                  # nb/notes/my-note.ipynb
-wt new note my-note -t "My Note"       # custom display title
-
-wt new article my-article             # nb/articles/my-article.ipynb
-wt new article my-article -t "My Article"  # custom display title
+source .venv/bin/activate             # or use .venv/bin/wt explicitly
+wt new post my-post                   # nb/posts/my-post.ipynb
+wt new post my-post -t "My Post"     # custom display title
+wt ls posts                           # list all post notebooks
+wt ls projects                        # list project directories
 wt new course llm "Large Language Models"  # nb/courses/llm/ (index + first lesson)
 wt new chapter my-course 02-bar       # nb/courses/my-course/02-bar.ipynb + register in sidebar
 wt new section my-course "My Section" # add section header to course sidebar
-wt new project my-code-project       # uv init projects/my-code-project
+make project NAME=my-code-project       # uv init projects/my-code-project
 
-wt render notes my-note              # render ipynb -> PDF (nb/notes/pdf/) and open
-wt resume                            # render assets/resume.yaml -> assets/resume.tex + index.qmd, then pdflatex -> assets/resume.pdf
-wt docs                              # serve site on :4200
-wt docs --port 4300                  # serve an isolated worktree preview
+make render NOTEBOOK=nb/posts/my-post.ipynb  # render notebook PDF
+make resume                            # render home, résumé, posts, contact script, LaTeX, and PDF
+make docs                              # rebuild résumé from YAML, serve site on :4200
+make docs PORT=4300                  # rebuild résumé, serve an isolated worktree preview
 ```
 
 The site is published automatically to `gh-pages` on push to `main` via
@@ -87,7 +88,7 @@ vision-capable agent can inspect plots without parsing notebook JSON.
 ## Importing notebooks from elsewhere
 
 ```bash
-wt import ~/Downloads/foo.ipynb notes my-foo                   # copy + normalize into nb/notes/
+wt import ~/Downloads/foo.ipynb posts my-post                  # copy + normalize into nb/posts/
 wt import ~/Downloads/foo.ipynb courses llm                    # import as a chapter of llm/ + register in sidebar
 wt import ~/Downloads/foo.ipynb courses llm 02-bar             # chapter stem override
 wt import ~/Downloads/foo.ipynb courses llm 02-bar -s "Setup"  # into a specific section
@@ -102,10 +103,10 @@ H1, not two.
 ## Secrets
 
 ```bash
-wt vault set OPENAI_API_KEY sk-...
+wt vault set OPENAI_API_KEY <value>
 wt vault rm OPENAI_API_KEY
 wt vault ls
-eval $(wt vault export)        # export lines for current shell
+eval "$(wt vault export)"        # export lines for current shell
 ```
 
 Stored in the OS keyring; never committed. Projects read them via:
@@ -118,12 +119,18 @@ get_secret("OPENAI_API_KEY")
 ## Layout
 
 ```
-index.qmd                 # "Ron Medina ∷ Résumé" home page (generated by wt resume)
+index.qmd                 # site home page (generated by make resume)
+resume.qmd                # full web résumé (generated by make resume)
+posts.qmd                 # published post listing (generated by make resume)
 nb/
+  posts/
+    *.ipynb                # all individual posts in one flat directory
+    img/                   # images used by posts
   portfolio/
-    portfolio.ipynb         # hand-maintained project cards
+    portfolio.ipynb         # project abstracts and links
+    *.qmd                   # full project pages
   photos/
-    photos.ipynb            # personal photos (mountaineering, landscapes, kid)
+    photos.ipynb            # personal gallery
 _quarto.yml               # publishes all content tiers (execute.enabled: false)
 assets/
   styles.css              # site styling
@@ -131,31 +138,29 @@ assets/
   resume.yaml             # canonical résumé source (single source of truth)
   resume.tex.j2           # Jinja2 template -> moderncv LaTeX (PDF)
   index.qmd.j2            # Jinja2 template -> site home page (QMD)
-  resume.pdf              # built by `wt resume` (served as download link)
+  resume.qmd.j2           # Jinja2 template -> full web résumé (QMD)
+  posts.qmd.j2            # Jinja2 template -> combined post listing (QMD)
+  contact.js.j2           # Jinja2 template -> copyable contact details
+  resume.pdf              # built by `make resume` (served as download link)
 filters/
   center-images.lua       # Quarto lua filter (image centering for PDF)
 
-  notes/
-    *.ipynb                 # working notes
-    index.ipynb             # listing page
-    pdf/                    # gitignored rendered PDFs
-  articles/
-    *.ipynb                 # long-form articles
-    index.ipynb             # listing page
-    pdf/                    # gitignored rendered PDFs
   courses/
     <course>/               # full course notes
     index.ipynb             # listing page
+scripts/                  # standalone repository tasks (no watchtower imports)
+  resume.py               # résumé/site artifact builder
+  docs.py                 # Quarto preview
+  project.py              # uv project creation
+  render.py               # single notebook PDF
 projects/                 # uv workspaces (each member has its own pyproject.toml)
 src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
-  scaffold.py             # `wt new note|article|course|chapter|section|project`
+  scaffold.py             # notebook/course scaffolding
   notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
   outputs.py              # structured cell-output access + image extraction
   inspect.py              # `wt map | find | ls` + resolver
   convert.py              # `wt import` (external ipynb -> tier)
-  render.py               # `wt render | docs`
-  resume.py               # `wt resume`
   vault.py                # OS keyring wrapper
 ```
 
@@ -168,30 +173,19 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 
 | Command | What it does |
 | --- | --- |
-| `wt new note <name> [--title <title>]` | create `nb/notes/<name>.ipynb` (title optional; defaults to `<name>`) |
-| `wt new article <name> [--title <title>]` | create `nb/articles/<name>.ipynb` (date injected in frontmatter; title optional; defaults to `<name>` titleized) |
+| `wt new post <name> [--title <title>]` | create a dated `nb/posts/<name>.ipynb` (title defaults to the titleized name) |
 | `wt new course <name> <title>` | create `nb/courses/<name>/` with index, first lesson, and sidebar (title shown in index frontmatter) |
 | `wt new chapter <course> <name> [--title <title>] [--section <name>]` | create `nb/courses/<course>/<name>.ipynb` and register in sidebar (title optional; sidebar text and notebook frontmatter are independent — edit either or both after scaffolding) |
 | `wt new section <course> <name>` | add a section header to a course's sidebar in `_quarto.yml` |
-| `wt new project <name>` | `uv init projects/<name>` and wire workspace |
-| `wt import <ipynb> notes|articles [<name>]` | import external notebook (Colab/Kaggle) into a flat tier |
+| `wt import <ipynb> posts [<name>]` | import external notebook (Colab/Kaggle) into `nb/posts/` |
 | `wt import <ipynb> courses <course> [<chapter>] [--section <name>]` | import as a chapter of an existing course (copies into the course dir and registers in the course's sidebar) |
-
-### Rendering & serving
-
-| Command                              | What it does                                              |
-|--------------------------------------|-----------------------------------------------------------|
-| `wt render notes <name>`             | render one notebook to PDF (`nb/notes/pdf/`), open it        |
-| `wt render articles <name>`            | render one notebook to PDF (`nb/articles/pdf/`)                |
-| `wt render <path/to.ipynb>`          | render by full path                                        |
-| `wt resume`                          | render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd`, then `pdflatex` -> `assets/resume.pdf` |
-| `wt docs [--port <port>]`            | serve the site on the chosen port (default: :4200)        |
 
 ### Navigation & search
 
 | Command | What it does |
 | --- | --- |
 | `wt map` | print repo structure as JSON |
+| `wt ls posts|courses|projects` | list notebook sources or project directories |
 | `wt find <query>` | grep across `.ipynb` cell sources |
 | `wt count <name>` | print cell count (plan ranges before `--index N:M`) |
 | `wt cat <name>` | print notebook as markdown; each cell headed `> cell N [code\|md]` (use N for `--index`) |
@@ -204,8 +198,7 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
 | `wt output <name> --index N [--output K] [--save-dir DIR]` | inspect one cell's stored outputs; print text/errors and save images (default: `ROOT_PATH / ".tmp"`) |
 | `wt cat <name> --index N --context K` | print cells N-K..N+K (surrounding context, marked `context`) |
-| `wt cat <name> --tag solution --decode` | print solution cells decoded to plaintext (spoiler opt-in) |
-| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, solutions decoded); highlights in interactive terminals and stays plain when piped or `NO_COLOR` is set |
+| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, showing stored cell source); highlights in interactive terminals and stays plain when piped or `NO_COLOR` is set |
 
 ### Editing notebooks
 | Command                              | What it does                                              |
@@ -241,50 +234,38 @@ Kernel selection: an explicit `--kernel K` overrides the notebook's
 `kernelspec.name`; otherwise the notebook kernelspec is used, falling back to
 `python3` when no kernelspec is stored.
 
-### Problems
+### Course exercises
 
-Course problems and solutions live entirely in the chapter notebooks — there
-is no `problems.json`. A problem is a markdown cell tagged `problem` + its id
-(e.g. `07-3`), headed by `### [PNN.N] title` (chapter from the notebook
-filename, number per-chapter, e.g. `### [P11.4] Energy retention in
-practice`), optionally followed by a starter code cell; the solution is
-the code cell tagged `solution` + the same id right after it. Its source is a
-`#| echo: false` / `#| eval: false` / `#| output: false` Quarto cell-options
-header followed by the ROT18-obfuscated body, each non-empty line prefixed
-`# ` (blank lines stay blank). The `#|` options hide the cell entirely on the
-rendered site, so solutions stay in the notebook for self-grading but never
-spoil the rendered chapters.
+Exercise prompts live in chapter notebooks. Add or revise them with the same
+`wt` cell commands used for other notebook content, and assess learner work
+when requested. New exercises do not need stored answers. Existing solutions
+are collected in the public [course solutions page](nb/courses/solutions.qmd).
 
-| Command                              | What it does                                              |
-|--------------------------------------|-----------------------------------------------------------|
-| `wt problem <course> <locator>`      | print a problem statement (plus starter code)             |
-| `wt solution <course> <locator>`     | print a problem's decoded solution (worked text, answer, checks, reference code) |
-| `wt hint <course> <locator> [--level 1\|2]` | progressive hint (checks without expected values, worked-text excerpt) |
-| `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X [--number N]` | append a new problem + solution pair (solution encoded on write) |
-| `wt solution-edit <course> <locator> --content X` | create/replace a solution cell (plaintext in, encoded stored) |
-| `wt check <course>`                  | validate tagging, pairing, and encoding across all chapters |
+### Core tools: vault
 
-Locator forms: `7.3`, `07-3`, `07 3`, `07-projection-and-orthogonalization 3`,
-or a fuzzy chapter name like `projection 3`.
-
-
-### Secrets (vault)
-
-| Command                              | What it does                                              |
-|--------------------------------------|-----------------------------------------------------------|
-| `wt vault set <key> <value>`          | store secret                                              |
-| `wt vault get <key>`                 | print secret value                                        |
-| `wt vault rm <key>`                  | delete secret                                             |
-| `wt vault ls`                        | list stored secret keys                                   |
-| `wt vault export`                       | emit `export` lines for all secrets                       |
+| Command | What it does |
+| --- | --- |
+| `wt vault set <key> <value>` | store a secret in the OS keyring |
+| `wt vault get <key>` | print a secret value |
+| `wt vault rm <key>` | remove a secret |
+| `wt vault ls` | list stored keys |
+| `wt vault export` | emit shell export statements |
 
 ## Make targets
 
-The Makefile covers only the generic dev workflows (external tools that
-don't belong in `wt`).
+`wt` focuses on reading, editing, running, and importing notebooks,
+including course exercises, and retains `wt vault` as a core tool. Make handles
+notebook PDF rendering, the site, résumé, project creation, and development tasks. Run `make` or `make help` to see the available workflows.
+Make invokes standalone scripts under `scripts/` using the repo virtual
+environment, so shell activation is optional. These tasks live outside the
+`watchtower` package and do not import it.
 
 | Target             | What it runs   |
 |--------------------|----------------|
+| `make resume` | rebuild site pages, contact script, LaTeX, and PDF from `assets/resume.yaml` and published posts |
+| `make docs [PORT=4200]` | rebuild résumé artifacts, then serve Quarto; `PORT=4300` selects another port |
+| `make project NAME=<name>` | create a uv workspace project |
+| `make render NOTEBOOK=<path.ipynb>` | render a notebook PDF into its source directory’s `pdf/` folder |
 | `make bootstrap`   | setup skills + `uv sync` |
 | `make setup-skills`| create and validate skill symlinks |
 | `make test`        | `pytest`       |
@@ -292,7 +273,9 @@ don't belong in `wt`).
 | `make typecheck`   | `pyright`      |
 
 Run `make lint` and `make typecheck` before committing changes to anything
-under `src/` or `projects/`. There is no pre-commit hook wired up.
+under `src/` or `projects/`. A pre-commit hook runs Gitleaks against staged
+changes to catch hardcoded secrets. Install Gitleaks (`brew install gitleaks`),
+then run `uv run pre-commit install` from the repo root.
 
 ## Dependencies
 

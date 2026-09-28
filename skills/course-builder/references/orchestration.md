@@ -69,8 +69,8 @@ Require each subagent to return:
 - the exact artifact or chapter handoff produced.
 
 The main agent re-reads every changed notebook through `wt`, reviews project
-diffs, resolves cross-chapter inconsistencies, executes edited code cells, runs
-`wt check` after exercise work, and renders the integrated course. A subagent's
+diffs, resolves cross-chapter inconsistencies, executes edited code cells, reviews exercise prompts, and renders the
+integrated course. A subagent's
 successful local check is evidence for integration, not a substitute for it.
 
 ## Suggested course-wide sequence
@@ -80,6 +80,6 @@ successful local check is evidence for integration, not a substitute for it.
 3. Delegate independent research, audits, or disjoint implementation work.
 4. Integrate one dependency layer at a time.
 5. Migrate chapters in the order promised by the overview.
-6. Run course-wide exercise, execution, navigation, and render checks.
+6. Review exercise prompts, execution, navigation, and rendering across the course.
 7. Update the index or overview only when measured evidence changes the
    learner-facing contract.

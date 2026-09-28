@@ -1,0 +1,26 @@
+---
+title: "Posts"
+page-layout: full
+sidebar: false
+toc: false
+aliases:
+  - /nb/articles/index.html
+  - /nb/notes/index.html
+listing:
+  contents:
+{% for post in posts %}
+    - "{{ post.url }}"
+{% endfor %}
+  type: table
+  sort: date desc
+  sort-ui: [date, title, reading-time]
+  page-size: 10
+  categories: false
+  fields:
+    - date
+    - title
+    - categories
+    - reading-time
+---
+
+Posts from across the knowledge base, newest first.

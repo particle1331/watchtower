@@ -1,21 +1,26 @@
-# Canonical résumé source. `wt resume` renders this into:
+# Canonical résumé source. `make resume` renders this into:
 #   - assets/resume.tex  (via assets/resume.tex.j2) -> assets/resume.pdf
 #   - index.qmd          (via assets/index.qmd.j2) -> site home page
+#   - resume.qmd         (via assets/resume.qmd.j2) -> full web résumé
+#   - assets/contact.js  (via assets/contact.js.j2) -> copy buttons
 # Edit this file; never hand-edit the generated .tex / .qmd.
 
 name: Ron Medina
 
 contact:
   phone: (+63) 962 831 6730
-  email: ron.mdn@gmail.com
+  email: ron.medina@hey.com
   github: particle1331
   linkedin: linkedin.com/in/ron-medina-5a411218a/
 
 summary: >
-  Senior Machine Learning Engineer with a maths & physics background. I design, build, and ship
-  ML and deep learning systems that optimize operations and surface useful
-  insight — with attention to the infrastructure and engineering that keeps
-  them running in production.
+  Machine Learning Engineer building machine learning and AI systems — from
+  predictive models to applied LLMs and agentic systems, and the infrastructure
+  that brings them and keeps them running in production.
+
+homepage_intro:
+  - I build machine learning & AI systems and the infrastructure that keeps them running.
+  - My work spans predictive models, applied LLMs, agentic systems, and the engineering that brings them into production.
 
 employment:
   - title: "Sr. Machine Learning Engineer"

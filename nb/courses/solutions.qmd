@@ -1,0 +1,2841 @@
+---
+title: "Course Solutions"
+toc: true
+toc-depth: 2
+page-layout: full
+---
+
+This page collects solutions from existing exercise cells across the courses.
+They are published openly for reference. Each entry identifies its source
+notebook and cell; new exercises may be assessed on request without a stored
+solution.
+
+## autocode / 00-overview
+
+### 00-1
+
+Source: nb/courses/autocode/00-overview.ipynb, cell 11.
+
+The submit handler reads the composer and sends a JSON command containing `type` and `content` over the session WebSocket. FastAPI validates the session and command before calling `AutocodeApplication.stream_message`. The application appends a `user_message` through `SessionRepository`; that repository fsyncs a serializable event to the journal before projecting it into SQLite. The selected `AgentRunner` yields transport-neutral runner events. The application persists each event and publishes the resulting event dictionary, including its cursor, through the session broker. Every subscribed WebSocket serializes the same dictionary. The browser applies events idempotently by cursor and renders text with DOM `textContent`. The guards are command validation, one application use case, journal-first durability, a replaceable runner port, monotonic cursors, replay after reconnect, and safe DOM projection.
+
+## autocode / 01-cli-product
+
+### 01-1
+
+Source: nb/courses/autocode/01-cli-product.ipynb, cell 12.
+
+Validate that the path session id exists and that the JSON body contains a non-empty `content` string within the documented size limit. Translate a missing session to 404 and malformed input to 422. Call `AutocodeApplication.stream_message` exactly once and serialize the returned durable events rather than constructing new event dictionaries in the route. The integration test should submit the same message through the CLI adapter and HTTP adapter against separate empty repositories, then assert that both persisted the same ordered `kind` values and that each adapter's emitted event ids match its repository. Identifiers may differ across runs, but the use-case vocabulary and persistence-before-publication invariant must match.
+
+## autocode / 02-web-application
+
+### 02-1
+
+Source: nb/courses/autocode/02-web-application.ipynb, cell 12.
+
+Use `idle -> loading -> ready` for a successful request and `loading -> error -> loading` for retry. A 200 response with an empty array is `ready`, not `error`: render an empty-state prompt and keep the New session button enabled. A populated response renders buttons whose labels are assigned with `textContent`; selecting one begins the detail request. During `loading`, mark the session navigation busy with `aria-busy=true` and show a short status without removing keyboard focus. On HTTP or parse failure, render a non-destructive error message in a live region and expose a real Retry button. Retry repeats the same GET and replaces the error only after the next response. Refresh always begins from `idle`; no in-memory session list is treated as durable state.
+
+## autocode / 03-streaming-ux
+
+### 03-1
+
+Source: nb/courses/autocode/03-streaming-ux.ipynb, cell 12.
+
+Publish a durable `tool_approval_requested` event with `call_id`, tool name, redacted arguments, and policy reason before the browser shows a pending card. The browser answers with an `approval_response` command containing the same `call_id`, a decision of `allow` or `deny`, and an idempotency key. Reject unknown ids and malformed decisions as protocol errors; return the already recorded outcome for a repeated idempotency key. The application journals `tool_approval_resolved` before releasing or rejecting the waiting tool call. Reconnect replays the request and any resolution by cursor, so the browser reconstructs pending, allowed, or denied without guessing from socket state. A denied tool ends in a durable blocked or denied card; it does not masquerade as a transport failure.
+
+## autocode / 04-durable-sessions
+
+### 04-1
+
+Source: nb/courses/autocode/04-durable-sessions.ipynb, cell 12.
+
+Read journal records in order, look up each event id in the projection, and insert only missing events inside a transaction. Update the session version to the highest recovered cursor. Running the pass again inserts zero rows. Before migration, stop writes and copy both SQLite and the journal. Add `summary TEXT NOT NULL DEFAULT ''` so existing rows remain readable, record the schema version, then exercise session list, detail, and cursor-suffix queries. If the migration cannot commit, roll back the database transaction, leave the backup untouched, fail readiness, and let the browser show a service-unavailable state rather than an empty session list. Rehearse downgrade on a copy; if SQLite requires table reconstruction, copy the original columns into a v1 table and atomically replace the migrated table.
+
+## autocode / 05-artifacts
+
+### 05-1
+
+Source: nb/courses/autocode/05-artifacts.ipynb, cell 12.
+
+Check that the tombstone is older than the grace period, no live session or export references the digest, and the deletion is recorded in an audit log. Delete by digest and make the operation idempotent: a missing object is already the desired terminal state. Backups and other device references must be included in the reference check.
+
+## autocode / 06-semantic-layer
+
+### 06-1
+
+Source: nb/courses/autocode/06-semantic-layer.ipynb, cell 12.
+
+For each question, record the relevant document ids before running the endpoint. Index the fixed corpus, request `/api/search?q=...&limit=3`, and count a hit when a relevant id appears in the first k results. Recall@k is hits divided by questions under the documented multiple-relevance convention. Assert every response contains document id, score, text, and method, and compare API ranking with direct index ranking. Change one source without reindexing and mark its fingerprint stale; the browser should label or hide it, while the agent tool must reject it or request reindex rather than treating stale text as current evidence. Wiring success and retrieval quality remain separate results.
+
+## autocode / 07-sync-service
+
+### 07-1
+
+Source: nb/courses/autocode/07-sync-service.ipynb, cell 12.
+
+Issue separate device tokens and grant both devices membership in the same session. Generate append-only events and scalar title updates, then assert commutativity `merge(a, b) == merge(b, a)`, associativity across a third state, and idempotency `merge(a, a) == a`. Push each logical delta twice with the same idempotency key and assert one merged result. Revoke one token and expect 401 before any sync mutation. Use a valid token for a device outside the session and return the deployment's documented 403 or privacy-preserving 404 without revealing session data. Authentication failures are surfaced immediately; an authorized retry is safe because merge and the idempotency key identify the logical operation.
+
+## autocode / 08-realtime
+
+### 08-1
+
+Source: nb/courses/autocode/08-realtime.ipynb, cell 12.
+
+Use a small queue and stop draining one observer after recording its last applied cursor. Publish until the broker removes that observer, then continue the run to a durable terminal event. The socket adapter should close or otherwise signal that replay is required. Reconnect with `after=<last_cursor>`, load every SQLite event with a larger cursor, and then join the live queue. Apply events through a map keyed by event id because replay and live delivery may overlap. Compare the final ordered event-id list with `SessionRepository.events_after(session_id, 0)` and assert equal ids, equal terminal event, and no duplicate rendered message. If retention removed the requested suffix, return cursor-too-old and reload the complete session before subscribing.
+
+## autocode / 09-background-jobs
+
+### 09-1
+
+Source: nb/courses/autocode/09-background-jobs.ipynb, cell 12.
+
+Compute the export bytes and digest before writing. Put them through content-addressed storage, where the digest is the idempotency key, then record the digest as the job checkpoint. If the worker crashes between those operations, retrying the same put returns the existing object and the checkpoint transition can be repeated. The create-job response returns a stable job id and queued state. Status moves through running and retry with attempt count and last scrubbed error; the browser keeps the prior checkpoint visible and labels the retry instead of restarting progress at zero. Completion exposes the artifact digest. Exhausted attempts produce a dead-letter state and an audited manual retry action. Exactly-once effect comes from the idempotent worker and store, not from a claim that queue delivery occurs once.
+
+## autocode / 10-packaging-and-updates
+
+### 10-1
+
+Source: nb/courses/autocode/10-packaging-and-updates.ipynb, cell 12.
+
+Build the N wheel and create representative browser sessions, then stop writes and copy the database, journal, and artifacts. Build N+1, inspect that its wheel includes all web assets, install it in an isolated environment, run the expand migration, and execute health, root-page, session REST, and WebSocket run checks. Confirm a refreshed browser can read N data and that new N+1 events have the documented protocol version. Run the N+1 container with a mounted data directory and prove data survives container replacement. On another copy, run the downgrade, reinstall N, load the old browser assets, and reopen the sessions. Retain commands, outputs, artifact hashes, and migration logs. Any omitted frontend, API, data, image, or rollback check remains an explicit release unknown.
+
+## autocode / 11-operations
+
+### 11-1
+
+Source: nb/courses/autocode/11-operations.ipynb, cell 12.
+
+Retain product version, component/status, and timestamps; drop raw prompts, tokens, and private file contents unless the user explicitly selects them. Seed a token in logs and metadata, build the archive, and assert the token is absent from every member. Restore a backup into a new directory and compare session ids and artifact digests.
+
+## autocode / 12-capstone
+
+### 12-1
+
+Source: nb/courses/autocode/12-capstone.ipynb, cell 11.
+
+For each problem, record the observed version and configuration, workload, user impact, failed boundary, event or log identifiers, screenshot or command output path, and recurrence. Classify it as frontend projection, REST/WebSocket transport, application orchestration, agent/tool behavior, persistence, concurrency, deployment, or operations. Rank recurring high-impact failures first. State the decision, owner, and acceptance date. A fix must name the narrow regression path, such as a browser focus check, HTTP contract test, WebSocket replay test, migration drill, or restore test. A deliberate non-fix must name the scope or cost boundary and the evidence threshold that would reopen the decision. Do not promote an unrun check to pass.
+
+## cla / 01-foundations
+
+### 01-1
+
+Source: nb/courses/cla/01-foundations.ipynb, cell 26.
+
+**Solution.** (a) Apply Cauchy-Schwarz to the inner product of row i of A with column j of B: (AB)_ij^2 = (sum_k a_ik b_kj)^2 <= (sum_k a_ik^2)(sum_k b_kj^2). Summing over i, j gives ||AB||_F^2 <= (sum_i sum_k a_ik^2)(sum_j sum_k b_kj^2) = ||A||_F^2 ||B||_F^2; take square roots. (b) Take B = x a column vector in part (a): ||Ax||_2 = ||Ax||_F <= ||A||_F ||x||_F = ||A||_F ||x||_2. Divide by ||x||_2 and take the supremum over x != 0 to get ||A||_2 <= ||A||_F. (c) For A = uv^T the entries are u_i v_j, so ||uv^T||_F^2 = sum_ij u_i^2 v_j^2 = (sum_i u_i^2)(sum_j v_j^2) = ||u||_2^2 ||v||_2^2. For the operator norm, ||uv^T||_2 = sup_{||x||=1} ||u v^T x||_2 = ||u||_2 sup_{||x||=1} |v^T x| = ||u||_2 ||v||_2, the sup of |v^T x| over the unit sphere being ||v||_2, attained at x = v/||v||. Both norms equal ||u||_2 ||v||_2, so equality holds in both bounds.
+
+**Answer:** ||uv^T||_F = ||uv^T||_2 = ||u||_2 ||v||_2
+
+### 01-2
+
+Source: nb/courses/cla/01-foundations.ipynb, cell 28.
+
+**Solution.** (a) Lower bound: ||x||_1^2 = (sum |x_i|)^2 = sum x_i^2 + 2 sum_{i<j} |x_i x_j| >= sum x_i^2 = ||x||_2^2, with equality iff at most one coordinate is nonzero. Upper bound: ||x||_1 = <|x|, 1> <= ||x||_2 ||1||_2 = sqrt(n) ||x||_2 by Cauchy-Schwarz, with equality iff |x| is a scalar multiple of the all-ones vector, i.e. all |x_i| are equal. (b) Lower bound: ||x||_inf = max |x_i| <= sqrt(sum x_i^2) = ||x||_2, equality iff x is a scalar multiple of a standard basis vector. Upper bound: ||x||_2^2 = sum x_i^2 <= n max_i x_i^2 = n ||x||_inf^2, equality iff all |x_i| are equal. (c) Lower bound: max |x_i| <= sum |x_i|, equality iff a single coordinate is nonzero. Upper bound: sum |x_i| <= n max |x_i|, equality iff all |x_i| are equal. (d) The all-ones vector (and its sign variants) attains all three upper bounds simultaneously; standard basis vectors (single nonzero coordinate) attain all three lower bounds.
+
+**Answer:** all-ones vector attains all three upper bounds; standard basis vectors attain all three lower bounds
+
+### 01-3
+
+Source: nb/courses/cla/01-foundations.ipynb, cell 31.
+
+**Solution.** The sampled maximum over 200,000 unit vectors is 3.338145, just below the reference sigma_1 = 3.338374; the gap is about 2.3e-4. The estimate approaches sigma_1 from below as N grows: the unit sphere is compact and the supremum is attained at the top right singular vector, which a finite random sample only approximates. The gap shrinks roughly like a power of 1/N.
+
+**Answer:** est = 3.338145 < sigma_1 = 3.338374, gap = 2.29e-4
+
+**Checks:**
+- gap sigma_1 - max over samples: expected 0.0002288 ± 0.0001
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(7)
+A = rng.normal(size=(6, 4))
+
+sigma_1 = np.linalg.norm(A, 2)
+
+N = 200_000
+X = rng.normal(size=(N, 4))
+X = X / np.linalg.norm(X, axis=1, keepdims=True)
+stretch = np.linalg.norm(X @ A.T, axis=1)
+est = stretch.max()
+
+assert est <= sigma_1
+assert sigma_1 - est < 1e-3
+print(f"sigma_1 = {sigma_1:.6f}, est = {est:.6f}, gap = {sigma_1 - est:.6f}")
+```
+
+### 01-4
+
+Source: nb/courses/cla/01-foundations.ipynb, cell 34.
+
+**Solution.** All three identities hold. The sum of the n = 3 outer products reproduces A @ B to machine precision, each term has rank exactly 1, and each term's Frobenius norm equals ||a_k||_2 ||b_k||_2, confirming the equality case of Problem 1(c) numerically.
+
+**Answer:** sum == A @ B (True); each term rank 1; ||a_k|| ||b_k|| == ||term||_F (True)
+
+**Checks:**
+- max deviation of outer-sum from A @ B: expected 0.0 ± 1e-12
+- rank of each outer-product term: expected 1 ± 0
+- max relative deviation of ||a_k||||b_k|| from ||term||_F: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(11)
+m, n, p = 5, 3, 4
+A = rng.normal(size=(m, n))
+B = rng.normal(size=(n, p))
+
+terms = [np.outer(A[:, k], B[k, :]) for k in range(n)]
+C = sum(terms)
+
+assert np.allclose(C, A @ B)
+assert all(np.linalg.matrix_rank(T) == 1 for T in terms)
+assert all(np.isclose(np.linalg.norm(A[:, k]) * np.linalg.norm(B[k, :]),
+                      np.linalg.norm(T)) for k, T in enumerate(terms))
+print("all identities hold")
+```
+
+### 01-5
+
+Source: nb/courses/cla/01-foundations.ipynb, cell 37.
+
+**Solution.** (a) r_n/sqrt(n) decreases from ~1.000 at n = 2 to ~0.896 at n = 64 and keeps decreasing toward sqrt(2/pi) ~ 0.798 as n grows. The ceiling sqrt(n) is a worst-case bound; a standard Gaussian vector has ||x||_1/||x||_2 ~ sqrt(2/pi) sqrt(n) with fluctuations that concentrate as n grows, so the max over a fixed sample size converges to the typical value, not the ceiling. (b) For n = 10 the observed max increases monotonically with N (2.917, 3.008, 3.094, 3.121) toward sqrt(10) ~ 3.162 from below: the sample max approaches the ceiling as N grows. (c) The all-ones vector attains ||1||_1/||1||_2 = sqrt(10) and ||1||_1/||1||_inf = 10 exactly; a standard basis vector attains both ratios equal to 1. The lesson: worst-case constants are real but generically unattained, echoing the Cauchy-Schwarz tightness discussion.
+
+**Answer:** r_n/sqrt(n) decreases toward sqrt(2/pi) ~ 0.798; observed max approaches sqrt(10) from below as N grows
+
+**Checks:**
+- r_64/sqrt(64) for n=64, N=20000: expected 0.896103 ± 0.001
+- max ratio for n=10, N=100000: expected 3.120864 ± 0.001
+- all-ones l1/l2 ratio equals sqrt(10): expected 3.162278 ± 1e-06
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(13)
+N = 20_000
+
+# (a) scaling with dimension
+rows = []
+for n in [2, 4, 8, 16, 32, 64]:
+    X = rng.normal(size=(N, n))
+    ratio = np.abs(X).sum(axis=1) / np.linalg.norm(X, axis=1)
+    rows.append((n, ratio.max(), ratio.max() / np.sqrt(n)))
+
+# (b) sample size at fixed n = 10
+maxes = []
+for N in [100, 1000, 10000, 100000]:
+    X = rng.normal(size=(N, 10))
+    ratio = np.abs(X).sum(axis=1) / np.linalg.norm(X, axis=1)
+    maxes.append(ratio.max())
+
+# (c) extremal vectors
+ones = np.ones(10)
+e = np.zeros(10); e[0] = 1.0
+
+assert abs(np.abs(ones).sum() / np.linalg.norm(ones) - np.sqrt(10)) < 1e-12
+assert abs(np.abs(ones).sum() / np.abs(ones).max() - 10) < 1e-12
+assert abs(np.abs(e).sum() / np.linalg.norm(e) - 1) < 1e-12
+assert abs(np.abs(e).sum() / np.abs(e).max() - 1) < 1e-12
+
+print("(a) r_n/sqrt(n):", [f"{r:.4f}" for _, _, r in rows])
+print("(b) maxes:", [f"{m:.4f}" for m in maxes], "ceiling:", np.sqrt(10))
+print("(c) extremal vectors verified")
+```
+
+## cla / 02-spectral-theorem
+
+### 02-1
+
+Source: nb/courses/cla/02-spectral-theorem.ipynb, cell 23.
+
+**Solution.** (a) Write x = sum_i c_i v_i. Since the v_i are orthonormal, x^T x = sum_i c_i^2 and x^T A x = sum_{i,j} c_i c_j v_i^T A v_j = sum_{i,j} c_i c_j lambda_j v_i^T v_j = sum_i lambda_i c_i^2. Hence R_A(x) = (sum_i lambda_i c_i^2)/(sum_i c_i^2), a convex combination of the eigenvalues with weights c_i^2 / sum_j c_j^2 >= 0 summing to 1.
+
+(b) A weighted average lies between the extremes, so lambda_min <= R_A(x) <= lambda_max for all x != 0. Equality R_A(x) = lambda_max forces sum_i (lambda_max - lambda_i) c_i^2 = 0; every term is nonnegative, so c_i = 0 for each i with lambda_i < lambda_max, i.e. x lies in E_{lambda_max}. Conversely any x in E_{lambda_max} gives R_A(x) = lambda_max.
+
+(c) A^2 is symmetric with eigenvalues lambda_i^2. Applying (b) to A^2 gives max_{||x||=1} x^T A^2 x = max_i lambda_i^2. Since A is symmetric, ||A x||^2 = x^T A^T A x = x^T A^2 x, so ||A||_2^2 = max_{||x||=1} ||A x||^2 = max_i lambda_i^2, hence ||A||_2 = max_i |lambda_i|.
+
+**Answer:** ||A||_2 = max_i |lambda_i|
+
+### 02-2
+
+Source: nb/courses/cla/02-spectral-theorem.ipynb, cell 25.
+
+**Solution.** (a) B commutes with A: B A = B B^2 = B^3 = B^2 B = A B.
+
+(b) B is symmetric, so the spectral theorem gives B = W D W^T with W orthogonal and D diagonal. Then A = B^2 = W D^2 W^T, so W is an eigenbasis of A and the diagonal entries of D^2 are the eigenvalues of A. Since A is symmetric, its eigenvalues are real, and D^2 = Lambda up to the ordering of the columns of W.
+
+(c) B >= 0 forces D >= 0 (the eigenvalues of B are nonnegative), so D = Lambda^{1/2} entrywise: the nonnegative square root of each lambda_i. Hence B = W Lambda^{1/2} W^T = A^{1/2}. The condition B >= 0 is used exactly here: without it, D could take the negative square root -sqrt(lambda_i) on any eigenspace, producing a different square root (e.g. -A^{1/2}).
+
+**Answer:** B = A^{1/2}; the hypothesis B >= 0 rules out the negative square roots
+
+### 02-3
+
+Source: nb/courses/cla/02-spectral-theorem.ipynb, cell 28.
+
+**Solution.** All four checks pass at machine precision. With seed 7: the computed eigenvalues match the prescribed ones to 3.6e-15; the reconstruction error max|A - Vhat diag(lam) Vhat^T| is 4.4e-15; the trace and determinant identities hold to 5.3e-15 and 2.6e-13 respectively; and over 2000 random unit vectors the Rayleigh quotient computed as x^T A x matches the weighted average sum_i lambda_i c_i^2 to 3.1e-15, with the sample range [1.011, 4.931] strictly inside [lambda_min, lambda_max] = [1, 5]. The spectral theorem holds to full floating-point precision.
+
+**Answer:** all four checks pass at ~1e-13 or better; sample Rayleigh range [1.011, 4.931] inside [1, 5]
+
+**Checks:**
+- max |computed eigenvalues - prescribed|: expected 0.0 ± 1e-12
+- max |A - Vhat diag(lam) Vhat^T|: expected 0.0 ± 1e-12
+- |tr(A) - sum(lam)|: expected 0.0 ± 1e-12
+- |det(A) - prod(lam)|: expected 0.0 ± 1e-11
+- max |x^T A x - sum(lam_i c_i^2)| over 2000 unit vectors: expected 0.0 ± 1e-12
+- min Rayleigh quotient over sample >= lam_min = 1: expected 1.0 ± 1e-12
+- max Rayleigh quotient over sample <= lam_max = 5: expected 5.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(7)
+n = 5
+lam_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+
+G = rng.normal(size=(n, n))
+V, _ = np.linalg.qr(G)
+A = V @ np.diag(lam_true) @ V.T
+
+lam, Vhat = np.linalg.eigh(A)
+err_lam = np.abs(lam - lam_true).max()
+err_recon = np.abs(A - Vhat @ np.diag(lam) @ Vhat.T).max()
+err_tr = abs(np.trace(A) - lam.sum())
+err_det = abs(np.linalg.det(A) - lam.prod())
+
+X = rng.normal(size=(2000, n))
+X = X / np.linalg.norm(X, axis=1, keepdims=True)
+c = X @ Vhat
+rq = (c**2 @ lam) / (c**2).sum(axis=1)
+rq_direct = (X * (X @ A)).sum(axis=1)
+err_rq = np.abs(rq_direct - rq).max()
+rq_min, rq_max = rq.min(), rq.max()
+
+print('err_lam ', err_lam)
+print('err_recon', err_recon)
+print('err_tr  ', err_tr)
+print('err_det ', err_det)
+print('err_rq  ', err_rq)
+print('rq_min  ', rq_min, ' rq_max', rq_max)
+```
+
+### 02-4
+
+Source: nb/courses/cla/02-spectral-theorem.ipynb, cell 31.
+
+**Solution.** For A = [[2, 0.8], [0.8, 1]] the eigensolver returns lambda = (0.5566, 2.4434). Over 20000 sampled points the farthest and nearest image points lie at distances 2.443398 and 0.556602, matching |lambda_max| and |lambda_min| to about 1e-8 (the residual is pure sampling error, O(1/N^2) near the flat extrema of the quadratic form). The farthest point's direction is within 8.5e-6 radians of the eigenvector of lambda_max, and the eigen-residual max_i |A v_i - lambda_i v_i| is 4.4e-16. The image is the ellipse with axes along the eigenvectors and half-lengths |lambda_i|, confirming the chapter figure.
+
+**Answer:** d_max = 2.443398 ~= lambda_max, d_min = 0.556602 ~= lambda_min; farthest direction aligns with v_max to ~1e-5 rad
+
+**Checks:**
+- max distance from origin over sampled image: expected 2.4433981132056606 ± 1e-06
+- min distance from origin over sampled image: expected 0.5566018867943396 ± 1e-06
+- angle between farthest image point and eigenvector of lam_max (radians): expected 0.0 ± 0.001
+- max |A v_i - lam_i v_i|: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+A = np.array([[2.0, 0.8],
+              [0.8, 1.0]])
+lam, V = np.linalg.eigh(A)
+
+t = np.linspace(0, 2 * np.pi, 20000)
+circle = np.c_[np.cos(t), np.sin(t)]
+image = circle @ A.T
+dist = np.linalg.norm(image, axis=1)
+d_max, d_min = dist.max(), dist.min()
+
+i_max = dist.argmax()
+far = image[i_max]
+vmax = V[:, np.argmax(lam)]
+angle = np.arccos(np.clip(np.abs(far @ vmax) / np.linalg.norm(far), 0, 1))
+residual = np.abs(A @ V - V * lam).max()
+
+print('d_max   ', d_max, ' |lam_max|', np.abs(lam).max())
+print('d_min   ', d_min, ' |lam_min|', np.abs(lam).min())
+print('angle   ', angle)
+print('residual', residual)
+```
+
+### 02-5
+
+Source: nb/courses/cla/02-spectral-theorem.ipynb, cell 34.
+
+**Solution.** (a) Write x_0 = sum_i c_i v_i. Then A^k x_0 = lambda_1^k (c_1 v_1 + sum_{i>=2} c_i (lambda_i/lambda_1)^k v_i), so the normalized iterate x_k -> sign(c_1) v_1 = +/- v_1. Write x_k = (c_1 v_1 + eps_k)/N_k with eps_k in span{v_2, ..., v_n}, ||eps_k|| = O((lambda_2/lambda_1)^k) and v_1^T eps_k = 0. Then R_A(x_k) = (c_1^2 lambda_1 + eps_k^T A eps_k)/(c_1^2 + ||eps_k||^2) = lambda_1 + (eps_k^T A eps_k - lambda_1 ||eps_k||^2)/(c_1^2 + ||eps_k||^2). Since eps_k^T A eps_k <= lambda_2 ||eps_k||^2 (Rayleigh quotient bound on the invariant subspace span{v_2, ..., v_n}), |R_A(x_k) - lambda_1| = O((lambda_2/lambda_1)^{2k}).
+
+(b) With A_1 = V diag(3, 1, 0) V^T (seed 23), the median ratio e_{k+1}/e_k over k = 3..11 is 0.111112, matching (1/3)^2 = 1/9 to six digits, and e_30 ~= 9e-16: converged to machine precision.
+
+(c) With A_2 = V diag(3, 2.9, 0) V^T the median ratio over k = 4..28 is 0.9355, matching (2.9/3)^2 ~= 0.9344, and e_30 ~= 7.4e-4, far above machine precision. The smaller gap lambda_1 - lambda_2 = 0.1 slows convergence dramatically: this is the numerical content of the minimax principle.
+
+(d) ||A_1||_2 = ||A_2||_2 = 3.0 = max_i |lambda_i| in both cases.
+
+**Answer:** ratio1 ~= 0.1111 = (1/3)^2; ratio2 ~= 0.9355 ~= (2.9/3)^2; e_30(A1) ~= 9e-16 vs e_30(A2) ~= 7.4e-4; ||A1||_2 = ||A2||_2 = 3
+
+**Checks:**
+- median ratio e_{k+1}/e_k for A1 over k = 3..11: expected 0.111112 ± 0.01
+- final error e_30 for A1 (converged to machine precision): expected 0.0 ± 1e-10
+- median ratio e_{k+1}/e_k for A2 over k = 4..28: expected 0.9355 ± 0.01
+- final error e_30 for A2 (not converged): expected 0.0007437 ± 0.0005
+- operator norm of A1: expected 3.0 ± 1e-12
+- operator norm of A2: expected 3.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(23)
+
+def power_iteration(A, x0, k):
+    x = x0 / np.linalg.norm(x0)
+    rqs = np.empty(k)
+    for i in range(k):
+        x = A @ x
+        x = x / np.linalg.norm(x)
+        rqs[i] = x @ A @ x
+    return rqs
+
+G = rng.normal(size=(3, 3))
+V, _ = np.linalg.qr(G)
+x0 = rng.normal(size=3)
+
+A1 = V @ np.diag([3.0, 1.0, 0.0]) @ V.T
+A2 = V @ np.diag([3.0, 2.9, 0.0]) @ V.T
+
+rq1 = power_iteration(A1, x0, 30)
+rq2 = power_iteration(A2, x0, 30)
+
+err1 = np.abs(rq1 - 3.0)
+err2 = np.abs(rq2 - 3.0)
+
+ratio1 = np.median(err1[4:13] / err1[3:12])
+ratio2 = np.median(err2[5:30] / err2[4:29])
+
+print('err1 final', err1[-1])
+print('ratio1   ', ratio1, ' 1/9 =', 1 / 9)
+print('err2 final', err2[-1])
+print('ratio2   ', ratio2, ' (2.9/3)^2 =', (2.9 / 3) ** 2)
+print('norm1    ', np.linalg.norm(A1, 2), ' norm2', np.linalg.norm(A2, 2))
+```
+
+## cla / 03-svd
+
+### 03-1
+
+Source: nb/courses/cla/03-svd.ipynb, cell 26.
+
+**Solution.** (a) Full SVD: A = U Sigma V^T gives A^T A = V Sigma^T Sigma V^T and A A^T = U Sigma Sigma^T U^T. Both Sigma^T Sigma in R^{n x n} and Sigma Sigma^T in R^{m x m} are diagonal with entries sigma_1^2, ..., sigma_r^2, 0, ..., 0 (r = rank A). Since V and U are orthogonal these are orthogonal diagonalizations, so the nonzero eigenvalues of A^T A and A A^T coincide, with the same multiplicities.
+(b) The singular values of A are the square roots of the eigenvalues of A^T A; those of A^T are the square roots of the eigenvalues of (A^T)^T A^T = A A^T. By (a) these coincide, so A and A^T share the nonzero singular values. Hence sigma_1(A) = sigma_1(A^T), giving ||A||_2 = ||A^T||_2. For invertible square A, sigma_n(A) = sigma_n(A^T) > 0, so kappa(A) = sigma_1/sigma_n = kappa(A^T).
+(c) Sigma^T Sigma has n diagonal entries of which r are positive; Sigma Sigma^T has m of which r are positive. So A^T A has n - r zero eigenvalues and A A^T has m - r, a difference of exactly m - n. Both matrices are symmetric, hence diagonalizable, so these algebraic multiplicities are exact.
+
+**Answer:** A and A^T share the nonzero singular values; ||A||_2 = ||A^T||_2 and kappa(A) = kappa(A^T); A A^T has m - n more zero eigenvalues than A^T A.
+
+### 03-2
+
+Source: nb/courses/cla/03-svd.ipynb, cell 28.
+
+**Solution.** (a) Q = U V^T, so Q v_i = U V^T v_i = U e_i = u_i. Since Q is orthogonal, det Q = +/- 1. From A = Q P with P = V Sigma V^T, det A = det Q det P and det P = sigma_1 ... sigma_n > 0 (invertible A has all sigma_i > 0). Hence sign(det Q) = sign(det A): Q is a rotation (det = +1) when det A > 0 and a reflection (det = -1) when det A < 0.
+(b) A^T A = V Sigma^2 V^T, so the principal square root is (A^T A)^{1/2} = V Sigma V^T = P. Then A P^{-1} = U Sigma V^T V Sigma^{-1} V^T = U V^T = Q, so Q = A (A^T A)^{-1/2}.
+(c) P_1^2 = A^T A = P_2^2. Both P_1, P_2 are symmetric positive semidefinite, so by uniqueness of the principal square root (chapter 2), P_1 = P_2. Then Q_1 = A P_1^{-1} = A P_2^{-1} = Q_2.
+
+**Answer:** Q v_i = u_i; Q = A(A^T A)^{-1/2}; the polar factors are unique for invertible A.
+
+### 03-3
+
+Source: nb/courses/cla/03-svd.ipynb, cell 31.
+
+**Solution.** The reference implementation follows the proof literally: diagonalize A^T A with eigh, sort descending, take square roots, and form u_i = A v_i / sigma_i. With the fixed seed the true singular values are about 6.0123, 4.7448, 1.1961; the fourth computed value is noise (~6e-8) produced by squaring A^T A, so the threshold 1e-6 cleanly recovers r = 3 = rank(A). All four checks print True: the Frobenius reconstruction error is ~3e-15, the orthonormality deviation ||U_r^T U_r - I_r||_F is ~4e-15, and |sigma_1 - ||A||_2| is ~3e-15.
+
+**Answer:** r = 3; all four checks print True.
+
+**Checks:**
+- number of nonzero singular values r: expected 3.0 ± 0.0
+- Frobenius reconstruction error ||A - U_r Sigma_r V_r^T||_F: expected 0.0 ± 1e-12
+- orthonormality deviation ||U_r^T U_r - I_r||_F: expected 0.0 ± 1e-12
+- |sigma_1 - ||A||_2|: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(7)
+B = rng.normal(size=(6, 3))
+C = rng.normal(size=(3, 5))
+A = B @ C                                    # rank 3, shape (6, 5)
+
+lam, V = np.linalg.eigh(A.T @ A)             # spectral theorem on A^T A
+order = np.argsort(-lam)
+lam, V = lam[order], V[:, order]
+sigma = np.sqrt(np.maximum(lam, 0.0))
+r = int(np.sum(sigma > 1e-6))                # noise floor ~1e-7, sigma_3 ~ 1.2
+
+Ur = np.zeros((6, r))
+for i in range(r):
+    Ur[:, i] = A @ V[:, i] / sigma[i]        # u_i = A v_i / sigma_i
+
+Sr, Vr = np.diag(sigma[:r]), V[:, :r]
+print('A == U_r Sigma_r V_r^T :', np.allclose(A, Ur @ Sr @ Vr.T))
+print('U_r orthonormal        :', np.allclose(Ur.T @ Ur, np.eye(r)))
+print('sigma_1 == ||A||_2     :', np.allclose(sigma[0], np.linalg.norm(A, 2)))
+print('rank(A) == r           :', np.linalg.matrix_rank(A) == r)
+```
+
+### 03-4
+
+Source: nb/courses/cla/03-svd.ipynb, cell 34.
+
+**Solution.** For every k the truncated SVD A_k = (U[:, :k] * S[:k]) @ Vt[:k, :] satisfies ||A - A_k||_2 = S[k] and ||A - A_k||_F = sqrt(sum_{i>k} S[i]^2) to ~1e-15, confirming the Eckart-Young identities. For k = 3, ||A - A_3||_2 = sigma_4 ~ 1.8630 and ||A - A_3||_F ~ 2.5689. A random rank-3 competitor B = X Y has ||A - B||_2 ~ 6.2763, well above sigma_4 ~ 1.8630: the truncated SVD is strictly better than a generic rank-3 competitor, as the theorem guarantees.
+
+**Answer:** ||A - A_3||_2 = sigma_4 = 1.8630; ||A - A_3||_F = 2.5689; random rank-3 competitor error 6.2763 >= sigma_4.
+
+**Checks:**
+- ||A - A_3||_2 (should equal sigma_4): expected 1.8630258408549638 ± 1e-09
+- ||A - A_3||_F (should equal sqrt(sum_{i>3} sigma_i^2)): expected 2.568859043056374 ± 1e-09
+- random rank-3 competitor error (must be >= sigma_4): expected 6.27629135934232 ± 1e-06
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(11)
+A = rng.normal(size=(8, 6))
+U, S, Vt = np.linalg.svd(A)
+
+for k in range(1, 6):
+    Ak = (U[:, :k] * S[:k]) @ Vt[:k, :]
+    err_op = np.linalg.norm(A - Ak, 2)
+    err_fr = np.linalg.norm(A - Ak, 'fro')
+    tail = np.sqrt((S[k:]**2).sum())
+    print(f'k={k}: ||A-Ak||_2 = {err_op:.4f}  sigma_{{k+1}} = {S[k]:.4f}  '
+          f'||A-Ak||_F = {err_fr:.4f}  tail = {tail:.4f}')
+
+k = 3
+X = rng.normal(size=(8, k))
+Y = rng.normal(size=(k, 6))
+B = X @ Y
+err_comp = np.linalg.norm(A - B, 2)
+print(f'random rank-{k} competitor: ||A-B||_2 = {err_comp:.4f}  '
+      f'>= sigma_4 = {S[3]:.4f} :', err_comp >= S[3])
+```
+
+### 03-5
+
+Source: nb/courses/cla/03-svd.ipynb, cell 37.
+
+**Solution.** (a) kappa(A) = sigma_1/sigma_n = 1000/1 = 1000; np.linalg.cond reports 1000.0000000000163.
+(b) Over 1000 random perturbations with ||db|| = 1e-4 ||b||, the amplification factor rho = (||dx||/||x||)/(||db||/||b||) has maximum ~101.77 and mean ~65.22, both far below kappa = 1000: a generic perturbation amplifies at most about 10% of the worst case.
+(c) With x = v_1 and db = eps ||A v_1|| u_n (eps = 1e-4): b = A v_1 = sigma_1 u_1, dx = A^{-1} db = eps sigma_1 v_n / sigma_n, so ||dx||/||x|| = eps sigma_1/sigma_n = eps kappa and ||db||/||b|| = eps; the ratio is exactly kappa = 1000 (measured 1000.0000000000006). The bound is attained.
+(d) The bound ||dx||/||x|| <= kappa ||db||/||b|| holds for all 1000 random perturbations (max 101.77 < 1000).
+
+**Answer:** kappa = 1000; worst-case ratio = 1000; max random ratio ~101.8, mean ~65.2; bound holds for every perturbation.
+
+**Checks:**
+- kappa(A) = sigma_1/sigma_n: expected 1000.0 ± 1e-09
+- worst-case amplification factor (x = v_1, db aligned with u_n): expected 1000.0 ± 1e-09
+- max amplification over 1000 random perturbations (must be < kappa): expected 101.77319238112716 ± 1e-06
+- mean amplification over 1000 random perturbations: expected 65.22033132754291 ± 1e-06
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(5)
+n = 100
+Q, _ = np.linalg.qr(rng.normal(size=(n, n)))
+W, _ = np.linalg.qr(rng.normal(size=(n, n)))
+sigma = np.geomspace(1e3, 1, n)              # sigma_1..sigma_n = 1000..1
+A = Q @ np.diag(sigma) @ W.T
+kappa = np.linalg.cond(A)
+
+U, S, Vt = np.linalg.svd(A)
+v1, un = Vt[0], U[:, -1]                     # v_1 and u_n
+
+x = rng.normal(size=n)
+b = A @ x
+eps = 1e-4
+
+# (b) random perturbations
+ratios = []
+for _ in range(1000):
+    db = rng.normal(size=n)
+    db = db / np.linalg.norm(db) * np.linalg.norm(b) * eps
+    dx = np.linalg.solve(A, db)
+    ratios.append((np.linalg.norm(dx) / np.linalg.norm(x)) /
+                  (np.linalg.norm(db) / np.linalg.norm(b)))
+ratios = np.array(ratios)
+
+# (c) worst case
+x_wc = v1
+b_wc = A @ x_wc
+db_wc = un * (np.linalg.norm(b_wc) * eps)
+dx_wc = np.linalg.solve(A, db_wc)
+rho_wc = (np.linalg.norm(dx_wc) / np.linalg.norm(x_wc)) / eps
+
+print('kappa(A)          =', kappa)
+print('max random ratio  =', ratios.max())
+print('mean random ratio =', ratios.mean())
+print('worst-case ratio  =', rho_wc)
+print('bound holds       :', bool((ratios <= kappa).all()))
+```
+
+## cla / 04-rank-and-four-subspaces
+
+### 04-1
+
+Source: nb/courses/cla/04-rank-and-four-subspaces.ipynb, cell 29.
+
+**Solution.** (a) Each column of AB is A times a column of B, hence a linear combination of the columns of A, so C(AB) ⊆ C(A) and rank(AB) ≤ rank(A). (b) rank(AB) = rank((AB)^T) = rank(B^T A^T) ≤ rank(B^T) = rank(B), using part (a) and row rank equals column rank. (c) N(B) ⊆ N(AB) is immediate. Conversely, if ABx = 0 then Bx ∈ N(A); since rank A = n, rank-nullity gives dim N(A) = 0, so Bx = 0 and x ∈ N(B). Hence N(AB) = N(B), and rank-nullity applied to B gives rank(AB) = p − dim N(AB) = p − dim N(B) = rank(B).
+
+**Answer:** rank(AB) ≤ min(rank A, rank B); equality rank(AB) = rank(B) when A has full column rank.
+
+### 04-2
+
+Source: nb/courses/cla/04-rank-and-four-subspaces.ipynb, cell 31.
+
+**Solution.** (a) N(AA^T) ⊆ N(A^T) is immediate. If AA^T x = 0, then ||A^T x||^2 = x^T AA^T x = 0, so A^T x = 0; hence N(AA^T) = N(A^T). (b) Take orthogonal complements in part (a) and in the chapter's identity N(A^T A) = N(A): C(AA^T) = N((AA^T)^T)^⊥ = N(AA^T)^⊥ = N(A^T)^⊥ = C(A), and C(A^T A) = N(A^T A)^⊥ = N(A)^⊥ = C(A^T), using the fundamental theorem N(A^T)^⊥ = C(A) and N(A)^⊥ = C(A^T). (c) rank(A^T A) = n − dim N(A^T A) = n − dim N(A) = rank(A), and rank(AA^T) = m − dim N(AA^T) = m − dim N(A^T) = rank(A^T) = rank(A).
+
+**Answer:** rank(A^T A) = rank(A) = rank(AA^T).
+
+### 04-3
+
+Source: nb/courses/cla/04-rank-and-four-subspaces.ipynb, cell 34.
+
+**Solution.** The exact matrix has rank 3. The noisy spectrum is [1e2, 1e1, 1.0004, 4e-3, 2.8e-3, 2.2e-3, 1.8e-3, 3e-4]: the trailing zeros are replaced by values near 1e-3. NumPy's default tolerance (≈ sigma_1 * eps_mach * max(m,n) ≈ 1e-13) sits below the noise floor, so it declares the noisy matrix full rank (8). A threshold of 0.5 sits inside the three-decade gap between sigma_3 ≈ 1 and sigma_4 ≈ 4e-3 and recovers the true rank 3.
+
+**Answer:** rank(exact) = 3, rank(noisy, default tol) = 8, rank(noisy, tol=0.5) = 3
+
+**Checks:**
+- numerical rank at threshold 0.5 inside the spectral gap: expected 3 ± 0
+- default-tolerance rank of the noisy matrix: expected 8 ± 0
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(0)
+m = n = 8
+sigma = np.array([1e2, 1e1, 1e0])
+
+U, _ = np.linalg.qr(rng.standard_normal((m, 3)))
+V, _ = np.linalg.qr(rng.standard_normal((n, 3)))
+A = (U * sigma) @ V.T
+An = A + 1e-3 * rng.standard_normal((m, n))
+
+s = np.linalg.svd(An, compute_uv=False)
+rank_exact = np.linalg.matrix_rank(A)
+rank_default = np.linalg.matrix_rank(An)
+rank_gap = np.linalg.matrix_rank(An, tol=0.5)
+
+assert rank_exact == 3
+assert rank_default == 8
+assert rank_gap == 3
+assert s[3] < 1e-2 < s[2]   # threshold 0.5 sits inside the gap
+print('rank(exact)=3, rank(default)=8, rank(tol=0.5)=3')
+```
+
+### 04-4
+
+Source: nb/courses/cla/04-rank-and-four-subspaces.ipynb, cell 38.
+
+**Solution.** Column-pivoted QR selects the pivot columns [1 4 2] (0-based), which are maximally independent, so rank(Csel) = 3. The least-squares solve reads off the coefficient matrix Rrec such that A = Csel @ Rrec to machine precision: the reconstruction error is about 3.1e-15, confirming the exactness of the skeleton representation.
+
+**Answer:** pivot columns [1 4 2], rank(Csel) = 3, ||A - Csel @ Rrec|| ≈ 3.06e-15
+
+**Checks:**
+- rank of the selected pivot columns: expected 3 ± 0
+- reconstruction error ||A - Csel @ Rrec||: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+import scipy.linalg as la
+
+rng = np.random.default_rng(1)
+m, n, r = 6, 5, 3
+
+C = rng.standard_normal((m, r))
+R = rng.standard_normal((r, n))
+A = C @ R
+
+_, _, p = la.qr(A, pivoting=True, mode='economic')
+piv = p[:r]
+Csel = A[:, piv]
+Rrec = np.linalg.lstsq(Csel, A, rcond=None)[0]
+
+err = np.linalg.norm(A - Csel @ Rrec)
+assert np.linalg.matrix_rank(Csel) == 3
+assert err < 1e-12
+print('pivot columns =', piv, ' rank(Csel)=3, error =', err)
+```
+
+### 04-5
+
+Source: nb/courses/cla/04-rank-and-four-subspaces.ipynb, cell 42.
+
+**Solution.** For eps = 1e-1, 1e-3, 1e-5 the noise floor sigma_4 (0.40, 3.2e-3, ~0) sits below the smallest genuine singular value sigma_3(A) = 1, so the gap-midpoint threshold recovers rank 3 while the default tolerance reports 8: the rank is well-posed. At eps = 1 the noise floor (sigma_4 ≈ 3.32) exceeds sigma_3(A) = 1, so the third singular value of the noisy matrix (4.89) is a noise direction, not a genuine one; the rank 3 recovered by the gap threshold is spurious and the matrix is genuinely full rank (8). The diagnostic is whether sigma_4 < sigma_3(A), not merely whether a gap exists.
+
+**Answer:** rank(tau) = 3 for all eps, but spurious at eps = 1 where sigma_4 ≈ 3.32 > sigma_3(A) = 1
+
+**Checks:**
+- numerical rank at gap-midpoint threshold for eps=1e-3: expected 3 ± 0
+- sigma_4 for eps=1 exceeds the genuine sigma_3(A)=1 (recovered rank spurious): expected 3.32 ± 0.5
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(0)
+m = n = 8
+sigma = np.array([1e2, 1e1, 1e0])
+
+U, _ = np.linalg.qr(rng.standard_normal((m, 3)))
+V, _ = np.linalg.qr(rng.standard_normal((n, 3)))
+A = (U * sigma) @ V.T
+
+results = {}
+for eps in [1e-1, 1e-3, 1e-5, 1.0]:
+    An = A + eps * rng.standard_normal((m, n))
+    s = np.linalg.svd(An, compute_uv=False)
+    s3, s4 = s[2], s[3]
+    tau = np.sqrt(s3 * s4)
+    rank_gap = np.linalg.matrix_rank(An, tol=tau)
+    rank_default = np.linalg.matrix_rank(An)
+    results[eps] = (s3, s4, rank_gap, rank_default)
+
+# well-posed cases: noise floor below the genuine sigma_3(A) = 1
+for eps in [1e-1, 1e-3, 1e-5]:
+    s3, s4, rg, rd = results[eps]
+    assert s4 < 1.0 and rg == 3 and rd == 8
+# eps = 1: noise floor exceeds sigma_3(A) = 1, recovered rank is spurious
+s3, s4, rg, rd = results[1.0]
+assert s4 > 1.0 and rd == 8
+print('well-posed for eps<=1e-1 (rank 3 recoverable); spurious at eps=1')
+```
+
+## cla / 05-determinant
+
+### 05-1
+
+Source: nb/courses/cla/05-determinant.ipynb, cell 24.
+
+**Solution.** (a) By multilinearity in column j, D(..., a_j + c a_k, ..., a_k, ...) = D(..., a_j, ..., a_k, ...) + c D(..., a_k, ..., a_k, ...). The second term has two equal columns (positions j and k), so it vanishes by the alternating property. (b) Scaling every column by c pulls one factor c out per column by multilinearity: det(cA) = c^n det A. (c) A zero column makes the columns dependent, and the determinant vanishes exactly on dependent columns; equivalently, multilinearity with a_j = 0 gives D = 0.
+
+**Answer:** det(cA) = c^n det A; column replacement leaves det unchanged.
+
+### 05-2
+
+Source: nb/courses/cla/05-determinant.ipynb, cell 26.
+
+**Solution.** (a) In the Leibniz sum over S_{n+p}, any permutation sigma with sigma(i) > n for some i <= n (or sigma(i) <= n for some i > n) forces the product prod_i a_{sigma(i),i} to include a zero entry from the off-diagonal zero block. Only permutations mapping {1,...,n} to itself survive; these factor as sigma_A sigma_B with sgn(sigma_A sigma_B) = sgn(sigma_A) sgn(sigma_B), and the sum splits into det A * det B. (b) diag(A,B) = diag(A, I_p) diag(I_n, B). By the same Leibniz argument det diag(A, I_p) = det A (only the identity permutation survives on the I_p block) and det diag(I_n, B) = det B; the product rule gives det diag(A,B) = det A det B. (c) det diag(A,B) = det A det B != 0 iff det A != 0 and det B != 0, i.e. both blocks invertible.
+
+**Answer:** det diag(A,B) = det A * det B.
+
+### 05-3
+
+Source: nb/courses/cla/05-determinant.ipynb, cell 29.
+
+**Solution.** scipy.linalg.lu returns A = P @ L @ U with det(L) = 1 and det(P) = ±1, so det(A) = det(P) * prod(diag(U)). All three residuals (elimination formula, product rule, transpose invariance) sit at machine precision: -1.78e-15, 0, 0.
+
+**Answer:** all three residuals at machine precision (|err| < 1e-12)
+
+**Checks:**
+- elimination residual |det(A) - det(P)*prod(diag(U))|: expected 0.0 ± 1e-12
+- product-rule residual |det(AB) - det(A)det(B)|: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+from scipy.linalg import lu
+
+rng = np.random.default_rng(7)
+A = rng.normal(size=(6, 6))
+B = rng.normal(size=(6, 6))
+
+P, L, U = lu(A)
+sign = np.linalg.det(P)
+
+err_elim = np.linalg.det(A) - sign * np.prod(np.diag(U))
+err_prod = np.linalg.det(A @ B) - np.linalg.det(A) * np.linalg.det(B)
+err_trans = np.linalg.det(A.T) - np.linalg.det(A)
+
+assert abs(err_elim) < 1e-12
+assert abs(err_prod) < 1e-12
+assert abs(err_trans) < 1e-12
+print('all three residuals at machine precision')
+```
+
+### 05-4
+
+Source: nb/courses/cla/05-determinant.ipynb, cell 33.
+
+**Solution.** For a random 400x400 matrix, |det| ~ n^(n/2) ~ 10^520 exceeds the float64 range, so np.linalg.det overflows to -inf (with a RuntimeWarning). np.linalg.slogdet returns the sign (-1.0) and log|det| = 996.69 without forming the product, and log|det| agrees with sum(log sigma_i) to about 5.7e-13.
+
+**Answer:** det = -inf; slogdet = (-1.0, 996.69); |logdet - sum(log sigma)| ≈ 5.7e-13
+
+**Checks:**
+- np.linalg.det overflows to inf: expected 1 ± 0
+- log|det| - sum(log sigma) residual: expected 0.0 ± 1e-10
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(11)
+n = 400
+A = rng.normal(size=(n, n))
+
+det = np.linalg.det(A)
+sign, logdet = np.linalg.slogdet(A)
+s = np.linalg.svd(A, compute_uv=False)
+
+assert np.isinf(det)
+assert abs(logdet - np.sum(np.log(s))) < 1e-10
+print('det overflows to inf; slogdet finite; log|det| = sum log sigma')
+```
+
+### 05-5
+
+Source: nb/courses/cla/05-determinant.ipynb, cell 37.
+
+**Solution.** The identity det(A + lambda I) = lambda * prod_{i>=2}(lambda_i + lambda) holds to machine precision at every shift (residuals 1.3e-17 to 1.2e-10, the latter relative to |det| = 3.6e5). sigma_min tracks lambda exactly (1.000e-06, 1.000e-04, 1.000e-02, 1.000e+00). At lambda = 1e-6, |det|/lambda = 0.1294 equals the prefactor prod_{i>=2} lambda_i = 0.1294, a scale set by the other eigenvalues and unrelated to the planted zero. The determinant confounds the singular direction with all the others; sigma_min reports the true distance to singularity.
+
+**Answer:** at lambda=1e-6: |det| = 1.294e-07, sigma_min = 1.000e-06, |det|/lambda = 0.1294 = prefactor
+
+**Checks:**
+- |det(A+1e-6 I) - 1e-6*prod(lambda_i + 1e-6)| residual: expected 0.0 ± 1e-12
+- sigma_min(A + 1e-6 I): expected 1e-06 ± 1e-07
+- |det|/lambda at lambda=1e-6 equals prefactor prod(lambda_i, i>=2): expected 0.1294 ± 0.001
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(1)
+n = 20
+Q, _ = np.linalg.qr(rng.normal(size=(n, n)))
+lam = np.zeros(n)
+lam[1:] = np.abs(rng.normal(size=n - 1))
+A = Q @ np.diag(lam) @ Q.T
+
+pref = np.prod(lam[1:])
+for s in [1e-6, 1e-4, 1e-2, 1.0]:
+    det = np.linalg.det(A + s * np.eye(n))
+    smin = np.linalg.svd(A + s * np.eye(n), compute_uv=False)[-1]
+    closed = s * np.prod(lam[1:] + s)
+    assert abs(det - closed) < 1e-10 * max(1.0, abs(closed))
+    assert abs(smin - s) < 1e-7 * max(1.0, s)
+
+det0 = np.linalg.det(A + 1e-6 * np.eye(n))
+assert abs(abs(det0) / 1e-6 - pref) < 1e-3 * pref
+print('identity holds; |det|/lambda = prefactor; sigma_min tracks lambda')
+```
+
+## cla / 06-inverse-and-pseudoinverse
+
+### 06-1
+
+Source: nb/courses/cla/06-inverse-and-pseudoinverse.ipynb, cell 29.
+
+**Solution.** (a) A = U Sigma V^T with U, V orthogonal and Sigma = diag(sigma_1,...,sigma_n). Inverting gives A^{-1} = V Sigma^{-1} U^T, a valid SVD because V and U^T are orthogonal and Sigma^{-1} = diag(sigma_1^{-1},...,sigma_n^{-1}) has positive diagonal entries. The singular values of A^{-1} are sigma_n^{-1} >= ... >= sigma_1^{-1}, the reciprocals in reverse order. (b) The largest singular value of A^{-1} is sigma_n^{-1}, so ||A^{-1}||_2 = 1/sigma_n. (c) kappa(A) = ||A||_2 ||A^{-1}||_2 = sigma_1 * sigma_n^{-1} = sigma_1/sigma_n.
+
+**Answer:** ||A^{-1}||_2 = 1/sigma_n and kappa(A) = sigma_1/sigma_n.
+
+### 06-2
+
+Source: nb/courses/cla/06-inverse-and-pseudoinverse.ipynb, cell 31.
+
+**Solution.** (a) A^+ A = V_r V_r^T projects onto C(A^T); when A has full column rank, C(A^T) = R^n, so A^+ A = I_n. Similarly B B^+ = U_r U_r^T = I_n when B has full row rank, since C(B) = R^n. (b) Let C = B^+ A^+. Condition 1: (AB)C(AB) = A(BB^+)(A^+A)B = A I_n I_n B = AB. Condition 2: C(AB)C = B^+(A^+A)(BB^+)A^+ = B^+ I_n I_n A^+ = C. Condition 3: (AB)C = A(BB^+)A^+ = AA^+, symmetric as the projector onto C(A). Condition 4: C(AB) = B^+(A^+A)B = B^+B, symmetric as the projector onto C(B^T). (c) By uniqueness of the Moore-Penrose pseudoinverse, (AB)^+ = B^+ A^+. In general the identity fails because AA^+ and B^+B need not be identities; the chapter's table records the general failure.
+
+**Answer:** (AB)^+ = B^+ A^+ when A has full column rank and B has full row rank.
+
+### 06-3
+
+Source: nb/courses/cla/06-inverse-and-pseudoinverse.ipynb, cell 34.
+
+**Solution.** The SVD reconstruction A^{-1} = V Sigma^{-1} U^T agrees with np.linalg.inv to machine precision: ||A Ainv_svd - I|| = 1.15e-15 and ||Ainv_svd - inv(A)|| = 1.38e-16. The printed singular values of A^{-1} are the reciprocals of those of A in reverse order, so the largest is 1/sigma_n.
+
+**Answer:** ||A Ainv_svd - I|| ≈ 1.15e-15; singular values of A^{-1} = [0.1956, 0.1907, 0.1195, 0.0861, 0.0765]
+
+**Checks:**
+- ||A @ Ainv_svd - I||: expected 0.0 ± 1e-12
+- ||Ainv_svd - inv(A)||: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(0)
+n = 5
+A = rng.standard_normal((n, n))
+A = A @ A.T + n * np.eye(n)
+
+U, s, Vt = np.linalg.svd(A)
+Ainv_svd = (Vt.T / s) @ U.T
+
+assert np.linalg.norm(A @ Ainv_svd - np.eye(n)) < 1e-12
+assert np.linalg.norm(Ainv_svd - np.linalg.inv(A)) < 1e-12
+assert np.allclose(np.sort(1.0 / s)[::-1],
+                   np.linalg.svd(np.linalg.inv(A), compute_uv=False))
+print('SVD inverse agrees with inv(A); singular values reversed')
+```
+
+### 06-4
+
+Source: nb/courses/cla/06-inverse-and-pseudoinverse.ipynb, cell 38.
+
+**Solution.** Both vectors give the same residual (1.9995) to round-off because they differ only by the null-space direction V[:, 2], but ||xplus|| = 0.7157 < ||xshift|| = 2.1242. The last line confirms xplus is orthogonal to the null space, the defining property of the minimum-norm least-squares solution.
+
+**Answer:** residuals equal (1.9995); ||xplus|| = 0.7157 < ||xshift|| = 2.1242; xplus orthogonal to N(A)
+
+**Checks:**
+- residual difference |r(xplus) - r(xshift)|: expected 0.0 ± 1e-12
+- xplus orthogonal to null(A): expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(4)
+m, n = 6, 4
+U = np.linalg.qr(rng.standard_normal((m, m)))[0]
+V = np.linalg.qr(rng.standard_normal((n, n)))[0]
+sigma = np.array([2.0, 1.0, 0.0, 0.0])
+A = (U[:, :n] * sigma) @ V.T
+b = rng.standard_normal(m)
+
+xplus = np.linalg.pinv(A) @ b
+nullv = V[:, 2]
+xshift = xplus + 2.0 * nullv
+
+r1 = np.linalg.norm(A @ xplus - b)
+r2 = np.linalg.norm(A @ xshift - b)
+assert abs(r1 - r2) < 1e-12
+assert np.linalg.norm(xplus) < np.linalg.norm(xshift)
+assert abs(xplus @ nullv) < 1e-12
+print('equal residuals; xplus is the minimum-norm solution, orthogonal to N(A)')
+```
+
+### 06-5
+
+Source: nb/courses/cla/06-inverse-and-pseudoinverse.ipynb, cell 42.
+
+**Solution.** (a) All five identities hold: (A^+)^+ = A, (A^T)^+ = (A^+)^T, (cA)^+ = A^+/c, ||A^+||_2 = 1/sigma_r, and kappa = ||A||_2 ||A^+||_2. (b) The order-reversal identity fails in general: ||(AB)^+ - B^+ A^+|| = 3.632, far above round-off. (c) When A has full column rank and B full row rank, the identity holds to machine precision. (d) The four Penrose conditions hold on the rank-deficient matrix. The failure in (b) is algebraic, not numerical.
+
+**Answer:** (a) all True; (b) gap = 3.632e+00; (c) True; (d) all True
+
+**Checks:**
+- ||(AB)+ - B+ A+|| gap (order reversal fails in general): expected 3.632 ± 0.001
+- (AB)+ == B+ A+ for full column/row rank: expected 1 ± 0
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(5)
+
+A = rng.standard_normal((5, 4))
+Aplus = np.linalg.pinv(A)
+s = np.linalg.svd(A, compute_uv=False)
+c = 2.5
+
+assert np.allclose(np.linalg.pinv(Aplus), A)
+assert np.allclose(np.linalg.pinv(A.T), Aplus.T)
+assert np.allclose(np.linalg.pinv(c * A), Aplus / c)
+assert np.allclose(np.linalg.norm(Aplus, 2), 1.0 / s[-1])
+assert np.allclose(s[0] / s[-1], np.linalg.norm(A, 2) * np.linalg.norm(Aplus, 2))
+
+B = rng.standard_normal((4, 3))
+gap = np.linalg.norm(np.linalg.pinv(A @ B) - np.linalg.pinv(B) @ np.linalg.pinv(A))
+assert gap > 1e-6
+
+At = rng.standard_normal((6, 3))
+Bt = rng.standard_normal((3, 5))
+assert np.allclose(np.linalg.pinv(At @ Bt), np.linalg.pinv(Bt) @ np.linalg.pinv(At))
+
+Ad = np.zeros((5, 4))
+Ad[:, :2] = rng.standard_normal((5, 2))
+Adp = np.linalg.pinv(Ad)
+assert np.allclose(Ad @ Adp @ Ad, Ad)
+assert np.allclose(Adp @ Ad @ Adp, Adp)
+assert np.allclose(Ad @ Adp, (Ad @ Adp).T)
+assert np.allclose(Adp @ Ad, (Adp @ Ad).T)
+print('identities hold; order reversal fails in general, holds for full rank')
+```
+
+## cla / 07-projection-and-orthogonalization
+
+### 07-1
+
+Source: nb/courses/cla/07-projection-and-orthogonalization.ipynb, cell 26.
+
+**Solution.** (a) Symmetry: (I-P)^T = I - P^T = I - P. Idempotence: (I-P)^2 = I - 2P + P^2 = I - P. For any y, (I-P)y = y - Py is in S^perp by the projection definition, and the residual y - (I-P)y = Py lies in S, which is orthogonal to S^perp, so the residual is orthogonal to S^perp. Hence I-P is the orthogonal projector onto S^perp. (b) y = Py + (I-P)y is an orthogonal decomposition (Py in S, (I-P)y in S^perp), so Pythagoras gives ||y||^2 = ||Py||^2 + ||(I-P)y||^2. (c) P is symmetric, hence diagonalizable; idempotence forces eigenvalues in {0,1}. The eigenvalue-1 eigenspace is S (Pv = v iff v in S), so the eigenvalue 1 occurs dim S times and tr P = sum of eigenvalues = dim S.
+
+**Answer:** tr P = dim S
+
+### 07-2
+
+Source: nb/courses/cla/07-projection-and-orthogonalization.ipynb, cell 28.
+
+**Solution.** (a) Expand: ||y - alpha a||^2 = ||y||^2 - 2 alpha (a^T y) + alpha^2 ||a||^2. Setting the derivative -2 a^T y + 2 alpha ||a||^2 to zero gives alpha* = a^T y / (a^T a); the second derivative 2||a||^2 > 0 confirms a minimum. Substituting back: ||y - alpha* a||^2 = ||y||^2 - (a^T y)^2 / (a^T a). (b) (y - alpha* a)^T a = a^T y - (a^T y / ||a||^2) ||a||^2 = 0, so the residual is orthogonal to a, hence to S = span{a}; alpha* a is therefore the orthogonal projection of y onto S. (c) cos theta = a^T y / (||a|| ||y||), so alpha* ||a|| = (a^T y / ||a||^2) ||a|| = a^T y / ||a|| = ||y|| cos theta. The projection is ||y|| cos theta times the unit vector a/||a||, i.e. P_a y = a (a^T a)^{-1} a^T y, the chapter's one-dimensional formula.
+
+**Answer:** alpha* = a^T y / (a^T a); squared distance = ||y||^2 - (a^T y)^2 / (a^T a)
+
+### 07-3
+
+Source: nb/courses/cla/07-projection-and-orthogonalization.ipynb, cell 31.
+
+**Solution.** All three formulas produce the same projector to machine precision: the largest pairwise difference is ~3e-16, the idempotence residual ||P^2 - P||_1 is ~1e-16, the residual orthogonality max |(y - Py)^T A| is ~7e-16, and the Pythagorean identity holds to ~1e-15. The normal-equations, QR, and SVD routes agree because they are algebraically the same projector; the exercise confirms the agreement survives floating point for a well-conditioned 8x3 matrix.
+
+**Answer:** max pairwise projector difference ~3e-16; idempotence residual ~1e-16
+
+**Checks:**
+- max pairwise projector difference ||P_i - P_j||_1: expected 3.05e-16 ± 1e-12
+- idempotence residual ||P^2 - P||_1: expected 1.29e-16 ± 1e-12
+- residual orthogonality max |(y - Py)^T A|: expected 6.66e-16 ± 1e-12
+- Pythagoras residual | ||Py||^2 + ||y-Py||^2 - ||y||^2 |: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(7)
+m, n = 8, 3
+A = rng.standard_normal((m, n))
+y = rng.standard_normal(m)
+
+P1 = A @ np.linalg.inv(A.T @ A) @ A.T
+Q, _ = np.linalg.qr(A)
+P2 = Q @ Q.T
+U, _, _ = np.linalg.svd(A, full_matrices=False)
+P3 = U[:, :n] @ U[:, :n].T
+
+d12 = np.abs(P1 - P2).max()
+d13 = np.abs(P1 - P3).max()
+d23 = np.abs(P2 - P3).max()
+idem = np.abs(P1 @ P1 - P1).max()
+orth = np.abs((y - P1 @ y) @ A).max()
+pyth = np.linalg.norm(P1 @ y) ** 2 + np.linalg.norm(y - P1 @ y) ** 2 - np.linalg.norm(y) ** 2
+print('pairwise diffs:', d12, d13, d23)
+print('idempotence   :', idem)
+print('orthogonality :', orth)
+print('pythagoras    :', pyth)
+
+```
+
+### 07-4
+
+Source: nb/courses/cla/07-projection-and-orthogonalization.ipynb, cell 34.
+
+**Solution.** At eps = 1e-10 the classical variant has lost orthogonality entirely: ||Q^T Q - I||_1 = 1.0 (saturated, since eps < sqrt(u) ~ 1e-8). Modified Gram-Schmidt stays at ~2e-10, and Householder QR at ~5e-16. The factorization residual ||A - QR||_inf is ~1e-10 for all three methods: Gram-Schmidt is backward stable even where it loses orthogonality, so the factorization is accurate while the orthonormality of Q is not.
+
+**Answer:** err_cgs = 1.0, err_mgs = 2.2e-10, err_qr = 5.3e-16
+
+**Checks:**
+- orthonormality error of classical Gram-Schmidt: expected 1.0 ± 0.5
+- orthonormality error of modified Gram-Schmidt: expected 2.23e-10 ± 1e-08
+- orthonormality error of np.linalg.qr: expected 5.27e-16 ± 1e-12
+- max factorization residual ||A - QR||_inf over the three methods: expected 1e-10 ± 1e-08
+
+**Reference code.**
+
+```python
+import numpy as np
+
+def cgs(A):
+    U = np.zeros_like(A)
+    U[:, 0] = A[:, 0] / np.linalg.norm(A[:, 0])
+    for k in range(1, A.shape[1]):
+        u = A[:, k] - U[:, :k] @ (U[:, :k].T @ A[:, k])
+        U[:, k] = u / np.linalg.norm(u)
+    return U
+
+def mgs(A):
+    U = np.copy(A)
+    for k in range(A.shape[1]):
+        U[:, k] = U[:, k] / np.linalg.norm(U[:, k])
+        for j in range(k + 1, A.shape[1]):
+            U[:, j] = U[:, j] - U[:, k] * (U[:, k].T @ U[:, j])
+    return U
+
+eps = 1e-10
+A = np.array([[1, 1, 1], [eps, 0, 0], [0, eps, 0], [0, 0, eps]], dtype=float)
+n = A.shape[1]
+
+Qc, Qm = cgs(A), mgs(A)
+Qq, Rq = np.linalg.qr(A)
+err_cgs = np.abs(Qc.T @ Qc - np.eye(n)).sum()
+err_mgs = np.abs(Qm.T @ Qm - np.eye(n)).sum()
+err_qr = np.abs(Qq.T @ Qq - np.eye(n)).sum()
+fac_cgs = np.abs(A - Qc @ (Qc.T @ A)).max()
+fac_mgs = np.abs(A - Qm @ (Qm.T @ A)).max()
+fac_qr = np.abs(A - Qq @ Rq).max()
+print('orthonormality:', err_cgs, err_mgs, err_qr)
+print('factorization :', fac_cgs, fac_mgs, fac_qr)
+
+```
+
+### 07-5
+
+Source: nb/courses/cla/07-projection-and-orthogonalization.ipynb, cell 37.
+
+**Solution.** (a) The formula matches np.linalg.inv to ~1e-15 relative error for n in {4, 16, 64}: machine precision, independent of size. (b) The determinant identity det(I + uv^T) = 1 + v^T u holds to ~1e-15. (c) As delta shrinks, 1 + v^T u = delta (w^T u) and cond(M) ~ 1/delta: at delta = 1e-2 the relative error is ~2e-15, at 1e-7 it is ~2e-9, and at 1e-12 it is ~1.4e-4. The error grows like 1/delta, i.e. the product (error * delta) stays roughly constant at ~1e-16: the formula is exact algebraically, but the inverse it computes is ill-conditioned, so the relative error is amplified by cond(M) ~ 1/delta.
+
+**Answer:** rel err ~1e-15 for well-conditioned; error grows like 1/delta near singularity
+
+**Checks:**
+- relative error of the formula at n = 64: expected 1.21e-15 ± 1e-13
+- det residual |det(M) - (1 + v^T u)| at n = 64: expected 6.2e-15 ± 1e-13
+- cond(M) at delta = 1e-12: expected 1560000000000.0 ± 100000000000.0
+- relative error at delta = 1e-12: expected 0.000142 ± 0.0001
+- ratio of relative errors at delta = 1e-12 vs 1e-2: expected 69300000000.0 ± 10000000000.0
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(11)
+
+for n in [4, 16, 64]:
+    u = rng.standard_normal(n)
+    v = rng.standard_normal(n)
+    M = np.eye(n) + np.outer(u, v)
+    inv = np.linalg.inv(M)
+    sm = np.eye(n) - np.outer(u, v) / (1 + v @ u)
+    rel = np.abs(inv - sm).max() / np.abs(inv).max()
+    det_res = np.linalg.det(M) - (1 + v @ u)
+    print(f'n={n}: rel_err={rel:.3e}, det_res={det_res:.3e}')
+
+n = 8
+u = rng.standard_normal(n)
+w = rng.standard_normal(n)
+for delta in [1e-2, 1e-7, 1e-12]:
+    v = -u / (u @ u) + delta * w
+    M = np.eye(n) + np.outer(u, v)
+    inv = np.linalg.inv(M)
+    sm = np.eye(n) - np.outer(u, v) / (1 + v @ u)
+    rel = np.abs(inv - sm).max() / np.abs(inv).max()
+    print(f'delta={delta:.0e}: 1+v@u={1 + v @ u:.3e}, '
+          f'cond={np.linalg.cond(M):.3e}, rel_err={rel:.3e}')
+
+```
+
+## cla / 08-least-squares
+
+### 08-1
+
+Source: nb/courses/cla/08-least-squares.ipynb, cell 17.
+
+**Solution.** (a) The normal equations X^T X w_hat = X^T y give X^T (y - X w_hat) = 0, so e = y - X w_hat is orthogonal to every column of X, hence to C(X). (b) X w_hat = X (X^T X)^{-1} X^T y = P y, and P X = X, so e = y - P y = (I - P) y = (I - P)(X w_true + eps) = (I - P) eps, since (I - P) X = 0. (c) E[||e||^2] = E[eps^T (I - P) eps] = tr((I - P) E[eps eps^T]) = sigma^2 tr(I - P) = sigma^2 (n - tr P) = sigma^2 (n - d), using tr P = d (eigenvalues 1 with multiplicity d, 0 otherwise). Hence E[J(w_hat)] = (1/n) E[||e||^2] = (n - d) sigma^2 / n, the value the chapter's demo fluctuates around.
+
+**Answer:** E[||e||^2] = (n - d) sigma^2, so E[J(w_hat)] = (n - d) sigma^2 / n
+
+### 08-2
+
+Source: nb/courses/cla/08-least-squares.ipynb, cell 19.
+
+**Solution.** (a) Both minimizers satisfy the normal equations X^T X w_i = X^T y; subtracting gives X^T X (w_1 - w_2) = 0, so w_1 - w_2 in N(X^T X) = N(X). (b) The SVD solution writes every minimizer as w = X^+ y + sum_{j>r} alpha_j v_j. The vectors v_{r+1},...,v_d are orthonormal and orthogonal to X^+ y (which lies in span{v_1,...,v_r}), so ||w||^2 = ||X^+ y||^2 + sum_j alpha_j^2. This is minimized at alpha = 0, i.e. by X^+ y. (c) The set of minimizers is X^+ y + span{v_{r+1},...,v_d} = X^+ y + N(X), an affine subspace of dimension d - r.
+
+**Answer:** minimizers = X^+ y + N(X), an affine subspace of dimension d - r; min-norm minimizer is X^+ y
+
+### 08-3
+
+Source: nb/courses/cla/08-least-squares.ipynb, cell 22.
+
+**Solution.** kappa(X) ~ 1.16e8 and kappa(X^T X) ~ 1.36e16, with ratio kappa(X^T X)/kappa(X)^2 = 1.008, confirming the squaring. The normal-equations weights are wildly wrong: ||w_ne - w_pinv||/||w_pinv|| = 2.70, while lstsq agrees with the pseudoinverse to ~1.7e-14. Yet the losses are all near the minimum (J(w_ne)/J(w_pinv) = 1.05): with nearly collinear columns the weights are not identifiable, but the fitted values X w still approximate y well, so loss does not reveal the instability.
+
+**Answer:** kappa(X^T X)/kappa(X)^2 = 1.008; ||w_ne - w_pinv||/||w_pinv|| = 2.70
+
+**Checks:**
+- ratio kappa(X^T X) / kappa(X)^2: expected 1.008 ± 0.01
+- relative difference ||w_ne - w_pinv|| / ||w_pinv||: expected 2.7 ± 0.5
+- relative difference ||w_lstsq - w_pinv|| / ||w_pinv||: expected 1.7e-14 ± 1e-12
+- loss ratio J(w_ne) / J(w_pinv): expected 1.047 ± 0.05
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(3)
+n = 1000
+x1 = rng.uniform(-1, 1, size=n)
+X = np.column_stack([x1, x1 + 1e-8 * rng.standard_normal(n)])
+w_true = np.array([2.0, -1.0])
+y = X @ w_true + 0.01 * rng.standard_normal(n)
+
+kX = np.linalg.cond(X)
+kG = np.linalg.cond(X.T @ X)
+w_ne = np.linalg.solve(X.T @ X, X.T @ y)
+w_pi = np.linalg.pinv(X) @ y
+w_ls = np.linalg.lstsq(X, y, rcond=None)[0]
+rel_ne = np.linalg.norm(w_ne - w_pi) / np.linalg.norm(w_pi)
+rel_ls = np.linalg.norm(w_ls - w_pi) / np.linalg.norm(w_pi)
+J = lambda w: ((X @ w - y) ** 2).mean()
+print(f'kappa(X)={kX:.3e}, kappa(X^T X)={kG:.3e}, ratio={kG / kX ** 2:.4f}')
+print(f'rel diff ne vs pinv: {rel_ne:.3e}, lstsq vs pinv: {rel_ls:.3e}')
+print(f'loss ratio J(ne)/J(pinv): {J(w_ne) / J(w_pi):.4f}')
+
+```
+
+### 08-4
+
+Source: nb/courses/cla/08-least-squares.ipynb, cell 25.
+
+**Solution.** The Hessian (2/n) X^T X has kappa = 100 (kappa(X)^2 with kappa(X) = 10), so the predicted rate is (100 - 1)/(100 + 1) = 0.9802. With the optimal step eta = 2/(lambda_max + lambda_min), the empirical contraction factor over 400 iterations is rho_emp = 0.9792, matching the theory to ~1e-3. With eta = 2.5/lambda_max, past the stability limit 2/lambda_max, the iterates diverge (the norm exceeds 1e3 within 60 steps).
+
+**Answer:** rho_emp = 0.9792 vs rho_theory = 0.9802; diverges for eta = 2.5/lambda_max
+
+**Checks:**
+- Hessian condition number kappa((2/n) X^T X): expected 100.0 ± 1e-06
+- |rho_emp - rho_theory|: expected 0.001 ± 0.01
+- divergence flag with eta = 2.5/lambda_max (1 = diverged): expected 1.0 ± 0.0
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(5)
+n, d, kappa = 300, 6, 10.0
+sig = np.geomspace(1.0, 1.0 / kappa, d)
+U, _ = np.linalg.qr(rng.standard_normal((n, d)))
+V, _ = np.linalg.qr(rng.standard_normal((d, d)))
+X = U @ np.diag(sig) @ V.T
+w_true = rng.standard_normal(d)
+y = X @ w_true
+w_star = np.linalg.pinv(X) @ y
+
+H = (2 / n) * X.T @ X
+lam = np.linalg.eigvalsh(H)
+lam_max, lam_min = lam.max(), lam.min()
+rho_theory = (lam_max - lam_min) / (lam_max + lam_min)
+
+eta = 2.0 / (lam_max + lam_min)
+w = np.zeros(d)
+err0 = np.linalg.norm(w - w_star)
+T = 400
+for _ in range(T):
+    w = w - eta * (2 / n) * X.T @ (X @ w - y)
+rho_emp = (np.linalg.norm(w - w_star) / err0) ** (1 / T)
+
+w = np.zeros(d)
+diverged = False
+eta_bad = 2.5 / lam_max
+for _ in range(60):
+    w = w - eta_bad * (2 / n) * X.T @ (X @ w - y)
+    if np.linalg.norm(w) > 1e3:
+        diverged = True
+        break
+print(f'kappa(H)={lam_max / lam_min:.3f}, rho_theory={rho_theory:.4f}, '
+      f'rho_emp={rho_emp:.4f}, diff={abs(rho_emp - rho_theory):.4f}, '
+      f'diverged={diverged}')
+
+```
+
+### 08-5
+
+Source: nb/courses/cla/08-least-squares.ipynb, cell 28.
+
+**Solution.** The log-log slopes confirm the theory: the normal-equations error grows like kappa^2 (slope 2.01) while the QR error grows like kappa (slope 0.88). At kappa = 1e8 the normal equations give a relative error of 0.28 (the solution is meaningless), whereas lstsq and pinv stay at ~1e-10. The residual ||X w_hat - y|| stays at ~1e-16 for QR at every kappa (and only ~1e-9 even for the normal equations at kappa = 1e8): residual quality does not discriminate the solvers, weight accuracy does. This is the practical case for X^+ over (X^T X)^{-1} X^T.
+
+**Answer:** slope_ne = 2.01, slope_qr = 0.88; err_ne(1e8) = 0.28 vs err_qr(1e8) = 1.9e-10
+
+**Checks:**
+- log-log slope of normal-equations error vs kappa: expected 2.01 ± 0.2
+- log-log slope of QR error vs kappa: expected 0.88 ± 0.3
+- normal-equations relative error at kappa = 1e8: expected 0.276 ± 0.1
+- QR relative error at kappa = 1e8: expected 1.87e-10 ± 1e-09
+- QR residual max |X w_hat - y| at kappa = 1e8: expected 1.6e-16 ± 1e-14
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(9)
+n, d = 100, 10
+w_true = rng.standard_normal(d)
+kappas = [1e2, 1e4, 1e6, 1e8]
+err_ne, err_qr, err_sv, res_qr = [], [], [], []
+for kap in kappas:
+    sig = np.geomspace(1.0, 1.0 / kap, d)
+    U, _ = np.linalg.qr(rng.standard_normal((n, d)))
+    V, _ = np.linalg.qr(rng.standard_normal((d, d)))
+    X = U @ np.diag(sig) @ V.T
+    y = X @ w_true
+    w_ne = np.linalg.solve(X.T @ X, X.T @ y)
+    w_qr = np.linalg.lstsq(X, y, rcond=None)[0]
+    w_sv = np.linalg.pinv(X) @ y
+    err_ne.append(np.linalg.norm(w_ne - w_true) / np.linalg.norm(w_true))
+    err_qr.append(np.linalg.norm(w_qr - w_true) / np.linalg.norm(w_true))
+    err_sv.append(np.linalg.norm(w_sv - w_true) / np.linalg.norm(w_true))
+    res_qr.append(np.abs(X @ w_qr - y).max())
+slope_ne = np.polyfit(np.log(kappas), np.log(err_ne), 1)[0]
+slope_qr = np.polyfit(np.log(kappas), np.log(err_qr), 1)[0]
+print(f'slope_ne={slope_ne:.2f}, slope_qr={slope_qr:.2f}')
+print(f'err at kappa=1e8: ne={err_ne[-1]:.3e}, qr={err_qr[-1]:.3e}, '
+      f'sv={err_sv[-1]:.3e}')
+print(f'QR residual at kappa=1e8: {res_qr[-1]:.3e}')
+
+```
+
+## cla / 09-eigendecomposition
+
+### 09-1
+
+Source: nb/courses/cla/09-eigendecomposition.ipynb, cell 31.
+
+**Solution.** (a) Since |a_ii| > r_i, the disk D_i = {z in C : |z - a_ii| <= r_i} excludes 0, because |0 - a_ii| = |a_ii| > r_i. (b) Gershgorin's circle theorem places every eigenvalue in the union of the disks; 0 lies in no disk, so 0 is not an eigenvalue, and a square matrix with no zero eigenvalue is invertible. (c) Each disk is centered at a_ii > 0 with radius r_i < a_ii, so the entire disk lies in the open right half-plane {Re z > 0}. Every eigenvalue lies in some disk, hence every eigenvalue has positive real part. This is why strict diagonal dominance plus a positive diagonal certifies that the whole spectrum sits in the right half-plane without computing anything.
+
+### 09-2
+
+Source: nb/courses/cla/09-eigendecomposition.ipynb, cell 33.
+
+**Solution.** (a) Every eigenvalue has at least one eigenvector by definition: the eigen-equation (lambda I - A)v = 0 has a nontrivial solution exactly when lambda is an eigenvalue, so dim E_lambda >= 1. (b) The characteristic polynomial has n distinct roots, so each eigenvalue has algebraic multiplicity exactly 1. The proposition gives 1 <= dim E_lambda <= 1, hence dim E_lambda = 1 for every lambda_i. (c) By the proposition, A is diagonalizable exactly when every eigenvalue has geometric multiplicity equal to its algebraic multiplicity, which holds here (both equal 1). Equivalently, the n one-dimensional eigenspaces are independent, so the n eigenvectors form a basis and A = V Lambda V^{-1}.
+
+### 09-3
+
+Source: nb/courses/cla/09-eigendecomposition.ipynb, cell 36.
+
+**Solution.** (a) The helper computes centers a_jj and radii r_j = sum_{i != j}|a_ji|. For each eigenvalue lambda_i, min_j(|lambda_i - a_jj| - r_j) is the signed distance to the nearest disk; the max over i is -2.362 <= 0, confirming every eigenvalue lies in at least one disk. (b) B = D A D^{-1} with D = diag(1,...,5) is similar to A, so the eigenvalues agree to machine precision (max |eig(B) - eig(A)| ~ 4e-15). (c) M has disks centered at 1 and 1 with radii 100 and 0.001, so the union has diameter 101 - (-99) = 200. M2 = D M D^{-1} with D = diag(1, 1000) equals [[1, 0.1], [1, 1]]: radii 0.1 and 1, union diameter 2. The eigenvalues 1 +/- sqrt(0.1) are unchanged (similarity), illustrating the refinement: diagonal scaling rescales the disks while preserving the spectrum.
+
+**Answer:** max disk violation = -2.362 (<= 0); union diameter shrinks from 200 to 2
+
+**Checks:**
+- max over eigenvalues of min_j(|lambda_i - a_jj| - r_j) for A: expected -2.3617 ± 0.001
+- max |eig(B) - eig(A)| for B = D A D^{-1}: expected 0.0 ± 1e-12
+- union diameter of disks of D M D^{-1} with D = diag(1, 1000): expected 2.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+def gershgorin_disks(M):
+    centers = np.diag(M)
+    radii = np.sum(np.abs(M), axis=1) - np.abs(np.diag(M))
+    return centers, radii
+
+rng = np.random.default_rng(7)
+A = rng.standard_normal((5, 5))
+eigs = np.linalg.eigvals(A)
+
+# (a)
+centers, radii = gershgorin_disks(A)
+violation = max(min(np.abs(e - centers) - radii) for e in eigs)
+print('(a) max disk violation:', violation)
+
+# (b)
+D = np.diag(np.arange(1, 6))
+B = D @ A @ np.linalg.inv(D)
+eigs_b = np.linalg.eigvals(B)
+print('(b) max |eig(B) - eig(A)|:',
+      np.max(np.abs(np.sort_complex(eigs_b) - np.sort_complex(eigs))))
+
+# (c)
+M = np.array([[1.0, 100.0], [0.001, 1.0]])
+D2 = np.diag([1.0, 1000.0])
+M2 = D2 @ M @ np.linalg.inv(D2)
+c1, r1 = gershgorin_disks(M)
+c2, r2 = gershgorin_disks(M2)
+print('(c) union diameter before:', max(c1 + r1) - min(c1 - r1))
+print('(c) union diameter after :', max(c2 + r2) - min(c2 - r2))
+print('(c) max |eig(M2) - eig(M)|:',
+      np.max(np.abs(np.sort_complex(np.linalg.eigvals(M2)) - np.sort_complex(np.linalg.eigvals(M)))))
+```
+
+### 09-4
+
+Source: nb/courses/cla/09-eigendecomposition.ipynb, cell 39.
+
+**Solution.** N is the nilpotent shift: N^2 has a single 1 at entry (0, 2). Since I and N commute, the binomial expansion applies: J^k = sum_j C(k, j) lambda^{k-j} N^j, and N^j shifts the diagonal j places up, so (J^k)_{0,1} = C(k,1) lambda^{k-1} = k lambda^{k-1} and (J^k)_{0,2} = C(k,2) lambda^{k-2}. For lambda = 2, k = 10 these are 5120 and 11520, matching np.linalg.matrix_power exactly. The ratio (J^k)_{0,2}/lambda^k = C(k,2)/lambda^2 = k(k-1)/8 equals 11.25 for k = 10 and 47.5 for k = 20: polynomial (k^2) growth, in contrast to the geometric lambda^k growth of a diagonalizable matrix with the same eigenvalue.
+
+**Answer:** (J^10)_{0,1} = 5120, (J^10)_{0,2} = 11520; ratio (J^k)_{0,2}/lambda^k = k(k-1)/8: 11.25 (k=10), 47.5 (k=20)
+
+**Checks:**
+- (J^10)[0,1] equals k*lam^(k-1): expected 5120.0 ± 1e-09
+- (J^10)[0,2] equals C(k,2)*lam^(k-2): expected 11520.0 ± 1e-09
+- ratio (J^20)[0,2]/lam^20 equals k(k-1)/(2 lam^2): expected 47.5 ± 1e-09
+
+**Reference code.**
+
+```python
+import numpy as np
+
+lam = 2.0
+n = 3
+N = np.diag(np.ones(n - 1), 1)   # ones on the superdiagonal
+J = lam * np.eye(n) + N          # Jordan block
+
+k = 10
+Jk = np.linalg.matrix_power(J, k)
+print('(b) (J^k)[0,1] =', Jk[0, 1], ' vs k*lam^(k-1) =', k * lam**(k-1))
+print('(b) (J^k)[0,2] =', Jk[0, 2], ' vs C(k,2)*lam^(k-2) =', k*(k-1)//2 * lam**(k-2))
+
+for kk in [10, 20]:
+    Jkk = np.linalg.matrix_power(J, kk)
+    ratio = Jkk[0, 2] / lam**kk
+    print(f'(c) k={kk}: ratio = {ratio:.4f} vs k(k-1)/(2 lam^2) = {kk*(kk-1)/(2*lam**2):.4f}')
+```
+
+### 09-5
+
+Source: nb/courses/cla/09-eigendecomposition.ipynb, cell 42.
+
+**Solution.** The eigenvector error decays like e_k ~ C |lambda_2/lambda_1|^k, so successive ratios e_{k+1}/e_k tend to |lambda_2/lambda_1| = 0.6659; the median over the late window k in [20, 45) measures 0.6651. The Rayleigh quotient error decays like |lambda_2/lambda_1|^{2k} (quadratic convergence: the quotient is stationary at the eigenvector), so successive ratios tend to |lambda_2/lambda_1|^2 = 0.4434; the median measures 0.4367. For the scaled rotation C = 1.5 R_theta the eigenvalues 1.5 e^{+/- i theta} tie in modulus, so the plain power method cannot pick a direction: the iterates rotate by theta each step, min_k ||x_{k+1} - x_k|| = 2 sin(theta/2) = 0.2989 > 0, and the Rayleigh quotient stays constant at 1.5 cos(theta) = 1.433 (the real part of the eigenvalues). The method never converges; a block (subspace) iteration is required.
+
+**Answer:** measured vec ratio 0.665 vs |lam2/lam1| = 0.666; measured quotient ratio 0.437 vs |lam2/lam1|^2 = 0.443; rotation: min step 0.299 = 2 sin(0.15)
+
+**Checks:**
+- median of e_{k+1}/e_k over k in [20,45) vs |lam2/lam1|: expected 0.6659 ± 0.01
+- median of |mu_{k+1}-lam1|/|mu_k-lam1| over k in [20,45) vs |lam2/lam1|^2: expected 0.4434 ± 0.02
+- min_k ||x_{k+1}-x_k|| for the scaled rotation vs 2 sin(theta/2): expected 0.2988763 ± 1e-06
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(11)
+B = rng.standard_normal((6, 6))
+A = (B + B.T) / 2
+
+lam = np.linalg.eigvalsh(A)
+lam1 = lam[np.argmax(np.abs(lam))]
+lam2 = lam[np.argsort(-np.abs(lam))[1]]
+v1 = np.linalg.eigh(A)[1][:, np.argmax(np.abs(lam))]
+
+x = rng.standard_normal(6)
+x /= np.linalg.norm(x)
+if x @ v1 < 0:
+    x = -x
+
+errs, mus = [], []
+for k in range(45):
+    x = A @ x
+    x /= np.linalg.norm(x)
+    if x @ v1 < 0:
+        x = -x
+    errs.append(np.linalg.norm(x - v1))
+    mus.append(x @ A @ x)
+
+# (b)
+ratios_vec = np.array(errs[1:]) / np.array(errs[:-1])
+ratio_vec = np.median(ratios_vec[20:45])
+print('(b) median vec ratio:', ratio_vec, ' vs |lam2/lam1| =', abs(lam2 / lam1))
+
+# (c)
+qe = np.abs(np.array(mus) - lam1)
+ratios_q = qe[1:] / qe[:-1]
+ratio_q = np.median(ratios_q[20:45])
+print('(c) median quot ratio:', ratio_q, ' vs |lam2/lam1|^2 =', abs(lam2 / lam1)**2)
+
+# (d)
+theta = 0.3
+C = 1.5 * np.array([[np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta),  np.cos(theta)]])
+x2 = np.array([1.0, 0.1])
+x2 /= np.linalg.norm(x2)
+diffs = []
+for k in range(200):
+    x2 = C @ x2
+    x2 /= np.linalg.norm(x2)
+    if k > 0:
+        diffs.append(np.linalg.norm(x2 - x2_prev))
+    x2_prev = x2
+print('(d) min ||x_{k+1}-x_k||:', min(diffs), ' vs 2 sin(theta/2) =', 2*np.sin(theta/2))
+```
+
+## cla / 10-quadratic-forms
+
+### 10-1
+
+Source: nb/courses/cla/10-quadratic-forms.ipynb, cell 18.
+
+**Solution.** (a) (S^T Q S)^T = S^T Q^T S = S^T Q S since Q is symmetric, so the product is symmetric. For any x, x^T S^T Q S x = (Sx)^T Q (Sx) >= 0 because Q is positive definite, so the product is positive semidefinite. (b) If S has full column rank then Sx != 0 for every x != 0, and (Sx)^T Q (Sx) > 0, so the product is positive definite. Conversely, if Sx = 0 for some x != 0, then x^T S^T Q S x = 0, so the product is not positive definite. (c) An invertible S has full column rank (N(S) = {0}), so S^T Q S is positive definite by (b). This is the congruence rule: definiteness is invariant under congruence by an invertible matrix.
+
+### 10-2
+
+Source: nb/courses/cla/10-quadratic-forms.ipynb, cell 20.
+
+**Solution.** (a) With x = Uy, x^T Q x = y^T Lambda y = sum_i lambda_i y_i^2 and x^T x = y^T y = sum_i y_i^2, so the quotient is sum_i lambda_i (y_i/||y||)^2 with weights summing to 1. (b) A convex combination of the lambda_i lies between the smallest and the largest, so lambda_n <= quotient <= lambda_1. (c) x = u_1 gives y = e_1 and quotient = lambda_1; x = u_n gives quotient = lambda_n. If lambda_1 > lambda_2, equality in the convex combination requires all weight on lambda_1, i.e. y is proportional to e_1, so x is proportional to u_1 (and similarly for the minimum). This proves the variational characterization max_{||x||=1} x^T Q x = lambda_1, the basis of the power method of Chapter 9.
+
+### 10-3
+
+Source: nb/courses/cla/10-quadratic-forms.ipynb, cell 23.
+
+**Solution.** The construction Q = U Lambda U^T with random orthogonal U realizes the principal axes form, giving eigenvalues {1, 3}, {0, 2}, {-1, 3} up to roundoff. The strict classifier reports Q1 positive definite and Q3 indefinite, but mislabels Q2: exact arithmetic gives eigenvalue 0, while floating point yields about -2.3e-17, so the strict test 'all >= 0' fails. With tol = 1e-12 the tiny negative value is absorbed and Q2 is correctly reported positive semidefinite. This is the numerical lesson of the boundary case: semidefiniteness is a closed condition, so it must be tested with a tolerance. Cholesky on Q1 succeeds and reconstructs it to machine precision (max |Q1 - L L^T| ~ 2e-16), as guaranteed by positive definiteness.
+
+**Answer:** Q1: positive definite, Q2: positive semidefinite (tol = 1e-12), Q3: indefinite; Cholesky error ~ 2e-16
+
+**Checks:**
+- max |Q1 - L L^T| for the Cholesky factorization: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(17)
+U, _ = np.linalg.qr(rng.standard_normal((2, 2)))   # random orthogonal
+
+def build(lam):
+    return (U * lam) @ U.T
+
+Q1 = build(np.array([1.0, 3.0]))
+Q2 = build(np.array([0.0, 2.0]))
+Q3 = build(np.array([-1.0, 3.0]))
+
+def classify(Q, tol=0.0):
+    lam = np.linalg.eigvalsh((Q + Q.T) / 2)
+    if np.all(lam > tol):      return 'positive definite'
+    if np.all(lam > -tol):     return 'positive semidefinite'
+    return 'indefinite'
+
+for name, Q in [('Q1', Q1), ('Q2', Q2), ('Q3', Q3)]:
+    print(name, 'strict:', classify(Q), '| tol:', classify(Q, tol=1e-12))
+
+L = np.linalg.cholesky(Q1)
+print('max |Q1 - L L^T| =', np.max(np.abs(Q1 - L @ L.T)))
+```
+
+### 10-4
+
+Source: nb/courses/cla/10-quadratic-forms.ipynb, cell 26.
+
+**Solution.** With 20000 samples the sampled quotients fill most of the range: max = 2.351 <= lambda_max = 2.355 and min = -1.050 >= lambda_min = -1.053, confirming the bound lambda_min <= x^T Q x <= lambda_max on the unit sphere. Sampling alone never attains the extremes (the maximizing direction is a single point on the sphere), but the principal axes do: u_1^T Q u_1 = lambda_max and u_n^T Q u_n = lambda_min exactly. This is the concrete content of the Chapter 2 bounds: the extremes are attained precisely along the principal axes.
+
+**Answer:** max sampled 2.351 <= lam_max = 2.355; min sampled -1.050 >= lam_min = -1.053; extremes attained exactly at the principal axes
+
+**Checks:**
+- max over 20000 sampled quotients (should be <= lam_max = 2.3550): expected 2.3511 ± 0.001
+- min over 20000 sampled quotients (should be >= lam_min = -1.0532): expected -1.0498 ± 0.001
+- |u_1^T Q u_1 - lam_max|: expected 0.0 ± 1e-12
+- |u_n^T Q u_n - lam_min|: expected 0.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(13)
+B = rng.standard_normal((4, 4))
+Q = (B + B.T) / 2
+
+lam = np.linalg.eigvalsh(Q)
+U = np.linalg.eigh(Q)[1]
+
+samples = rng.standard_normal((20000, 4))
+samples /= np.linalg.norm(samples, axis=1, keepdims=True)
+vals = np.einsum('ij,ij->i', samples @ Q, samples)
+print('(a) max sampled =', vals.max(), ' lam_max =', lam.max())
+print('(a) min sampled =', vals.min(), ' lam_min =', lam.min())
+print('(b) u_1^T Q u_1 =', U[:, -1] @ Q @ U[:, -1], ' lam_max =', lam.max())
+print('(b) u_n^T Q u_n =', U[:, 0] @ Q @ U[:, 0], ' lam_min =', lam.min())
+```
+
+### 10-5
+
+Source: nb/courses/cla/10-quadratic-forms.ipynb, cell 29.
+
+**Solution.** (a) The mixed second difference of a quadratic is exact up to roundoff: expanding J(w + delta) = J(w) + 2 r^T X delta + delta^T X^T X delta with r = Xw - y shows the epsilon^2 terms cancel to leave exactly 2 (X^T X)_{ij}. With eps = 1e-2 the roundoff is negligible, giving max |H_fd - 2 X^T X| ~ 1e-11 (a smaller eps, e.g. 1e-6, loses precision to catastrophic cancellation). (b) X^T X is always positive semidefinite: w^T X^T X w = ||Xw||^2 >= 0; numerically min eig = 13.64 > 0 here because X has full column rank (n = 30 > p = 6, generic). (c) Adding lambda I shifts every eigenvalue by lambda: eig(X^T X + lambda I) = eig(X^T X) + lambda up to 2e-14, and the condition number drops from kappa_2(X^T X) = 42.33/13.64 = 3.104 to (42.33 + 1)/(13.64 + 1) = 2.960. This is the mechanism behind ridge regularization: a spectral shift that strictly convexifies the objective.
+
+**Answer:** max |H_fd - 2 X^T X| ~ 1e-11; min eig(X^T X) = 13.64 >= 0; ridge shift exact to 2e-14; cond 3.104 -> 2.960
+
+**Checks:**
+- max |H_fd - 2 X^T X| with eps = 1e-2: expected 9.65e-12 ± 1e-11
+- min eigenvalue of X^T X: expected 13.637 ± 0.001
+- max |eig(X^T X + I) - (eig(X^T X) + 1)|: expected 0.0 ± 1e-12
+- cond(X^T X + I) equals (lam_max + 1)/(lam_min + 1): expected 2.9604 ± 0.0001
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(5)
+n, p = 30, 6
+X = rng.standard_normal((n, p))
+w_true = rng.standard_normal(p)
+y = X @ w_true + 0.1 * rng.standard_normal(n)
+
+def J(w):
+    return np.sum((X @ w - y)**2)
+
+# (a)
+H_exact = 2 * X.T @ X
+eps = 1e-2
+H_fd = np.zeros((p, p))
+for i in range(p):
+    for j in range(p):
+        wp = w_true.copy(); wp[i] += eps; wp[j] += eps
+        wpi = w_true.copy(); wpi[i] += eps
+        wpj = w_true.copy(); wpj[j] += eps
+        H_fd[i, j] = (J(wp) - J(wpi) - J(wpj) + J(w_true)) / eps**2
+print('(a) max |H_fd - 2 X^T X| =', np.max(np.abs(H_fd - H_exact)))
+
+# (b)
+lam_xtx = np.linalg.eigvalsh(X.T @ X)
+print('(b) min eig(X^T X) =', lam_xtx.min())
+
+# (c)
+lam_r = 1.0
+lam_ridge = np.linalg.eigvalsh(X.T @ X + lam_r * np.eye(p))
+print('(c) max |eig(X^T X + lam I) - (eig(X^T X) + lam)| =',
+      np.max(np.abs(lam_ridge - (lam_xtx + lam_r))))
+print('(c) cond(X^T X)         =', np.linalg.cond(X.T @ X))
+print('(c) cond(X^T X + lam I) =', np.linalg.cond(X.T @ X + lam_r * np.eye(p)))
+```
+
+## cla / 11-topic-modeling
+
+### 11-1
+
+Source: nb/courses/cla/11-topic-modeling.ipynb, cell 25.
+
+**Solution.** (a) For orthonormal unit vectors, ||sigma u v^T||_F^2 = tr(sigma^2 v u^T u v^T) = sigma^2 tr(v v^T) = sigma^2 (v^T v) = sigma^2. (b) The Frobenius inner product of two layers is <u_i v_i^T, u_j v_j^T> = tr(v_i u_i^T u_j v_j^T) = (u_i^T u_j)(v_i^T v_j) = delta_ij, so the layers are mutually orthogonal and the cross terms vanish in ||X_k||_F^2 = sum_{i<=k} ||sigma_i u_i v_i^T||_F^2 = sum_{i<=k} sigma_i^2; likewise X - X_k = sum_{i>k} sigma_i u_i v_i^T gives ||X - X_k||_F^2 = sum_{i>k} sigma_i^2. (c) Dividing by ||X||_F^2 = sum_i sigma_i^2 yields the boxed ratio. The chapter's 58% figure for k = 10 on the newsgroups matrix is exactly this ratio: the first ten layers carry 58% of the squared singular-value mass.
+
+**Answer:** ||X_k||_F^2 / ||X||_F^2 = sum_{i<=k} sigma_i^2 / sum_i sigma_i^2
+
+### 11-2
+
+Source: nb/courses/cla/11-topic-modeling.ipynb, cell 27.
+
+**Solution.** (a) X X^T = U Sigma V^T V Sigma U^T = U Sigma^2 U^T, and powers diagonalize: (X X^T)^q = U Sigma^{2q} U^T. Then Y_q = U Sigma^{2q} U^T U Sigma V^T G = U Sigma^{2q+1} V^T G. (b) Column j: Y_q e_j = U Sigma^{2q+1} V^T g_j = sum_i sigma_i^{2q+1} (v_i^T g_j) u_i, so the component along u_i has magnitude sigma_i^{2q+1} |v_i^T g_j|; the ratio of the i-th to the l-th direction's content is (sigma_i/sigma_l)^{2q+1} |v_i^T g_j|/|v_l^T g_j|. (c) For Gaussian g_j, v_i^T g_j ~ N(0,1), so the random factors are O(1) with high probability and the deterministic ratio (sigma_1/sigma_2)^{2q+1} dominates. One power iteration costs two sparse matrix-vector products, O(nnz(X) * (k+p)) flops. Real text spectra decay as power laws, so sigma_1/sigma_{k+1} is small (e.g. sqrt(6) in Problem 5), and the sketch without amplification does not concentrate on the dominant subspace; each power iteration squares the gap, which is why the chapter's scratch run needs them.
+
+**Answer:** Y_q = U Sigma^{2q+1} V^T G; per-iteration cost O(nnz(X) * (k+p))
+
+### 11-3
+
+Source: nb/courses/cla/11-topic-modeling.ipynb, cell 30.
+
+**Solution.** (a) df(cat) = 3 (docs 0, 1, 3), df(dog) = 2 (docs 1, 2). Smoothed idf with n = 4: idf(cat) = log(5/4) + 1 = 1.22314355, idf(dog) = log(5/3) + 1 = 1.51082562; both match vec.idf_ to 1e-6. (b) Every row of the tfidf matrix has 2-norm 1: the L2 normalization of TfidfVectorizer. (c) X[1, cat] = idf(cat)/sqrt(idf(cat)^2 + idf(dog)^2) = 1.2231/sqrt(1.2231^2 + 1.5108^2) = 0.6292275, matching the vectorizer's entry.
+
+**Answer:** idf(cat) = 1.2231, idf(dog) = 1.5108, X[1, cat] = 0.6292
+
+**Checks:**
+- smoothed idf of 'cat' matches TfidfVectorizer.idf_: expected 1.2231435513142097 ± 1e-06
+- smoothed idf of 'dog' matches TfidfVectorizer.idf_: expected 1.5108256237659907 ± 1e-06
+- entry (1, cat) of the tfidf matrix: expected 0.6292275146695526 ± 1e-06
+- every row of the tfidf matrix has unit 2-norm: expected 1.0 ± 1e-09
+
+**Reference code.**
+
+```python
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+docs = ["cat cat cat", "cat dog", "dog dog dog", "cat cat"]
+vec = TfidfVectorizer()
+X = vec.fit_transform(docs)
+vocab = vec.get_feature_names_out()
+n = len(docs)
+
+# (a) document frequencies and smoothed idf
+df = np.asarray((X > 0).sum(axis=0)).ravel()
+idf_calc = np.log((n + 1) / (df + 1)) + 1
+assert np.allclose(idf_calc, vec.idf_, atol=1e-6)
+
+# (b) row norms
+row_norms = np.linalg.norm(X.toarray(), axis=1)
+assert np.allclose(row_norms, 1.0, atol=1e-9)
+
+# (c) weight of 'cat' in document 1
+w_cat_doc1 = X.toarray()[1, list(vocab).index('cat')]
+hand = idf_calc[0] / np.sqrt(idf_calc[0] ** 2 + idf_calc[1] ** 2)
+assert abs(w_cat_doc1 - hand) < 1e-6
+
+print('idf:', np.round(idf_calc, 6))
+print('X[1, cat] =', round(w_cat_doc1, 6))
+```
+
+### 11-4
+
+Source: nb/courses/cla/11-topic-modeling.ipynb, cell 33.
+
+**Solution.** energy_retained(s, k) = (s[:k]**2).sum() / (s**2).sum(). With sigma_i = 1/i the planted singular values are recovered exactly (up to roundoff), so: energy_retained(s, 40) = 1.0 (the matrix has full rank 40); the fraction is monotone nondecreasing in k; and the formula agrees with the direct Frobenius computation ||A_k||_F^2 / ||A||_F^2 to 3.3e-16. The fraction at k = 10 is 0.9565, well above the newsgroups' 58%: the planted 1/i spectrum concentrates its energy much faster than the real corpus, whose tail is heavier (a genuine power law with no cutoff).
+
+**Answer:** energy_retained(s, 10) = 0.9565
+
+**Checks:**
+- energy fraction at k = 10 for the planted 1/i spectrum: expected 0.9565027036363084 ± 1e-06
+- formula agrees with direct Frobenius computation: expected 0.0 ± 1e-10
+- energy_retained(s, 40) equals 1 (full rank): expected 1.0 ± 1e-09
+
+**Reference code.**
+
+```python
+import numpy as np
+
+def energy_retained(s, k):
+    return (s[:k] ** 2).sum() / (s ** 2).sum()
+
+rng = np.random.default_rng(0)
+n, r = 50, 40
+sigma = 1.0 / np.arange(1, r + 1)
+U, _ = np.linalg.qr(rng.standard_normal((n, r)))
+V, _ = np.linalg.qr(rng.standard_normal((r, r)))
+A = U @ np.diag(sigma) @ V.T
+
+U, s, Vh = np.linalg.svd(A, full_matrices=False)
+
+k = 10
+Ak = U[:, :k] @ np.diag(s[:k]) @ Vh[:k, :]
+direct = np.linalg.norm(Ak) ** 2 / np.linalg.norm(A) ** 2
+formula = energy_retained(s, k)
+fracs = [energy_retained(s, kk) for kk in range(1, r + 1)]
+
+assert abs(energy_retained(s, r) - 1.0) < 1e-9
+assert all(b >= a - 1e-12 for a, b in zip(fracs, fracs[1:]))
+assert abs(direct - formula) < 1e-10
+
+print('fraction at k = 10:', formula)
+```
+
+### 11-5
+
+Source: nb/courses/cla/11-topic-modeling.ipynb, cell 36.
+
+**Solution.** Measured errors: err(0) = 0.3415, err(3) = 1.3e-3, err(10) = 1.5e-8, and sub(10) = 1.2e-8. The ladder is the amplification of Problem 2: the sketch's content ratio for direction 6 versus direction 1 falls like (sigma_6/sigma_1)^{2q+1} = 6^{-(2q+1)/2}, so each power iteration squares the effective gap; at q = 10 the leaked component is below 1e-8. At q = 30 the error rises again to 0.63: (sigma_6/sigma_1)^{61} = 6^{-30.5} ~ 1.3e-24 sits below machine epsilon 2.2e-16, so direction 6 is at the roundoff level and the sketch is numerically rank-one; the QR range finder cannot recover the tail directions. Threshold: 6^{-(2q+1)/2} < 2.2e-16 requires 2q + 1 > 2 ln(4.5e15)/ln(6) ~ 40.2, i.e. q >= 20. The experiment confirms the chapter's claim that power iterations are what make the sketch track the dominant subspace of a slowly decaying spectrum, and exposes the over-amplification edge case.
+
+**Answer:** err(0) = 0.34, err(3) = 1.3e-3, err(10) = 1.5e-8, err(30) = 0.63
+
+**Checks:**
+- relative singular-value error at q = 10 is below 1e-6: expected 1.491e-08 ± 1e-06
+- relative singular-value error at q = 0 is above 1e-2: expected 0.3415 ± 0.05
+- relative singular-value error at q = 30 is large (roundoff collapse): expected 0.6323 ± 0.05
+
+**Reference code.**
+
+```python
+import numpy as np
+
+def rsvd(A, k, q, p=5, seed=11):
+    rng = np.random.default_rng(seed)
+    n, d = A.shape
+    ell = k + p
+    G = rng.standard_normal((d, ell))
+    Y = A @ G
+    for _ in range(q):
+        Y = A @ (A.T @ Y)
+    Q, _ = np.linalg.qr(Y)
+    B = Q.T @ A
+    _, s_hat, Vh_hat = np.linalg.svd(B, full_matrices=False)
+    return s_hat, Vh_hat
+
+rng = np.random.default_rng(3)
+n, d, k = 200, 150, 5
+sigma = 1.0 / np.sqrt(np.arange(1, d + 1))
+U, _ = np.linalg.qr(rng.standard_normal((n, d)))
+V, _ = np.linalg.qr(rng.standard_normal((d, d)))
+A = U @ np.diag(sigma) @ V.T
+
+Ue, s_exact, Vhe = np.linalg.svd(A, full_matrices=False)
+
+for q in (0, 3, 10, 30):
+    s_hat, Vh_hat = rsvd(A, k, q)
+    err = np.max(np.abs(s_hat[:k] - s_exact[:k]) / s_exact[:k])
+    sub = np.max(1 - np.abs(np.diag(Vh_hat[:k] @ Vhe[:k].T)))
+    print(f'q={q}: err={err:.3e}  sub={sub:.3e}')
+```
+
+## cla / 12-pagerank
+
+### 12-1
+
+Source: nb/courses/cla/12-pagerank.ipynb, cell 25.
+
+**Solution.** (a) Each column sum of G is alpha times a column sum of P~ plus n copies of (1-alpha)/n: alpha*1 + (1 - alpha) = 1. So 1^T G = 1^T: damping preserves column-stochasticity. Mind the sides: the all-ones vector is generally NOT a right eigenvector (P~ 1 != 1 on the teaching web); the right eigenvector for eigenvalue 1 is the stationary vector pi, which exists and is unique because G is strictly positive. By construction span{pi} is invariant (G pi = pi), and 1^T G = 1^T makes 1^perp invariant: 1^T x = 0 implies 1^T (G x) = 0. Since 1^T pi = 1 != 0, pi does not lie in 1^perp, and the dimensions 1 + (n - 1) = n make R^n = span{pi} (+) 1^perp a direct sum of G-invariant subspaces.
+
+(b) From 1^T P~ = 1^T, taking inner products with x: 1^T x = 1^T P~ x = lambda 1^T x; lambda != 1 forces 1^T x = 0, i.e. x lies in 1^perp. The rank-one teleport term vanishes on such x, so G x = alpha P~ x + (1-alpha)/n 1 (1^T x) = alpha lambda x.
+
+(c) In a basis adapted to the splitting of part (a) with pi first, the first column of G reads (1, 0, ..., 0)^T, and every other basis vector lies in 1^perp, where G acts as alpha times the restriction B := P~|_{1^perp}; membership in 1^perp pins the pi-coordinate to zero because the sum in part (a) is direct. Hence G = [[1, 0], [0, alpha B]], so chi_G(t) = (t - 1) alpha^{n-1} chi_B(t/alpha), multiplicity included and no diagonalizability needed. Every lambda != 1 in spec(P~) reappears scaled by alpha by part (b). A finite chain carries one unit eigenvalue per closed class, and these copies are semisimple; exactly one of them sits in the pi direction, while the rest lie inside 1^perp and come back multiplied by alpha rather than being removed: spec(G) keeps one copy of 1 and turns each further copy into alpha. This is why damping cannot manufacture a gap better than alpha on reducible chains. Finally rho(B) <= ||B||_1 <= ||P~||_1, and the induced l1 norm equals the largest column sum, which is 1; hence |lambda_i(G)| <= alpha for all i >= 2, reducible or not. On the teaching web the undamped chain has the single closed class {I, J, K}, so no extra unit copies arise and the spectrum matches alpha*(spec(P~)\{1}) entry by entry: |lambda_2(P~)| = 0.9910 and |lambda_2(G)| = 0.85 * 0.9910 = 0.8424. The power-method rate on G is therefore at most alpha^k (0.85^k at the chapter's damping) for any link structure, versus the undamped 0.952^k on the teaching web: the bound is structural, not data-dependent.
+
+**Answer:** 1^T G = 1^T (not G 1 = 1); chi_G(t) = (t - 1) alpha^{n-1} chi_B(t/alpha) with B = P~|_{1^perp}; |lambda_i(G)| <= alpha for i >= 2
+
+### 12-2
+
+Source: nb/courses/cla/12-pagerank.ipynb, cell 27.
+
+**Solution.** (a) 1^T P is the vector of column sums, which has a zero in position s (the dangling column). Hence 1^T P x = 1^T x - x_s = 1 - x_s < 1: mass leaks at rate x_s per step. If P x = x held, then 1^T x = 1^T P x < 1^T x, a contradiction, so no probability vector with x_s > 0 can be stationary. (b) Replacing the zero column by (1/n) 1 makes every column sum to 1, so 1^T P~ = 1^T and the leak obstruction disappears. (c) The cluster {I, J, K} never links out, so no column of the restriction sends mass outside C; each such column sums to 1 within C, making P_C column-stochastic, and the uniform vector (1/3, 1/3, 1/3) extends by zeros to a stationary vector of the full P~. This stationary distribution is in fact unique here: {I, J, K} is the only closed class, and a finite chain carries exactly one stationary distribution per closed class. Uniqueness is not the disease in this web; degeneracy is. All visiting mass concentrates on three pages that ignore the rest of the graph, which is exactly the failure the chapter's ranking table displays. Reducibility does threaten uniqueness itself once there are two or more closed classes: each carries its own stationary vector, every convex combination of them is again stationary, and the power-method limit then depends on the starting vector. Either way the undamped ranking is unusable.
+
+**Answer:** 1^T P x = 1 - x_s < 1; uniform vector on {I, J, K} is stationary (uniquely so here, the sink being the only closed class)
+
+### 12-3
+
+Source: nb/courses/cla/12-pagerank.ipynb, cell 30.
+
+**Solution.** For the teaching web, |lambda_2(P~)| = 0.9910. For alpha in {0.5, 0.85, 0.95} the identity |lambda_2(G)| = alpha |lambda_2(P~)| holds to 1e-15 and |lambda_2(G)| <= alpha holds. At alpha = 0.85, |lambda_2(G)| = 0.8424. Every column of G sums to 1 (G is stochastic). Note the repair alone makes the gap worse: |lambda_2(P~)| = 0.991 exceeds the undamped 0.952, because the closed cluster {I, J, K} remains; only the teleport term restores the bound |lambda_2(G)| <= alpha.
+
+**Answer:** |lambda_2(G)| = 0.8424 at alpha = 0.85
+
+**Checks:**
+- |lambda_2(G)| at alpha = 0.85: expected 0.8423569304 ± 1e-06
+- |lambda_2(G)| equals alpha * |lambda_2(P~)| for alpha in {0.5, 0.85, 0.95}: expected 0.0 ± 1e-10
+- every column of G(0.85) sums to 1: expected 1.0 ± 1e-12
+
+**Reference code.**
+
+```python
+import numpy as np
+
+pages = list('ABCDEFGHIJKLMNOP')
+out = {'A': 'BCDEFGH', 'B': 'ACD', 'C': 'AB', 'D': 'AB', 'E': 'A',
+       'F': 'AB', 'G': 'AB', 'H': '', 'I': 'JK', 'J': 'IK', 'K': 'IJ',
+       'L': 'ABC', 'M': 'AL', 'N': 'AM', 'O': 'AN', 'P': 'AO'}
+n = len(pages)
+index = {p: i for i, p in enumerate(pages)}
+A = np.zeros((n, n))
+for s, dests in out.items():
+    for d in dests:
+        A[index[d], index[s]] = 1.0
+
+outdeg = A.sum(axis=0)
+with np.errstate(divide='ignore', invalid='ignore'):
+    P = A / outdeg
+P = np.nan_to_num(P, nan=0.0)
+P_tilde = P.copy()
+P_tilde[:, outdeg == 0] = 1.0 / n
+
+lamPt = np.sort(np.abs(np.linalg.eigvals(P_tilde)))[::-1]
+for alpha in (0.5, 0.85, 0.95):
+    G = alpha * P_tilde + (1 - alpha) / n * np.ones((n, n))
+    lamG = np.sort(np.abs(np.linalg.eigvals(G)))[::-1]
+    assert abs(lamG[1] - alpha * lamPt[1]) < 1e-10
+    assert lamG[1] <= alpha + 1e-12
+
+G85 = 0.85 * P_tilde + 0.15 / n * np.ones((n, n))
+assert np.allclose(G85.sum(axis=0), 1.0, atol=1e-12)
+lamG85 = np.sort(np.abs(np.linalg.eigvals(G85)))[::-1]
+print('|lam2(G, 0.85)| =', round(lamG85[1], 6))
+```
+
+### 12-4
+
+Source: nb/courses/cla/12-pagerank.ipynb, cell 33.
+
+**Solution.** The matrix-free step x' = alpha P x + (alpha x_H + 1 - alpha)/n * 1 preserves total mass exactly: 1^T x' = alpha(1 - x_H) + alpha x_H + 1 - alpha = 1, so no renormalization is needed. It converges in 131 iterations to the 1e-12 tolerance, and the infinity-norm difference from the dense power method on G is 2.8e-17, well below 1e-10. The top-ranked page is A with score 0.2217, matching the chapter's damped ranking. The rate bound of Problem 1 predicts k ~ ln(1e-12)/ln(0.842) ~ 161 iterations for the error; the residual-based stopping rule terminates at 131 because the bound is asymptotic (error <= C |lambda_2|^k with C ~ ||x_1 - x*||), so the measured count is consistent up to a constant.
+
+**Answer:** top page A, 131 iterations, L-infinity diff 2.8e-17
+
+**Checks:**
+- infinity-norm difference between matrix-free and dense PageRank: expected 2.7755575615628914e-17 ± 1e-10
+- top-ranked page is the hub A: expected 0.0 ± 1.0
+- iteration count to 1e-12 tolerance: expected 131.0 ± 1.0
+
+**Reference code.**
+
+```python
+import numpy as np
+from scipy import sparse
+
+pages = list('ABCDEFGHIJKLMNOP')
+out = {'A': 'BCDEFGH', 'B': 'ACD', 'C': 'AB', 'D': 'AB', 'E': 'A',
+       'F': 'AB', 'G': 'AB', 'H': '', 'I': 'JK', 'J': 'IK', 'K': 'IJ',
+       'L': 'ABC', 'M': 'AL', 'N': 'AM', 'O': 'AN', 'P': 'AO'}
+n = len(pages)
+index = {p: i for i, p in enumerate(pages)}
+
+rows, cols = [], []
+for s, dests in out.items():
+    for d in dests:
+        rows.append(index[d]); cols.append(index[s])
+P = sparse.coo_matrix((np.ones(len(rows)), (rows, cols)), shape=(n, n))
+P = sparse.csr_matrix(P.multiply(1.0 / P.sum(axis=0)))
+
+alpha = 0.85
+dangling = index['H']
+
+def step(x):
+    return alpha * (P @ x) + (alpha * x[dangling] + 1 - alpha) / n
+
+x = np.full(n, 1.0 / n)
+it = 0
+for _ in range(5000):
+    x_new = step(x)
+    it += 1
+    if np.linalg.norm(x_new - x) < 1e-12:
+        break
+    x = x_new
+
+P_tilde = P.toarray().copy()
+P_tilde[:, dangling] = 1.0 / n
+G = alpha * P_tilde + (1 - alpha) / n * np.ones((n, n))
+x_dense = np.full(n, 1.0 / n)
+for _ in range(5000):
+    xd = G @ x_dense
+    if np.linalg.norm(xd - x_dense) < 1e-12:
+        break
+    x_dense = xd
+
+assert np.max(np.abs(x - x_dense)) < 1e-10
+print('iterations:', it)
+print('top page:', pages[int(np.argmax(x))], ' score:', round(np.max(x), 4))
+```
+
+### 12-5
+
+Source: nb/courses/cla/12-pagerank.ipynb, cell 36.
+
+**Solution.** With seed 42 the L1 distances between empirical visit frequencies and the exact PageRank vector are 0.0359 (N = 1e4), 0.0123 (N = 1e5), and 0.0035 (N = 1e6). The empirical top-ranked page is A at every N, matching the stationary ranking. The ratio L1(1e5)/L1(1e6) = 3.48 is close to sqrt(10) = 3.16: the N^{-1/2} sampling law holds. The deviation from 3.16 reflects the walk's autocorrelation: the variance of a frequency estimate is inflated by a factor bounded by (1 + rho)/(1 - rho) with rho ~ |lambda_2(G)| = 0.842, about a factor of 12, which changes the constant but not the exponent.
+
+**Answer:** L1(1e6) = 0.0035, ratio 3.48 ~ sqrt(10), top page A
+
+**Checks:**
+- L1 distance at N = 1e6 (fixed seed 42): expected 0.003542 ± 0.001
+- empirical top-ranked page at N = 1e6 is A: expected 0.0 ± 1.0
+- ratio L1(1e5)/L1(1e6) near sqrt(10): expected 3.484 ± 1.0
+
+**Reference code.**
+
+```python
+import numpy as np
+
+pages = list('ABCDEFGHIJKLMNOP')
+out = {'A': 'BCDEFGH', 'B': 'ACD', 'C': 'AB', 'D': 'AB', 'E': 'A',
+       'F': 'AB', 'G': 'AB', 'H': '', 'I': 'JK', 'J': 'IK', 'K': 'IJ',
+       'L': 'ABC', 'M': 'AL', 'N': 'AM', 'O': 'AN', 'P': 'AO'}
+n = len(pages)
+index = {p: i for i, p in enumerate(pages)}
+neigh = [[index[d] for d in out[s]] if out[s] else list(range(n))
+         for s in pages]
+
+A = np.zeros((n, n))
+for s, dests in out.items():
+    for d in dests:
+        A[index[d], index[s]] = 1.0
+outdeg = A.sum(axis=0)
+with np.errstate(divide='ignore', invalid='ignore'):
+    P = A / outdeg
+P = np.nan_to_num(P, nan=0.0)
+P_tilde = P.copy()
+P_tilde[:, outdeg == 0] = 1.0 / n
+
+alpha = 0.85
+G = alpha * P_tilde + (1 - alpha) / n * np.ones((n, n))
+
+x = np.full(n, 1.0 / n)
+for _ in range(5000):
+    xn = G @ x
+    if np.linalg.norm(xn - x) < 1e-13:
+        break
+    x = xn
+
+rng = np.random.default_rng(42)
+errs = {}
+for N in (10**4, 10**5, 10**6):
+    counts = np.zeros(n)
+    cur = int(rng.integers(0, n))
+    for _ in range(N):
+        if rng.random() < alpha:
+            nb = neigh[cur]
+            cur = nb[int(rng.integers(0, len(nb)))]
+        else:
+            cur = int(rng.integers(0, n))
+        counts[cur] += 1
+    freq = counts / N
+    errs[N] = np.abs(freq - x).sum()
+    print(f'N={N}: L1={errs[N]:.6f}  top={pages[int(np.argmax(freq))]}')
+
+print('ratio L1(1e5)/L1(1e6):', round(errs[10**5] / errs[10**6], 3))
+```
+
+## cla / 13-robust-pca
+
+### 13-1
+
+Source: nb/courses/cla/13-robust-pca.ipynb, cell 22.
+
+**Solution.** (a) The subgradient of f at z is ∂f(z) = z − x + τ·sign(z), where sign(0) ∈ [−1, 1]. The optimality condition 0 ∈ ∂f(z*) gives z* = x − τ·sign(z*). If z* > 0 then z* = x − τ, which requires x > τ; if z* < 0 then z* = x + τ, which requires x < −τ; if z* = 0 then the condition reduces to |x| ≤ τ. Hence z* = sign(x)max(|x| − τ, 0) = shrink(x, τ). Uniqueness follows from strict convexity of ½(z − x)².
+(b) The objective ½||X − Z||_F² + τ||Z||_1 = Σ_ij [½(Z_ij − X_ij)² + τ|Z_ij|] separates over the entries of Z, so the minimizer applies the scalar result entrywise: Z* = shrink(X, τ).
+(c) For |x| ≤ τ the minimizer is 0: the operator kills every entry whose magnitude does not exceed the threshold. In the S step of the PCP loop the threshold is τ = λ/μ, so entries of M − L + Y/μ below λ/μ in magnitude are classified as background and zeroed in S.
+
+### 13-2
+
+Source: nb/courses/cla/13-robust-pca.ipynb, cell 24.
+
+**Solution.** (a) von Neumann's trace inequality: ⟨X, Z⟩ ≤ Σ_i σ_i(X)σ_i(Z), with equality iff Z = U diag(σ(Z)) V^T shares the singular vectors of X.
+(b) Expand the objective: ½||X − Z||_F² + τ||Z||_* = ½||X||_F² + ½||Z||_F² − ⟨X, Z⟩ + τ||Z||_* ≥ ½||X||_F² + Σ_i [½σ_i(Z)² − σ_i(X)σ_i(Z) + τσ_i(Z)], with equality when Z shares X's singular vectors. Each scalar term ½z² − σ_i(X)z + τz = ½(z − σ_i(X))² + τz − ½σ_i(X)² is minimized over z ≥ 0 at z = shrink(σ_i(X), τ) by Problem 13-1; the constraint z ≥ 0 is automatic since shrink ≥ 0.
+(c) Hence Z* = U shrink(Σ, τ) V^T. This is exactly the L step of the PCP loop, which SVDs M − S + Y/μ and shrinks the singular values by 1/μ.
+
+### 13-3
+
+Source: nb/courses/cla/13-robust-pca.ipynb, cell 27.
+
+**Solution.** The starter code (seed 7, 20×15 matrix, τ = 0.5) computes Z* = U shrink(Σ, τ)V^T and the residual G = X − Z*. The printed values confirm the optimality conditions: ||G||_2 = 0.5 = τ exactly (the largest singular value of the residual equals the threshold), and ⟨G, Z*⟩ = 23.7849 = τ||Z*||_* to machine precision. All five perturbed candidates Z* + E give f(Z + E) − f(Z) > 0, the smallest gap being 1.516, so Z* is the unique minimizer of ½||X − Z||_F² + τ||Z||_*.
+
+**Answer:** ||G||_2 = 0.5 = tau; <G, Z*> = tau*||Z*||_* = 23.7849; min gap over perturbed candidates = 1.516 > 0
+
+**Checks:**
+- spectral norm of residual G = X - Z*: expected 0.5 ± 1e-06
+- complementarity |<G, Z*> - tau*||Z*||_*|: expected 0.0 ± 1e-06
+- min objective gap f(Z+E) - f(Z) over perturbed candidates: expected 1.5161347976273873 ± 1e-06
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(7)
+m, n, tau = 20, 15, 0.5
+X = rng.standard_normal((m, n))
+
+U, s, Vt = np.linalg.svd(X, full_matrices=False)
+Z = (U * np.maximum(s - tau, 0)) @ Vt
+G = X - Z
+
+print('||G||_2 =', np.linalg.norm(G, 2), '  tau =', tau)
+print('<G, Z> =', np.sum(G * Z))
+print('tau * ||Z||_* =', tau * np.sum(np.linalg.svd(Z, compute_uv=False)))
+
+for _ in range(5):
+    E = rng.standard_normal((m, n)) * 0.1
+    Zc = Z + E
+    f = lambda W: 0.5 * np.sum((X - W) ** 2) + tau * np.sum(np.linalg.svd(W, compute_uv=False))
+    print('f(Z + E) - f(Z) =', f(Zc) - f(Z))
+```
+
+### 13-4
+
+Source: nb/courses/cla/13-robust-pca.ipynb, cell 30.
+
+**Solution.** The starter code (seed 11, 12×9 matrix) computes the nuclear norm as the sum of the singular values, ||L||_* = 25.12195. The SVD alignment Y = UV^T has ||Y||_2 = 1 (product of two orthogonal matrices) and achieves ⟨L, Y⟩ = 25.12195 = ||L||_*, so the maximum in the dual-norm identity is attained. Over 2000 random Y with ||Y||_2 = 1 the largest inner product is 5.0236, well below ||L||_*, confirming that no unit-spectral-norm matrix beats the SVD alignment.
+
+**Answer:** <L, UV^T> = ||L||_* = 25.12195; max over random ||Y||_2 = 1 is 5.0236
+
+**Checks:**
+- |<L, UV^T> - ||L||_*|: expected 0.0 ± 1e-06
+- max over random Y with ||Y||_2 = 1: expected 5.023616457017139 ± 1e-06
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(11)
+m, n = 12, 9
+L = rng.standard_normal((m, n))
+
+U, s, Vt = np.linalg.svd(L, full_matrices=False)
+nuc = s.sum()
+Y = U @ Vt
+print('<L, Y> =', np.sum(L * Y), '  ||L||_* =', nuc)
+
+best = -np.inf
+for _ in range(2000):
+    Yr = rng.standard_normal((m, n))
+    Yr = Yr / np.linalg.norm(Yr, 2)
+    best = max(best, np.sum(L * Yr))
+print('max over random ||Y||_2 = 1:', best)
+```
+
+### 13-5
+
+Source: nb/courses/cla/13-robust-pca.ipynb, cell 33.
+
+**Solution.** (a) With λ = 1/√N the sweep (seed 23, N = 100, rank 5, L = UV^T/√N, S entries ±1) recovers L to machine precision for ρ_s ≤ 0.15 (errors 7.8e-07, 2.1e-06, 1.9e-06) and fails for ρ_s ≥ 0.18 (errors 5.7e-03, 9.1e-02, 3.6e-01).
+(b) The empirical threshold is ρ_s = 0.15, the largest grid value with error below 1e-3. At ρ_s = 0.15 the recovered L has singular values [14.06, 10.82, 9.42, 7.60, 7.25, 0, 0, ...], i.e. rank exactly 5: the singular values beyond the fifth vanish to machine precision.
+(c) With λ = 0.5/√N the sparsity penalty is too weak: the algorithm routes low-rank energy into S, and every ρ_s fails (errors ≥ 5.7e-02). With λ = 2/√N the penalty is too strong: outliers leak into L, and every ρ_s fails (errors ≥ 6.4e-02). The theoretical choice λ = 1/√max(m, n) sits at the unique sweet spot where exact recovery is possible.
+
+**Answer:** threshold(lambda=1/sqrt(N)) = 0.15; threshold(lambda=0.5/sqrt(N)) = none; threshold(lambda=2/sqrt(N)) = none; rank(L_hat) = 5 at rho_s = 0.15
+
+**Checks:**
+- largest rho_s with rel err < 1e-3 at lambda = 1/sqrt(N): expected 0.15 ± 0.0
+- rank of recovered L at rho_s = 0.15: expected 5 ± 0.0
+- min rel err over grid at lambda = 0.5/sqrt(N): expected 0.0569 ± 0.001
+- min rel err over grid at lambda = 2/sqrt(N): expected 0.0644 ± 0.001
+
+**Reference code.**
+
+```python
+import numpy as np
+
+def pcp(M, lam, mu0, rho=1.6, mu_max=1e7, tol=1e-6, max_iter=500):
+    mu = mu0
+    L = np.zeros_like(M); S = np.zeros_like(M); Y = np.zeros_like(M)
+    for it in range(max_iter):
+        U, s, Vt = np.linalg.svd(M - S + Y / mu, full_matrices=False)
+        L = (U * np.maximum(s - 1.0 / mu, 0)) @ Vt
+        S = np.sign(M - L + Y / mu) * np.maximum(np.abs(M - L + Y / mu) - lam / mu, 0)
+        Y = Y + mu * (M - L - S)
+        mu = min(rho * mu, mu_max)
+        if np.linalg.norm(M - L - S, 'fro') / np.linalg.norm(M, 'fro') < tol:
+            break
+    return L, S
+
+rng = np.random.default_rng(23)
+N, r = 100, 5
+lam = 1.0 / np.sqrt(N)
+rhos = (0.05, 0.10, 0.15, 0.18, 0.20, 0.25)
+
+U = rng.standard_normal((N, r)); V = rng.standard_normal((N, r))
+L0 = (U @ V.T) / np.sqrt(N)
+
+instances = []
+for rho in rhos:
+    S0 = np.zeros((N, N))
+    nz = int(rho * N * N)
+    idx = rng.choice(N * N, size=nz, replace=False)
+    S0.ravel()[idx] = rng.choice([-1.0, 1.0], size=nz)
+    instances.append((rho, L0, S0))
+
+def sweep(lam):
+    for rho, L0, S0 in instances:
+        M = L0 + S0
+        Lh, Sh = pcp(M, lam, 1.25 / np.linalg.norm(M, 2))
+        err = np.linalg.norm(Lh - L0, 'fro') / np.linalg.norm(L0, 'fro')
+        print(f'rho_s={rho:.2f}  rel err = {err:.2e}')
+
+print('lambda = 1/sqrt(N):')
+sweep(lam)
+print('lambda = 0.5/sqrt(N):')
+sweep(0.5 * lam)
+print('lambda = 2/sqrt(N):')
+sweep(2.0 * lam)
+```
+
+## cla / 14-compressed-sensing
+
+### 14-1
+
+Source: nb/courses/cla/14-compressed-sensing.ipynb, cell 25.
+
+**Solution.** (a) A⁺A is the orthogonal projection onto C(A^T): split x = x_row + x_null with x_row ∈ C(A^T) and x_null ∈ N(A). Then A⁺A x_row = x_row (A⁺ is a right inverse on the row space) and A⁺A x_null = 0, so P = A⁺A is the orthogonal projection onto the row space. The row space has dimension m (A has full row rank with probability one), so P = Σ_{i=1}^m u_i u_i^T for any orthonormal basis {u_i}.
+(b) The row space of a Gaussian A is a uniformly random m-dimensional subspace: the distribution of A is invariant under orthogonal transformations, hence so is the row space. Each u_i is therefore uniformly distributed on the unit sphere, and E[u_i u_i^T] is invariant under conjugation by any orthogonal Q, so it must be a scalar multiple of I; taking traces gives the scalar 1/n.
+(c) E||Px||² = x^T E[P] x = x^T (Σ_i E[u_i u_i^T]) x = (m/n)||x||². Since the minimum-norm solution is Px, E||x − Px||² = ||x||² − E||Px||² = (1 − m/n)||x||², so the expected relative error is sqrt(1 − m/n).
+
+### 14-2
+
+Source: nb/courses/cla/14-compressed-sensing.ipynb, cell 27.
+
+**Solution.** (a) With x = x⁺ − x⁻ and x⁺, x⁻ ≥ 0, the constraint Ax = b becomes A x⁺ − A x⁻ = b, and at the optimum the supports of x⁺ and x⁻ are disjoint, so ||x||_1 = 1^T x⁺ + 1^T x⁻. The problem is a standard-form LP with 2n variables and m equality constraints.
+(b) The LP has an optimal solution (the objective is bounded below by 0 and the feasible set is nonempty), and standard LP theory guarantees an optimal basic feasible solution, i.e. a vertex of the polytope {z ≥ 0 : Bz = b}. A vertex is determined by m linearly independent active constraints among the 2n nonnegativity constraints, so at most m variables are nonzero.
+(c) Hence x = x⁺ − x⁻ has at most m nonzero entries. For a K-sparse signal with m ≥ K measurements the true signal is feasible for the ℓ1 problem and the ℓ1 minimizer is K-sparse (at most m nonzeros), so basis pursuit can in principle recover it; the RIP guarantees that it does.
+
+### 14-3
+
+Source: nb/courses/cla/14-compressed-sensing.ipynb, cell 30.
+
+**Solution.** The starter code (seed 3) draws A ∈ R^{40×128}, forms P = A⁺A, and averages ||Px||² over T = 2000 random unit-norm signals. The empirical mean is 0.3122, matching m/n = 0.3125 within 0.001. The implied relative error sqrt(1 − mean) = 0.8293 matches the prediction sqrt(1 − m/n) = 0.8292, confirming the energy identity of Problem 14-1 and the chapter's claim that the minimum-norm solution keeps the fraction m/n of the signal energy.
+
+**Answer:** mean ||Px||^2 = 0.3122 (m/n = 0.3125); sqrt(1 - mean) = 0.8293 (predicted 0.8292)
+
+**Checks:**
+- |mean ||Px||^2 - m/n|: expected 0.0 ± 0.01
+- |sqrt(1 - mean) - sqrt(1 - m/n)|: expected 0.0 ± 0.01
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(3)
+n, m, T = 128, 40, 2000
+A = rng.standard_normal((m, n))
+P = np.linalg.pinv(A) @ A
+
+xs = rng.standard_normal((T, n))
+xs = xs / np.linalg.norm(xs, axis=1, keepdims=True)
+energies = np.sum((xs @ P.T) ** 2, axis=1)
+
+print('mean ||P x||^2 =', energies.mean(), '  m/n =', m / n)
+print('sqrt(1 - mean) =', np.sqrt(1 - energies.mean()), '  sqrt(1 - m/n) =', np.sqrt(1 - m / n))
+```
+
+### 14-4
+
+Source: nb/courses/cla/14-compressed-sensing.ipynb, cell 33.
+
+**Solution.** The starter code (seed 5, n = 128, K = 5, T = 2000) estimates delta_5 by sampling random 5-sparse unit vectors for scaled Gaussian matrices (entries N(0, 1/m)). The estimates are approximately 1.03 (m = 40), 0.58 (m = 80), 0.49 (m = 160): strictly decreasing in m, so more measurements give a better isometry. The products delta_5*sqrt(m) are roughly constant (6.5, 5.2, 6.2), consistent with a deviation that decays like 1/sqrt(m). Note the sampled estimates are lower bounds on the true RIP constants; the point is the trend, which matches the m >~ K log(n/K) heuristic.
+
+**Answer:** delta_5 decreasing in m; delta_5*sqrt(m) roughly constant
+
+**Checks:**
+- delta_5 estimate at m = 40: expected 1.10 ± 0.25
+- delta_5 estimate at m = 80: expected 0.59 ± 0.15
+- delta_5 estimate at m = 160: expected 0.50 ± 0.15
+- delta_5 strictly decreasing across m = [40, 80, 160]: expected True
+
+**Reference code.**
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(5)
+n, K, T = 128, 5, 2000
+
+def est_delta(m):
+    A = rng.standard_normal((m, n)) / np.sqrt(m)
+    vals = []
+    for _ in range(T):
+        x = np.zeros(n)
+        x[rng.choice(n, K, replace=False)] = rng.standard_normal(K)
+        x = x / np.linalg.norm(x)
+        vals.append(np.linalg.norm(A @ x) ** 2)
+    return max(vals) - 1.0
+
+for m in (40, 80, 160):
+    d = est_delta(m)
+    print(f'm={m}: delta_5 ~ {d:.4f},  delta_5 * sqrt(m) = {d * np.sqrt(m):.3f}')
+```
+
+### 14-5
+
+Source: nb/courses/cla/14-compressed-sensing.ipynb, cell 36.
+
+**Solution.** (a) The success fractions (seed 100+m per m, T = 20 trials) are: m=8: 0/20, m=12: 1/20, m=16: 4/20, m=20: 6/20, m=24: 16/20, m=28: 20/20, m=32: 20/20, m=40: 20/20. Recovery is essentially impossible below m ≈ 16 and perfect from m = 28.
+(b) The plot shows a sharp transition: the success fraction rises from 0 to 1 across m ∈ [16, 28], with the heuristic K log(n/K) = 5 log(128/5) ≈ 16.2 marking where recovery first becomes possible.
+(c) The smallest m with success fraction 1.0 is 28, about 1.7× the heuristic value. The heuristic is a guide, not an exact threshold: the constant hidden in m ≳ K log(n/K) is an absolute constant, and empirically it lands near 1.7 for this setup.
+
+**Answer:** smallest m with success fraction 1.0 = 28 (heuristic K log(n/K) ≈ 16.2)
+
+**Checks:**
+- success fraction at m = 16: expected 0.2 ± 0.0
+- success fraction at m = 24: expected 0.8 ± 0.0
+- success fraction at m = 28: expected 1.0 ± 0.0
+- success fraction at m = 40: expected 1.0 ± 0.0
+
+**Reference code.**
+
+```python
+import numpy as np
+from scipy.optimize import linprog
+
+def bp_solve(A, b):
+    m, n = A.shape
+    c = np.ones(2 * n)
+    Aeq = np.hstack([A, -A])
+    res = linprog(c, A_eq=Aeq, b_eq=b, bounds=(0, None), method='highs')
+    return res.x[:n] - res.x[n:]
+
+n, K, T = 128, 5, 20
+ms = [8, 12, 16, 20, 24, 28, 32, 40]
+
+for m in ms:
+    rng = np.random.default_rng(100 + m)
+    succ = 0
+    for t in range(T):
+        x = np.zeros(n)
+        x[rng.choice(n, K, replace=False)] = rng.uniform(0.5, 1.0, K)
+        A = rng.standard_normal((m, n))
+        b = A @ x
+        xh = bp_solve(A, b)
+        supp = np.abs(xh) > 1e-4
+        if np.array_equal(np.sort(np.nonzero(x)[0]), np.sort(np.nonzero(supp)[0])):
+            succ += 1
+    print(f'm={m:3d}: success {succ}/{T}')
+```
+
+## llm-training / 01-introduction
+
+### 01-1
+
+Source: nb/courses/llm-training/01-introduction.ipynb, cell 17.
+
+**Solution.** A fixed seed makes the same mistake repeatable; it does not make the mistake valid. If two chunks from one document are assigned independently, a validation chunk can be predicted using phrase, topic, or local continuation information present in the training chunk. The evaluation examples are then dependent on training examples, so the measured loss mixes transfer with recognition.
+
+A document-identity invariant is
+
+$$
+\{d(x):x\in D_{\mathrm{train}}\}\cap\{d(x):x\in D_{\mathrm{validation}}\}=\varnothing.
+$$
+
+A canonical-content invariant is
+
+$$
+\{h(x):x\in D_{\mathrm{train}}\}\cap\{h(x):x\in D_{\mathrm{validation}}\}=\varnothing,
+$$
+
+where `h` hashes the normalized text. The first catches chunks crossing a document boundary; the second catches duplicate documents with different identifiers or surface formatting. Both should be checked because either alone leaves a leakage path.
+
+**Checks.** A clean split has empty intersections for both sets. A deliberately contaminated fixture should fail at least one assertion and should be reported as a pipeline test, not as held-out generalization.
+
+### 01-2
+
+Source: nb/courses/llm-training/01-introduction.ipynb, cell 20.
+
+**Solution.** Canonicalize before hashing, count each canonical string, and count only groups with frequency at least two.
+
+```python
+from collections import Counter
+from hashlib import sha256
+import re
+
+
+def duplicate_group_count(texts):
+    def canonical(text):
+        return re.sub(r"\s+", " ", text.strip()).casefold()
+
+    hashes = [sha256(canonical(text).encode("utf-8")).digest() for text in texts]
+    counts = Counter(hashes)
+    return sum(count >= 2 for count in counts.values())
+
+
+assert duplicate_group_count(["A  B", "a b", "different"]) == 1
+assert duplicate_group_count(["one", "two"]) == 0
+```
+
+**Interpretation.** Hashing the canonical representation makes the equivalence relation explicit. A production report should retain the member document IDs for every group, not only this count, so a reviewer can inspect false positives and decide whether the group should be assigned as one split unit.
+
+### 01-3
+
+Source: nb/courses/llm-training/01-introduction.ipynb, cell 23.
+
+**Solution.** Count the row-level source field without collapsing the rows into separate datasets.
+
+\`\`\`python
+def source_counts(records):
+    counts = {}
+    for record in records:
+        source_kind = record["source_kind"]
+        counts[source_kind] = counts.get(source_kind, 0) + 1
+    return counts
+
+rows = [
+    {"source_kind": "language"},
+    {"source_kind": "mathematics"},
+    {"source_kind": "generated-proof"},
+    {"source_kind": "generated-proof"},
+]
+assert source_counts(rows) == {
+    "language": 1,
+    "mathematics": 1,
+    "generated-proof": 2,
+}
+\`\`\`
+
+The shared dataset manifest identifies one reproducible training artifact, while
+the row-level source kind preserves provenance for filtering and evaluation.
+Without it, a later loss or proof-validity result could not be attributed to
+the source mixture that produced it.
+
+## llm-training / 02-tokenization
+
+### 02-1
+
+Source: nb/courses/llm-training/02-tokenization.ipynb, cell 26.
+
+**Solution.** The valid start positions are 0 and 3 because a window needs four input tokens and four shifted targets. The targets are the input slice shifted one place to the right.
+
+```python
+windows = make_windows(range(10), context_length=4, stride=3)
+assert [(x.tolist(), y.tolist()) for x, y in windows] == [
+    ([0, 1, 2, 3], [1, 2, 3, 4]),
+    ([3, 4, 5, 6], [4, 5, 6, 7]),
+]
+for inputs, targets in windows:
+    assert np.array_equal(targets, inputs + 1)
+    assert all(target > input_token for input_token, target in zip(inputs, targets))
+```
+
+The first assertion checks the complete expected batch. The second checks the shift at every position; no target is copied from the same input position. A causal attention mask separately enforces that position `t` cannot read key positions greater than `t`, so correct windows and correct attention are two distinct invariants.
+
+### 02-2
+
+Source: nb/courses/llm-training/02-tokenization.ipynb, cell 28.
+
+**Solution.** UTF-8 encodes `é` as the two bytes `0xC3 0xA9`, while the character tokenizer represents it as one character. The ASCII `x` uses one byte and one character, so the string has two characters and three bytes. Its character-to-byte token ratio is therefore $2/3$.
+
+```python
+text = "éx"
+character_tokens = CharacterTokenizer(text).encode(text)
+byte_tokens = ByteTokenizer().encode(text)
+assert len(character_tokens) == 2
+assert len(byte_tokens) == 3
+assert len(character_tokens) / len(byte_tokens) == 2 / 3
+assert ByteTokenizer().decode(byte_tokens) == text
+```
+
+The word tokenizer does not promise exact whitespace or capitalization recovery. Its `split()` operation discards the original separators, and its vocabulary maps unseen words to `<unk>`. Its round trip is only exact for the normalized, in-vocabulary word sequence declared by its implementation.
+
+### 02-3
+
+Source: nb/courses/llm-training/02-tokenization.ipynb, cell 31.
+
+**Solution.** Look up every required name first, then compare the number of IDs with the number of distinct IDs.
+
+\`\`\`python
+def validate_special_ids(manifest, required_tokens):
+    try:
+        ids = [manifest.special_tokens[token] for token in required_tokens]
+    except KeyError:
+        return False
+    return len(ids) == len(set(ids))
+
+required = ["<|document|>", "<|proof|>", "<|assistant|>", "<|tool_call|>"]
+assert validate_special_ids(
+    type("Manifest", (), {"special_tokens": {
+        "<|document|>": 1,
+        "<|proof|>": 2,
+        "<|assistant|>": 3,
+        "<|tool_call|>": 4,
+    }})(),
+    required,
+)
+\`\`\`
+
+The token names and their IDs are part of the tokenizer identity. A later run
+must not silently substitute a different map, because every stored model
+embedding and output row would then refer to a different symbol.
+
+## llm-training / 03-baselines
+
+### 03-1
+
+Source: nb/courses/llm-training/03-baselines.ipynb, cell 22.
+
+**Solution.** For one example, write $p_v=\exp(z_v)/\sum_u\exp(z_u)$ and let $e_y$ be the one-hot target. Differentiating $-\log p_y$ gives
+
+$$
+\frac{\partial(-\log p_y)}{\partial z_v}=p_v-e_{y,v}.
+$$
+
+The mean over $B$ examples contributes the factor $1/B$:
+
+$$
+\frac{\partial\mathcal{L}}{\partial z_i}=\frac{p_i-e_{y_i}}{B}.
+$$
+
+For $z_i=x_iW+b$, the chain rule produces
+
+$$
+\frac{\partial\mathcal{L}}{\partial W}=X^\top\frac{\partial\mathcal{L}}{\partial z},\qquad
+\frac{\partial\mathcal{L}}{\partial b}=\sum_i\frac{\partial\mathcal{L}}{\partial z_i}.
+$$
+
+The same `dlogits` array is used in both expressions, so the batch factor affects both gradients. Omitting it makes the update depend on batch size even when the mean loss is unchanged, altering the effective learning rate.
+
+### 03-2
+
+Source: nb/courses/llm-training/03-baselines.ipynb, cell 24.
+
+**Solution.** Greedy decoding selects index `0` and has support `{0}`. Top-k sampling with `k=2` retains indices `{0, 1}` and assigns index `2` probability zero. Temperature divides every logit by the same positive scalar, so the ordering stays `0 > 1 > 2`; increasing the temperature reduces the logit gaps and makes the retained distribution flatter.
+
+```python
+logits = np.array([2.0, 1.0, 0.0])
+rng = np.random.default_rng(3)
+assert sample_next(logits, rng, top_k=1) == 0
+assert all(sample_next(logits, np.random.default_rng(seed), top_k=2) in {0, 1}
+           for seed in range(20))
+low = softmax(logits / 0.5)
+high = softmax(logits / 2.0)
+assert np.argmax(low) == np.argmax(high) == 0
+assert high[0] - high[1] < low[0] - low[1]
+```
+
+Temperature changes uncertainty after the model has produced logits; it does not retrain the model or change the argmax ordering for positive temperatures.
+
+### 03-3
+
+Source: nb/courses/llm-training/03-baselines.ipynb, cell 27.
+
+**Solution.** The bigram model has one categorical row per preceding token, so it consumes one ID per example. The MLP concatenates all context embeddings, so it needs the complete window.
+
+\`\`\`python
+def baseline_input_shapes(context_inputs, bigram_inputs, context_length):
+    return (
+        bigram_inputs.ndim == 1
+        and bigram_inputs.shape[0] == context_inputs.shape[0],
+        context_inputs.ndim == 2
+        and context_inputs.shape[1] == context_length,
+    )
+
+assert baseline_input_shapes(
+    context_inputs_shape := type("Shape", (), {
+        "ndim": 2,
+        "shape": (10, 3),
+    })(),
+    type("Shape", (), {"ndim": 1, "shape": (10,)})(),
+    3,
+) == (True, True)
+\`\`\`
+
+A direct assertion such as
+`assert context_inputs.shape[1] == context_length` prevents a silently
+broadcast or truncated receptive field from changing the baseline comparison.
+
+## llm-training / 04-transformer
+
+### 04-1
+
+Source: nb/courses/llm-training/04-transformer.ipynb, cell 23.
+
+**Solution.** Construct one hidden sequence, run attention, add a large perturbation to the final row, and compare all earlier output rows.
+
+```python
+rng = np.random.default_rng(404)
+hidden = rng.normal(size=(5, 6))
+weights = [rng.normal(scale=0.2, size=(6, 6)) for _ in range(4)]
+original = single_head_attention(hidden, *weights)[0]
+perturbed = hidden.copy()
+perturbed[-1] += 100.0
+changed = single_head_attention(perturbed, *weights)[0]
+np.testing.assert_allclose(changed[:-1], original[:-1], atol=1e-10)
+```
+
+With a causal mask, an earlier query has no edge to the final key, so the final row can affect only itself and later rows. Without the mask, the final key and value receive nonzero softmax weight for earlier queries; the large perturbation changes their outputs and exposes future information.
+
+### 04-2
+
+Source: nb/courses/llm-training/04-transformer.ipynb, cell 25.
+
+**Solution.** A plain branch has Jacobian $A$, so a depth-$L$ stack multiplies $A_L\cdots A_1$. A residual branch has Jacobian $I+A$, which includes an identity route even when the learned branch is small. In the controlled experiment, normalization reduces the branch gain, so the pre-norm residual configuration uses products close to $I$ rather than repeatedly multiplying a contraction or a large perturbation.
+
+```python
+plain = gradient_norm_by_depth(12, residual=False, normalized=False)
+pre_norm = gradient_norm_by_depth(12, residual=True, normalized=True)
+assert pre_norm > plain
+```
+
+The value is a linearized mechanism experiment, not an exact Transformer training prediction. It isolates why identity paths preserve signal and why controlling branch scale reduces depth-dependent amplification.
+
+### 04-3
+
+Source: nb/courses/llm-training/04-transformer.ipynb, cell 28.
+
+**Solution.** Compare all earlier logits after changing only the final input, compare the embedding and output weight storage, and compare logits before and after loading the state dictionary.
+
+\`\`\`python
+def decoder_checks(model, original_logits, changed_logits, reloaded_logits):
+    causal = torch.testing.assert_close(
+        original_logits[:, :-1], changed_logits[:, :-1], atol=1e-6, rtol=1e-6
+    ) is None
+    tied = model.token_embedding.weight.data_ptr() == model.lm_head.weight.data_ptr()
+    serialized = torch.testing.assert_close(
+        original_logits, reloaded_logits, atol=1e-6, rtol=1e-6
+    ) is None
+    return causal, tied, serialized
+\`\`\`
+
+The intervention tests the complete forward path, including value mixing and
+residual blocks. A triangular weight matrix alone does not detect a later
+broadcast, transpose, or output path that leaks future information.
+
+## llm-training / 05-pretraining
+
+### 05-1
+
+Source: nb/courses/llm-training/05-pretraining.ipynb, cell 23.
+
+**Solution.** Exact resumption requires the parameter arrays, the update position, and the state of every random generator that controls future data or model randomness. The update position selects the correct schedule value, while the generator state selects the same next mini-batch. Restoring only weights can therefore follow a different trajectory even with the same nominal seed.
+
+This chapter stores those fields as `parameters`, `step`, and `rng_state` in `save_checkpoint`. `load_checkpoint` copies the arrays and installs the saved bit-generator state into a new generator. The equality assertion after a split run compares every final array with an uninterrupted run, which tests the combined state rather than just one serialized value.
+
+### 05-2
+
+Source: nb/courses/llm-training/05-pretraining.ipynb, cell 25.
+
+**Solution.** Target alignment can be checked with a short prefix of the chapter's training text. The first target must be the token immediately after the first context window.
+
+```python
+short = train_text[:CONTEXT_LENGTH + 2]
+small_inputs, small_targets = make_examples(short, vocabulary, CONTEXT_LENGTH)
+encoded = np.asarray([vocabulary[c] for c in short])
+assert np.array_equal(small_inputs[0], encoded[:CONTEXT_LENGTH])
+assert small_targets[0] == encoded[CONTEXT_LENGTH]
+```
+
+A separate validation measurement should build windows from `validation_text`, not from an index sampled out of `train_inputs`. A structural check can compare the window tuples:
+
+```python
+train_windows = {tuple(row) + (int(target),) for row, target in zip(train_inputs, train_targets)}
+validation_windows = {tuple(row) + (int(target),) for row, target in zip(validation_inputs, validation_targets)}
+assert not train_windows & validation_windows
+```
+
+The first check catches a shifted-target bug. The second makes the split boundary inspectable; a finite validation loss alone cannot prove that no training examples were reused.
+
+### 05-3
+
+Source: nb/courses/llm-training/05-pretraining.ipynb, cell 28.
+
+**Solution.** The next document's first token is visible after EOS in the packed stream, but predicting it from the previous document would train an artificial cross-document continuation. Keep the token for rectangular packing and mask its loss.
+
+\`\`\`python
+def boundary_loss_invariant(valid_mask, loss_mask):
+    return all(
+        not loss or valid
+        for valid_row, loss_row in zip(valid_mask, loss_mask)
+        for valid, loss in zip(valid_row, loss_row)
+    )
+\`\`\`
+
+The useful count invariant is
+`sum(loss_mask) <= sum(valid_mask)`; a padded or boundary-masked
+position must never contribute to the objective.
+
+## llm-training / 06-optimization
+
+### 06-1
+
+Source: nb/courses/llm-training/06-optimization.ipynb, cell 17.
+
+**Solution.** AdamW maintains
+
+$$
+m_t=\beta_1m_{t-1}+(1-\beta_1)g_t,
+\qquad
+v_t=\beta_2v_{t-1}+(1-\beta_2)g_t^2.
+$$
+
+Because both states start at zero, their early values are biased toward zero. Bias correction divides them by $1-\beta_1^t$ and $1-\beta_2^t$. At step one, $\hat m_1=m_1/(1-\beta_1)=g_1$ and $\hat v_1=v_1/(1-\beta_2)=g_1^2$.
+
+The AdamW parameter update is
+
+$$
+\theta_{t+1}=\theta_t-\eta\frac{\hat m_t}{\sqrt{\hat v_t}+\epsilon}-\eta\lambda\theta_t.
+$$
+
+The final term is applied directly to the current parameter after the adaptive gradient step. It is not included in the gradient moment estimates, which is what makes the decay decoupled.
+
+```python
+theta = np.array([2.0, -1.0])
+gradient = np.array([0.5, -0.25])
+updated, first, second = adamw_update(
+    theta.copy(), gradient, np.zeros(2), np.zeros(2), step=1,
+    learning_rate=0.1, weight_decay=0.1
+)
+assert np.all(np.isfinite(updated))
+assert np.all(first != 0.0)
+assert np.all(second > 0.0)
+```
+
+### 06-2
+
+Source: nb/courses/llm-training/06-optimization.ipynb, cell 19.
+
+**Solution.** The processed-token estimate is
+
+$$
+16\times128\times250=512{,}000\text{ tokens}.
+$$
+
+The same 250 updates with batch size 4 would process $4\times128\times250=128{,}000$ tokens. If both runs were described only as one or two epochs, the comparison would hide the fourfold difference in examples and tokens per update. Report batch size, sequence length, updates, examples, and tokens; use epochs only when the data traversal itself is the controlled quantity.
+
+```python
+batch_size = 16
+sequence_length = 128
+updates = 250
+assert batch_size * sequence_length * updates == 512_000
+
+### 06-3
+
+Source: nb/courses/llm-training/06-optimization.ipynb, cell 22.
+
+**Solution.** Warmup increases the learning rate linearly for the first two updates; the cosine phase then decays from the base rate toward the configured minimum. The schedule is indexed by updates even when each update processes a different number of tokens.
+
+\`\`\`python
+def schedule_report(batch_size, context_length, updates):
+    return {
+        "updates": updates,
+        "examples": batch_size * updates,
+        "tokens": batch_size * context_length * updates,
+    }
+
+assert schedule_report(4, 128, 6)["tokens"] == 3072
+\`\`\`
+
+Report batch size, sequence length, updates, examples, and processed tokens.
+Epochs alone hide the fact that a larger batch changes the token budget per
+optimizer step.
+
+## llm-training / 07-evaluation
+
+### 07-1
+
+Source: nb/courses/llm-training/07-evaluation.ipynb, cell 23.
+
+**Solution.** With one prediction per bin, the absolute calibration gaps are
+
+$$
+|1-0.2|=0.8,\qquad |0-0.4|=0.4,\qquad |0-0.9|=0.9.
+$$
+
+Each bin has weight $1/3$, so
+
+$$
+\operatorname{ECE}=\frac{0.8+0.4+0.9}{3}=0.7.
+$$
+
+The prediction with confidence $0.9$ is incorrect, so its empirical accuracy is zero and its confidence exceeds accuracy by $0.9$. That bin is overconfident.
+
+```python
+confidences = np.array([0.2, 0.4, 0.9])
+correct = np.array([1, 0, 0])
+assert np.isclose(expected_calibration_error(confidences, correct, bin_count=3), 0.7)
+
+### 07-2
+
+Source: nb/courses/llm-training/07-evaluation.ipynb, cell 25.
+
+**Solution.** A high distinct-2 score means that generated bigrams vary across the sample set. The samples can still all be factually wrong, fail a required format, or be poorly calibrated. Diversity is an output-variation measurement, not a task-success measurement.
+
+N-gram overlap compares generated local sequences with the training corpus. High overlap at longer orders is evidence of reuse, although it can also arise from a shared formula or common phrase. A canary probe inserts a unique sequence and tests its conditional recovery from a specified prefix, comparing a model trained with the canary against one trained without it. That controlled contrast gives more direct evidence of memorization of the inserted string.
+
+```python
+samples = ["new red birds fly".split(), "small green fish swim".split()]
+assert distinct_n(samples, 2) > 0.0
+assert ngram_overlap(samples[0], training_sequences, n=3) == 0.0
+```
+
+### 07-3
+
+Source: nb/courses/llm-training/07-evaluation.ipynb, cell 28.
+
+**Solution.** The metrics have different inputs and claims: likelihood scores masked token prediction, while proof validity parses and verifies complete proof objects. They must remain independently versioned so changing one evaluator cannot silently change the meaning of a stored report.
+
+\`\`\`python
+def evaluator_regression(lower_perplexity, proof_validity):
+    return lower_perplexity and proof_validity >= 0.95
+
+assert evaluator_regression(True, 1.0)
+assert not evaluator_regression(True, 0.7)
+\`\`\`
+
+A model can lower validation loss while producing syntactically invalid or
+logically invalid proofs. The verifier report catches that regression; a
+single perplexity scalar does not.
+
+## llm-training / 08-sft
+
+### 08-1
+
+Source: nb/courses/llm-training/08-sft.ipynb, cell 15.
+
+The response-only mask is [0, 0, 1, 1]. Padding positions receive mask zero as well. The denominator is the number of unpadded response tokens, so prompt and padding tokens contribute neither loss nor gradient.
+
+### 08-2
+
+Source: nb/courses/llm-training/08-sft.ipynb, cell 17.
+
+The serializer emits role markers, content, and an end-of-turn marker while recording each role span. The mask is true for assistant content and its end-of-turn marker, and false for user content, role markers, and padding. Deriving it from spans keeps the objective aligned when the template changes; hard-coded indices silently drift.
+
+## llm-training / 09-preferences
+
+### 09-1
+
+Source: nb/courses/llm-training/09-preferences.ipynb, cell 19.
+
+Because length predicts the preference label perfectly on the training set, a reward model can approach zero loss by scoring longer responses higher without representing quality at all. A detecting held-out pair consists of a concise correct answer as the preferred response and a padded, equally correct but twice-as-long answer as the rejected one, scored by a ground-truth correctness evaluator. A length-confounded reward model ranks the long response higher; the disagreement between the reward ranking and the evaluator ranking is the measurement of the confound.
+
+### 09-2
+
+Source: nb/courses/llm-training/09-preferences.ipynb, cell 21.
+
+The reference log-ratios measure how much the policy moves toward the preferred response relative to a frozen anchor, while subtracting the rejected ratio creates a pairwise margin. Beta scales the margin and therefore the strength of the preference update; it does not create an absolute quality score.
+
+## llm-training / 10-rl
+
+### 10-1
+
+Source: nb/courses/llm-training/10-rl.ipynb, cell 5.
+
+This is reward hacking caused by a weak specification. Fix the verifier so it checks the actual answer with an independent test, and report the original checker score beside the ground-truth score to expose the gap.
+
+### 10-2
+
+Source: nb/courses/llm-training/10-rl.ipynb, cell 7.
+
+Subtracting the sampled group mean removes a prompt-local baseline and reduces variance without a learned critic. The training reward must be compared with a held-out ground-truth evaluator at matched checkpoints; a rising weak-checker score with a flat ground-truth score is reward hacking.
+
+## llm-training / 11-tools
+
+### 11-1
+
+Source: nb/courses/llm-training/11-tools.ipynb, cell 5.
+
+The tool must be appropriate and exist, measured by exact tool-choice accuracy; arguments must satisfy the schema, measured by schema-validity rate; and calling must be the right decision, measured by when-to-call accuracy or false-call rate.
+
+### 11-2
+
+Source: nb/courses/llm-training/11-tools.ipynb, cell 7.
+
+Episode one: a request that needs arithmetic where the model calls get_weather. Tool choice is wrong, so exact tool-choice accuracy fails, but if the arguments happen to satisfy the weather schema, schema-validity still passes. Episode two: a weather request where the model calls get_weather with a missing required city field. Tool choice is correct, so tool-choice accuracy passes, while the schema-validity rate fails. Episode three: a question answerable from the model own knowledge, such as the capital of Norway, where the model still calls a tool. Schema and choice may both be fine, so only when-to-call accuracy and false-call rate catch it.
+
+### 11-3
+
+Source: nb/courses/llm-training/11-tools.ipynb, cell 9.
+
+Schema validity fails while tool choice may still be correct. The registry should reject execution with a missing_argument error and record the missing field, so a subsequent recovery turn can be evaluated separately from tool-choice accuracy.
+
+## llm-training / 12-lora
+
+### 12-1
+
+Source: nb/courses/llm-training/12-lora.ipynb, cell 5.
+
+With one factor zero, the low-rank update BA is zero at initialization. The adapted layer therefore computes exactly the base layer before learning begins, making the adapter a controlled perturbation.
+
+### 12-2
+
+Source: nb/courses/llm-training/12-lora.ipynb, cell 7.
+
+Full fine-tuning trains 4096 times 4096, about 16.8M parameters. Rank-8 LoRA trains A (8 times 4096) plus B (4096 times 8), which is 65,536 parameters, about 0.4 percent of full tuning. The comparison omits the frozen base weights, which still consume memory and compute at every forward pass; the fixed scale alpha/r, which is not trained; any bias terms; and every other layer where adapters may or may not be applied, so the total trainable fraction depends on which modules are wrapped.
+
+### 12-3
+
+Source: nb/courses/llm-training/12-lora.ipynb, cell 9.
+
+First compare the wrapped model with the base model immediately after injection; zero-initialized B must make the outputs equal. Then merge and unmerge the low-rank update and verify outputs return to the pre-merge values. Also report trainable adapter parameters separately from frozen base parameters.
+
+## llm-training / 13-failure-modes
+
+### 13-1
+
+Source: nb/courses/llm-training/13-failure-modes.ipynb, cell 5.
+
+No. Probe accuracy establishes that information is represented, not that the policy reads it. Ablate or patch the candidate activation and measure target behavior plus unrelated behavior on a held-out checkpoint.
+
+### 13-2
+
+Source: nb/courses/llm-training/13-failure-modes.ipynb, cell 7.
+
+Checker: award full reward to any response containing the substring "verified", regardless of content. Shortcut: the policy learns to append the word "verified", so training reward saturates. Held-out test: a set of prompts where correct answers are scored by a ground-truth evaluator that reads only the content, plus a prompt set where appending "verified" is explicitly wrong. Proxy compliance is the pass rate on the weak checker; objective compliance is the pass rate on the ground-truth evaluator; the gap between the two at matched checkpoints is the hacking rate. If the gap widens over training, the policy is exploiting the specification.
+
+### 13-3
+
+Source: nb/courses/llm-training/13-failure-modes.ipynb, cell 9.
+
+The output only satisfies the weak substring condition, so its score says the evaluator accepted a shortcut, not that the intended behavior was achieved. Compare the weak-evaluator reward with the independent ground-truth compliance score at the same checkpoint; their disagreement is the hacking gap.
+
+## llm-training / 14-capstone
+
+### 14-1
+
+Source: nb/courses/llm-training/14-capstone.ipynb, cell 6.
+
+Record the checkpoint identity, dataset hash, target-specification or evaluator version, and decoding settings; also record seeds and compute when possible. One score hides distribution shift, stochastic failure, evaluator disagreement, and capability regressions, so the full suite and concrete failures are required.
+
+### 14-2
+
+Source: nb/courses/llm-training/14-capstone.ipynb, cell 8.
+
+Checkpoint identity (hash or version) rules out silently comparing different models under one name. Dataset hashes rule out split drift between the training and evaluation runs. Target-specification and evaluator versions rule out scoring different objectives and calling it the same result. Decoding parameters (temperature, top-k, seed) rule out a result that exists only under one sampling setting. Together they make each number attributable; a single final score cannot be, since it hides distribution shift, stochastic failure, evaluator disagreement, and capability regressions.
+
+### 14-3
+
+Source: nb/courses/llm-training/14-capstone.ipynb, cell 10.
+
+The smoke record verifies interfaces, masks, checkpoints, and evaluators on a small CPU run, but it cannot establish the planned standard-scale quality, multi-seed variance, or hardware cost. Keeping the scale gate preserves the distinction between reproducible contract evidence and an unrun capability claim.

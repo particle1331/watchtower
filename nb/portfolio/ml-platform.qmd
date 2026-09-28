@@ -1,0 +1,33 @@
+---
+title: "ML Platform"
+description: "A compact platform for reproducible training, batch work, and model serving."
+page-layout: article
+---
+
+[← Portfolio](portfolio.ipynb)
+
+This project assembles a small ML platform for a team that needs reproducible
+training, evaluation, scheduled or on-demand batch inference, and observable
+operations without a large platform team. The course develops the implementation
+from a local path toward Azure deployment.
+
+## What it contains
+
+Training and evaluation jobs record their runs and artifacts through MLflow. A
+PostgreSQL results database tracks operational state across job types. Batch jobs
+and an online serving app use versioned model artifacts, while a dashboard exposes
+results and job launches. The repository includes containers, Terraform modules,
+deployment scripts, smoke tests, and CI configuration for Azure Container Apps.
+
+The design keeps execution, model lifecycle, operational state, and serving as
+separate concerns. Managed identities provide machine authentication in the Azure
+path; the local course path can be studied without a cloud deployment.
+
+## Explore the project
+
+- [Source code and setup](https://github.com/particle1331/watchtower/tree/main/projects/ml-platform)
+- [ML Platform course](../courses/ml-platform/index.ipynb)
+
+The infrastructure code describes a deployment path, not a claim that a public
+service is currently running. Reproduction costs depend on the Azure resources
+selected for a run.

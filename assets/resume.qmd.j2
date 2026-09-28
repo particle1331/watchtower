@@ -1,0 +1,83 @@
+---
+title: "Ron Medina ∷ Résumé"
+page-layout: full
+sidebar: false
+---
+
+::: {.resume-overview}
+::: {.resume-summary}
+I am a {{ summary }}
+:::
+
+::: {.resume-contact-links}
+<ul class="resume-card-links">
+<li><a href="assets/resume.pdf"><i class="bi bi-download" aria-hidden="true"></i>PDF résumé</a></li>
+<li><a href="https://github.com/{{ contact.github }}"><i class="bi bi-github" aria-hidden="true"></i>GitHub</a></li>
+<li><a href="https://{{ contact.linkedin }}"><i class="bi bi-linkedin" aria-hidden="true"></i>LinkedIn</a></li>
+<li><span class="resume-contact-item"><i class="bi bi-envelope" aria-hidden="true"></i><span class="contact-value" data-contact="email">Email</span><button type="button" class="copy-contact" data-contact="email" aria-label="Copy email address" title="Copy email address"><i class="bi bi-clipboard" aria-hidden="true"></i></button></span></li>
+<li><span class="resume-contact-item"><i class="bi bi-telephone" aria-hidden="true"></i><span class="contact-value" data-contact="phone">Phone</span><button type="button" class="copy-contact" data-contact="phone" aria-label="Copy phone number" title="Copy phone number"><i class="bi bi-clipboard" aria-hidden="true"></i></button></span></li>
+</ul>
+:::
+
+:::
+
+## Employment History
+
+{% for job in employment + (early_employment or []) %}
+### {{ job.title }} · {{ job.company }}
+*{{ job.dates }}*
+
+{% for b in job.bullets %}
+- {{ b }}
+{% endfor %}
+
+{% endfor %}
+
+## Skills
+
+{% for skill in skills %}
+**{{ skill.name }}**
+
+{% for it in skill.entries %}
+- {{ it }}
+{% endfor %}
+
+{% endfor %}
+
+{% if projects %}
+## Projects
+
+{% for proj in projects %}
+### {{ proj.title }}
+{% for b in proj.bullets %}
+- {{ b }}
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+
+## Education
+
+{% for edu in education %}
+{% if edu.major %}
+
+### {{ edu.institution }}
+*{{ edu.degree }}, Major in {{ edu.major }}* &nbsp; · &nbsp; {{ edu.dates }}.
+
+{% if edu.awards %}- **Awards**: {{ edu.awards }}{% endif %}
+
+{% if edu.thesis %}- **Thesis**: *{{ edu.thesis }}*{% endif %}
+
+{% if edu.courses %}- **Relevant courses**: {{ edu.courses | join(', ') }}{% endif %}
+
+{% else %}
+
+### {{ edu.institution }}
+*{{ edu.degree }} &nbsp; · &nbsp; {{ edu.dates }}*
+
+{{ edu.description }}
+
+{% endif %}
+{% endfor %}
+
+<script src="assets/contact.js"></script>

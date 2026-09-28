@@ -2,8 +2,7 @@
 
 ## Architecture
 This repo is a personal system with three tiers of content with DIFFERENT visibility:
-- `nb/notes/*.ipynb` — atomic, focused explorations: a single definition, technique, or concept with a minimal live demo
-- `nb/articles/*.ipynb` — self-contained long-form articles and deep dives
+- `nb/posts/*.ipynb` — all published writing, from focused notes to long-form articles
 - `nb/courses/` — full course notes
 - `nb/photos/photos.ipynb` — personal photo gallery
 - `projects/<name>/` — code projects (each a uv workspace member)
@@ -26,7 +25,7 @@ to the website using **inline outputs, no re-execution** — so heavy compute
 done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Knowledge base
-- The canonical knowledge base is `nb/notes/*.ipynb`, `nb/articles/*.ipynb`, and `nb/courses/**/*.ipynb`.
+- The canonical knowledge base is `nb/posts/*.ipynb` and `nb/courses/**/*.ipynb`.
 - Raw `.ipynb` JSON is noisy — do NOT `grep`/`read` it directly. Use the
   `wt` wrappers below, which expose cell sources as plain markdown.
 - `.ipynb_checkpoints/` is excluded from listings and resolution.
@@ -40,10 +39,11 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 
 ## Navigation
 - Run `wt map` first to get structured repo layout as JSON.
-- Run `wt ls notes|articles|courses|projects` for plain listings of notebooks.
+- Run `wt ls posts|courses` for notebook listings, or `wt ls projects` for
+  project directories.
 - `<name>` for any cell command (`cat`, `edit-cell`, `append-cell`, `insert-cell`,
-  `remove-cell`, `tag`, `count`, `render`) resolves as: bare stem (`001-testnote`),
-  tier-prefixed stem (`nb/notes/001-testnote`), or full path (`nb/notes/001-testnote.ipynb`).
+  `remove-cell`, `tag`, `count`) resolves as: bare stem (`001-testnote`),
+  tier-prefixed stem (`nb/posts/001-example`), or full path (`nb/posts/001-example.ipynb`).
 
 ## Reading notebooks
 - `wt cat <name>` — print all cells as markdown (`> cell N [code|markdown] ...` headers; `>` marks tool meta, not notebook content).
@@ -64,9 +64,8 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 - `wt cat <name> --index N --context 3` — render cells N-3..N+3; context
   cells are marked `context` in their header. The standard way to see a cell
   with its surroundings before editing.
-- `wt cat <name> --tag solution --decode` — decode solution-tagged cells to
-  plaintext (spoiler opt-in; default `wt cat` shows the stored encoded
-  source). `wt solution <course> <locator>` is the normal way to read one.
+- Existing course solutions are collected in
+  `nb/courses/solutions.qmd`; `wt cat` shows the stored notebook cell source.
 
 ## Agent editing workflow (any coding agent)
 
@@ -139,7 +138,7 @@ opencode, Claude Code, ...). The loop:
   launches a kernel.
 
 ## Importing notebooks
-- `wt import <path.ipynb> notes|articles [<name>]` — copy a notebook produced
+- `wt import <path.ipynb> posts [<name>]` — copy a notebook produced
   elsewhere (Colab, Kaggle, a teammate) into a tier dir, preserving inline
   outputs. Quarto will render with those outputs, no re-execution.
 - `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]` —
@@ -152,11 +151,12 @@ opencode, Claude Code, ...). The loop:
   a bare `# Title` with no frontmatter is kept as-is.
 
 ## Rendering
-- `wt docs [--port <port>]` serves the site on the chosen local port (default
+- `make docs [PORT=<port>]` rebuilds résumé pages and PDF from
+  `assets/resume.yaml`, then serves the site on the chosen local port (default
   :4200; publishing is handled by the `publish.yml` GitHub Action on push to
-  `main`). The command prints the preview URL before blocking.
-- `wt render <tier> <name> | <path.ipynb>` renders one notebook to PDF
-  (`nb/notes/pdf/` or `nb/articles/pdf/`) using inline outputs.
+  `main`). The command prints the PDF path and preview URL before blocking.
+- `make render NOTEBOOK=nb/posts/<name>.ipynb` renders one notebook to PDF
+  under its source directory’s `pdf/` folder using inline outputs.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
   code at render time — it uses whatever outputs already live in the `.ipynb`.
 
@@ -173,7 +173,7 @@ it works. Common traps to avoid regardless: `x in some_list` inside a loop
 (use a `set`), repeated string `+=` in a loop (use `join`), and building
 throwaway intermediate lists you iterate once (use a generator).
 
-**Course & note content (`nb/notes/`, `nb/articles/`, `nb/courses/`).** Here the
+**Post & course content (`nb/posts/`, `nb/courses/`).** Here the
 algorithm is often the lesson, so the priorities differ. Implement the
 complexity you claim: code in a note about an O(n log n) method must actually
 be that — a stray O(n²) is a teaching bug even if the outputs are right. State
@@ -211,22 +211,20 @@ if present (project-specific rules stack on top of these).
 ## Vault (secrets)
 - Secrets live in the OS keyring, accessed via `wt vault`. NEVER commit secret values.
 - `wt vault export` emits export lines — projects use it via
-  `eval $(wt vault export)` or `from watchtower.vault import get_secret`.
+  `eval "$(wt vault export)"` or `from watchtower.vault import get_secret`.
 
-## Course building & problems
+## Course building and exercises
 
-Course scaffolding, index/sidebar/chapter conventions, and the full
-problems-and-solutions authoring workflow (tag-based ids, ROT18-encoded
-solution cells, sanctioned commands) live in the shared skill
-`skills/course-builder/SKILL.md`. Load it whenever creating or extending a
-course under `nb/courses/`. Hard rules it enforces: create problems only via
-`wt add-exercise`, update solutions only via `wt solution-edit`, and run
-`wt check <course>` after any problem/solution work.
+Course scaffolding, index/sidebar/chapter conventions, and exercise authoring
+live in `skills/course-builder/SKILL.md`. Load it whenever creating or
+extending a course under `nb/courses/`. Write new exercise prompts with the
+ordinary `wt` cell commands. Assess answers when requested; new exercises do
+not require stored solutions. Existing solutions are collected in the public
+page `nb/courses/solutions.qmd`.
 
 For a new course or a multi-file course revision, use a dedicated Git worktree
 when the environment permits it so the user's primary checkout and site
-preview remain usable. Run the isolated preview with `.venv/bin/wt docs
---port 4300` (or another unused port) and include the exact URL in progress
+preview remain usable. Run the isolated preview with `make docs PORT=4300` (or another unused port) and include the exact URL in progress
 updates and the final handoff. A separate port without a separate worktree
 does not isolate source files or Quarto's `_site` output. Never reset, clean, or
 overwrite a dirty primary checkout to create the worktree.
@@ -234,22 +232,21 @@ overwrite a dirty primary checkout to create the worktree.
 ## CLI command reference (for the agent)
 - `wt kernels` — list installed Jupyter kernel names and languages; use the
   `name` column with `wt run --kernel`.
-- `wt new note|article <name> [--title <title>]` — scaffold a notebook stub (note or article); <title> defaults to a placeholder derived from <name>
-- `wt new project <name>` — `uv init` workspace member
+- `wt new post <name> [--title <title>]` — scaffold a dated post notebook; <title> defaults to a titleized version of <name>
 - `wt new course <name> <title>` — scaffold `nb/courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
 - `wt new chapter <course> <name> [--title <title>] [--section <name>]` — scaffold a course chapter (notebook) and register it in the course's sidebar in `_quarto.yml`; <title> defaults to a placeholder derived from <name> (sidebar text and notebook frontmatter are independent surfaces — edit either or both after scaffolding)
 - `wt new section <course> <name>` — add a section header to a course's sidebar in `_quarto.yml`
 - `wt map` — JSON repo structure (orientation)
-- `wt ls notes|articles|courses|projects` — list sources in a tier
+- `wt ls posts|courses|projects` — list notebook sources or project directories
 - `wt find <query>` — grep across `.ipynb` cell sources
 - `wt count <name>` — cell count (plan ranges before `--index N:M`)
 - `wt cat <name> [--index N|N:M | --tag foo | --label foo] [--offset O --limit L]
-  [--with-outputs] [--out-offset O --out-limit L] [--context N] [--decode]`
+  [--with-outputs] [--out-offset O --out-limit L] [--context N]`
   — read notebook cells as markdown. `--index` accepts a single 0-based index
   or a Python-style slice (`N:M`, `:M`, `N:`) to scan a range of cells quickly.
   Default per-cell limit is 4096 chars (`--limit 0` = unlimited).
   `--context N` also renders the N cells around each match (marked
-  `context`); `--decode` decodes solution-tagged cells to plaintext.
+  `context`).
 - `wt output <name> --index N [--output K] [--save-dir DIR]` — print text and
   error outputs from one cell and save decoded image outputs for visual
   inspection. The default image directory is `ROOT_PATH / ".tmp"`.
@@ -269,49 +266,42 @@ overwrite a dirty primary checkout to create the worktree.
   — clear stored outputs of code cells (markdown cells skipped). `--from N`
   clears every code cell from index N to the end (handy for a trailing
   section like a problem set); with no locator, all code cells are cleared.
-- `wt problem <course> <locator>` — print a problem statement (plus starter
-  code) from the chapter notebooks. Locator forms: `7.3`, `07-3`, `07 3`,
-  `07-projection-and-orthogonalization 3`, `projection 3`.
-- `wt solution <course> <locator> [--raw]` — print a problem's decoded
-  solution (worked text, answer, checks, reference code). `--raw` prints the
-  stored ROT18-encoded cell source instead.
-- `wt hint <course> <locator> [--level 1|2]` — progressive hint from the
-  solution: level 1 = checks descriptions (no expected values) + first
-  sentence of the worked text; level 2 = full worked text. Never the answer.
-- `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X
-  [--number N]` — append a new problem + solution pair to a chapter. The
-  statement is stored plaintext (tags `problem` + id); the solution is
-  ROT18-encoded into a hidden code cell (tags `solution` + id, `#| echo:
-  false` / `eval: false` / `output: false` header), so plaintext never reaches
-  the notebook through this path. Number defaults to
-  the next one in the chapter. This is the ONLY sanctioned way to add a new
-  exercise, besides `wt solution-edit` for updating an existing solution.
-- `wt solution-edit <course> <locator> --content X` — create or replace a
-  problem's solution cell (encodes on write; plaintext in, encoded stored).
-- `wt check <course>` — validate every chapter: problem cells are markdown and
-  solution cells are hidden code cells, both with unique id tags matching
-  `<chapter>-<n>`; each problem has a solution pair (and vice versa) in
-  consecutive cells (problem, optional starter code cell, solution); solutions
-  are wrapped and encoded. Exit 1 on any warning.
 - `wt diff <name> [--base REF]` — markdown diff of a notebook vs a git ref
   (default HEAD): both sides rendered like `wt cat` (JSON-stripped, no
-  outputs; solutions decoded), so the diff shows content, not `.ipynb` JSON.
+  outputs), so the diff shows stored cell source, not `.ipynb` JSON.
   Added/removed lines are highlighted in interactive terminals; output stays
   plain when piped, redirected, or `NO_COLOR` is set.
 - `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code cells
   in-place via nbclient, writing outputs back; exit code 1 if any cell errored.
   `--index N` runs the notebook prefix through that cell in a fresh kernel;
   prior state is available and only the target cell's outputs are written back.
-- `wt import <path.ipynb> notes|articles [<name>]` — import an external notebook
+- `wt import <path.ipynb> posts [<name>]` — import an external notebook
   (Colab/Kaggle) into a flat tier
 - `wt import <path.ipynb> courses <course> [<chapter>] [--section <name>]`
   — import as a chapter of an existing course (copies into the course dir and
   registers in the course's sidebar)
-- `wt render <tier> <name> | <path.ipynb>` — render notebook -> PDF
-- `wt resume` — render `assets/resume.yaml` -> `assets/resume.tex` + `index.qmd`
-  via Jinja2 templates, then `pdflatex` -> `assets/resume.pdf` (builds in a
+
+- `wt vault set <key> <value>` — store a secret in the OS keyring
+- `wt vault get <key>` / `wt vault rm <key>` — retrieve/delete a secret
+- `wt vault ls` — list stored keys
+- `wt vault export` — emit shell export statements
+
+## Repository tasks (Make)
+
+`wt` focuses on notebook work and retains the core `vault` tool. Run these tasks from the repository root; Make uses
+`.venv/bin/python` automatically. Implement repository tasks as standalone
+scripts under `scripts/`, with no imports from `watchtower`; keep notebook
+operations and core tools in `src/watchtower/`. `make` or `make help` lists
+the workflows.
+
+- `make project NAME=<name>` — scaffold a uv workspace project
+- `make render NOTEBOOK=<path.ipynb>` — render a notebook to PDF in its
+  source directory’s `pdf/` folder
+- `make resume` — render `assets/resume.yaml` plus published post metadata
+  -> `assets/resume.tex`, `index.qmd`, `resume.qmd`, `posts.qmd`, and
+  `assets/contact.js` via Jinja2 templates, then `pdflatex`
+  -> `assets/resume.pdf` (builds in a
   temp dir). The YAML is the single source; edit it, never the generated
   `.tex`/`.qmd`.
-- `wt docs [--port <port>]` — serve the site on the chosen port (blocking;
+- `make docs [PORT=<port>]` — rebuild résumé pages and PDF from `assets/resume.yaml`, then serve the site (blocking;
   default :4200)
-- `wt vault get|set|rm <key>` / `wt vault ls` — secret management

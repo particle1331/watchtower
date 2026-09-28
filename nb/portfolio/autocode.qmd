@@ -1,0 +1,31 @@
+---
+title: "Autocode"
+description: "A local-first browser application for a coding agent."
+page-layout: article
+---
+
+[← Portfolio](portfolio.ipynb)
+
+Autocode gives the headless agent harness a browser interface and a durable place to
+inspect its work. A user can create a session, send a task, follow events as they
+arrive, and return to the same timeline after refreshing the page.
+
+## What it contains
+
+The application combines a semantic HTML and JavaScript frontend with FastAPI REST
+routes and a WebSocket event stream. A shared application service supports both the
+web and command-line interfaces. An append-only journal records events, while a
+SQLite projection makes sessions queryable. The project also includes artifacts,
+search, sync, replay, background jobs, and update and operations paths.
+
+The default runner is deterministic, so the complete request and event flow can be
+tried locally without an API key. A live agent-harness adapter is available when a
+provider is configured.
+
+## Explore the project
+
+- [Source code and setup](https://github.com/particle1331/watchtower/tree/main/projects/autocode)
+- [Shipping the Agent course](../courses/autocode/index.ipynb)
+
+The local implementation is the demonstrated path. PostgreSQL, S3-compatible
+storage, managed identity, and a reverse proxy are separate production adapters.

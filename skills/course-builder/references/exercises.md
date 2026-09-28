@@ -1,69 +1,29 @@
-# Course problems and solutions
+# Course exercises
 
-Read this reference before adding, editing, removing, or reviewing course
-problems, starter code, solutions, or hints.
+Read this reference when adding, editing, or reviewing exercise prompts or
+starter code in course chapters. Learner answers can be evaluated in context
+when requested; a stored solution is not required for each prompt.
 
-## Identity and layout
+## Authoring
 
-Exercise identity is stored in Jupyter tags; pairing is by shared id, never by
-position.
+Place a `## Exercises` section after the chapter's summary or last teaching
+section. Give each exercise a clear Markdown heading and a self-contained
+statement. Include any data, assumptions, expected artifact, and checks the
+learner needs to attempt it. Put optional starter code in the next code cell.
 
-Every chapter's problem set belongs under a dedicated `## Exercises` section,
-placed after the chapter's summary or final teaching section and before the
-first problem statement. Do not leave problems as an unheaded continuation of
-`## Summary`.
+Use `wt cat <chapter> --context N` to inspect the surrounding cells. Add or
+revise prompts with `wt insert-cell`, `wt append-cell`, and `wt edit-cell`; use
+`wt tag` when a stable `problem` tag helps locate an exercise later. Re-read
+indices after inserting or removing cells. Run edited starter code and inspect
+its stored output. Review the notebook with `wt diff` and render the chapter.
 
-- A problem statement is a Markdown cell tagged `problem` and `<chapter>-<n>`,
-  for example `07-3`.
-- Its heading is `### [P<NN>.<N>] Title`, where `NN` is the chapter number and
-  `N` is the problem number.
-- Optional starter code immediately follows the statement.
-- The solution is a code cell tagged `solution` and the same id, directly after
-  the statement or starter.
+For assessment, read the prompt, learner response, and relevant chapter or
+project code, then evaluate the answer against the stated requirements. Give
+specific feedback and checks. Do not generate a hidden answer cell by default.
 
-The solution starts with:
+## Existing solutions
 
-```text
-#| echo: false
-#| eval: false
-#| output: false
-```
-
-Its body is stored with ROT18 obfuscation: letters shifted by 13, digits by 5,
-and every non-empty line prefixed with `# `. This is a spoiler guard, not
-security. Blank lines remain blank.
-
-## Sanctioned commands
-
-- Add an exercise only with
-  `wt add-exercise <course> <chapter> --statement X [--starter X] --solution X`.
-  It assigns the next number and encodes the solution before writing.
-- Update or create an existing solution only with
-  `wt solution-edit <course> <locator> --content X`.
-- Read a decoded solution with `wt solution <course> <locator>` or
-  `wt cat <path> --tag <id> --decode`.
-- Read progressive hints with `wt hint <course> <locator> --level 1|2`.
-  Level 1 returns check descriptions without expected values plus the first
-  sentence of the worked text; level 2 returns the full worked text. Neither
-  level reveals the answer.
-- Remove exercise cells through the `wt` cell commands, highest index first,
-  while preserving pair integrity.
-
-Never write a plaintext solution with `edit-cell`, `insert-cell`, or direct
-notebook manipulation. Never hand-encode a new exercise when the sanctioned
-commands can enforce the invariant. To revise an existing solution, read it
-decoded and write the revised plaintext back through `wt solution-edit`.
-
-Locators such as `7.3`, `07-3`, `07 3`, and `<chapter-stem> 3` resolve to the
-same pair.
-
-## Verification
-
-After any problem or solution change:
-
-1. Run `wt check <course>` and resolve every warning; exit code 1 must be fixed
-   before completion.
-2. Read the problem and decoded solution together.
-3. Execute starter code when applicable.
-4. Confirm the pair remains consecutive: problem, optional starter, solution.
-5. Review the notebook with `wt diff` and render the affected chapter.
+Existing solutions are collected in the public course solutions page at
+`nb/courses/solutions.qmd`. Older chapter notebooks still contain hidden,
+encoded solution cells; preserve those cells when editing nearby exercises.
+`wt cat` shows their stored source, while `wt diff` compares stored source.

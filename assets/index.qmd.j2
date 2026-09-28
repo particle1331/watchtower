@@ -1,24 +1,42 @@
 ---
 title: ""
+pagetitle: "{{ name }} ∷ AI & ML"
 page-layout: full
+sidebar: false
+toc: false
 ---
 
 ::: {.resume-hero}
 
-<canvas class="resume-banner" id="resume-banner"></canvas>
+<canvas class="resume-banner" id="resume-banner" aria-hidden="true"></canvas>
+
+::: {.resume-hero-layout}
 
 ::: {.resume-hero-content}
 
-# {{ name }} ∷ Résumé
+<div class="resume-hero-title" role="heading" aria-level="1">{{ name }}<span class="resume-name-dot">.</span></div>
 
 ::: {.lead}
-AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
+{{ employment[0].title }}
 :::
 
-{{ summary }}
+::: {.resume-intro}
 
-[Download PDF résumé](assets/resume.pdf) · [GitHub](https://github.com/{{ contact.github }}) · [LinkedIn](https://{{ contact.linkedin }}) · [{{ contact.email | html_entities }}]{.underline} · {{ contact.phone }}
+{% for paragraph in homepage_intro %}
+{{ paragraph }}
 
+{% endfor %}
+
+[View my résumé →](resume.qmd)
+
+:::
+
+:::
+
+:::
+
+::: {.resume-hero-links}
+<a href="assets/resume.pdf"><i class="bi bi-download" aria-hidden="true"></i> PDF résumé</a><span class="resume-link-separator" aria-hidden="true">·</span><a href="https://github.com/{{ contact.github }}"><i class="bi bi-github" aria-hidden="true"></i> GitHub</a><span class="resume-link-separator" aria-hidden="true">·</span><a href="https://{{ contact.linkedin }}"><i class="bi bi-linkedin" aria-hidden="true"></i> LinkedIn</a><span class="resume-link-separator" aria-hidden="true">·</span><span class="resume-home-contact"><i class="bi bi-envelope" aria-hidden="true"></i> <span class="contact-value" data-contact="email">Email</span> <button type="button" class="copy-contact" data-contact="email" aria-label="Copy email address" title="Copy email address"><i class="bi bi-clipboard" aria-hidden="true"></i></button></span><span class="resume-link-separator" aria-hidden="true">·</span><span class="resume-home-contact"><i class="bi bi-telephone" aria-hidden="true"></i> <span class="contact-value" data-contact="phone">Phone</span> <button type="button" class="copy-contact" data-contact="phone" aria-label="Copy phone number" title="Copy phone number"><i class="bi bi-clipboard" aria-hidden="true"></i></button></span>
 :::
 
 :::
@@ -31,135 +49,116 @@ AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
     if (!hero || !canvas) return;
 
     var ctx = canvas.getContext('2d');
-    var dpr = window.devicePixelRatio || 1;
-    var nodes = [];
-    var edges = [];
-    var layers = [3, 6, 2];
-    var breathDuration = 5.5; // seconds for one calm fade-in / fade-out breath
-    var breathShape = 0.5;  // <1 = stay visible longer, fade faster near ends
-    var lastBreathIndex = -1;
+    if (!ctx) return;
+    var motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var nodes = Array.from({ length: 90 }, function() {
+      return {
+        x: Math.random(), y: Math.random(),
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.08 + Math.random() * 0.12,
+        radius: 2.25 + Math.random() * 3.6
+      };
+    });
+    var w = 0, h = 0, frame = null;
+    var textBoxes = [];
 
     function resize() {
-      var w = hero.clientWidth;
-      var h = hero.clientHeight;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
-
-      nodes = [];
-      edges = [];
-
-      // Keep the network clustered in the upper-right corner of the hero box.
-      var region = {
-        xMin: w * 0.55,
-        xMax: w * 0.96,
-        yMin: h * 0.01,
-        yMax: h * 0.45
-      };
-
-      layers.forEach(function(count, li) {
-        var x = region.xMin + (region.xMax - region.xMin) * (li / (layers.length - 1));
-        for (var i = 0; i < count; i++) {
-          var y = region.yMin + (region.yMax - region.yMin) * ((i + 1) / (count + 1));
-          nodes.push({
-            x: x,
-            baseY: y,
-            layer: li,
-            r: 3 + Math.random() * 1.5,
-            speed: 0.4 + Math.random() * 0.6,
-            phase: Math.random() * Math.PI * 2,
-            amp: 1.5 + Math.random() * 2
-          });
+      w = hero.clientWidth;
+      h = hero.clientHeight;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var origin = hero.getBoundingClientRect();
+      textBoxes = Array.from(hero.querySelectorAll(
+        '.resume-hero-title, .resume-hero-content p, .resume-hero-links'
+      )).map(function(element) {
+        var box = element.getBoundingClientRect();
+        // Keep the role's quiet area within the name's width so the network
+        // remains visible to the right of the heading.
+        if (element.closest('.lead')) {
+          box = {
+            left: box.left,
+            right: Math.max(box.right, hero.querySelector('.resume-hero-title').getBoundingClientRect().right),
+            top: box.top,
+            bottom: box.bottom
+          };
         }
+        return {
+          left: box.left - origin.left, right: box.right - origin.left,
+          top: box.top - origin.top, bottom: box.bottom - origin.top
+        };
       });
-
-      generateEdges();
-    }
-
-    function generateEdges() {
-      edges = [];
-      var hasInput = {};
-
-      // Input → hidden.
-      for (var i = 0; i < nodes.length; i++) {
-        var a = nodes[i];
-        if (a.layer !== 0) continue;
-        for (var j = 0; j < nodes.length; j++) {
-          var b = nodes[j];
-          if (b.layer === a.layer + 1 && Math.random() < 0.65) {
-            edges.push({ i: i, j: j, layer: a.layer, phase: Math.random() * 0.8 });
-            hasInput[j] = true;
-          }
-        }
-      }
-
-      // Hidden → output only for hidden nodes that received input.
-      for (var i = 0; i < nodes.length; i++) {
-        var a = nodes[i];
-        if (a.layer !== 1 || !hasInput[i]) continue;
-        for (var j = 0; j < nodes.length; j++) {
-          var b = nodes[j];
-          if (b.layer === a.layer + 1 && Math.random() < 0.65) {
-            edges.push({ i: i, j: j, layer: a.layer, phase: Math.random() * 0.8 });
-          }
-        }
-      }
+      if (motion.matches) draw();
     }
 
     function draw() {
-      var w = hero.clientWidth;
-      var h = hero.clientHeight;
-      var t = performance.now() / 1000;
-      var breathIndex = Math.floor(t / breathDuration);
-
-      if (breathIndex !== lastBreathIndex) {
-        generateEdges();
-        lastBreathIndex = breathIndex;
-      }
-
-      var breathProgress = (t % breathDuration) / breathDuration;
-      var breath = Math.pow(Math.sin(breathProgress * Math.PI), breathShape);
-
+      frame = null;
+      var t = motion.matches ? 0 : performance.now() / 1000;
       ctx.clearRect(0, 0, w, h);
 
-      var live = nodes.map(function(n) {
+      var live = nodes.map(function(node) {
         return {
-          x: n.x,
-          y: n.baseY + Math.sin(t * n.speed + n.phase) * n.amp,
-          r: n.r
+          x: node.x * w + Math.sin(t * node.speed + node.phase) * 18,
+          y: node.y * h + Math.cos(t * node.speed * 0.7 + node.phase) * 14,
+          radius: node.radius
         };
       });
 
-      // Animate edge opacity like a signal activating across the network.
-      // The pulse is anchored to the breath cycle so edges fade out cleanly
-      // before the set is re-initialized at the start of the next breath.
-      edges.forEach(function(e) {
-        var a = live[e.i];
-        var b = live[e.j];
-        var pulse = 0.5 + 0.5 * Math.sin(breathProgress * Math.PI * 2 * 2 - e.layer * 1.6 + e.phase);
-        var alpha = (0.25 + 0.5 * pulse) * breath;
-        ctx.strokeStyle = 'rgba(233, 84, 32, ' + alpha + ')';
-        ctx.lineWidth = (1.2 + pulse * 0.8) * breath;
+      var reach = Math.min(185, w * 0.32);
+      live.forEach(function(a, i) {
+        live.slice(i + 1).forEach(function(b) {
+          var distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (distance >= reach) return;
+          ctx.strokeStyle = 'rgba(100, 100, 100, ' + (0.46 * (1 - distance / reach)) + ')';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        });
         ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      });
-
-      live.forEach(function(n) {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(233, 84, 32, 0.65)';
+        ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 100, 100, 0.62)';
         ctx.fill();
       });
 
-      requestAnimationFrame(draw);
+      // Fade the network toward the text side of the hero, leaving it faint
+      // at the column split and fully visible just to its right.
+      var horizontalFade = ctx.createLinearGradient(0, 0, w, 0);
+      horizontalFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      horizontalFade.addColorStop(0.38, 'rgba(0, 0, 0, 0)');
+      horizontalFade.addColorStop(0.425, 'rgba(0, 0, 0, 0.3)');
+      horizontalFade.addColorStop(0.49, 'rgba(0, 0, 0, 1)');
+      horizontalFade.addColorStop(1, 'rgba(0, 0, 0, 1)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.fillStyle = horizontalFade;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+
+      // Keep the network present across the page, but give every text block a
+      // softly cleared region so the reading surface stays quiet.
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.filter = 'blur(22px)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.98)';
+      textBoxes.forEach(function(box) {
+        ctx.fillRect(box.left - 18, box.top - 16,
+          box.right - box.left + 36, box.bottom - box.top + 32);
+      });
+      ctx.restore();
+      if (!motion.matches) frame = requestAnimationFrame(draw);
     }
 
+    new ResizeObserver(resize).observe(hero);
+    motion.addEventListener('change', function() {
+      resize();
+      if (!motion.matches && !frame) draw();
+    });
     resize();
-    window.addEventListener('resize', resize);
-    draw();
+    if (!motion.matches) draw();
+    document.fonts.ready.then(resize);
   }
 
   if (document.readyState === 'loading') {
@@ -167,76 +166,113 @@ AI / ML Engineer ◦ Tinkerer ◦ Lifelong learner
   } else {
     initBanner();
   }
+
+  function initContactCopyButtons() {
+    var contactCodes = {
+      email: [{{ contact.email | char_codes }}],
+      phone: [{{ contact.phone | char_codes }}]
+    };
+
+    function getContact(name) {
+      return contactCodes[name].map(function(code) {
+        return String.fromCharCode(code);
+      }).join('');
+    }
+
+    document.querySelectorAll('.contact-value[data-contact]').forEach(function(contact) {
+      contact.textContent = getContact(contact.getAttribute('data-contact'));
+    });
+
+    document.querySelectorAll('.copy-contact').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var name = button.getAttribute('data-contact');
+        var value = getContact(name);
+        var contact = document.querySelector('.contact-value[data-contact="' + name + '"]');
+        var copiedLabel = button.getAttribute('aria-label').replace(/^Copy /, 'Copied ');
+
+        if (contact) contact.textContent = value;
+
+        function showCopied() {
+          var icon = button.querySelector('i');
+          button.setAttribute('aria-label', copiedLabel);
+          button.setAttribute('title', copiedLabel);
+          button.classList.add('copied');
+          if (icon) icon.className = 'bi bi-check2';
+          window.setTimeout(function() {
+            button.setAttribute('aria-label', copiedLabel.replace(/^Copied /, 'Copy '));
+            button.setAttribute('title', copiedLabel.replace(/^Copied /, 'Copy '));
+            button.classList.remove('copied');
+            if (icon) icon.className = 'bi bi-clipboard';
+          }, 1400);
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(value).then(showCopied);
+          return;
+        }
+
+        var input = document.createElement('textarea');
+        input.value = value;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+        showCopied();
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContactCopyButtons);
+  } else {
+    initContactCopyButtons();
+  }
 })();
 </script>
 
----
+## Featured projects
 
-The sections below mirror the PDF résumé above. More context lives in the
-rest of this site:
+Selected code projects from this repository. Each project page explains the implementation and where to inspect it.
 
-| Section | What it is | Effort |
-|---|---|---|
-| [Portfolio](nb/portfolio/portfolio.ipynb) | Showcased projects | high |
-| [Articles](nb/articles/index.ipynb) | Articles and research | high |
-| [Courses](nb/courses/index.ipynb) | Full course notes | mid |
-| [Notes](nb/notes/index.ipynb) | Working drafts and random bits | low |
+::: {.home-preview-grid}
 
-## Employment History
+::: {.home-preview-card}
+### Autocode
 
-{% for job in employment + (early_employment or []) %}
-### {{ job.title }} · {{ job.company }}
-*{{ job.dates }}*
+A local-first browser application for a coding agent. Streaming events and a durable session timeline let you follow a task and return to it after refreshing the page.
 
-{% for b in job.bullets %}
-- {{ b }}
+[Explore Autocode →](nb/portfolio/autocode.qmd)
+:::
+
+::: {.home-preview-card}
+### Change Planner Agent
+
+A read-only agent that investigates a proposed code change. It relates repository evidence to tests and history, then produces a reviewable plan.
+
+[Explore Change Planner →](nb/portfolio/change-planner.qmd)
+:::
+
+::: {.home-preview-card}
+### ML Platform
+
+A compact implementation for reproducible training, evaluation, batch inference, and online serving, with a local path and Azure deployment components.
+
+[Explore ML Platform →](nb/portfolio/ml-platform.qmd)
+:::
+
+:::
+
+[View the portfolio →](nb/portfolio/portfolio.ipynb)
+
+## Latest posts
+
+Recent writing from across the knowledge base.
+
+{% for post in latest_posts %}
+- [{{ post.title }}]({{ post.url }})
 {% endfor %}
 
-{% endfor %}
-
-## Skills
-
-{% for skill in skills %}
-**{{ skill.name }}**
-
-{% for it in skill.entries %}
-- {{ it }}
-{% endfor %}
-
-{% endfor %}
-
-{% if projects %}
-## Projects
-
-{% for proj in projects %}
-### {{ proj.title }}
-{% for b in proj.bullets %}
-- {{ b }}
-{% endfor %}
-
-{% endfor %}
-{% endif %}
-
-## Education
-
-{% for edu in education %}
-{% if edu.major %}
-
-### {{ edu.institution }}
-*{{ edu.degree }}, Major in {{ edu.major }}* &nbsp; · &nbsp; {{ edu.dates }}.
-
-{% if edu.awards %}- **Awards**: {{ edu.awards }}{% endif %}
-
-{% if edu.thesis %}- **Thesis**: *{{ edu.thesis }}*{% endif %}
-
-{% if edu.courses %}- **Relevant courses**: {{ edu.courses | join(', ') }}{% endif %}
-
-{% else %}
-
-### {{ edu.institution }}
-*{{ edu.degree }} &nbsp; · &nbsp; {{ edu.dates }}*
-
-{{ edu.description }}
-
-{% endif %}
-{% endfor %}
+[Browse all posts →](posts.qmd)

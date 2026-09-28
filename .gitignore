@@ -6,10 +6,9 @@ todos/
 # Build / render noise
 .DS_Store
 todo.txt
-nb/notes/hello.qmd
+nb/posts/hello.qmd
 .ipynb_checkpoints/
-nb/notes/pdf/
-nb/articles/pdf/
+nb/**/pdf/
 _site/
 .jupyter/
 __pycache__/
@@ -23,7 +22,7 @@ htmlcov/
 /.quarto/
 **/*.quarto_ipynb
 
-# Notebook checkpoints (actual notebook ipynbs in nb/notes/, nb/articles/, and nb/courses/)
+# Notebook checkpoints (actual notebook ipynbs in nb/posts/ and nb/courses/)
 # are tracked as canonical content).
 .ipynb_checkpoints/
 
