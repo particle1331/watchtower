@@ -6,7 +6,7 @@ Outputs are preserved as-is; Quarto renders them without re-execution.
 
 `wt import <src.ipynb> courses <course> [<chapter>]` imports a notebook as
 a chapter of an existing course, copying it to `nb/courses/<course>/<stem>.ipynb`
-and registering it in the course's sidebar in `_quarto.yml`.
+and registering it in the course's authored sidebar outline.
 """
 
 
@@ -152,7 +152,7 @@ def import_chapter(
 
     Copies `<src>.ipynb` to `nb/courses/<course>/<chapter>.ipynb` (default
     chapter name = source filename without extension) and registers it
-    in the course's sidebar in `_quarto.yml` under the last section, or
+    in the course's authored sidebar under the last section, or
     under `section` if given. The sidebar text is derived from the chapter
     name (same heuristic as `wt new chapter`); edit either the sidebar text
     or the notebook frontmatter after import — they're independent surfaces.
@@ -177,4 +177,5 @@ def import_chapter(
         f"course/{course}/{chapter}", "chapter", dest, title,
         parent=f"course/{course}",
     )
+    knowledge.sync_site()
     return dest

@@ -10,6 +10,7 @@ import yaml
 from ruamel.yaml import YAML
 
 CATALOG_PATH = Path("knowledge/catalog.yaml")
+SIDEBAR_PATH = Path("knowledge/sidebar.yaml")
 ARCHIVE_PATH = Path("archive/2026-09-30")
 KINDS = {"post", "course", "chapter", "portfolio", "project"}
 VISIBILITIES = {"public", "private"}
@@ -86,6 +87,127 @@ def get_artifact(name: str) -> dict[str, Any] | None:
         if isinstance(path, str) and Path(name).suffix == "" and name == str(Path(path).with_suffix("")):
             return item
     return None
+
+
+def load_sidebar_source() -> Any:
+    """Load the authored sidebar, initializing it from Quarto on first use."""
+    parser = YAML(typ="rt")
+    parser.preserve_quotes = True
+    if not SIDEBAR_PATH.exists():
+        with Path("_quarto.yml").open(encoding="utf-8") as handle:
+            config = parser.load(handle)
+        SIDEBAR_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with SIDEBAR_PATH.open("w", encoding="utf-8") as handle:
+            parser.dump({"website": {"sidebar": config.get("website", {}).get("sidebar", [])}}, handle)
+    with SIDEBAR_PATH.open(encoding="utf-8") as handle:
+        return parser.load(handle)
+
+
+def publish_artifact(name: str) -> dict[str, Any]:
+    """Publish one public course or chapter and synchronize the site."""
+    parser = YAML(typ="rt")
+    parser.preserve_quotes = True
+    with CATALOG_PATH.open(encoding="utf-8") as handle:
+        catalog = parser.load(handle)
+
+    artifacts = catalog["artifacts"]
+    resolved = get_artifact(name)
+    artifact = next(
+        (item for item in artifacts if resolved and item.get("id") == resolved.get("id")),
+        None,
+    )
+    if artifact is None:
+        raise ValueError(f"no active artifact named '{name}'")
+    if artifact.get("kind") not in {"course", "chapter"}:
+        raise ValueError("publish accepts a course or chapter artifact")
+    if artifact.get("visibility") != "public":
+        raise ValueError(f"{artifact['id']} is private; set visibility to public first")
+    if artifact.get("kind") == "chapter":
+        parent = next(
+            (item for item in artifacts if item.get("id") == artifact.get("parent")),
+            None,
+        )
+        if parent is None or parent.get("kind") != "course":
+            raise ValueError(f"{artifact['id']} has no registered course parent")
+        if parent.get("lifecycle") != "published" or parent.get("visibility") != "public":
+            raise ValueError(f"publish the public parent course before {artifact['id']}")
+
+    artifact["lifecycle"] = "published"
+    with CATALOG_PATH.open("w", encoding="utf-8") as handle:
+        parser.dump(catalog, handle)
+    sync_site()
+    return dict(artifact)
+
+
+def _sync_published_course_sidebars(
+    config: dict[str, Any],
+    artifacts: list[dict[str, Any]],
+    published: dict[str, dict[str, Any]],
+) -> None:
+    """Hide unpublished chapters from navigation for published courses."""
+    courses_by_slug = {
+        Path(str(course["path"])).name: course
+        for course in artifacts
+        if course.get("kind") == "course"
+    }
+    sidebar = config.get("website", {}).get("sidebar", [])
+    if not isinstance(sidebar, list):
+        return
+
+    def chapter_path(node: Any, chapter_paths: set[str]) -> str | None:
+        if isinstance(node, list):
+            for child in node:
+                found = chapter_path(child, chapter_paths)
+                if found is not None:
+                    return found
+        if isinstance(node, dict):
+            href = node.get("href")
+            if isinstance(href, str) and href in chapter_paths:
+                return href
+            for child in node.get("contents", []):
+                found = chapter_path(child, chapter_paths)
+                if found is not None:
+                    return found
+        return None
+
+    def filter_node(node: Any, chapter_paths: set[str], visible_paths: set[str], *, root: bool = False) -> Any | None:
+        if not isinstance(node, dict):
+            return node
+
+        contents = node.get("contents")
+        if isinstance(contents, list):
+            node["contents"] = [
+                kept for child in contents
+                if (kept := filter_node(child, chapter_paths, visible_paths)) is not None
+            ]
+
+        href = node.get("href")
+        if isinstance(href, str) and href in chapter_paths and href not in visible_paths:
+            replacement = chapter_path(node.get("contents", []), visible_paths)
+            if replacement is not None:
+                node["href"] = replacement
+            elif not root:
+                return None
+
+        if node.get("section") and not node.get("contents") and not root:
+            href = node.get("href")
+            if not isinstance(href, str) or href not in visible_paths:
+                return None
+        return node
+
+    for entry in sidebar:
+        if not isinstance(entry, dict):
+            continue
+        course = courses_by_slug.get(str(entry.get("id", "")))
+        if course is None or course["id"] not in published:
+            continue
+        children = [item for item in artifacts if item.get("kind") == "chapter" and item.get("parent") == course["id"]]
+        chapter_paths = {str(item["path"]) for item in children}
+        visible_paths = {
+            str(item["path"]) for item in children
+            if item.get("visibility") == "public" and item.get("lifecycle") == "published"
+        }
+        filter_node(entry, chapter_paths, visible_paths, root=True)
 
 
 def course_file(course: dict[str, Any]) -> Path:
@@ -165,6 +287,8 @@ def sync_site() -> None:
     parser.preserve_quotes = True
     with path.open(encoding="utf-8") as handle:
         config = parser.load(handle)
+    sidebar_source = load_sidebar_source()
+    config.setdefault("website", {})["sidebar"] = sidebar_source.get("website", {}).get("sidebar", [])
     artifacts = load_catalog()
     published = {
         str(a["id"]): a for a in artifacts
@@ -198,6 +322,7 @@ def sync_site() -> None:
     render.append("!archive/**")
     config.setdefault("project", {})["render"] = render
     config.setdefault("website", {}).setdefault("navbar", {})["left"] = navbar
+    _sync_published_course_sidebars(config, artifacts, published)
     with path.open("w", encoding="utf-8") as handle:
         parser.dump(config, handle)
 
@@ -307,10 +432,6 @@ def validate() -> list[str]:
             course = next((a for a in artifacts if a.get("id") == parent), None)
             if course is None or course.get("lifecycle") != "published":
                 errors.append(f"{artifact_id}: published chapter needs a published parent course")
-        if item.get("kind") == "course" and item.get("lifecycle") == "published":
-            drafts = [a["id"] for a in artifacts if a.get("parent") == artifact_id and (a.get("lifecycle") != "published" or a.get("visibility") != "public")]
-            if drafts:
-                errors.append(f"{artifact_id}: sidebar has unavailable chapters: {', '.join(drafts)}")
     active_files = (
         list(Path("nb/posts").glob("*.ipynb"))
         + list(Path("nb/courses").glob("*/*.ipynb"))

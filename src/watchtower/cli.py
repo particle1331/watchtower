@@ -75,7 +75,7 @@ def new_chapter(
         help="section name to place this chapter under (default: last section)",
     ),
 ) -> None:
-    """Scaffold nb/courses/<course>/<name>.ipynb and register it in the course sidebar."""
+    """Scaffold a course chapter and register it in the authored outline."""
     from . import scaffold
 
     path = scaffold.new_course_chapter(course, name, title=title, section=section)
@@ -87,7 +87,7 @@ def new_section(
     course: str = typer.Argument(..., help="course folder name (e.g. mlops)"),
     name: str = typer.Argument(..., help="section name (e.g. 'Local Stack')"),
 ) -> None:
-    """Add a section header to a course's sidebar in _quarto.yml."""
+    """Add a section header to a course's authored outline."""
     from . import scaffold
 
     scaffold.new_course_section(course, name)
@@ -227,6 +227,19 @@ def sync_site_cmd() -> None:
 
     knowledge.sync_site()
     console.print("[green]site navigation synchronized[/green]")
+
+
+@app.command(name="publish")
+def publish_cmd(name: str = typer.Argument(..., help="public course or chapter ID/path")) -> None:
+    """Publish one course or chapter and update Quarto's site listing."""
+    from . import knowledge
+
+    try:
+        artifact = knowledge.publish_artifact(name)
+    except ValueError as error:
+        console.print(f"[red]{error}[/red]")
+        raise typer.Exit(1) from error
+    console.print(f"[green]published {artifact['id']}[/green]")
 
 
 @app.command(name="register")
@@ -412,7 +425,7 @@ def import_cmd(
 
     For posts: writes to nb/posts/<name>.ipynb.
     For courses: writes to nb/courses/<course>/<chapter>.ipynb and registers
-    in the course's sidebar in _quarto.yml.
+    in the course's authored sidebar outline.
     """
     from . import convert
 

@@ -15,7 +15,7 @@ A course has three distinct layers:
 | `nb/courses/<slug>/00-overview.ipynb` (optional) | Deeper technical design and whole-course explanation. |
 
 The home embeds a short generated rendering of the YAML contract. `make knowledge`, `make docs`, and `make render` refresh that include. Quarto uses stored notebook outputs and does not execute cells while rendering. The planned section states intent; the actualized section must be updated from evidence, never inferred from file existence.
-Only catalog entries marked both `public` and `published` enter the site. `make knowledge` validates the catalog and synchronizes Quarto's render list and navigation; drafts and private works stay in the repository. Published courses appear as grid cards on the generated Courses page, linked from the navbar.
+Only catalog entries marked both `public` and `published` enter the site. Publishing a course renders its home and creates its grid card; chapters render independently when they are published under a published course. The course sidebar lists only its published chapters. `knowledge/sidebar.yaml` stores the authored course outline; synchronization derives the published sidebar in `_quarto.yml` without discarding draft entries. `make knowledge` validates the catalog and synchronizes Quarto's render list and navigation; drafts and private works stay out of the public site.
 
 ## `wt` navigation
 
@@ -29,6 +29,7 @@ Use `.venv/bin/wt` from the repository root. `wt map` is the starting point: it 
 | `wt find <query>` | Search registered active sources; notebooks report cell indices, text files report line numbers. |
 | `wt validate` | Check catalog records, paths, course contracts, home includes, relations, and unregistered active content. |
 | `wt register <kind> <id> <path> <title>` | Register an existing work, especially a portfolio page or project. |
+| `wt publish <course-or-chapter-id>` | Publish one public course or chapter and synchronize its card, render path, and course navigation. Publishing a course leaves its chapters unchanged. |
 | `wt render-context`, `wt sync-site` | Refresh course-home includes and Quarto publication paths from the catalog. |
 | `wt map --archive`, `wt ls <tier> --archive`, `wt find <query> --archive` | Explicitly inspect the repository-only archive. |
 | `wt cat <notebook>` | Read notebook cell sources as Markdown, without raw `.ipynb` JSON. An archived notebook can be read by its full path. |
@@ -50,6 +51,7 @@ Notebook IDs such as `post/example` or `course/example/01-introduction` work wit
 
 Scaffolding and import register the new work in the catalog. A new course also creates `course.yaml`, its home notebook and generated include, a first chapter, and sidebar entries. For project or portfolio works created outside these notebook commands, add a catalog entry and run `wt validate`.
 Use `wt register portfolio <id> <path> <title>` for a portfolio page; `make project` registers its new project automatically.
+Use `.venv/bin/wt publish course/<slug>` to publish a course home and generate its Courses card. Publish a chapter separately with `.venv/bin/wt publish course/<slug>/<chapter>`; its parent course must already be published.
 
 For notebook changes, use `wt find`, `wt cat --index N --context K`, then `wt edit-cell`, `append-cell`, `insert-cell`, or `remove-cell`. Review with `wt diff`; run edited code with `wt run` and inspect stored output with `wt output`. `wt cat` defaults to a 4096-character source limit per cell; `--limit 0` removes it. Cell writes are capped at 20,000 source characters. `wt --help` and subcommand help give full syntax.
 

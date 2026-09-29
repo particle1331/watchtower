@@ -69,7 +69,7 @@ def new_post(name: str, title: str | None = None) -> Path:
 
 
 def _find_course_sidebar_entry(data: Any, name: str) -> dict | None:
-    """Find a course entry in _quarto.yml's sidebar by id."""
+    """Find a course entry in the authored sidebar by id."""
     sidebar = data.get("website", {}).get("sidebar", [])
     for entry in sidebar:
         if isinstance(entry, dict) and entry.get("id") == name:
@@ -83,9 +83,9 @@ def _course_href(course: str, filename: str) -> str:
 
 
 def _register_course(name: str) -> None:
-    """Add a sidebar entry for course *name* to _quarto.yml if not present."""
-    quarto = Path("_quarto.yml")
-    data = _load_yaml(quarto)
+    """Add a sidebar entry for course *name* if not present."""
+    sidebar_path = knowledge.SIDEBAR_PATH
+    data = knowledge.load_sidebar_source()
     if _find_course_sidebar_entry(data, name) is not None:
         return  # already registered — idempotent
 
@@ -104,7 +104,7 @@ def _register_course(name: str) -> None:
         ],
     }
     sidebar.append(new_entry)
-    _dump_yaml(quarto, data)
+    _dump_yaml(sidebar_path, data)
 
 
 def new_course(name: str, title: str) -> Path:
@@ -131,7 +131,7 @@ def new_course(name: str, title: str) -> Path:
     if not lesson_path.exists():
         _write_ipynb(lesson_path, "Introduction", body="\n\nTODO: lesson content.\n")
 
-    # register in _quarto.yml sidebar
+    # Register the authored sidebar before adding the catalog records.
     _register_course(name)
     if knowledge.get_artifact(f"course/{name}") is None:
         knowledge.add_artifact(f"course/{name}", "course", course_dir, title)
@@ -141,6 +141,7 @@ def new_course(name: str, title: str) -> Path:
             "Introduction", parent=f"course/{name}",
         )
     knowledge.render_course_includes()
+    knowledge.sync_site()
 
     return course_dir
 
@@ -172,6 +173,7 @@ def new_course_chapter(
     _write_ipynb(path, title)
     _register_chapter_in_sidebar(course, name, title, section)
     knowledge.add_artifact(f"course/{course}/{name}", "chapter", path, title, parent=f"course/{course}")
+    knowledge.sync_site()
     return path
 
 
@@ -181,18 +183,18 @@ def _register_chapter_in_sidebar(
     title: str,
     section: str | None,
 ) -> None:
-    """Add a chapter entry to a course's sidebar in _quarto.yml.
+    """Add a chapter entry to a course's authored sidebar.
 
     If `section` is None, appends to the last entry in the contents list
     (which may be the unnamed top-level section if it's the only entry).
     Raises if the course is not registered or the named section is missing.
     """
-    quarto = Path("_quarto.yml")
-    data = _load_yaml(quarto)
+    sidebar_path = knowledge.SIDEBAR_PATH
+    data = knowledge.load_sidebar_source()
     course_entry = _find_course_sidebar_entry(data, course)
     if course_entry is None:
         raise ValueError(
-            f"course '{course}' not registered in _quarto.yml sidebar. "
+            f"course '{course}' not registered in the authored sidebar. "
             f"Run 'wt new course {course}' first."
         )
 
@@ -230,21 +232,21 @@ def _register_chapter_in_sidebar(
     if "href" not in target or target["href"] is None:
         target["href"] = _course_href(course, f"{name}.ipynb")
 
-    _dump_yaml(quarto, data)
+    _dump_yaml(sidebar_path, data)
 
 
 def new_course_section(course: str, name: str) -> None:
-    """Add a section header to a course's sidebar in _quarto.yml."""
+    """Add a section header to a course's authored sidebar."""
     course_dir = COURSES_DIR / course
     if not course_dir.is_dir():
         raise FileNotFoundError(f"course directory {course_dir} does not exist")
 
-    quarto = Path("_quarto.yml")
-    data = _load_yaml(quarto)
+    sidebar_path = knowledge.SIDEBAR_PATH
+    data = knowledge.load_sidebar_source()
     course_entry = _find_course_sidebar_entry(data, course)
     if course_entry is None:
         raise ValueError(
-            f"course '{course}' not registered in _quarto.yml sidebar. "
+            f"course '{course}' not registered in the authored sidebar. "
             f"Run 'wt new course {course}' first."
         )
 
@@ -256,4 +258,5 @@ def new_course_section(course: str, name: str) -> None:
             )
 
     contents.append({"section": name, "contents": []})
-    _dump_yaml(quarto, data)
+    _dump_yaml(sidebar_path, data)
+    knowledge.sync_site()
