@@ -310,6 +310,8 @@ then run `uv run pre-commit install` from the repo root.
 - `jupyterlab` + `jupyterlab-quarto` — edit `.ipynb` in JupyterLab
 - `nbformat` — read/write `.ipynb` files from `wt` wrappers
 
-The résumé PDF build requires XeLaTeX (`texlive-xetex` on Debian/Ubuntu).
+The résumé PDF build requires XeLaTeX and the ModernCV icon fonts. On
+Debian/Ubuntu, install `texlive-xetex`, `texlive-latex-extra`,
+`texlive-fonts-recommended`, and `texlive-fonts-extra`.
 Its name header uses the bundled Ubuntu Bold font in `assets/fonts/`, matching
 the homepage; the font license is included alongside it.

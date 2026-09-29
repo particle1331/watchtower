@@ -289,6 +289,14 @@ def main() -> None:
         sys.exit(str(error))
     except subprocess.CalledProcessError as error:
         print(f"command failed: {error.cmd[0]}", file=sys.stderr)
+        output = "\n".join(
+            stream.decode(errors="replace") if isinstance(stream, bytes) else stream
+            for stream in (error.stdout, error.stderr)
+            if stream
+        )
+        if output:
+            print("xelatex output (last 50 lines):", file=sys.stderr)
+            print("\n".join(output.splitlines()[-50:]), file=sys.stderr)
         raise SystemExit(error.returncode) from error
     print(f"resume PDF: {pdf}")
     print(f"home page: {index}")
