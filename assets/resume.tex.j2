@@ -22,6 +22,10 @@
 \renewcommand*{\labelitemi}{\homepagemarker}
 \renewcommand*{\namefont}{\Huge\homepagenamefont}
 {% raw %}
+% TeX Live 2023 uses \namestyle; newer moderncv splits the two name styles.
+\renewcommand*{\namestyle}[1]{{\namefont\textcolor{homepagename}{#1}\textcolor{homepagedot}{.}}}
+\providecommand*{\firstnamestyle}[1]{}
+\providecommand*{\lastnamestyle}[1]{}
 \renewcommand*{\firstnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}}}
 \renewcommand*{\lastnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}\textcolor{homepagedot}{.}}}
 {% endraw %}
