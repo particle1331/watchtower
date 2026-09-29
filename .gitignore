@@ -18,6 +18,8 @@ __pycache__/
 htmlcov/
 .ruff_cache/
 .watchtower/
+**/_course-context.md
+archive/**/pdf/
 .venv/
 /.quarto/
 **/*.quarto_ipynb
@@ -44,6 +46,7 @@ htmlcov/
 /index.qmd
 /resume.qmd
 /posts.qmd
+/courses.qmd
 
 # Terraform local identity values (real subscription/objectId/UPN).
 # Shared config lives in the committed *.tfvars; the identifying trio lives in a

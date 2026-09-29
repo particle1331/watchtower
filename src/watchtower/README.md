@@ -1,8 +1,8 @@
 # watchtower
 
-Personal posts, courses, and projects system. This package provides
-the `wt` CLI, which manages the notebook-based knowledge base in the repo
-root, and the `core` tools library containing helpers for ML-based code.
+The `wt` CLI reads the active knowledge catalog and supports notebook workflows.
+Archived knowledge is available only through explicit archive lookup. The
+`core` library contains optional helpers for ML notebooks.
 
 ## Modules
 
@@ -10,7 +10,8 @@ root, and the `core` tools library containing helpers for ML-based code.
 |---|---|
 | `cli.py` | Typer application (`wt`) for notebook operations and core tools |
 | `convert.py` | Import an external Jupyter notebook into a content tier |
-| `inspect.py` | Agent-facing inspection helpers: repo structure, search, file content |
+| `inspect.py` | Catalog-backed navigation, active search, and explicit archive search |
+| `knowledge.py` | Catalog records, course context, validation, and site synchronization |
 | `notebook.py` | Read and edit cells in `.ipynb` files |
 | `outputs.py` | Read stored cell outputs and extract image payloads into `ROOT_PATH / ".tmp"` for inspection |
 | `paths.py` | Repo path resolution helpers for workspace projects |

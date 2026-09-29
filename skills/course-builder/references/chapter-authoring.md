@@ -8,10 +8,10 @@ when the chapter uses Quarto-rendered notebook features.
 
 Before editing an ordinary chapter:
 
-1. Read the course `index.ipynb` and `00-overview.ipynb` when present. They are
-   the source of truth for the course promise, terminology, artifact lineage,
-   execution profiles, chapter handoff, and evidence standard.
-2. Read the target chapter and its adjacent chapter openings with `wt cat`.
+1. Run `wt context <chapter>`; read the catalog record and course YAML, which
+   distinguishes planned work from actualized work.
+2. Read the course `index.ipynb`, `00-overview.ipynb` when present, and target
+   chapter with `wt cat`. Read adjacent chapter openings only for a relevant handoff.
 3. Read the backing project's `AGENTS.md` when one exists.
 4. Identify the concept taught, reusable artifact added, controlled result,
    and handoff promised by the overview.

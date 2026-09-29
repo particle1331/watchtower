@@ -8,6 +8,7 @@ import nbformat
 import pytest
 
 from watchtower import inspect as wt_inspect
+from watchtower import knowledge
 
 
 @pytest.fixture
@@ -26,6 +27,13 @@ def populated_repo(tmp_path, monkeypatch):
     (tmp_path / "nb" / "courses" / "ml").mkdir(parents=True)
     nbformat.write(nb, tmp_path / "nb" / "courses" / "ml" / "01-intro.ipynb")
     nbformat.write(nb, tmp_path / "nb" / "courses" / "ml" / "index.ipynb")  # must be excluded
+
+    knowledge.add_artifact("post/001-test", "post", Path("nb/posts/001-test.ipynb"), "Test")
+    knowledge.add_artifact("course/ml", "course", Path("nb/courses/ml"), "ML")
+    knowledge.add_artifact(
+        "course/ml/01-intro", "chapter", Path("nb/courses/ml/01-intro.ipynb"),
+        "Intro", parent="course/ml",
+    )
 
     return tmp_path
 
@@ -74,17 +82,17 @@ def test_repo_map_json_is_valid(populated_repo):
 
 
 def test_repo_map_portfolio_path(populated_repo):
-    assert wt_inspect.repo_map()["portfolio"] == "nb/portfolio/portfolio.ipynb"
+    assert wt_inspect.repo_map()["portfolio"] == []
 
 
 def test_repo_map_posts_content(populated_repo):
     m = wt_inspect.repo_map()
-    assert any("001-test.ipynb" in n for n in m["posts"])
+    assert any("001-test.ipynb" in n["path"] for n in m["posts"])
 
 
 def test_repo_map_courses_nested(populated_repo):
     m = wt_inspect.repo_map()
-    assert any("01-intro.ipynb" in n for n in m["courses"])
+    assert any("01-intro.ipynb" in n for course in m["courses"] for n in course["chapters"])
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +130,7 @@ def test_resolve_full_path(populated_repo):
 
 def test_resolve_not_found_raises(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    with pytest.raises(FileNotFoundError, match="no ipynb"):
+    with pytest.raises(FileNotFoundError, match="no registered notebook"):
         wt_inspect.resolve_ipynb("nope")
 
 

@@ -8,6 +8,7 @@ registering or renaming sidebar entries, or changing course-level navigation.
 A course lives at `nb/courses/<name>/`:
 
 - `index.ipynb`: the learner-facing course home and README.
+- `course.yaml`: concise shared context with distinct planned and actualized sections.
 - `00-overview.ipynb`: an optional whole-course technical overview.
 - `NN-topic.ipynb`: one notebook per chapter, with a zero-padded prefix.
 - `img/`: figures referenced by notebooks.
@@ -16,8 +17,8 @@ The sidebar registration lives in `_quarto.yml` under `website.sidebar`.
 Rendering never executes notebook code because `execute.enabled: false`; the
 site uses the outputs last stored by `wt run`.
 
-The existing `nb/courses/cla` and `nb/courses/ml-platform` courses remain concrete
-examples of course structure and phased sidebar organization.
+Historical examples remain under `archive/2026-09-30/nb/courses/`; use them as
+source material, not as the active course contract.
 
 ## Scaffolding
 
@@ -27,8 +28,8 @@ for example `make docs PORT=4300`, and report the resulting URL in
 agent updates. A separate port alone is insufficient when two agents share the
 same checkout because they still share the source files and `_site` output.
 
-1. Run `wt new course <name> "<Title>"` to create the course home and first
-   chapter stub.
+1. Run `wt new course <name> "<Title>"` to create the course YAML, home,
+   generated include, catalog entries, and first chapter stub.
 2. If the course needs a whole-system orientation before Chapter 01, run
    `wt new chapter <course> 00-overview --title "<Overview title>"`, then move
    its sidebar entry before Chapter 01 in `_quarto.yml`.
@@ -40,6 +41,9 @@ same checkout because they still share the source files and `_site` output.
 After scaffolding a chapter, set its final sidebar label explicitly. The
 notebook frontmatter title and sidebar text are independent surfaces; the
 scaffold initially derives placeholder text from the filename.
+Update `course.yaml` when the planned path changes, and update its actualized
+section only after completing and checking work. Run `wt validate` and
+`make knowledge` before rendering.
 
 ## Sidebar naming
 

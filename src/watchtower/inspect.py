@@ -1,156 +1,167 @@
-"""Agent-facing inspection helpers: repo structure, search, file content.
+"""Catalog-backed navigation and source search for ``wt``."""
 
-These produce plain stdout (JSON or text) suitable for an AI agent calling
-`wt map`, `wt find`, or `wt cat` via bash. The canonical source is `.ipynb`
-notebooks in the content dirs; cell sources (no JSON noise) are exposed
-through the `wt` CLI for low-token agent reads.
-"""
-
+from __future__ import annotations
 
 import json
-import shutil
-import subprocess
 from pathlib import Path
 
-from .paths import (
-    CONTENT_DIRS,
-    COURSES_DIR,
-    NB_DIR,
-    PORTFOLIO_PATH,
-    POSTS_DIR,
-)
+from . import knowledge
+
+TEXT_SUFFIXES = {".md", ".qmd", ".py", ".yaml", ".yml", ".toml"}
+SKIP_DIRS = {".git", ".tmp", ".ruff_cache", ".pytest_cache", "__pycache__", "pdf", "artifacts"}
 
 
 def list_ipynb(src_dir: Path) -> list[str]:
-    if not src_dir.exists():
-        return []
+    """List registered notebooks in a tier."""
     return sorted(
-        str(p.relative_to("."))
-        for p in src_dir.rglob("*.ipynb")
-        if p.name != "index.ipynb" and ".ipynb_checkpoints" not in p.parts
+        str(a["path"])
+        for a in knowledge.load_catalog()
+        if a.get("kind") in {"post", "chapter"}
+        and Path(str(a.get("path"))).is_relative_to(src_dir)
+        and Path(str(a.get("path"))).suffix == ".ipynb"
     )
 
 
 def list_projects() -> list[dict]:
-    projects_dir = Path("projects")
-    if not projects_dir.exists():
-        return []
-    out: list[dict] = []
-    for d in sorted(projects_dir.iterdir()):
-        if d.is_dir() and (d / "pyproject.toml").exists():
-            out.append(
-                {
-                    "name": d.name,
-                    "path": str(d),
-                    "has_agents_md": (d / "AGENTS.md").exists(),
-                }
-            )
-    return out
+    return [
+        {"name": Path(str(a["path"])).name, "path": a["path"], "has_agents_md": (Path(str(a["path"])) / "AGENTS.md").exists()}
+        for a in knowledge.load_catalog() if a.get("kind") == "project"
+    ]
+
+
+def list_tier(tier: str) -> list[str]:
+    kinds = {"posts": "post", "courses": "course", "projects": "project", "portfolio": "portfolio"}
+    if tier not in kinds:
+        raise ValueError(f"unknown tier: {tier}. try posts|courses|projects|portfolio")
+    artifacts = knowledge.load_catalog()
+    if tier == "courses":
+        lines: list[str] = []
+        for course in artifacts:
+            if course.get("kind") != "course":
+                continue
+            lines.append(str(course["path"]))
+            lines.append(str(Path(str(course["path"])) / "index.ipynb"))
+            lines.extend(str(a["path"]) for a in artifacts if a.get("kind") == "chapter" and a.get("parent") == course.get("id"))
+        return lines
+    return [str(a["path"]) for a in artifacts if a.get("kind") == kinds[tier]]
 
 
 def repo_map() -> dict:
+    artifacts = knowledge.load_catalog()
+    courses: list[dict] = []
+    for course in artifacts:
+        if course.get("kind") != "course":
+            continue
+        children = [a for a in artifacts if a.get("kind") == "chapter" and a.get("parent") == course.get("id")]
+        overview = next((a["path"] for a in children if Path(str(a["path"])).stem.endswith("overview")), None)
+        courses.append({
+            "id": course["id"], "path": course["path"],
+            "home": str(Path(str(course["path"])) / "index.ipynb"),
+            "overview": overview,
+            "chapters": [a["path"] for a in children if a["path"] != overview],
+        })
     return {
-        "posts": list_ipynb(POSTS_DIR),
-        "courses": list_ipynb(COURSES_DIR),
-        "projects": list_projects(),
-        "portfolio": str(PORTFOLIO_PATH),
-        "rules": "AGENTS.md",
+        "catalog": str(knowledge.CATALOG_PATH),
+        "posts": [a for a in artifacts if a.get("kind") == "post"],
+        "courses": courses,
+        "portfolio": [a for a in artifacts if a.get("kind") == "portfolio"],
+        "projects": [a for a in artifacts if a.get("kind") == "project"],
+        "personal": "nb/photos/photos.ipynb", "rules": "AGENTS.md",
     }
 
 
-def repo_map_json() -> str:
-    return json.dumps(repo_map(), indent=2)
+def archive_map() -> dict:
+    root = knowledge.ARCHIVE_PATH
+    return {
+        "archive": str(root),
+        "posts": sorted(str(p) for p in (root / "nb/posts").glob("*.ipynb")),
+        "courses": sorted(str(p) for p in (root / "nb/courses").glob("*/*.ipynb")),
+        "portfolio": sorted(str(p) for p in (root / "nb/portfolio").glob("*.qmd")),
+        "projects": sorted(str(p) for p in (root / "projects").iterdir() if p.is_dir()) if (root / "projects").exists() else [],
+    }
 
 
-def _candidate_ipynb_files(query: str) -> list[Path]:
-    """Return .ipynb paths that may contain *query*.
+def repo_map_json(*, archive: bool = False) -> str:
+    return json.dumps(archive_map() if archive else repo_map(), indent=2, ensure_ascii=False)
 
-    Uses ripgrep as a fast pre-filter when available (skips parsing files
-    that can't possibly match). Falls back to a full rglob walk otherwise.
-    Both paths exclude index notebooks and checkpoint dirs.
-    """
-    if shutil.which("rg"):
-        result = subprocess.run(
-            ["rg", "-i", "-l", "-F", query, *[str(d) for d in CONTENT_DIRS], "-g", "*.ipynb"],
-            capture_output=True,
-            text=True,
-        )
-        return sorted(
-            Path(ln)
-            for ln in result.stdout.splitlines()
-            if ln and ".ipynb_checkpoints" not in ln
-        )
+
+def _sources_for(artifact: dict) -> list[Path]:
+    path = Path(str(artifact["path"]))
+    if artifact.get("kind") == "course":
+        return [p for p in (path / "course.yaml", path / "index.ipynb") if p.exists()]
+    if path.is_file():
+        return [path]
+    if not path.is_dir():
+        return []
     return sorted(
-        p
-        for base in CONTENT_DIRS
-        if base.exists()
-        for p in base.rglob("*.ipynb")
-        if ".ipynb_checkpoints" not in p.parts
+        p for p in path.rglob("*")
+        if p.is_file() and p.suffix in TEXT_SUFFIXES | {".ipynb"}
+        and not any(part in SKIP_DIRS for part in p.parts)
     )
 
 
-def find_in_src(query: str) -> str:
-    """Search `.ipynb` cell sources across all content dirs.
-
-    Uses ripgrep as a fast pre-filter when available (O(n) raw-text scan to
-    narrow candidates), then parses only matching files with ``json.load``.
-    Falls back to a pure-Python rglob scan if rg is not installed. Output:
-
-        path [cell N]: matching text
-
-    so agents can follow up directly with ``wt cat <path> --index N``.
-    """
-    q = query.lower()
-    results: list[str] = []
-    for p in _candidate_ipynb_files(query):
+def _matching_lines(path: Path, query: str) -> list[str]:
+    if path.suffix == ".ipynb":
         try:
-            with open(p, encoding="utf-8") as f:
-                nb = json.load(f)
-        except Exception:
-            continue
-        for i, cell in enumerate(nb.get("cells", [])):
-            src = cell.get("source", "")
-            if isinstance(src, list):
-                src = "".join(src)
-            if q not in src.lower():
-                continue
-            for line in src.splitlines():
-                if q in line.lower():
-                    results.append(f"{p} [cell {i}]: {line}")
-    return "\n".join(results)
+            with path.open(encoding="utf-8") as handle:
+                notebook = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            return []
+        matches: list[str] = []
+        for index, cell in enumerate(notebook.get("cells", [])):
+            source = cell.get("source", "")
+            if isinstance(source, list):
+                source = "".join(source)
+            for line in source.splitlines():
+                if query in line.lower():
+                    matches.append(f"{path} [cell {index}]: {line}")
+        return matches
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return []
+    return [f"{path}:{index}: {line}" for index, line in enumerate(lines, 1) if query in line.lower()]
+
+
+def find_in_src(query: str, *, archive: bool = False) -> str:
+    if archive:
+        root = knowledge.ARCHIVE_PATH
+        paths = sorted(
+            p for p in root.rglob("*")
+            if p.is_file() and p.suffix in TEXT_SUFFIXES | {".ipynb"}
+            and not any(part in SKIP_DIRS for part in p.relative_to(root).parts)
+        ) if root.exists() else []
+    else:
+        paths = sorted({p for artifact in knowledge.load_catalog() for p in _sources_for(artifact)})
+    needle = query.lower()
+    return "\n".join(match for path in paths for match in _matching_lines(path, needle))
 
 
 def resolve_ipynb(name: str) -> Path:
-    """Find a `.ipynb` by stem, tier-prefixed stem, or full path.
-
-    Accepted forms:
-      - 001-testnote                 bare stem (searched across tiers)
-      - nb/posts/001-example           tier-prefixed stem (--index, --limit: 0)
-      - nb/posts/001-example.ipynb     full path
-    """
-    # Full path: direct check
-    maybe = Path(name)
-    if maybe.exists() and maybe.suffix == ".ipynb":
-        return maybe.resolve()
-    # Tier-prefixed stems retain their short public form for CLI ergonomics,
-    # while resolving into the new nb/ content root. Full nb/... paths also
-    # work, including a stem without the .ipynb suffix.
-    parts = Path(name).parts
-    if parts and parts[0] in {"posts", "courses"}:
-        path = NB_DIR.joinpath(*parts)
-        if path.suffix != ".ipynb":
-            path = path.with_suffix(".ipynb")
-        if path.exists():
+    """Resolve a registered notebook ID or a direct notebook path."""
+    artifact = knowledge.get_artifact(name)
+    if artifact is not None:
+        path = Path(str(artifact["path"]))
+        if artifact.get("kind") == "course":
+            path = path / "index.ipynb"
+        if path.suffix == ".ipynb" and path.exists():
             return path.resolve()
-    if parts and parts[0] == NB_DIR.name and len(parts) > 1:
-        path = Path(*parts)
-        if path.suffix != ".ipynb":
-            path = path.with_suffix(".ipynb")
-        if path.exists():
-            return path.resolve()
-    # Bare stem: search across tiers
-    for base in CONTENT_DIRS:
-        for p in base.rglob(f"{name}.ipynb"):
-            if p.exists() and ".ipynb_checkpoints" not in p.parts:
-                return p
-    raise FileNotFoundError(f"no ipynb named '{name}'. try `wt ls posts|courses`.")
+    path = Path(name)
+    if path.suffix != ".ipynb":
+        path = path.with_suffix(".ipynb")
+    if path.exists():
+        return path.resolve()
+    if Path(name).parts[:1] in {("posts",), ("courses",)}:
+        short = Path("nb") / path
+        if short.exists():
+            return short.resolve()
+    matches = [Path(str(a["path"])) for a in knowledge.load_catalog() if Path(str(a.get("path", ""))).stem == name]
+    if len(matches) == 1 and matches[0].suffix == ".ipynb":
+        return matches[0].resolve()
+    # A bare stem remains a convenient direct read for a notebook that has not
+    # yet been registered; discovery commands still use only the catalog.
+    for base in (Path("nb/posts"), Path("nb/courses")):
+        for candidate in sorted(base.rglob(f"{name}.ipynb")):
+            if ".ipynb_checkpoints" not in candidate.parts:
+                return candidate.resolve()
+    raise FileNotFoundError(f"no registered notebook named '{name}'. try `wt map`.")

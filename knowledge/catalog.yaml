@@ -1,0 +1,96 @@
+version: 1
+artifacts:
+- id: post/001-watchtower-cli-and-knowledge-model
+  kind: post
+  title: Watchtower CLI and Tests
+  path: nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+- id: course/llms-from-scratch
+  kind: course
+  title: Build a GPT Language Model from Scratch
+  path: nb/courses/llms-from-scratch
+  visibility: public
+  lifecycle: published
+  relations: []
+- id: course/llms-from-scratch/00-overview
+  kind: chapter
+  title: The GPT Build and Evidence Plan
+  path: nb/courses/llms-from-scratch/00-overview.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/01-introduction
+  kind: chapter
+  title: Language Models, Scope, and the Experiment Contract
+  path: nb/courses/llms-from-scratch/01-introduction.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/02-text-data
+  kind: chapter
+  title: Tokenization, Context Windows, and Batches
+  path: nb/courses/llms-from-scratch/02-text-data.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/03-attention
+  kind: chapter
+  title: Causal Self-Attention and Multi-Head Attention
+  path: nb/courses/llms-from-scratch/03-attention.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/04-gpt-model
+  kind: chapter
+  title: Assembling a Decoder-Only GPT
+  path: nb/courses/llms-from-scratch/04-gpt-model.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/05-pretraining
+  kind: chapter
+  title: Pretraining, Validation, and Generation
+  path: nb/courses/llms-from-scratch/05-pretraining.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/06-classification
+  kind: chapter
+  title: Fine-Tuning GPT for Text Classification
+  path: nb/courses/llms-from-scratch/06-classification.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/07-instructions
+  kind: chapter
+  title: Instruction Fine-Tuning and Response Evaluation
+  path: nb/courses/llms-from-scratch/07-instructions.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/08-lora
+  kind: chapter
+  title: 'Optional: Parameter-Efficient Fine-Tuning with LoRA'
+  path: nb/courses/llms-from-scratch/08-lora.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch
+- id: course/llms-from-scratch/09-capstone
+  kind: chapter
+  title: 'Capstone: Reproduce and Compare the GPT Pipeline'
+  path: nb/courses/llms-from-scratch/09-capstone.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/llms-from-scratch

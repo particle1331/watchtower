@@ -89,15 +89,14 @@ def run_notebook(
     """
     path = resolve_ipynb(name)
     nb = read_notebook(path)
-    if kernel is None:
-        kernelspec = nb.metadata.get("kernelspec") or {}
-        kernel = kernelspec.get("name") or "python3"
+    kernelspec = nb.metadata.get("kernelspec") or {}
+    kernel_name: str = kernel or str(kernelspec.get("name") or "python3")
     if index is not None:
-        return _run_single_cell(nb, path, index, kernel, timeout)
+        return _run_single_cell(nb, path, index, kernel_name, timeout)
     code_count = sum(1 for c in nb["cells"] if c.get("cell_type") == "code")
     if code_count == 0:
         return {"ran": 0, "errors": [], "path": path}
-    _execute(nb, kernel=kernel, timeout=timeout)
+    _execute(nb, kernel=kernel_name, timeout=timeout)
     nbformat.write(nb, path)
     return {"ran": code_count, "errors": _collect_errors(nb), "path": path}
 

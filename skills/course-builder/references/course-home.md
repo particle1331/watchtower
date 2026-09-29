@@ -5,6 +5,15 @@ Read this reference only when creating or revising `index.ipynb`,
 technical contract. Once those pages are stable, ordinary chapter work should
 read the pages themselves rather than reload this authoring guidance.
 
+## Course YAML, home, and overview
+
+`course.yaml` is the compact, structured course context. Keep purpose and
+audience there, along with separate `planned.summary` and
+`actualized.summary` fields. The latter records completed work, not an
+inference from chapter files. The generated include places these shared facts
+in the rendered home. Keep teaching narrative, setup steps, links, and other
+reader guidance in the notebook.
+
 ## Index page: the course README
 
 The `index.ipynb` is the learner-facing home page. It should be concise but
@@ -38,6 +47,7 @@ Chapter 00 when they are important to understanding the course. Migration
 history, authoring status, and rewrite instructions belong in neither page.
 
 Do not create a sibling `README.md`; `index.ipynb` is the course README.
+Avoid restating the generated YAML summary in independently authored prose.
 
 ## When to add Chapter 00
 
@@ -97,11 +107,11 @@ Keep this preview accessible at the prerequisite level:
 | How does the complete system fit together, and what counts as success? | `00-overview.ipynb` |
 | How do I derive, implement, test, and interpret this stage? | The relevant numbered chapter |
 
-The canonical example is the pair
-`nb/courses/llm-training/index.ipynb` and
-`nb/courses/llm-training/00-overview.ipynb`. Consult it for the division between
-course-home orientation and technical overview, and for the expected technical
-altitude. Reuse the pattern, not its language-model-specific contents.
+The archived pair at
+`archive/2026-09-30/nb/courses/llm-training/index.ipynb` and
+`archive/2026-09-30/nb/courses/llm-training/00-overview.ipynb` illustrates the
+division between home and technical overview. It predates `course.yaml`; use
+the pattern as source material, not as an active contract.
 
 ## Verification
 

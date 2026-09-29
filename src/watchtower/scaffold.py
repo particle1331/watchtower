@@ -13,7 +13,9 @@ from typing import Any
 
 import nbformat
 import ruamel.yaml
+import yaml
 
+from . import knowledge
 from .paths import COURSES_DIR, POSTS_DIR
 
 _yaml = ruamel.yaml.YAML(typ="rt")
@@ -62,6 +64,7 @@ def new_post(name: str, title: str | None = None) -> Path:
     if title is None:
         title = name.replace("-", " ").replace("_", " ").title()
     _write_ipynb(path, title, date=date)
+    knowledge.add_artifact(f"post/{name}", "post", path, title)
     return path
 
 
@@ -86,7 +89,7 @@ def _register_course(name: str) -> None:
     if _find_course_sidebar_entry(data, name) is not None:
         return  # already registered — idempotent
 
-    sidebar: list = data["website"]["sidebar"]
+    sidebar: list = data["website"].setdefault("sidebar", [])
     new_entry = {
         "id": name,
         "style": "floating",
@@ -96,13 +99,7 @@ def _register_course(name: str) -> None:
             {
                 "section": "",
                 "href": _course_href(name, "index.ipynb"),
-                "contents": [
-                    {"text": "Overview", "href": _course_href(name, "index.ipynb")},
-                    {
-                        "text": "01. Introduction",
-                        "href": _course_href(name, "01-introduction.ipynb"),
-                    },
-                ],
+                "contents": [{"text": "01. Introduction", "href": _course_href(name, "01-introduction.ipynb")}],
             }
         ],
     }
@@ -120,13 +117,30 @@ def new_course(name: str, title: str) -> Path:
     # frontmatter `title` as the H1.
     index_path = course_dir / "index.ipynb"
     if not index_path.exists():
-        _write_ipynb(index_path, title, body="\n\nTODO: course overview.\n")
+        _write_ipynb(index_path, title, body=f"\n\n{knowledge.INCLUDE_MARKER}\n\nTODO: course introduction.\n")
+    course_yaml = course_dir / "course.yaml"
+    if not course_yaml.exists():
+        course_yaml.write_text(
+            yaml.safe_dump({
+                "id": f"course/{name}", "purpose": "", "audience": "",
+                "planned": {"summary": ""}, "actualized": {"summary": ""},
+            }, sort_keys=False),
+            encoding="utf-8",
+        )
     lesson_path = course_dir / "01-introduction.ipynb"
     if not lesson_path.exists():
         _write_ipynb(lesson_path, "Introduction", body="\n\nTODO: lesson content.\n")
 
     # register in _quarto.yml sidebar
     _register_course(name)
+    if knowledge.get_artifact(f"course/{name}") is None:
+        knowledge.add_artifact(f"course/{name}", "course", course_dir, title)
+    if knowledge.get_artifact(f"course/{name}/01-introduction") is None:
+        knowledge.add_artifact(
+            f"course/{name}/01-introduction", "chapter", lesson_path,
+            "Introduction", parent=f"course/{name}",
+        )
+    knowledge.render_course_includes()
 
     return course_dir
 
@@ -157,6 +171,7 @@ def new_course_chapter(
 
     _write_ipynb(path, title)
     _register_chapter_in_sidebar(course, name, title, section)
+    knowledge.add_artifact(f"course/{course}/{name}", "chapter", path, title, parent=f"course/{course}")
     return path
 
 

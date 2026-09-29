@@ -1,4 +1,4 @@
-.PHONY: help bootstrap setup-skills test lint typecheck review resume docs render project
+.PHONY: help bootstrap setup-skills test lint typecheck review resume knowledge docs render project
 
 .DEFAULT_GOAL := help
 PYTHON := .venv/bin/python
@@ -20,18 +20,18 @@ setup-skills:
 	./scripts/setup-skills
 
 test:
-	uv run pytest
+	.venv/bin/pytest
 
 lint:
-	uv run ruff check .
+	.venv/bin/ruff check .
 
 typecheck:
-	uv run pyright
+	.venv/bin/pyright
 
 review:
-	@uv run ruff check .
-	@uv run pyright
-	@uv run pytest
+	@.venv/bin/ruff check .
+	@.venv/bin/pyright
+	@.venv/bin/pytest
 	@echo "--- diff shape ---"
 	@git diff --stat
 
@@ -39,10 +39,15 @@ review:
 resume:
 	@$(PYTHON) scripts/resume.py
 
-docs: resume
+knowledge:
+	@$(PYTHON) -m watchtower.cli render-context
+	@$(PYTHON) -m watchtower.cli validate
+	@$(PYTHON) -m watchtower.cli sync-site
+
+docs: resume knowledge
 	@$(PYTHON) scripts/docs.py
 
-render:
+render: knowledge
 	@$(PYTHON) scripts/render.py
 
 project:

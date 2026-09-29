@@ -17,6 +17,12 @@ def new_project() -> Path:
     path = ROOT_PATH / "projects" / name
     path.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(["uv", "init", "--package", str(path)], cwd=ROOT_PATH, check=True)
+    subprocess.run(
+        [str(ROOT_PATH / ".venv/bin/wt"), "register", "project", f"project/{name}",
+         str(path.relative_to(ROOT_PATH)), name.replace("-", " ").title()],
+        cwd=ROOT_PATH,
+        check=True,
+    )
     return path
 
 

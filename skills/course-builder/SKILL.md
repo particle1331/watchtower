@@ -57,12 +57,12 @@ does not isolate the files or Quarto's `_site` output.
 
 ## Course content after orientation
 
-Once a course has `index.ipynb` and `00-overview.ipynb`, those notebooks are the
-source of truth for its promise, terminology, artifact lineage, execution
-profiles, chapter handoffs, and evidence standard. Ordinary chapter work should
-read those pages and the target chapter, not reload the course-home authoring
-reference. Return to that reference only when the course home, overview, or
-course-wide contract must change.
+Run `wt context <chapter-id-or-path>` first. The catalog and `course.yaml` give
+the course contract, separating planned work from actualized work. Then read
+`index.ipynb` (the learner-facing home), `00-overview.ipynb` when present, and
+the target chapter. Read adjacent chapter openings only when a handoff matters;
+do not load all sibling chapters. Return to the course-home authoring reference
+only when the course home, overview, or course-wide contract must change.
 
 ## Universal invariants
 

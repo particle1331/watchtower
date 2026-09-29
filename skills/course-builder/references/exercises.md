@@ -23,7 +23,7 @@ specific feedback and checks. Do not generate a hidden answer cell by default.
 
 ## Existing solutions
 
-Existing solutions are collected in the public course solutions page at
-`nb/courses/solutions.qmd`. Older chapter notebooks still contain hidden,
-encoded solution cells; preserve those cells when editing nearby exercises.
+Archived solutions are at
+`archive/2026-09-30/nb/courses/solutions.qmd`. Archived chapter notebooks may
+contain hidden, encoded solution cells; preserve them when reviewing source.
 `wt cat` shows their stored source, while `wt diff` compares stored source.

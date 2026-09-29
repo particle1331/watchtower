@@ -15,7 +15,7 @@ from pathlib import Path
 
 import nbformat
 
-from . import scaffold
+from . import knowledge, scaffold
 from .paths import POSTS_DIR
 
 TIERS = ("posts", "courses")
@@ -135,6 +135,10 @@ def import_notebook(src: str, tier: str, name: str | None = None) -> Path:
     if dest.exists():
         raise FileExistsError(f"{dest} already exists")
     _copy_ipynb(source, dest)
+    knowledge.add_artifact(
+        f"post/{stem}", "post", dest,
+        stem.replace("-", " ").replace("_", " ").title(),
+    )
     return dest
 
 
@@ -169,4 +173,8 @@ def import_chapter(
     _copy_ipynb(source, dest)
     title = chapter.replace("-", " ").replace("_", " ").title()
     scaffold._register_chapter_in_sidebar(course, chapter, title, section)
+    knowledge.add_artifact(
+        f"course/{course}/{chapter}", "chapter", dest, title,
+        parent=f"course/{course}",
+    )
     return dest

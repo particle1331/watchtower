@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import random
+from importlib import import_module
 
 import numpy as np
-import torch
 
 
 def set_seed(value: int = 42, deterministic: bool = False) -> None:
@@ -15,6 +15,7 @@ def set_seed(value: int = 42, deterministic: bool = False) -> None:
     disabling benchmarking causes cuDNN to deterministically select an
     algorithm, possibly at the cost of reduced performance.
     """
+    torch = import_module("torch")
     random.seed(value)
     np.random.seed(value)
     torch.manual_seed(value)

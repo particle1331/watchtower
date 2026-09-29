@@ -123,9 +123,13 @@ def _load_yaml(path: Path) -> dict:
 
 
 def _published_posts(root: Path) -> list[dict[str, str]]:
-    """Find dated, non-draft post notebooks for the site listings."""
+    """Select only catalog-published public posts for the site listing."""
     posts: list[tuple[date, str, str]] = []
-    for path in (root / "nb" / "posts").glob("*.ipynb"):
+    catalog = yaml.safe_load((root / "knowledge/catalog.yaml").read_text(encoding="utf-8"))
+    for item in catalog["artifacts"]:
+        if item.get("kind") != "post" or item.get("visibility") != "public" or item.get("lifecycle") != "published":
+            continue
+        path = root / item["path"]
         notebook = nbformat.read(path, as_version=nbformat.NO_CONVERT)
         if not notebook.cells or notebook.cells[0].cell_type != "markdown":
             continue

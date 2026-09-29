@@ -36,7 +36,7 @@ def test_make_docs_rebuilds_before_preview(tmp_path, resume_fails):
     )
     assert (result.returncode != 0) == resume_fails
     assert log.read_text().splitlines() == (
-        ["resume:4300"] if resume_fails else ["resume:4300", "docs:4300"]
+        ["resume:4300"] if resume_fails else ["resume:4300", "render-context:4300", "validate:4300", "sync-site:4300", "docs:4300"]
     )
 
 

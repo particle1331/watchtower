@@ -155,11 +155,11 @@ def vault_export() -> None:
 
 
 @app.command(name="map")
-def map_cmd() -> None:
-    """Print repo structure as JSON — agent navigation context."""
+def map_cmd(archive: bool = typer.Option(False, "--archive", help="show archived source paths")) -> None:
+    """Print registered active knowledge as JSON, or the archive inventory."""
     from . import inspect
 
-    print(inspect.repo_map_json())
+    print(inspect.repo_map_json(archive=archive))
 
 
 @app.command(name="kernels")
@@ -179,15 +179,76 @@ def kernels_cmd() -> None:
 
 
 @app.command()
-def find(query: str) -> None:
-    """Grep across notebook cell sources, reporting cell indices."""
+def find(query: str, archive: bool = typer.Option(False, "--archive", help="search archived sources")) -> None:
+    """Search registered active sources, or archived sources explicitly."""
     from . import inspect
 
-    out = inspect.find_in_src(query)
+    out = inspect.find_in_src(query, archive=archive)
     if out:
         print(out)
     else:
         console.print(f"[yellow]no sources match '{query}'.[/yellow]")
+
+
+@app.command(name="context")
+def context_cmd(name: str) -> None:
+    """Show an artifact's catalog record, course contract, and reading paths."""
+    from . import knowledge
+
+    print(knowledge.context_json(name))
+
+
+@app.command(name="validate")
+def validate_cmd() -> None:
+    """Check catalog references, course contracts, and unregistered active files."""
+    from . import knowledge
+
+    errors = knowledge.validate()
+    if errors:
+        for error in errors:
+            console.print(f"[red]{error}[/red]")
+        raise typer.Exit(1)
+    console.print("[green]knowledge catalog valid[/green]")
+
+
+@app.command(name="render-context")
+def render_context_cmd() -> None:
+    """Generate course-home Markdown includes from active course YAML files."""
+    from . import knowledge
+
+    for path in knowledge.render_course_includes():
+        print(path)
+
+
+@app.command(name="sync-site")
+def sync_site_cmd() -> None:
+    """Sync Quarto render paths and navigation from published catalog records."""
+    from . import knowledge
+
+    knowledge.sync_site()
+    console.print("[green]site navigation synchronized[/green]")
+
+
+@app.command(name="register")
+def register_cmd(
+    kind: str = typer.Argument(..., help="post | course | chapter | portfolio | project"),
+    artifact_id: str = typer.Argument(..., help="stable knowledge ID"),
+    path: str = typer.Argument(..., help="existing relative source path"),
+    title: str = typer.Argument(..., help="display title"),
+    parent: str | None = typer.Option(None, "--parent", help="registered course ID for a chapter"),
+    visibility: str = typer.Option("public", "--visibility", help="public | private"),
+    lifecycle: str = typer.Option("draft", "--lifecycle", help="planned | draft | published"),
+) -> None:
+    """Register an existing knowledge work, especially a project or portfolio piece."""
+    from pathlib import Path
+
+    from . import knowledge
+
+    knowledge.add_artifact(
+        artifact_id, kind, Path(path), title,
+        parent=parent, visibility=visibility, lifecycle=lifecycle,
+    )
+    console.print(f"[green]registered {artifact_id}[/green]")
 
 
 @app.command()
@@ -210,7 +271,7 @@ def cat(
     with_outputs: bool = typer.Option(False, "--with-outputs", help="also show each code cell's outputs"),
     out_offset: int = typer.Option(0, "--out-offset", help="char offset into each output's text body"),
     out_limit: int | None = typer.Option(None, "--out-limit", help="max chars per output body"),
-    context: int = typer.Option(0, "--context", "-C", help="include N cells before the first match and after the last (marked `context` in headers)"),
+    context: int = typer.Option(0, "--context", "-C", help="include N neighboring cells in this notebook (not course context)"),
 ) -> None:
     """Print notebook cell sources as markdown (JSON-stripped)."""
     from . import notebook
@@ -301,20 +362,20 @@ def _print_diff(out: str) -> None:
 
 
 @app.command()
-def ls(tier: str = typer.Argument(..., help="posts | courses | projects")) -> None:
-    """List notebook sources or project directories."""
+def ls(
+    tier: str = typer.Argument(..., help="posts | courses | portfolio | projects"),
+    archive: bool = typer.Option(False, "--archive", help="list the archived tier"),
+) -> None:
+    """List registered active artifacts or archived source paths."""
     from . import inspect
-    from .paths import COURSES_DIR, POSTS_DIR
 
-    if tier == "posts":
-        items = inspect.list_ipynb(POSTS_DIR)
-    elif tier == "courses":
-        items = inspect.list_ipynb(COURSES_DIR)
-    elif tier == "projects":
-        items = [project["path"] for project in inspect.list_projects()]
+    if archive:
+        inventory = inspect.archive_map()
+        if tier not in {"posts", "courses", "portfolio", "projects"}:
+            raise ValueError(f"unknown tier: {tier}")
+        items = inventory[tier]
     else:
-        console.print(f"[red]unknown tier: {tier}. try posts|courses|projects.[/red]")
-        raise typer.Exit(2)
+        items = inspect.list_tier(tier)
     if not items:
         console.print(f"[yellow]no {tier} yet.[/yellow]")
         return

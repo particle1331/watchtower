@@ -12,6 +12,14 @@ from watchtower import cli
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def catalog_file(tmp_path):
+    """Every isolated test repository starts with an empty active catalog."""
+    target = tmp_path / "knowledge" / "catalog.yaml"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("version: 1\nartifacts: []\n", encoding="utf-8")
+
+
 @pytest.fixture
 def repo(tmp_path, monkeypatch):
     """Isolated repo root: cwd = tmp_path with a minimal _quarto.yml."""
