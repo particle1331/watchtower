@@ -97,6 +97,18 @@ it is measured under the final trainer profile.
 - [x] Implement the natural-deduction rules and independent proof verifier.
 - [x] Implement checked countermodel search.
 - [x] Generate positive examples from valid proof skeletons.
+- [ ] Expand beyond the five fixed proof templates with a recursive derivation
+  generator in `projects/proof-lm/src/proof_lm/logic/generator.py`. Start with
+  implication chains and conjunction compositions, then add nested assumption
+  discharge, disjunction case splits, and negation/contradiction. Extract each
+  theorem from its derivation and independently verify every positive example.
+- [ ] Control generated proof depth, branching, rule combinations, and assumption
+  nesting; measure serialized lengths against the 512-token context budget.
+- [ ] Split generated examples by canonical proof structure before variable
+  renaming or prompt paraphrasing. Hold out rule compositions and deeper proofs
+  to distinguish structural generalization from template memorization.
+- [ ] Validate the expanded corpus with a small pretraining → proof-SFT run and
+  report verifier-checked validity on held-out structures before the full run.
 - [x] Generate controlled invalid examples by perturbing proofs and goals.
 - [x] Add parse/render round-trip, generated-proof validity, countermodel, and
   assumption-discharge property tests.
