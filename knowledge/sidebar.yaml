@@ -1,82 +1,4 @@
-bibliography: assets/references.bib
-
-execute:
-  enabled: false
-
-format:
-  html:
-    theme: united
-    lightbox: true
-    html-math-method: katex
-    highlight-annotations: true
-    toc: true
-    toc-location: right
-    css: assets/styles.css
-
-project:
-  type: website
-  output-dir: _site
-  render:
-  - index.qmd
-  - resume.qmd
-  - nb/photos/photos.ipynb
-  - posts.qmd
-  - nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
-  - courses.qmd
-  - nb/courses/llms-from-scratch/index.ipynb
-  - nb/courses/llms-from-scratch/00-overview.ipynb
-  - nb/courses/llms-from-scratch/01-introduction.ipynb
-  - nb/courses/llms-from-scratch/02-text-data.ipynb
-  - nb/courses/llms-from-scratch/03-attention.ipynb
-  - nb/courses/llms-from-scratch/04-gpt-model.ipynb
-  - nb/courses/llms-from-scratch/05-pretraining.ipynb
-  - nb/courses/llms-from-scratch/06-classification.ipynb
-  - nb/courses/llms-from-scratch/07-instructions.ipynb
-  - nb/courses/llms-from-scratch/08-lora.ipynb
-  - nb/courses/llms-from-scratch/09-capstone.ipynb
-  - nb/courses/reasoning-from-scratch/index.ipynb
-  - nb/courses/reasoning-from-scratch/00-overview.ipynb
-  - nb/courses/reasoning-from-scratch/01-introduction.ipynb
-  - nb/courses/text-classification-from-scratch/index.ipynb
-  - nb/courses/text-classification-from-scratch/01-introduction.ipynb
-  - nb/courses/text-classification-from-scratch/00-overview.ipynb
-  - nb/courses/text-classification-from-scratch/02-data.ipynb
-  - nb/courses/text-classification-from-scratch/03-splits.ipynb
-  - nb/courses/text-classification-from-scratch/04-baseline.ipynb
-  - nb/courses/text-classification-from-scratch/05-transformers.ipynb
-  - nb/courses/text-classification-from-scratch/06-finetuning.ipynb
-  - nb/courses/text-classification-from-scratch/07-evaluation.ipynb
-  - nb/courses/text-classification-from-scratch/08-efficiency.ipynb
-  - nb/courses/text-classification-from-scratch/09-deployment.ipynb
-  - nb/courses/text-classification-from-scratch/10-capstone.ipynb
-  - '!archive/**'
-  preview:
-    port: 4200
-    browser: false
-
 website:
-  title: "Ron Medina ∷ AI & ML"
-  draft-mode: visible
-  back-to-top-navigation: true
-  page-navigation: true
-  bread-crumbs: true
-  reader-mode: true
-  favicon: assets/favicon.jpg
-
-  navbar:
-    left:
-    - href: resume.qmd
-      text: résumé
-    - href: nb/photos/photos.ipynb
-      text: personal
-    - href: posts.qmd
-      text: posts
-    - href: courses.qmd
-      text: courses
-    right:
-    - icon: github
-      href: https://github.com/particle1331/watchtower/tree/main/src/watchtower
-      aria-label: watchtower source on GitHub
   sidebar:
   - id: llms-from-scratch
     style: floating
@@ -127,6 +49,20 @@ website:
         href: nb/courses/reasoning-from-scratch/01-introduction.ipynb
       - text: Reasoning Model Pipeline and Evidence Contract
         href: nb/courses/reasoning-from-scratch/00-overview.ipynb
+      - text: Generate Text with a Pretrained Reasoning Base Model
+        href: nb/courses/reasoning-from-scratch/02-generation.ipynb
+      - text: Evaluate Reasoning Models
+        href: nb/courses/reasoning-from-scratch/03-evaluation.ipynb
+      - text: Improve Reasoning with Inference-Time Scaling
+        href: nb/courses/reasoning-from-scratch/04-inference-scaling.ipynb
+      - text: Inference-Time Scaling through Self-Refinement
+        href: nb/courses/reasoning-from-scratch/05-self-refinement.ipynb
+      - text: Train Reasoning Models with Reinforcement Learning
+        href: nb/courses/reasoning-from-scratch/06-reinforcement-learning.ipynb
+      - text: Improve GRPO for Reasoning Reinforcement Learning
+        href: nb/courses/reasoning-from-scratch/07-grpo.ipynb
+      - text: Distill Reasoning Models for Efficient Inference
+        href: nb/courses/reasoning-from-scratch/08-distillation.ipynb
   - id: text-classification-from-scratch
     style: floating
     collapse-level: 2

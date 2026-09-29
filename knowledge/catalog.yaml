@@ -94,3 +94,177 @@ artifacts:
   lifecycle: published
   relations: []
   parent: course/llms-from-scratch
+- id: course/reasoning-from-scratch
+  kind: course
+  title: Build a Reasoning Model from Scratch
+  path: nb/courses/reasoning-from-scratch
+  visibility: public
+  lifecycle: published
+  relations: []
+- id: course/reasoning-from-scratch/00-overview
+  kind: chapter
+  title: Reasoning Model Pipeline and Evidence Contract
+  path: nb/courses/reasoning-from-scratch/00-overview.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/01-introduction
+  kind: chapter
+  title: Understanding Reasoning Models
+  path: nb/courses/reasoning-from-scratch/01-introduction.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/02-generation
+  kind: chapter
+  title: Generate Text with a Pretrained Reasoning Base Model
+  path: nb/courses/reasoning-from-scratch/02-generation.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/03-evaluation
+  kind: chapter
+  title: Evaluate Reasoning Models
+  path: nb/courses/reasoning-from-scratch/03-evaluation.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/04-inference-scaling
+  kind: chapter
+  title: Improve Reasoning with Inference-Time Scaling
+  path: nb/courses/reasoning-from-scratch/04-inference-scaling.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/05-self-refinement
+  kind: chapter
+  title: Inference-Time Scaling through Self-Refinement
+  path: nb/courses/reasoning-from-scratch/05-self-refinement.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/06-reinforcement-learning
+  kind: chapter
+  title: Train Reasoning Models with Reinforcement Learning
+  path: nb/courses/reasoning-from-scratch/06-reinforcement-learning.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/07-grpo
+  kind: chapter
+  title: Improving GRPO for Reasoning Reinforcement Learning
+  path: nb/courses/reasoning-from-scratch/07-grpo.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/reasoning-from-scratch/08-distillation
+  kind: chapter
+  title: Distill Reasoning Models for Efficient Inference
+  path: nb/courses/reasoning-from-scratch/08-distillation.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  parent: course/reasoning-from-scratch
+- id: course/text-classification-from-scratch
+  kind: course
+  title: Build Text Classifiers from Scratch
+  path: nb/courses/text-classification-from-scratch
+  visibility: public
+  lifecycle: published
+  relations: []
+- id: course/text-classification-from-scratch/01-introduction
+  kind: chapter
+  title: "Define the Classification Problem"
+  path: nb/courses/text-classification-from-scratch/01-introduction.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/00-overview
+  kind: chapter
+  title: Text Classification Pipeline and Evidence Contract
+  path: nb/courses/text-classification-from-scratch/00-overview.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/02-data
+  kind: chapter
+  title: Build a Dataset with Reliable Labels
+  path: nb/courses/text-classification-from-scratch/02-data.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/03-splits
+  kind: chapter
+  title: Prevent Leakage with Grouped Splits
+  path: nb/courses/text-classification-from-scratch/03-splits.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/04-baseline
+  kind: chapter
+  title: Train a TF-IDF Logistic Regression Baseline
+  path: nb/courses/text-classification-from-scratch/04-baseline.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/05-transformers
+  kind: chapter
+  title: "From Classical Models to General-Purpose Classifiers"
+  path: nb/courses/text-classification-from-scratch/05-transformers.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/06-finetuning
+  kind: chapter
+  title: Fine-Tune Encoder and Decoder Models
+  path: nb/courses/text-classification-from-scratch/06-finetuning.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/07-evaluation
+  kind: chapter
+  title: "Evaluate Calibration and Failure Modes"
+  path: nb/courses/text-classification-from-scratch/07-evaluation.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/08-efficiency
+  kind: chapter
+  title: Measure Data Efficiency and Inference Cost
+  path: nb/courses/text-classification-from-scratch/08-efficiency.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/09-deployment
+  kind: chapter
+  title: Package and Serve a Text Classifier
+  path: nb/courses/text-classification-from-scratch/09-deployment.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch
+- id: course/text-classification-from-scratch/10-capstone
+  kind: chapter
+  title: 'Final Project: Implement a Jev-Like Classifier with ModernBERT'
+  path: nb/courses/text-classification-from-scratch/10-capstone.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  parent: course/text-classification-from-scratch

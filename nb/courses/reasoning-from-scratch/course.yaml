@@ -1,0 +1,31 @@
+id: course/reasoning-from-scratch
+purpose: >-
+  Explain and reproduce the main stages used to add reasoning behavior to a
+  pretrained language model: inference-time scaling, reinforcement learning,
+  and distillation, with evaluation used to decide whether each change helps.
+audience: >-
+  Python programmers who understand basic neural networks and language-model
+  inference and want a practical, evidence-based introduction to reasoning
+  methods without training a foundation model from scratch.
+planned:
+  summary: >-
+    Start from a pretrained Qwen3 base model, establish a task and evaluation
+    contract, then compare ordinary generation with test-time scaling and
+    self-refinement. Continue with reward-driven fine-tuning using RL and GRPO,
+    and finish by distilling reasoning behavior into a smaller, faster model.
+    The notebooks follow the main progression of Sebastian Raschka's
+    reasoning-from-scratch repository while making compute costs and limits
+    explicit.
+  source: https://github.com/rasbt/reasoning-from-scratch
+  chapters:
+    - 00-overview: Map the model lineage, methods, execution paths, and evidence required for defensible claims.
+    - 01-introduction: Define reasoning behavior, the pretrained starting point, scope, and limits of the phrase “from scratch.”
+    - 02-generation: Load Qwen3, format prompts, generate answers, and understand decoding controls.
+    - 03-evaluation: Build a small reproducible reasoning evaluation with answer parsing, exact-match checks, and error analysis.
+    - 04-inference-scaling: Compare chain-of-thought prompting, multiple sampled candidates, self-consistency, and best-of-N under a fixed compute budget.
+    - 05-self-refinement: Implement draft, critique, and revision loops; measure whether additional inference improves correctness and cost.
+    - 06-reinforcement-learning: Connect verifiable rewards to policy updates and reproduce a small RLVR/GRPO training path.
+    - 07-grpo: Examine group-relative optimization, stabilizing improvements, reward design, and training diagnostics.
+    - 08-distillation: Generate teacher traces, fine-tune a smaller student, and compare quality, latency, and token use.
+actualized:
+  summary: ''
