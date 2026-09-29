@@ -12,6 +12,15 @@ reference exemplars; consult them when the rules below need a concrete instance.
 For a larger example, see the Weak Supervision article
 (`nb/posts/003-weak-supervision`).
 
+## Repository notation
+
+Read the repository-root `NOTATION.md` before writing or revising math-heavy
+notebook content. It is the source of truth for mathematical typefaces,
+dimensions, shapes, indices, and the correspondence between mathematical and
+code names. Keep subject-specific conventions in the relevant course or
+notebook; extend `NOTATION.md` only when a convention is broadly reusable
+across the repository.
+
 ## Voice
 
 - **Direct and declarative.** Prefer impersonal exposition for definitions and
@@ -71,7 +80,8 @@ For a larger example, see the Weak Supervision article
 - Display equations for derivations; use `aligned` for multi-line steps.
 - Box final results: `$$\boxed{\hat{\theta}_{\text{MLE}} = \max(x_i)}$$`.
 - Shape annotations: `\underbrace{X}_{n \times d}` for matrix dimensions.
-- Define notation inline at first use; do not front-load a notation table.
+- Follow `NOTATION.md` for established symbols and shapes, while still defining
+  notation inline at first use; do not front-load a notation table.
 - Quarto cross-references: `{#eq-label}` on the equation, `@eq-label` in prose.
 
 ## Code cells
