@@ -15,6 +15,11 @@
 \newfontface\homepagenamefont{Ubuntu-Bold.ttf}[Path=assets/fonts/,LetterSpace=-4.5]
 \definecolor{homepagename}{HTML}{343A40}
 \definecolor{homepagedot}{HTML}{E95420}
+{% raw %}
+\renewcommand*{\makeheaddetailssymbol}{{\hspace{1em}\textcolor{gray}{\rmfamily\textbullet}\hspace{1em}}}
+{% endraw %}
+\newcommand*{\homepagemarker}{\makebox[1em][c]{\tikz[baseline=-0.2ex]\fill[homepagedot] (0,0) circle (0.45ex);}}
+\renewcommand*{\labelitemi}{\homepagemarker}
 \renewcommand*{\namefont}{\Huge\homepagenamefont}
 {% raw %}
 \renewcommand*{\firstnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}}}
