@@ -41,15 +41,17 @@ done once in JupyterLab (or imported from Colab/Kaggle) is preserved as-is.
 - Run `wt map` first to get structured repo layout as JSON.
 - Run `wt ls posts|courses` for notebook listings, or `wt ls projects` for
   project directories.
-- `<name>` for any cell command (`cat`, `edit-cell`, `append-cell`, `insert-cell`,
-  `remove-cell`, `tag`, `count`) resolves as: bare stem (`001-testnote`),
+- `<name>` for notebook commands (`cat`, `output`, `diff`, `edit-cell`,
+  `append-cell`, `insert-cell`, `remove-cell`, `clear-outputs`, `tag`, `count`,
+  `run`) resolves as: bare stem (`001-testnote`),
   tier-prefixed stem (`nb/posts/001-example`), or full path (`nb/posts/001-example.ipynb`).
 
 ## Reading notebooks
 - `wt cat <name>` — print all cells as markdown (`> cell N [code|markdown] ...` headers; `>` marks tool meta, not notebook content).
 - `wt cat <name> --index N` — just cell N.
 - `wt cat <name> --tag foo` — cells with Jupyter tag `foo` (may be multiple).
-- `wt cat <name> --label fig-x` — cell whose first line is `#| label: fig-x`.
+- `wt cat <name> --label fig-x` — cells whose leading Quarto options contain
+  `#| label: fig-x`.
 - `wt cat <name> --index N --offset 500 --limit 1000` — slice chars 500:1500
   of cell N's source. Header carries `src[start:end] of total` so you can
   chain reads without re-paying for bytes you've already seen.
@@ -86,13 +88,15 @@ opencode, Claude Code, ...). The loop:
 ## Editing notebooks
 - Cell writes (`edit-cell`, `append-cell`, `insert-cell`) are hard-capped at
   20k chars per source — break large content into smaller cells.
-- **Cell mutations (`edit-cell`, `insert-cell`, `remove-cell`, `tag`) take
-  exactly one locator: `--index N`, `--tag foo`, or `--label foo`.**
-  `--tag`/`--label` must match a unique cell (writes error on zero or
-  multiple matches); prefer them over positional `--index` when the cell has
-  a stable tag or Quarto label. Exception: `remove-cell --tag foo` removes
-  every matching cell. To target a cell without stable tags, run `wt cat`
-  and read the `> cell N ...` index from its header.
+- **Locator-based cell mutations take exactly one locator.** `edit-cell` and `tag` accept
+  `--index N`, `--tag foo`, or `--label foo`; `insert-cell` accepts one of
+  `--after N`, `--before N`, `--tag foo`, or `--label foo`; `remove-cell`
+  accepts `--index N`, `--tag foo`, or `--label foo`.
+  `edit-cell`, `insert-cell` tag/label locators, and `tag` require one matched
+  cell. `remove-cell` deletes every matching cell, including multiple tag or
+  label matches. Prefer stable tags or Quarto labels over positional indices
+  when possible. To target a cell without a stable locator, run `wt cat` and
+  read the `> cell N ...` index from its header.
 - **Indices shift after insert/remove.** Any `insert-cell` or `remove-cell`
   bumps the index of every cell that comes after the anchor by ±1. So:
   - When planning multiple mutations, do them right-to-left (highest index
@@ -100,22 +104,25 @@ opencode, Claude Code, ...). The loop:
     anything — it only rewrites the source of cell N.
   - After an insert/remove, do NOT reuse indices you resolved before that
     mutation — re-run `wt cat` (or `wt count`) to get fresh indices.
-- `wt edit-cell <name> --index N | --tag foo | --label foo --content "..."`
-  — replace a cell's source (outputs + metadata preserved). Source may come
-  from `--content` or stdin (useful for multi-line via heredoc). stdin is
-  always decoded as UTF-8, so piping Unicode (box-drawing, arrows, dashes,
-  accents) is safe on any platform — no `PYTHONUTF8`/encoding dance needed.
-- `wt append-cell <name> --type md|code [--content "..."]` — push to end.
+- `wt edit-cell <name> --index N | --tag foo | --label foo [--content "..."]`
+  — replace a cell's source (outputs + metadata preserved). If `--content` is
+  omitted, source is read from stdin, which is useful for multi-line content.
+  stdin is decoded as UTF-8.
+- `wt append-cell <name> --type md|code [--content "..."]` — push to end;
+  the default type is Markdown.
 - `wt insert-cell <name> --after N | --before N | --tag foo | --label foo
   --type md|code [--content "..."]` — insert a new cell below/above the
   located cell; `--tag`/`--label` insert *below* the matched cell.
-- `wt remove-cell <name> --index N | --tag foo | --label foo` — delete the
-  matching cell(s); a tag may remove multiple. To remove a range, resolve
-  each index via `wt cat --tag/--label` (or `wt count` for a tail) and
-  delete from highest to lowest (see index-shift rule above).
-- `wt tag <name> --index N | --tag foo | --label foo --add foo --remove bar`
-  — manage Jupyter cell tags (unique match required). With neither `--add`
-  nor `--remove`, prints the cell's current tags.
+- `wt remove-cell <name> --index N | --tag foo | --label foo` — delete every
+  matching cell. Resolve ranges with `wt cat --index N:M`, then remove from
+  highest to lowest if you need to delete a selected range by index.
+- `wt tag <name> --index N | --tag foo | --label foo [--add foo] [--remove bar]`
+  — manage Jupyter cell tags on one matched cell. `--add` and `--remove` may
+  be repeated; with neither, prints the cell's current tags.
+- `wt clear-outputs <name> [--index N | --tag foo | --label foo | --from N]`
+  — clear stored outputs from matching code cells. With no locator, all code
+  cells are cleared; `--from N` clears code cells from `N` to the end; Markdown
+  cells are skipped.
 
 ## Executing notebooks
 - `wt kernels` — list installed Jupyter kernel names and languages; use the
@@ -125,9 +132,10 @@ opencode, Claude Code, ...). The loop:
 - `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code
   cells in-place via nbclient, writing outputs back to the `.ipynb`. Quarto
   renders inline outputs without re-running; `wt run` is the explicit
-  re-execution path. Execution is JupyterLab-like: a cell error is stored as
-  an inline output and execution continues; exit code is 1 if any cell
-  errored (agents can use it to verify notebook code).
+  re-execution path. The default timeout is 300 seconds per cell. Execution is
+  JupyterLab-like: a cell error is stored as an inline output and execution
+  continues; exit code is 1 if any cell errored (agents can use it to verify
+  notebook code).
 - `--index N` runs the notebook prefix through that cell in a *fresh* kernel,
   so imports and variables from earlier cells are available. Only the target
   cell's outputs are written back.
@@ -145,18 +153,22 @@ opencode, Claude Code, ...). The loop:
   import as a chapter of an existing course: copies to
   `nb/courses/<course>/<chapter>.ipynb` and registers it in the course's sidebar in
   `_quarto.yml` (last section by default, or the section named by `--section`).
-- Import strips a leading `# Title` heading that duplicates the frontmatter
-  `title` (Quarto renders that title as the page's H1), so the imported
-  notebook has one H1, not two. It only runs when the notebook has frontmatter;
-  a bare `# Title` with no frontmatter is kept as-is.
+- `wt import` preserves stored outputs, adds a default `python3` kernelspec if
+  needed, and strips a leading `# Title` heading that duplicates frontmatter
+  `title` (Quarto renders that title as the page's H1). A bare `# Title` with
+  no frontmatter is kept as-is.
 
 ## Rendering
 - `make docs [PORT=<port>]` rebuilds résumé pages and PDF from
   `assets/resume.yaml`, then serves the site on the chosen local port (default
   :4200; publishing is handled by the `publish.yml` GitHub Action on push to
   `main`). The command prints the PDF path and preview URL before blocking.
+- `make resume` rebuilds generated home, résumé, posts, contact, LaTeX, and PDF
+  artifacts from `assets/resume.yaml` and published post metadata.
 - `make render NOTEBOOK=nb/posts/<name>.ipynb` renders one notebook to PDF
-  under its source directory’s `pdf/` folder using inline outputs.
+  under its source directory's `pdf/` folder using inline outputs.
+- `make project NAME=<name>` scaffolds a uv workspace project under
+  `projects/<name>`.
 - `_quarto.yml` sets `execute.enabled: false`. Quarto never runs your
   code at render time — it uses whatever outputs already live in the `.ipynb`.
 
@@ -230,8 +242,17 @@ does not isolate source files or Quarto's `_site` output. Never reset, clean, or
 overwrite a dirty primary checkout to create the worktree.
 
 ## CLI command reference (for the agent)
+
+The `wt` CLI is limited to notebook/content workflows and the `vault` secret
+tool. Site previews, PDF rendering, résumé generation, and project creation
+are Make tasks, not `wt` subcommands. `wt --help` and each subcommand's
+`--help` output are the authoritative syntax.
+
 - `wt kernels` — list installed Jupyter kernel names and languages; use the
   `name` column with `wt run --kernel`.
+- `wt new` — command group for `post`, `course`, `chapter`, and `section`
+  scaffolding. `wt new course` requires `<name> <title>`; chapter creation and
+  course imports register entries in `_quarto.yml`.
 - `wt new post <name> [--title <title>]` — scaffold a dated post notebook; <title> defaults to a titleized version of <name>
 - `wt new course <name> <title>` — scaffold `nb/courses/<name>/` with an index notebook and first lesson stub; <title> becomes the display title in the index frontmatter
 - `wt new chapter <course> <name> [--title <title>] [--section <name>]` — scaffold a course chapter (notebook) and register it in the course's sidebar in `_quarto.yml`; <title> defaults to a placeholder derived from <name> (sidebar text and notebook frontmatter are independent surfaces — edit either or both after scaffolding)
@@ -246,7 +267,8 @@ overwrite a dirty primary checkout to create the worktree.
   or a Python-style slice (`N:M`, `:M`, `N:`) to scan a range of cells quickly.
   Default per-cell limit is 4096 chars (`--limit 0` = unlimited).
   `--context N` also renders the N cells around each match (marked
-  `context`).
+  `context`). A tag may match multiple cells; image/base64 output payloads are
+  summarized rather than dumped.
 - `wt output <name> --index N [--output K] [--save-dir DIR]` — print text and
   error outputs from one cell and save decoded image outputs for visual
   inspection. The default image directory is `ROOT_PATH / ".tmp"`.
@@ -258,8 +280,8 @@ overwrite a dirty primary checkout to create the worktree.
   --type md|code [--content X]` — insert a new cell; `--tag`/`--label` insert
   below the matched cell (must be unique)
 - `wt remove-cell <name> --index N | --tag foo | --label foo`
-  — delete matching cell(s); a tag may remove multiple (delete ranges from
-  highest to lowest)
+  — delete every matching cell; delete selected index ranges from highest to
+  lowest when planning multiple removals
 - `wt tag <name> --index N | --tag foo | --label foo [--add foo] [--remove bar]`
   — manage cell tags (unique match required)
 - `wt clear-outputs <name> [--index N | --tag foo | --label foo | --from N]`
@@ -270,7 +292,8 @@ overwrite a dirty primary checkout to create the worktree.
   (default HEAD): both sides rendered like `wt cat` (JSON-stripped, no
   outputs), so the diff shows stored cell source, not `.ipynb` JSON.
   Added/removed lines are highlighted in interactive terminals; output stays
-  plain when piped, redirected, or `NO_COLOR` is set.
+  plain when piped, redirected, or `NO_COLOR` is set. An unchanged notebook
+  reports `no changes`.
 - `wt run <name> [--index N] [--timeout S] [--kernel K]` — execute code cells
   in-place via nbclient, writing outputs back; exit code 1 if any cell errored.
   `--index N` runs the notebook prefix through that cell in a fresh kernel;
@@ -285,6 +308,10 @@ overwrite a dirty primary checkout to create the worktree.
 - `wt vault get <key>` / `wt vault rm <key>` — retrieve/delete a secret
 - `wt vault ls` — list stored keys
 - `wt vault export` — emit shell export statements
+
+`wt vault get` prints a secret value, `ls` prints keys only, and `export`
+emits shell-safe `export KEY=value` lines. Use `eval "$(.venv/bin/wt vault
+export)"` when loading the values into the current shell.
 
 ## Repository tasks (Make)
 
@@ -305,3 +332,10 @@ the workflows.
   `.tex`/`.qmd`.
 - `make docs [PORT=<port>]` — rebuild résumé pages and PDF from `assets/resume.yaml`, then serve the site (blocking;
   default :4200)
+- `make help` — print the repository workflow summary
+- `make bootstrap` — set up skills and run `uv sync`
+- `make setup-skills` — create and validate skill symlinks
+- `make test` — run `pytest`
+- `make lint` — run `ruff check .`
+- `make typecheck` — run `pyright`
+- `make review` — run lint, typecheck, tests, and print the diff summary

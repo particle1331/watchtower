@@ -24,9 +24,8 @@ This repository takes its name from the [Watchtower structure in *Battle Realms*
 
 Site content is primarily stored as Jupyter notebooks (`.ipynb`); the generated
 home and résumé pages are `index.qmd` and `resume.qmd`. `posts.qmd` lists the
-post notebooks. Agents read notebook cell sources as plain
-markdown via the `wt` CLI (jupytext under the hood); they never see
-the raw JSON.
+post notebooks. Agents read notebook cell sources as plain markdown through
+the notebook-aware `wt` CLI; they never need to see the raw JSON.
 
 ## Quick start
 
@@ -45,8 +44,11 @@ make project NAME=my-code-project       # uv init projects/my-code-project
 make render NOTEBOOK=nb/posts/my-post.ipynb  # render notebook PDF
 make resume                            # render home, résumé, posts, contact script, LaTeX, and PDF
 make docs                              # rebuild résumé from YAML, serve site on :4200
-make docs PORT=4300                  # rebuild résumé, serve an isolated worktree preview
+make docs PORT=4300                  # rebuild résumé, serve on :4300
 ```
+
+`wt` handles notebook and content operations. Site previews, PDF rendering,
+résumé generation, and project scaffolding are repository-level `make` tasks.
 
 The site is published automatically to `gh-pages` on push to `main` via
 `.github/workflows/publish.yml`.
@@ -144,10 +146,9 @@ assets/
   resume.pdf              # built by `make resume` (served as download link)
 filters/
   center-images.lua       # Quarto lua filter (image centering for PDF)
-
-  courses/
-    <course>/               # full course notes
-    index.ipynb             # listing page
+nb/courses/
+  <course>/               # full course notes
+  index.ipynb             # listing page
 scripts/                  # standalone repository tasks (no watchtower imports)
   resume.py               # résumé/site artifact builder
   docs.py                 # Quarto preview
@@ -157,17 +158,25 @@ projects/                 # uv workspaces (each member has its own pyproject.tom
 src/watchtower/           # the `wt` CLI + importable `watchtower` package
   cli.py                  # Typer application
   scaffold.py             # notebook/course scaffolding
-  notebook.py             # `wt cat | edit-cell | append-cell | insert-cell | remove-cell | tag`
+  notebook.py             # cell reads, edits, insertion, removal, tags, outputs
   outputs.py              # structured cell-output access + image extraction
   inspect.py              # `wt map | find | ls` + resolver
   convert.py              # `wt import` (external ipynb -> tier)
+  execute.py              # `wt run` via nbclient
+  kernels.py              # installed Jupyter kernel discovery
+  paths.py                # repository and content paths
   vault.py                # OS keyring wrapper
 ```
 
 ## CLI reference (`wt`)
 
+Run `.venv/bin/wt --help` for the live command list. The CLI is intentionally
+focused on notebook/content workflows and secret management; use the Make
+targets below for site and repository tasks.
+
 > **Defaults**: `wt cat` limits each cell source to 4096 chars (use `--limit 0`
-> for unlimited). Cell writes (edit/append/insert) are hard-capped at 20k chars.
+> for unlimited). Cell writes (`edit-cell`, `append-cell`, `insert-cell`) are
+> hard-capped at 20k characters.
 
 ### Scaffolding & importing
 
@@ -177,8 +186,13 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt new course <name> <title>` | create `nb/courses/<name>/` with index, first lesson, and sidebar (title shown in index frontmatter) |
 | `wt new chapter <course> <name> [--title <title>] [--section <name>]` | create `nb/courses/<course>/<name>.ipynb` and register in sidebar (title optional; sidebar text and notebook frontmatter are independent — edit either or both after scaffolding) |
 | `wt new section <course> <name>` | add a section header to a course's sidebar in `_quarto.yml` |
-| `wt import <ipynb> posts [<name>]` | import external notebook (Colab/Kaggle) into `nb/posts/` |
-| `wt import <ipynb> courses <course> [<chapter>] [--section <name>]` | import as a chapter of an existing course (copies into the course dir and registers in the course's sidebar) |
+| `wt import <ipynb> posts [<name>]` | import an external notebook into `nb/posts/`; the destination name defaults to the source stem |
+| `wt import <ipynb> courses <course> [<chapter>] [--section <name>]` | import into an existing course, defaulting the chapter name to the source stem, and register it in the sidebar |
+
+`wt new` is a command group containing `post`, `course`, `chapter`, and
+`section`. Course imports require an existing course. Imports preserve stored
+outputs, add a default Python kernelspec when needed, and strip a leading
+Markdown `# Title` that duplicates frontmatter.
 
 ### Navigation & search
 
@@ -188,47 +202,51 @@ src/watchtower/           # the `wt` CLI + importable `watchtower` package
 | `wt ls posts|courses|projects` | list notebook sources or project directories |
 | `wt find <query>` | grep across `.ipynb` cell sources |
 | `wt count <name>` | print cell count (plan ranges before `--index N:M`) |
-| `wt cat <name>` | print notebook as markdown; each cell headed `> cell N [code\|md]` (use N for `--index`) |
-| `wt cat <name> --index N` | print only cell N |
-| `wt cat <name> --index N:M` | print cells N..M-1 (Python slice; `:M` and `N:` ok) |
+| `wt cat <name>` | print notebook as markdown; each cell headed `> cell N [code\|markdown]` (use N for `--index`) |
+| `wt cat <name> --index N` | print one cell; `--index` also accepts Python-style `N:M`, `:M`, and `N:` slices |
 | `wt cat <name> --tag foo` | print cells with Jupyter tag `foo` |
-| `wt cat <name> --label foo` | print cells with matching [Quarto label](https://quarto.org/docs/authoring/cross-references.html#computations) |
-| `wt cat <name> --index N --offset O [--limit L]` | slice chars `O:O+L` of cell N (default limit 4096; 0 = unlimited) |
+| `wt cat <name> --label foo` | print cells whose leading Quarto options contain `#\| label: foo` |
+| `wt cat <name> --index N --offset O [--limit L]` | slice characters `O:O+L` from each selected cell (default limit 4096; `0` = unlimited) |
 | `wt cat <name> --with-outputs` | also print each code cell's outputs (stream/error/etc.) |
-| `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body |
-| `wt output <name> --index N [--output K] [--save-dir DIR]` | inspect one cell's stored outputs; print text/errors and save images (default: `ROOT_PATH / ".tmp"`) |
-| `wt cat <name> --index N --context K` | print cells N-K..N+K (surrounding context, marked `context`) |
-| `wt diff <name> [--base REF]` | markdown diff of a notebook vs a git ref (both sides rendered like `wt cat`, showing stored cell source); highlights in interactive terminals and stays plain when piped or `NO_COLOR` is set |
+| `wt cat <name> --with-outputs --out-offset O [--out-limit L]` | slice each output's text body; image/base64 payloads are summarized |
+| `wt cat <name> --index N --context K` | include `K` surrounding cells, marked `context` in their headers |
+| `wt output <name> --index N [--output K] [--save-dir DIR]` | inspect stored text/errors and extract image outputs; the default image directory is `ROOT_PATH / ".tmp"` |
+| `wt diff <name> [--base REF]` | show a JSON-free Markdown diff against `HEAD` or another Git ref; terminal output is highlighted when supported |
+
+Notebook names resolve as a bare stem, a tier-prefixed path such as
+`nb/posts/example`, or a full `.ipynb` path. `wt map` reports the current
+posts, courses, projects, portfolio path, and `AGENTS.md`; `wt find` reports
+matching source lines with their notebook cell indices.
 
 ### Editing notebooks
 | Command                              | What it does                                              |
 |--------------------------------------|-----------------------------------------------------------|
-| `wt edit-cell <name> --index N \| --tag foo \| --label foo [--content X]` | replace a cell's source (outputs preserved) |
-| `wt append-cell <name> [--type md\|code] [--content X]` | append a new cell (default: md)          |
-| `wt insert-cell <name> --after N [--type] [--content X]` | insert a new cell below index N            |
-| `wt insert-cell <name> --before N ...`           | insert above index N                                    |
-| `wt remove-cell <name> --index N \| --tag foo \| --label foo` | delete matching cell(s); a tag may remove multiple |
-| `wt tag <name> --index N \| --tag foo \| --label foo [--add foo] [--remove bar]` | list tags (no flags), or add/remove |
-| `wt clear-outputs <name> [--index N \| --tag foo \| --label foo \| --from N]` | clear stored outputs of code cells (markdown skipped); `--from N` clears every code cell from N to the end; no locator clears all |
-> `--content X` is optional for `edit-cell` / `append` / `insert`; if omitted,
-> the new source is read from stdin (useful for multi-line contents via heredoc).
-> Write locators (`--index` / `--tag` / `--label`) must match exactly one cell,
-> except `remove-cell --tag foo`, which removes every matching cell.
+| `wt edit-cell <name> --index N \| --tag foo \| --label foo [--content X]` | replace one cell's source while preserving outputs and metadata |
+| `wt append-cell <name> [--type md\|code] [--content X]` | append a Markdown cell by default |
+| `wt insert-cell <name> --after N \| --before N \| --tag foo \| --label foo [--type md\|code] [--content X]` | insert above/below a located cell; tag and label locators insert below |
+| `wt remove-cell <name> --index N \| --tag foo \| --label foo` | remove all cells matching the locator; a tag or label may match multiple |
+| `wt clear-outputs <name> [--index N \| --tag foo \| --label foo \| --from N]` | clear outputs from matching code cells; no locator clears all, and `--from N` clears from `N` to the end |
+| `wt tag <name> --index N \| --tag foo \| --label foo [--add foo] [--remove bar]` | inspect tags, or add/remove repeatable tags on one matched cell |
+
+For `edit-cell`, `append-cell`, and `insert-cell`, omit `--content` to read
+the new source from stdin. Write locators must identify one cell. `remove-cell`
+may remove every matching cell, while `clear-outputs` may operate on multiple
+tagged cells. `--tag` and `--label` are mutually exclusive with `--index`.
 
 ### Executing notebooks
 
 | Command | What it does |
 |---|---|
 | `wt kernels` | list installed Jupyter kernel names and languages |
-| `wt run <name> [--timeout S] [--kernel K]` | execute every code cell in order and write all outputs back to the `.ipynb` |
-| `wt run <name> --index N [--timeout S] [--kernel K]` | execute cells through `N` in a fresh kernel and write only cell `N`'s outputs back |
+| `wt run <name> [--index N] [--timeout S] [--kernel K]` | execute code cells in place; indexed runs execute through `N` in a fresh kernel and save only the selected cell's outputs |
 
 Both forms start a fresh kernel. Without `--index`, the entire notebook runs;
 with `--index N`, the prefix through cell `N` runs so that cell has prior
 notebook state, but only its outputs are saved. Every indexed invocation
 re-executes that prefix, which is deterministic but can be expensive when
 earlier cells perform heavy computation. State is not reused between separate
-CLI calls.
+CLI calls. The default per-cell timeout is 300 seconds. Cell errors are stored
+inline, execution continues, and `wt run` exits with status 1 if any occurred.
 
 Kernel selection: an explicit `--kernel K` overrides the notebook's
 `kernelspec.name`; otherwise the notebook kernelspec is used, falling back to
@@ -251,11 +269,16 @@ are collected in the public [course solutions page](nb/courses/solutions.qmd).
 | `wt vault ls` | list stored keys |
 | `wt vault export` | emit shell export statements |
 
+`wt vault` is a command group. `get` prints a value, `ls` prints keys only,
+and `export` emits shell-safe `export KEY=value` lines for use with
+`eval "$(.venv/bin/wt vault export)"`.
+
 ## Make targets
 
 `wt` focuses on reading, editing, running, and importing notebooks,
 including course exercises, and retains `wt vault` as a core tool. Make handles
-notebook PDF rendering, the site, résumé, project creation, and development tasks. Run `make` or `make help` to see the available workflows.
+notebook PDF rendering, the site, résumé, project creation, and development
+tasks. Run `make` or `make help` to see the available workflows.
 Make invokes standalone scripts under `scripts/` using the repo virtual
 environment, so shell activation is optional. These tasks live outside the
 `watchtower` package and do not import it.
@@ -266,11 +289,13 @@ environment, so shell activation is optional. These tasks live outside the
 | `make docs [PORT=4200]` | rebuild résumé artifacts, then serve Quarto; `PORT=4300` selects another port |
 | `make project NAME=<name>` | create a uv workspace project |
 | `make render NOTEBOOK=<path.ipynb>` | render a notebook PDF into its source directory’s `pdf/` folder |
+| `make help` | print the repository workflow summary |
 | `make bootstrap`   | setup skills + `uv sync` |
 | `make setup-skills`| create and validate skill symlinks |
 | `make test`        | `pytest`       |
 | `make lint`        | `ruff check .` |
 | `make typecheck`   | `pyright`      |
+| `make review`      | run lint, typecheck, tests, and print the diff summary |
 
 Run `make lint` and `make typecheck` before committing changes to anything
 under `src/` or `projects/`. A pre-commit hook runs Gitleaks against staged
