@@ -5,8 +5,15 @@
 
 \documentclass[11pt,a4paper,sans]{moderncv}
 
+\moderncvcolor{black}
+\definecolor{color2}{rgb}{0.45,0.45,0.45}
 \moderncvstyle{banking}
-\moderncvcolor{blue}
+% Older moderncv uses color1 directly; newer releases copy it into these
+% named colors when loading the style. Set both explicitly on every build.
+\colorlet{color1}{black}
+\colorlet{sectioncolor}{black}
+\colorlet{subsectioncolor}{black}
+\colorlet{bodyrulecolor}{black}
 \nopagenumbers{}
 
 \usepackage{lmodern}
