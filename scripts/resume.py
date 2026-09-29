@@ -1,7 +1,7 @@
 """Resume builder — YAML is the single source for résumé content.
 
 `make resume` renders assets/resume.yaml into the site home, résumé page,
-contact script, and moderncv LaTeX, then runs pdflatex for the PDF.
+contact script, and moderncv LaTeX, then runs xelatex for the PDF.
 The home and posts pages also select published posts. Edit the YAML
 for résumé content; never hand-edit generated files.
 """
@@ -34,7 +34,7 @@ CONTACT_JS      = Path("assets/contact.js")
 POSTS_QMD_J2    = Path("assets/posts.qmd.j2")
 POSTS_QMD       = Path("posts.qmd")
 
-LATEX_ENGINE = "pdflatex"
+LATEX_ENGINE = "xelatex"
 
 _URL_RE = re.compile(r"https?://[^\s)]+")
 _MD_LINK_RE = re.compile(r"\[(?P<text>[^\]]*)\]\((?P<url>https?://[^\s)]+)\)")
@@ -165,8 +165,8 @@ def _make_env(root: Path) -> Environment:
     return env
 
 
-def _run_pdflatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
-    # SOURCE_DATE_EPOCH makes pdfTeX stamp /CreationDate, /ModDate, and /ID
+def _run_xelatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
+    # SOURCE_DATE_EPOCH makes XeTeX stamp /CreationDate, /ModDate, and /ID
     # from this epoch instead of the current wall-clock, so reruns produce
     # byte-identical PDFs when the sources are unchanged (reproducible build).
     env = {**os.environ, "SOURCE_DATE_EPOCH": str(source_epoch)}
@@ -181,6 +181,7 @@ def _run_pdflatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
         check=True,
         capture_output=True,
         env=env,
+        cwd=ROOT_PATH,
     )
 
 
@@ -205,7 +206,7 @@ def build_resume() -> tuple[Path, Path]:
     env = _make_env(root)
 
     # Pin PDF timestamps to the newest source mtime so reruns are reproducible.
-    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, qmd_src, resume_qmd_src, contact_js_src, yaml_path)))
+    source_epoch = int(max(p.stat().st_mtime for p in (tex_src, qmd_src, resume_qmd_src, contact_js_src, yaml_path, root / "assets/fonts/Ubuntu-Bold.ttf")))
 
     # Render index.qmd (web version with markdown escaping).
     web_data = _escape_for_target(data, _md_escape)
@@ -226,18 +227,15 @@ def build_resume() -> tuple[Path, Path]:
     tex_template = env.get_template(RESUME_TEX_J2.name)
     tex_rendered = tex_template.render(**_escape_for_target(data, _latex_text))
     (root / RESUME_TEX).write_text(tex_rendered, encoding="utf-8")
-    # Use a STABLE scratch dir basename: pdfTeX hashes the absolute build path
-    # into the PDF /ID, so a random tmp suffix would make every run's bytes
-    # differ. Combined with SOURCE_DATE_EPOCH (set in _run_pdflatex) this
-    # makes reruns byte-identical when sources are unchanged.
+    # Keep the build path stable for reproducible PDF output.
     tmp_dir = root / ".tmp" / "resume-build"
     shutil.rmtree(tmp_dir, ignore_errors=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)
     try:
         tex_copy = tmp_dir / "resume.tex"
         tex_copy.write_text(tex_rendered, encoding="utf-8")
-        _run_pdflatex(tex_copy, tmp_dir, source_epoch)
-        _run_pdflatex(tex_copy, tmp_dir, source_epoch)  # 2nd pass for cross-refs / page count.
+        _run_xelatex(tex_copy, tmp_dir, source_epoch)
+        _run_xelatex(tex_copy, tmp_dir, source_epoch)  # 2nd pass for cross-refs / page count.
         built = tmp_dir / "resume.pdf"
         if not built.exists():
             raise FileNotFoundError(

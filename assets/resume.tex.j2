@@ -9,13 +9,22 @@
 \moderncvcolor{blue}
 \nopagenumbers{}
 
-\usepackage[utf8]{inputenc}
 \usepackage{lmodern}
+\usepackage{fontspec}
+% Match the homepage wordmark, while keeping the résumé body in Latin Modern.
+\newfontface\homepagenamefont{Ubuntu-Bold.ttf}[Path=assets/fonts/,LetterSpace=-4.5]
+\definecolor{homepagename}{HTML}{343A40}
+\definecolor{homepagedot}{HTML}{E95420}
+\renewcommand*{\namefont}{\Huge\homepagenamefont}
+{% raw %}
+\renewcommand*{\firstnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}}}
+\renewcommand*{\lastnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}\textcolor{homepagedot}{.}}}
+{% endraw %}
 \usepackage{pdfpages}
 \usepackage{multicol}
 \usepackage[scale=0.8,top=0.5cm, bottom=0.1cm]{geometry}
 \usepackage{xpatch}
-% Font Awesome includes non-scalable fonts; do not ask pdfTeX to expand them.
+% Font Awesome includes non-scalable fonts; do not expand them.
 \microtypesetup{expansion=false}
 \xpatchcmd\cventry{,}{}{}{}
 

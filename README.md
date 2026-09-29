@@ -309,3 +309,7 @@ then run `uv run pre-commit install` from the repo root.
 - `ripgrep` (`rg`) — used by `wt find` for searching cell sources — `brew install ripgrep`
 - `jupyterlab` + `jupyterlab-quarto` — edit `.ipynb` in JupyterLab
 - `nbformat` — read/write `.ipynb` files from `wt` wrappers
+
+The résumé PDF build requires XeLaTeX (`texlive-xetex` on Debian/Ubuntu).
+Its name header uses the bundled Ubuntu Bold font in `assets/fonts/`, matching
+the homepage; the font license is included alongside it.

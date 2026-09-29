@@ -326,7 +326,7 @@ the workflows.
   source directory’s `pdf/` folder
 - `make resume` — render `assets/resume.yaml` plus published post metadata
   -> `assets/resume.tex`, `index.qmd`, `resume.qmd`, `posts.qmd`, and
-  `assets/contact.js` via Jinja2 templates, then `pdflatex`
+  `assets/contact.js` via Jinja2 templates, then `xelatex`
   -> `assets/resume.pdf` (builds in a
   temp dir). The YAML is the single source; edit it, never the generated
   `.tex`/`.qmd`.
