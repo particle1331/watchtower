@@ -1,22 +1,20 @@
 [
   {
-    "listing": "/notes/index.html",
+    "listing": "/posts.html",
     "items": [
-      "/notes/005-wt-src-walkthrough.html",
-      "/notes/006-maximum-likelihood-estimation.html"
+      "/nb/posts/005-wt-src-walkthrough.html",
+      "/nb/posts/006-maximum-likelihood-estimation.html",
+      "/nb/posts/003-weak-supervision.html"
     ]
   },
   {
-    "listing": "/articles/index.html",
+    "listing": "/nb/courses/index.html",
     "items": [
-      "/articles/weak-supervision.html"
-    ]
-  },
-  {
-    "listing": "/courses/index.html",
-    "items": [
-      "/courses/cla/index.html",
-      "/courses/mlops/index.html"
+      "/nb/courses/llm-training/index.html",
+      "/nb/courses/agent-harness/index.html",
+      "/nb/courses/autocode/index.html",
+      "/nb/courses/ml-platform/index.html",
+      "/nb/courses/cla/index.html"
     ]
   }
 ]

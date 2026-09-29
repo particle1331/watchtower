@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="The generic results database every workflow reports into, batch fan-out as parent/child rows written by a one-shot Compose container, and a stateless continuation rule instead of an orchestration engine.">
+
+<title>04. Results DB &amp; batch workflows – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/ml-platform/05-online-serving.html" rel="next">
+<link href="../../../nb/courses/ml-platform/03-reproducible-training.html" rel="prev">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/01-overview.html">Part I — Local platform (Compose)</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/04-results-db-and-batch.html">04. Results DB &amp; batch workflows</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building an ML Platform on Azure</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/01-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part I — Local platform (Compose)</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/01-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Overview &amp; golden path</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/02-local-foundation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Local platform foundation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/03-reproducible-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. Reproducible training &amp; registry</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/04-results-db-and-batch.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">04. Results DB &amp; batch workflows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/05-online-serving.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Online serving &amp; promotion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/06-observability-and-dashboard.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Observability &amp; dashboard</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/07-llm-release-artifacts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. LLM release artifacts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/08-environment-contract.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. The environment contract</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part II — Production (Azure)</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Just enough Terraform</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/10-azure-foundation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Azure platform foundation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/11-porting-to-aca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Porting jobs &amp; apps to ACA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/12-ci-cd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. CI/CD: build, scan, deploy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/13-azure-operations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Operations on Azure</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/14-multi-gpu-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Off the critical path</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/14-multi-gpu-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Multi-GPU training (exception)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/15-e2e-integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Capstone</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/15-e2e-integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">15. End-to-end integration</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#design-results-state-triggers-and-bounded-retries" id="toc-design-results-state-triggers-and-bounded-retries" class="nav-link active" data-scroll-target="#design-results-state-triggers-and-bounded-retries">Design: results state, triggers, and bounded retries</a></li>
+  <li><a href="#build-in-projectsml-platform" id="toc-build-in-projectsml-platform" class="nav-link" data-scroll-target="#build-in-projectsml-platform">Build in <code>projects/ml-platform/</code></a></li>
+  <li><a href="#how-the-pieces-connect" id="toc-how-the-pieces-connect" class="nav-link" data-scroll-target="#how-the-pieces-connect">How the pieces connect</a>
+  <ul class="collapse">
+  <li><a href="#results-module-ml_platformresults" id="toc-results-module-ml_platformresults" class="nav-link" data-scroll-target="#results-module-ml_platformresults">Results module (<code>ml_platform/results/</code>)</a></li>
+  <li><a href="#continuation-rule-ml_platformresultscontinuation.py" id="toc-continuation-rule-ml_platformresultscontinuation.py" class="nav-link" data-scroll-target="#continuation-rule-ml_platformresultscontinuation.py">Continuation rule (<code>ml_platform/results/continuation.py</code>)</a></li>
+  <li><a href="#batch-scoring-srcbatch_jobscore.py" id="toc-batch-scoring-srcbatch_jobscore.py" class="nav-link" data-scroll-target="#batch-scoring-srcbatch_jobscore.py">Batch scoring (<code>src/batch_job/score.py</code>)</a></li>
+  <li><a href="#trigger-path" id="toc-trigger-path" class="nav-link" data-scroll-target="#trigger-path">Trigger path</a></li>
+  </ul></li>
+  <li><a href="#golden-path-position-acceptance-evidence" id="toc-golden-path-position-acceptance-evidence" class="nav-link" data-scroll-target="#golden-path-position-acceptance-evidence">Golden-path position &amp; acceptance evidence</a></li>
+  <li><a href="#extensions-deferred-from-the-mvp" id="toc-extensions-deferred-from-the-mvp" class="nav-link" data-scroll-target="#extensions-deferred-from-the-mvp">Extensions (deferred from the MVP)</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/01-overview.html">Part I — Local platform (Compose)</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/04-results-db-and-batch.html">04. Results DB &amp; batch workflows</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">04. Results DB &amp; batch workflows</h1>
+</div>
+
+<div>
+  <div class="description">
+    The generic results database every workflow reports into, batch fan-out as parent/child rows written by a one-shot Compose container, and a stateless continuation rule instead of an orchestration engine.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This chapter builds the platform’s operational backbone: one generic results DB that records the state of every run of every type, plus the first workflow that needs it in earnest. Batch inference fans out as <strong>one parent row per batch and one child row per chunk</strong>, tracks per-chunk success/failure, distinguishes transient from permanent failures, and can <em>run until done</em> without any orchestration engine, because all the state it needs lives in the results DB.</p>
+<p>On the Compose stack the consumer is a batch scoring job: a one-shot container built from <code>src/batch_job/Dockerfile</code>, scoring model versions registered by <a href="../../../nb/courses/ml-platform/03-reproducible-training.html">chapter 03</a>. Triggers here are <strong>on-demand</strong> only, via the dashboard buttons and runner API of <a href="../../../nb/courses/ml-platform/02-local-foundation.html">chapter 02</a>; scheduled execution arrives when Part II runs this same image as an ACA Job with cron triggers (<a href="../../../nb/courses/ml-platform/11-porting-to-aca.html">chapter 11</a>).</p>
+<section id="design-results-state-triggers-and-bounded-retries" class="level2">
+<h2 class="anchored" data-anchor-id="design-results-state-triggers-and-bounded-retries">Design: results state, triggers, and bounded retries</h2>
+<p>One Postgres table records the state of every job of every type:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> results (</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span>           TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,                 <span class="co">-- UUID, or deterministic hash for idempotent items</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    parent_id    TEXT <span class="kw">NULL</span> <span class="kw">REFERENCES</span> results(<span class="kw">id</span>), <span class="co">-- NULL = top-level run; set = child</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    name         TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                    <span class="co">-- workflow/task type, e.g. 'batch:score-fraud'</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    status       TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                    <span class="co">-- PENDING|STARTED|SUCCESS|RETRY|FAILURE|REVOKED</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    output       JSONB <span class="kw">NULL</span>,                       <span class="co">-- per-task metadata; big payloads go to object storage</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    error        TEXT <span class="kw">NULL</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    attempts     <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    triggered_by TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                    <span class="co">-- 'schedule' or caller identity (audit)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    created_at   TIMESTAMPTZ <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now(),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    updated_at   TIMESTAMPTZ <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now()</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">INDEX</span> <span class="kw">ON</span> results (parent_id, status);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>RETRY</code> means transient/retriable; <code>FAILURE</code> means permanent. Batch inference uses <strong>one parent row per batch and one child row per item/chunk</strong>, giving per-item success/failure without any bespoke ledger. Locally the table lives in the <code>results</code> database inside the Compose Postgres container (<a href="../../../nb/courses/ml-platform/02-local-foundation.html">chapter 02</a>); in Part II it moves to Azure Database for PostgreSQL unchanged.</p>
+<p>Three ways a workflow can start:</p>
+<ul>
+<li><strong>On-demand:</strong> the dashboard’s trigger buttons or a direct runner call starts a one-shot batch process; every row records the caller in <code>triggered_by</code>.</li>
+<li><strong>Scheduled (Part II):</strong> the same image runs as an ACA Job whose definition carries a cron expression; each tick starts a fresh execution with <code>triggered_by='schedule'</code> (<a href="../../../nb/courses/ml-platform/11-porting-to-aca.html">chapter 11</a>).</li>
+<li><strong>Event:</strong> started from an event source when a use case needs it. This remains deferred because the baseline has no event-driven requirement.</li>
+</ul>
+<p>A linear pipeline (extract → validate → score → publish) is one script in one container. Inside an execution, <em>run until done</em> means: <strong>re-dispatch children still in <code>PENDING</code> or <code>RETRY</code> up to the attempt cap; finish when no child is eligible.</strong> Settled child rows survive each retry loop iteration.</p>
+<p>The boundary is important: <code>score.py</code> creates a fresh parent ID when a new process starts unless the caller deliberately supplies <code>RESULTS_RUN_ID</code>. The baseline therefore does <strong>not</strong> promise automatic resume after a container or ACA execution crashes. Cross-execution resume would also need a stable parent ID and a pinned input snapshot; that machinery is deferred until a real workload requires it.</p>
+</section>
+<section id="build-in-projectsml-platform" class="level2">
+<h2 class="anchored" data-anchor-id="build-in-projectsml-platform">Build in <code>projects/ml-platform/</code></h2>
+<pre><code>projects/ml-platform/
+├── src/ml_platform/results/
+│   ├── schema.sql              # results DDL, owned once: CREATE TABLE IF NOT EXISTS + index
+│   ├── store.py                # create_run, create_children, mark, pending_children, finalize_parent
+│   └── continuation.py         # run_until_done: PENDING/RETRY loop + circuit breaker
+├── src/batch_job/
+│   ├── Dockerfile              # pinned base + deps + ml_platform package (same pattern as train_job)
+│   ├── requirements.txt        # mlflow/sklearn/pandas pinned + psycopg (+ azure-identity for Part II auth)
+│   └── score.py                # entrypoint: load model → create parent/children → run_until_done
+└── demo/
+    ├── docker-compose.yml      # + one-shot batch service; BATCH_CHUNK_SIZE pinned to 100
+    └── postgres/init/01-create-results.sql  # creates the results db and applies the DDL at first boot</code></pre>
+<p>The <code>results/</code> module is environment-neutral. It connects through ordinary <code>PG*</code> variables, so the same code writes to the Compose Postgres container today and to Azure Database for PostgreSQL in Part II; only connection settings differ (local password auth versus short-lived Entra tokens from a managed identity). The DDL is owned once by <code>schema.sql</code>: the Compose init script materializes the identical table definition when Postgres first initializes its volume, and the Part II deploy scripts apply the same file after <code>grants.sql</code>, so both environments converge on one schema.</p>
+<p>This module formalizes the table contract that <code>common/results.py</code> began writing in <a href="../../../nb/courses/ml-platform/03-reproducible-training.html">chapter 03</a>: the <code>record_run</code> context manager delegates to this store, so training rows and batch rows share one writer, one status vocabulary, and one table from here on.</p>
+</section>
+<section id="how-the-pieces-connect" class="level2">
+<h2 class="anchored" data-anchor-id="how-the-pieces-connect">How the pieces connect</h2>
+<section id="results-module-ml_platformresults" class="level3">
+<h3 class="anchored" data-anchor-id="results-module-ml_platformresults">Results module (<code>ml_platform/results/</code>)</h3>
+<p><code>schema.sql</code> owns the DDL once, and every environment applies it the same way. Locally, <code>demo/postgres/init/01-create-results.sql</code> creates the <code>results</code> database and executes the identical <code>CREATE TABLE IF NOT EXISTS</code> statements; the Postgres image runs init scripts only when its data volume is empty, so a <code>docker compose down -v</code> reset rebuilds the schema. In Part II the deploy scripts apply <code>schema.sql</code> after <code>grants.sql</code>.</p>
+<p><code>store.py</code> exposes five functions that cover the lifecycle:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>create_run(name, triggered_by=…)</code></td>
+<td>Insert a top-level row in PENDING</td>
+</tr>
+<tr class="even">
+<td><code>create_children(parent_id, items, name=…, triggered_by=…)</code></td>
+<td>Bulk-insert child rows with deterministic ids (<code>SHA-256(name:item_key)[:32]</code>); idempotent, <code>ON CONFLICT DO NOTHING</code></td>
+</tr>
+<tr class="odd">
+<td><code>mark(run_id, status, output=…, error=…, increment_attempts=…)</code></td>
+<td>Update a row’s status and metadata</td>
+</tr>
+<tr class="even">
+<td><code>pending_children(parent_id, max_attempts=…)</code></td>
+<td>Query PENDING/RETRY children below the attempt cap</td>
+</tr>
+<tr class="odd">
+<td><code>finalize_parent(parent_id)</code></td>
+<td>Set parent SUCCESS when every child succeeded, otherwise FAILURE</td>
+</tr>
+</tbody>
+</table>
+<p>All five are no-ops when <code>PGHOST</code> is unset, so any job linked against the store stays runnable outside a live database.</p>
+</section>
+<section id="continuation-rule-ml_platformresultscontinuation.py" class="level3">
+<h3 class="anchored" data-anchor-id="continuation-rule-ml_platformresultscontinuation.py">Continuation rule (<code>ml_platform/results/continuation.py</code>)</h3>
+<p><code>run_until_done(parent_id, processor, max_attempts=3, max_iterations=10)</code> applies the rule in a loop:</p>
+<ol type="1">
+<li>Fetch <code>pending_children</code>; each attempt increments the child’s <code>attempts</code>.</li>
+<li>For each child, call <code>processor(child)</code>. Mark normal completion <code>SUCCESS</code>, a <code>BatchItemFailure</code> as permanent <code>FAILURE</code>, and another exception as <code>RETRY</code>.</li>
+<li>If no child changes state, circuit-break and mark the parent <code>FAILURE</code>.</li>
+<li>Stop when no eligible children remain; call <code>finalize_parent</code>.</li>
+</ol>
+<p>This gives bounded retries and idempotent child creation <strong>within one batch execution</strong>. A fresh invocation starts a fresh parent unless its caller reuses <code>RESULTS_RUN_ID</code>; the current dashboard and ACA schedule do not implement that cross-execution resume protocol.</p>
+</section>
+<section id="batch-scoring-srcbatch_jobscore.py" class="level3">
+<h3 class="anchored" data-anchor-id="batch-scoring-srcbatch_jobscore.py">Batch scoring (<code>src/batch_job/score.py</code>)</h3>
+<p>The entrypoint is symmetric to <code>train.py</code> but read-only to MLflow:</p>
+<ol type="1">
+<li>Load a pinned model. <code>--model-version</code> names an exact version; omitted, it uses the <code>production</code> alias selected by the promotion path.</li>
+<li>Read the input CSV and split it into <code>--chunk-size</code> rows.</li>
+<li>Create one parent row plus one child row per chunk.</li>
+<li>Call <code>run_until_done</code>; the processor scores one chunk and records its output.</li>
+<li>Record the parent summary and exit non-zero on anything other than SUCCESS.</li>
+</ol>
+</section>
+<section id="trigger-path" class="level3">
+<h3 class="anchored" data-anchor-id="trigger-path">Trigger path</h3>
+<p>At Compose startup the one-shot <code>batch</code> service waits for the bootstrap training run and scores the sample CSV once. On-demand calls then use the dashboard’s <strong>Run batch scoring</strong> button or <code>POST /api/runs/batch/trigger</code>. The runner validates scalar parameters, launches <code>score.py</code>, and returns immediately. It passes the execution name as <code>RESULTS_RUN_ID</code>, so that execution ID is also the parent results-row ID.</p>
+<p>Part II runs the same image as the <code>batch</code> ACA Job. Terraform adds manual and optional cron triggers under <code>id-jobs-batch</code>; the dashboard starts independent executions and can supply per-execution CLI arguments without changing the Job definition.</p>
+</section>
+</section>
+<section id="golden-path-position-acceptance-evidence" class="level2">
+<h2 class="anchored" data-anchor-id="golden-path-position-acceptance-evidence">Golden-path position &amp; acceptance evidence</h2>
+<p>This chapter adds the <code>registered version → batch scoring → per-chunk results</code> segment of the golden path and builds the operational backbone that every later chapter reports into.</p>
+<p><strong>Acceptance evidence:</strong></p>
+<ul>
+<li>One query returns full status, output, and error data for a run and its children.</li>
+<li>A batch of N chunks yields one parent row plus N child rows. A transient child failure is retried only up to the configured cap during that execution.</li>
+<li>Permanent failures and exhausted retries finalize the parent as <code>FAILURE</code>; the circuit breaker bounds a continuation loop that stops making progress.</li>
+<li>An on-demand trigger records its caller in <code>triggered_by</code>, and the local trigger response’s execution ID is the parent row ID.</li>
+<li>Starting a new batch without the same <code>RESULTS_RUN_ID</code> creates a new parent. Automatic crash recovery across separate executions is explicitly not part of the baseline.</li>
+<li>Scheduling is out of scope for Compose. ACA cron triggers start this same image in <a href="../../../nb/courses/ml-platform/11-porting-to-aca.html">chapter 11</a>.</li>
+</ul>
+</section>
+<section id="extensions-deferred-from-the-mvp" class="level2">
+<h2 class="anchored" data-anchor-id="extensions-deferred-from-the-mvp">Extensions (deferred from the MVP)</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Deferred capability</th>
+<th>Current baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Event-triggered workflows (revisit when a use case needs reactive starts or queue backpressure)</td>
+<td>On-demand triggers now; cron via ACA Job schedule triggers in Part II (<a href="../../../nb/courses/ml-platform/11-porting-to-aca.html">chapter 11</a>)</td>
+</tr>
+<tr class="even">
+<td>Cross-workflow DAGs (revisit when pipelines need inter-job dependencies)</td>
+<td>One script per job; no orchestration graph</td>
+</tr>
+</tbody>
+</table>
+<p>Next: <strong><a href="../../../nb/courses/ml-platform/05-online-serving.html">05 — Online serving &amp; promotion</a></strong> puts a model version behind an HTTP endpoint with version-based promotion and rollback.</p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../../nb/courses/ml-platform/03-reproducible-training.html" class="pagination-link" aria-label="03. Reproducible training &amp; registry">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">03. Reproducible training &amp; registry</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/ml-platform/05-online-serving.html" class="pagination-link" aria-label="05. Online serving &amp; promotion">
+        <span class="nav-page-text">05. Online serving &amp; promotion</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

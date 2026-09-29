@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="A small, low-ops ML platform built twice: first as a Docker Compose proof of concept, then ported to Azure Container Apps behind an explicit environment contract.">
+
+<title>Building an ML Platform on Azure – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/ml-platform/01-overview.html" rel="next">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/index.html">Building an ML Platform on Azure</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Building an ML Platform on Azure</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/01-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part I — Local platform (Compose)</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/01-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Overview &amp; golden path</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/02-local-foundation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Local platform foundation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/03-reproducible-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. Reproducible training &amp; registry</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/04-results-db-and-batch.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Results DB &amp; batch workflows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/05-online-serving.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Online serving &amp; promotion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/06-observability-and-dashboard.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Observability &amp; dashboard</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/07-llm-release-artifacts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. LLM release artifacts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/08-environment-contract.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. The environment contract</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part II — Production (Azure)</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Just enough Terraform</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/10-azure-foundation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Azure platform foundation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/11-porting-to-aca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Porting jobs &amp; apps to ACA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/12-ci-cd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. CI/CD: build, scan, deploy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/13-azure-operations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Operations on Azure</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/14-multi-gpu-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Off the critical path</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/14-multi-gpu-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Multi-GPU training (exception)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/15-e2e-integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Capstone</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/15-e2e-integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">15. End-to-end integration</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#local-first-phased-build" id="toc-local-first-phased-build" class="nav-link active" data-scroll-target="#local-first-phased-build">Local-first phased build</a></li>
+  <li><a href="#four-planes-architecture" id="toc-four-planes-architecture" class="nav-link" data-scroll-target="#four-planes-architecture">Four planes architecture</a></li>
+  <li><a href="#cloud-deployment-contract" id="toc-cloud-deployment-contract" class="nav-link" data-scroll-target="#cloud-deployment-contract">Cloud deployment contract</a></li>
+  <li><a href="#how-to-read-the-rest-of-the-course" id="toc-how-to-read-the-rest-of-the-course" class="nav-link" data-scroll-target="#how-to-read-the-rest-of-the-course">How to read the rest of the course</a></li>
+  <li><a href="#what-you-need-before-you-start" id="toc-what-you-need-before-you-start" class="nav-link" data-scroll-target="#what-you-need-before-you-start">What you need before you start</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Building an ML Platform on Azure</h1>
+</div>
+
+<div>
+  <div class="description">
+    A small, low-ops ML platform built twice: first as a Docker Compose proof of concept, then ported to Azure Container Apps behind an explicit environment contract.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A step-by-step build of a <strong>deliberately small, low-ops</strong> MLOps platform for a team of ML engineers who are <em>not</em> full-time platform/DevOps engineers. We use the fewest moving parts that still deliver reproducible training, honest evaluation, scheduled and on-demand batch/inference workflows, and observable operations — and we add machinery only when a concrete need forces it.</p>
+<p>This course is the authoritative build guide. Each chapter develops one slice of the platform, and the chapters accumulate toward the completed implementation in <code>projects/ml-platform/</code>. The project directory contains the final cumulative result; following the course in order reconstructs how it is built.</p>
+<section id="local-first-phased-build" class="level2">
+<h2 class="anchored" data-anchor-id="local-first-phased-build">Local-first phased build</h2>
+<p>The platform is built twice on purpose. Part I builds every feature on a Docker Compose sandbox: Postgres and MinIO underneath, self-hosted MLflow, a small runner service as the execution plane, serving, dashboard, and local LLM commands. The feedback loop stays short while the design settles.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Part</th>
+<th>Chapters</th>
+<th>Environment</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>I: Local platform</td>
+<td>02–08</td>
+<td>Docker Compose</td>
+<td>Every feature working, interfaces fixed</td>
+</tr>
+<tr class="even">
+<td>II: Production</td>
+<td>09–13</td>
+<td>Azure Container Apps + Terraform</td>
+<td>Same workload images deployed and operated</td>
+</tr>
+<tr class="odd">
+<td>Off the critical path</td>
+<td>14</td>
+<td>Azure ML</td>
+<td>Exception track, adopted only if forced</td>
+</tr>
+<tr class="even">
+<td>Capstone</td>
+<td>15</td>
+<td>Compose + Azure adapters</td>
+<td>Separate suites preserve one behavioral definition of done</td>
+</tr>
+</tbody>
+</table>
+<p>Part II ports the settled result to Azure: a Terraform foundation, Container Apps Jobs as the execution plane, managed Postgres and Blob storage, then CI/CD and operations. Workload behavior stays fixed; deployment adapters change.</p>
+<table class="caption-top table">
+<caption>Source audit</caption>
+<colgroup>
+<col style="width: 10%">
+<col style="width: 50%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ch</th>
+<th>Chapter</th>
+<th>Builds in <code>projects/ml-platform/</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>01</td>
+<td>Overview &amp; the golden path</td>
+<td>— (conceptual)</td>
+</tr>
+<tr class="even">
+<td>02</td>
+<td>Local platform foundation</td>
+<td><code>demo/</code></td>
+</tr>
+<tr class="odd">
+<td>03</td>
+<td>Reproducible training &amp; registry</td>
+<td><code>src/train_job/</code>, <code>src/ml_platform/common/</code></td>
+</tr>
+<tr class="even">
+<td>04</td>
+<td>Results DB &amp; batch workflows</td>
+<td><code>src/ml_platform/results/</code>, <code>src/batch_job/</code></td>
+</tr>
+<tr class="odd">
+<td>05</td>
+<td>Online serving &amp; promotion</td>
+<td><code>src/serving_app/</code>, <code>demo/promote.py</code></td>
+</tr>
+<tr class="even">
+<td>06</td>
+<td>Observability &amp; dashboard</td>
+<td><code>src/dashboard/</code>, <code>infra/modules/observability/</code></td>
+</tr>
+<tr class="odd">
+<td>07</td>
+<td>LLM release artifacts</td>
+<td><code>src/ml_platform/llm/</code></td>
+</tr>
+<tr class="even">
+<td>08</td>
+<td>The environment contract</td>
+<td><code>tools/check_env_contract.py</code></td>
+</tr>
+<tr class="odd">
+<td>09</td>
+<td>Just enough Terraform</td>
+<td><code>infra/</code></td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>Azure foundation</td>
+<td><code>infra/</code>, <code>src/mlflow_app/</code></td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>Porting the workflows to ACA</td>
+<td><code>deploy/</code>, <code>infra/modules/</code></td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>CI/CD</td>
+<td><code>.github/workflows/</code></td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td>Azure operations</td>
+<td><code>infra/modules/dashboard/</code>, <code>infra/modules/observability/</code></td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td>Multi-GPU training</td>
+<td><code>src/train_aml/</code>, <code>infra/modules/aml/</code></td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td>End-to-end integration</td>
+<td><code>demo/golden_path.py</code>, <code>deploy/smoke-tests.*</code></td>
+</tr>
+</tbody>
+</table>
+<p>Chapter 14 is off the critical path: an exception track included so the boundary is explicit but never required to ship the baseline.</p>
+</section>
+<section id="four-planes-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="four-planes-architecture">Four planes architecture</h2>
+<p>Everything in the platform is a consequence of four planes plus a thin dashboard.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Plane</th>
+<th>Responsibility</th>
+<th>Azure building block</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Execution</td>
+<td>Run every workflow as an ephemeral, image-pinned task</td>
+<td>Azure Container Apps Jobs</td>
+</tr>
+<tr class="even">
+<td>Model lifecycle</td>
+<td>Track experiments, register versions, store artifacts</td>
+<td>Self-hosted MLflow (ACA App + Postgres + Blob)</td>
+</tr>
+<tr class="odd">
+<td>Operational state</td>
+<td>Record status/output/error for every run, with batch granularity</td>
+<td>Generic results DB (Postgres)</td>
+</tr>
+<tr class="even">
+<td>Serving</td>
+<td>Optional online HTTP inference at an exact model version</td>
+<td>Azure Container Apps Apps</td>
+</tr>
+</tbody>
+</table>
+<p>There is no bespoke control plane: no Durable Functions, no orchestration engine, and no application broker in the baseline. Linear multi-step workflows are an ordinary Python script inside one Job; batch fan-out is expressed as parent/child rows in the results DB plus a small stateless rule.</p>
+</section>
+<section id="cloud-deployment-contract" class="level2">
+<h2 class="anchored" data-anchor-id="cloud-deployment-contract">Cloud deployment contract</h2>
+<p>What makes the Part II move a port and not a rewrite is a short list of seams, fixed once in chapter 08. Here, a <strong>contract</strong> is the set of interfaces and invariants that both deployment environments must preserve. Azure implements the same contract through different infrastructure adapters; it is not a second application with different behavior.</p>
+<ul>
+<li><strong>Environmental variables:</strong> services read the same documented environment variables, and a contract check<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> fails when a variable has no provider or documented production injector.</li>
+<li><strong>Workload entrypoints:</strong> Compose and ACA reference the <em>same</em> train, batch, serving, dashboard, and shared LLM <em>image sources</em>.</li>
+<li><strong>Results DB:</strong> the same schema records every run in both worlds.</li>
+<li><strong>Promotion semantics:</strong> flip the MLflow production alias, then repin only the long-running consumer to the exact version.</li>
+<li><strong>Behavioral checks:</strong> the local golden path and cloud smoke adapters use separate trigger mechanisms but assert terminal success, results state, readiness, model identity, and prediction behavior.</li>
+</ul>
+<p>Part I stands each plane up on Compose equivalents; Part II moves them onto Azure blocks and managed identities without adding local-only feature implementations.</p>
+</section>
+<section id="how-to-read-the-rest-of-the-course" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-read-the-rest-of-the-course">How to read the rest of the course</h2>
+<p>The <strong>source is not authored inside the notebooks</strong>. Each chapter:</p>
+<ol type="1">
+<li>Defines the outcome and behavior added to the cumulative platform.</li>
+<li>Builds the relevant modules/scripts under <code>projects/ml-platform/src/</code> (and <code>demo/</code> in Part I, <code>infra/</code> / <code>deploy/</code> in Part II).</li>
+<li>References that source when demonstrating a stage — e.g.&nbsp;triggering a training run through the runner API, or loading a model version in the serving app.</li>
+<li>Ends with an <strong>Extensions</strong> section covering optional capabilities or production hardening beyond the chapter’s baseline.</li>
+</ol>
+<p>The course owns the build sequence and explanation. The project directory holds the completed, reviewable implementation.</p>
+</section>
+<section id="what-you-need-before-you-start" class="level2">
+<h2 class="anchored" data-anchor-id="what-you-need-before-you-start">What you need before you start</h2>
+<ul>
+<li>Part I: Docker and Python 3.11+, basic ML familiarity. No cloud account.</li>
+<li>Part II: Azure CLI with an active subscription; container builds via ACR Tasks (no local Docker required there).</li>
+<li>Budget is small with tear-down discipline; every Part II chapter that provisions resources ends by tearing them down.</li>
+</ul>
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><code>tools/check_env_contract.py</code><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/ml-platform/01-overview.html" class="pagination-link" aria-label="Part I — Local platform (Compose)">
+        <span class="nav-page-text">Part I — Local platform (Compose)</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

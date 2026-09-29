@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="The variables, schemas, trigger APIs, and promotion rules that keep the Docker Compose POC and the Azure deployment behaviorally aligned while their control-plane adapters remain separate.">
+
+<title>08. The environment contract – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" rel="next">
+<link href="../../../nb/courses/ml-platform/07-llm-release-artifacts.html" rel="prev">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/01-overview.html">Part I — Local platform (Compose)</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/08-environment-contract.html">08. The environment contract</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building an ML Platform on Azure</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/01-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part I — Local platform (Compose)</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/01-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Overview &amp; golden path</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/02-local-foundation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Local platform foundation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/03-reproducible-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. Reproducible training &amp; registry</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/04-results-db-and-batch.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Results DB &amp; batch workflows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/05-online-serving.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Online serving &amp; promotion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/06-observability-and-dashboard.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Observability &amp; dashboard</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/07-llm-release-artifacts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. LLM release artifacts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/08-environment-contract.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">08. The environment contract</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part II — Production (Azure)</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Just enough Terraform</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/10-azure-foundation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Azure platform foundation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/11-porting-to-aca.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Porting jobs &amp; apps to ACA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/12-ci-cd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. CI/CD: build, scan, deploy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/13-azure-operations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Operations on Azure</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/14-multi-gpu-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Off the critical path</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/14-multi-gpu-training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. Multi-GPU training (exception)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/ml-platform/15-e2e-integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Capstone</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/ml-platform/15-e2e-integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">15. End-to-end integration</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#why-a-contract" id="toc-why-a-contract" class="nav-link active" data-scroll-target="#why-a-contract">Why a contract</a></li>
+  <li><a href="#the-environment-variable-contract" id="toc-the-environment-variable-contract" class="nav-link" data-scroll-target="#the-environment-variable-contract">The environment-variable contract</a></li>
+  <li><a href="#results-schema-ownership" id="toc-results-schema-ownership" class="nav-link" data-scroll-target="#results-schema-ownership">Results schema ownership</a></li>
+  <li><a href="#trigger-api-equivalence" id="toc-trigger-api-equivalence" class="nav-link" data-scroll-target="#trigger-api-equivalence">Trigger API equivalence</a></li>
+  <li><a href="#promotion-semantics" id="toc-promotion-semantics" class="nav-link" data-scroll-target="#promotion-semantics">Promotion semantics</a></li>
+  <li><a href="#compose-azure-mapping" id="toc-compose-azure-mapping" class="nav-link" data-scroll-target="#compose-azure-mapping">Compose ↔︎ Azure mapping</a></li>
+  <li><a href="#behavioral-checks-with-separate-trigger-adapters" id="toc-behavioral-checks-with-separate-trigger-adapters" class="nav-link" data-scroll-target="#behavioral-checks-with-separate-trigger-adapters">Behavioral checks, with separate trigger adapters</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/01-overview.html">Part I — Local platform (Compose)</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/ml-platform/08-environment-contract.html">08. The environment contract</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">08. The environment contract</h1>
+</div>
+
+<div>
+  <div class="description">
+    The variables, schemas, trigger APIs, and promotion rules that keep the Docker Compose POC and the Azure deployment behaviorally aligned while their control-plane adapters remain separate.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This chapter defines the contract that lets every Part I feature survive the transfer to Azure: the environment variables each image may read, who owns the results schema, equivalent trigger inputs, how promotion works, and the behavioral checks both validation adapters must preserve. Compose remains the complete local feature/demo environment; ACA supplies the cloud control plane and managed-identity adapter.</p>
+<section id="why-a-contract" class="level2">
+<h2 class="anchored" data-anchor-id="why-a-contract">Why a contract</h2>
+<p>The platform exists in two deployment phases, not two implementations. Part I runs the complete feature/demo environment on one machine with Docker Compose: database, object storage, MLflow, training, batch scoring, serving, dashboard, and the local runner. Part II moves the same workload images and entrypoints to Azure Container Apps (ACA), where long-lived HTTP services run as Apps, run-to-finish workloads run as Jobs, and managed identities replace stored passwords.</p>
+<p>The control-plane mechanisms are allowed to differ. The local runner accepts HTTP requests and starts subprocesses; the cloud dashboard starts ACA Job executions. What must not differ is the workload contract: environment fallbacks, results schema and statuses, model version identity, health/readiness routes, prediction shape, and the evidence used to decide that a run succeeded.</p>
+<p>The design rule is therefore: maximize source reuse, isolate deployment adapters, and compare behavior rather than forcing local code to impersonate Azure APIs.</p>
+</section>
+<section id="the-environment-variable-contract" class="level2">
+<h2 class="anchored" data-anchor-id="the-environment-variable-contract">The environment-variable contract</h2>
+<p>Application images contain code only. Configuration arrives from Compose, Terraform-managed Job/App definitions, managed identity, or per-execution overrides.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Consumed by</th>
+<th>Purpose</th>
+<th>Compose</th>
+<th>Azure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>MLFLOW_TRACKING_URI</code></td>
+<td>train, eval, batch, serving, dashboard</td>
+<td>Tracking/registry URL</td>
+<td>Compose MLflow DNS</td>
+<td>MLflow ACA App URL</td>
+</tr>
+<tr class="even">
+<td><code>MODEL_NAME</code></td>
+<td>eval, batch, serving, runner</td>
+<td>Registered model name</td>
+<td><code>wine-quality</code></td>
+<td>Job/App definition or execution override</td>
+</tr>
+<tr class="odd">
+<td><code>MODEL_VERSION</code></td>
+<td>eval, serving, runner</td>
+<td>Exact candidate/live version</td>
+<td>local default or override</td>
+<td>eval Job default/override; serving App pin</td>
+</tr>
+<tr class="even">
+<td><code>DATA_SOURCE</code></td>
+<td>eval, batch</td>
+<td>Input CSV</td>
+<td>public sample or override</td>
+<td>Job template or execution override</td>
+</tr>
+<tr class="odd">
+<td><code>EVAL_MAX_RMSE</code></td>
+<td>eval</td>
+<td>Promotion threshold default</td>
+<td><code>0.8</code></td>
+<td>eval Job template</td>
+</tr>
+<tr class="even">
+<td><code>BATCH_CHUNK_SIZE</code></td>
+<td>batch</td>
+<td>Rows per chunk</td>
+<td><code>100</code></td>
+<td>default or override</td>
+</tr>
+<tr class="odd">
+<td><code>PGHOST</code>, <code>PGPORT</code>, <code>PGUSER</code>, <code>RESULTS_DB</code></td>
+<td>jobs, dashboard</td>
+<td>Results-store connection</td>
+<td>Compose Postgres</td>
+<td>Azure PostgreSQL + identity principal</td>
+</tr>
+<tr class="even">
+<td><code>PGPASSWORD</code>, <code>PGSSLMODE</code></td>
+<td>jobs, dashboard</td>
+<td>Local password / TLS policy</td>
+<td>demo password, local TLS choice</td>
+<td>no stored DB password; Entra token and <code>require</code></td>
+</tr>
+<tr class="odd">
+<td><code>TRIGGERED_BY</code></td>
+<td>jobs</td>
+<td>Human or schedule attribution</td>
+<td>runner value</td>
+<td>Easy Auth caller or schedule</td>
+</tr>
+<tr class="even">
+<td><code>RESULTS_RUN_ID</code></td>
+<td>jobs</td>
+<td>Optional external result ID</td>
+<td>local execution ID</td>
+<td>unset by default</td>
+</tr>
+<tr class="odd">
+<td><code>IMAGE_DIGEST</code></td>
+<td>train/LLM entrypoints</td>
+<td>Code lineage</td>
+<td><code>demo-local</code></td>
+<td>pinned ACR digest</td>
+</tr>
+<tr class="even">
+<td><code>LLM_*</code>, <code>MODEL_API_KEY*</code>, <code>KEY_VAULT_URL</code></td>
+<td>LLM paths</td>
+<td>LLM artifact/eval configuration</td>
+<td>fixture and optional local key</td>
+<td>Job template and Key Vault</td>
+</tr>
+<tr class="odd">
+<td><code>MLFLOW_UI_URL</code></td>
+<td>dashboard</td>
+<td>Browser-reachable MLflow link</td>
+<td>localhost port</td>
+<td>public MLflow URL</td>
+</tr>
+<tr class="even">
+<td><code>TRIGGER_BACKEND</code>, <code>RUNNER_URL</code></td>
+<td>dashboard</td>
+<td>Execution adapter</td>
+<td><code>local</code>, runner DNS</td>
+<td><code>aca</code>, runner unset</td>
+</tr>
+<tr class="odd">
+<td><code>AZURE_SUBSCRIPTION_ID</code>, <code>AZURE_RESOURCE_GROUP</code></td>
+<td>dashboard</td>
+<td>ACA API scope</td>
+<td>unset</td>
+<td>Terraform values</td>
+</tr>
+<tr class="even">
+<td><code>TRAIN_JOB_NAME</code>, <code>EVAL_JOB_NAME</code>, <code>BATCH_JOB_NAME</code></td>
+<td>dashboard</td>
+<td>Logical-to-resource mapping</td>
+<td>unset</td>
+<td>Terraform module outputs</td>
+</tr>
+<tr class="odd">
+<td><code>DASHBOARD_OPERATOR_GROUP_ID</code></td>
+<td>dashboard</td>
+<td>Mutation authorization</td>
+<td>unset</td>
+<td>Entra group object ID</td>
+</tr>
+</tbody>
+</table>
+<p>The Easy Auth client secret is an ACA app setting consumed by the platform auth module, not by Python. It comes from ignored <code>secret.auto.tfvars</code>, is marked sensitive, and requires protected Terraform state. Adding or changing a Python- read variable means updating the workload, Compose/Terraform providers, this table, and the executable environment check together.</p>
+</section>
+<section id="results-schema-ownership" class="level2">
+<h2 class="anchored" data-anchor-id="results-schema-ownership">Results schema ownership</h2>
+<p>One table, <code>results</code>, in a dedicated PostgreSQL database is the canonical operational state of every workflow: <code>id</code>, <code>parent_id</code>, <code>name</code>, <code>status</code>, <code>output</code>, <code>error</code>, <code>attempts</code>, <code>triggered_by</code>, and timestamps. Its DDL lives in <code>src/ml_platform/results/schema.sql</code> with <code>IF NOT EXISTS</code> guards.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Environment</th>
+<th>Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Docker Compose</td>
+<td>Postgres initialization creates the <code>results</code> database and applies the guarded DDL on a fresh volume</td>
+</tr>
+<tr class="even">
+<td>Azure</td>
+<td>Deployment runs <code>infra/grants.sql</code>, maps managed identities to least-privilege roles, then applies <code>schema.sql</code></td>
+</tr>
+</tbody>
+</table>
+<p>The status vocabulary is <code>PENDING</code>, <code>STARTED</code>, <code>SUCCESS</code>, <code>RETRY</code>, <code>FAILURE</code>, and <code>REVOKED</code>. Batch fan-out uses one parent plus deterministic child rows. The continuation loop retries eligible children during one execution; a fresh invocation creates a fresh parent unless the caller explicitly reuses <code>RESULTS_RUN_ID</code>. Cross-execution crash resume is not a baseline guarantee.</p>
+<p>Schema changes land in <code>schema.sql</code> first and update every bootstrap copy and reader in the same product change. The dashboard SQL depends on these columns; there is no separate documentation-defined schema.</p>
+</section>
+<section id="trigger-api-equivalence" class="level2">
+<h2 class="anchored" data-anchor-id="trigger-api-equivalence">Trigger API equivalence</h2>
+<p>The dashboard is a catalog and launcher, never an executor. Each launch goes to an execution-plane adapter:</p>
+<ul>
+<li><strong>Local:</strong> <code>demo/runner/</code> accepts the caller and scalar parameters, validates a per-job allow-list, and starts <code>train.py</code>, <code>evaluate.py</code>, or <code>score.py</code> as an independent subprocess.</li>
+<li><strong>Azure:</strong> the dashboard resolves the logical job name through Terraform- supplied <code>TRAIN_JOB_NAME</code>, <code>EVAL_JOB_NAME</code>, or <code>BATCH_JOB_NAME</code>, reads that deployed ACA Job template, and starts a new execution after changing only the caller and allow-listed CLI arguments.</li>
+</ul>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Operation</th>
+<th>Dashboard route</th>
+<th>Local adapter</th>
+<th>Azure adapter</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Train</td>
+<td><code>POST /api/runs/train/trigger</code></td>
+<td>runner <code>train</code> subprocess</td>
+<td>training ACA Job execution</td>
+</tr>
+<tr class="even">
+<td>Evaluate</td>
+<td><code>POST /api/runs/eval/trigger</code></td>
+<td>runner <code>evaluate.py</code> subprocess</td>
+<td>evaluation ACA Job execution from the train image</td>
+</tr>
+<tr class="odd">
+<td>Batch score</td>
+<td><code>POST /api/runs/batch/trigger</code></td>
+<td>runner <code>score.py</code> subprocess</td>
+<td>batch ACA Job execution</td>
+</tr>
+<tr class="even">
+<td>Parameters</td>
+<td>typed request models</td>
+<td>command-line flags after allow-list validation</td>
+<td>same flags as execution-specific <code>args</code> on a copy of the deployed template</td>
+</tr>
+<tr class="odd">
+<td>Poll</td>
+<td>results URL and local execution route</td>
+<td>runner status + results row</td>
+<td>ACA execution API + results row</td>
+</tr>
+</tbody>
+</table>
+<p>ACA replaces the whole execution template when overrides are supplied. Copying the deployed template first is therefore part of the adapter contract: image, resources, identity, and unchanged environment values survive parameterization. A local trigger looks like this:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST http://localhost:18000/api/runs/train/trigger <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">'content-type: application/json'</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">'X-MS-CLIENT-PRINCIPAL-NAME: demo-user'</span> <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">'{"parameters":{"alpha":0.25,"l1_ratio":0.8,"random_state":7}}'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The response names the execution and echoes the accepted parameters. Locally it also returns <code>result_id</code> and <code>result_url</code>; the runner exports its execution name as <code>RESULTS_RUN_ID</code>, so one ID chains from trigger response to results row. ACA returns its own execution name while the workload writes the application outcome to the results DB.</p>
+<p>Azure attribution and authorization use different Easy Auth headers for different purposes. <code>X-MS-CLIENT-PRINCIPAL-NAME</code> supplies the display identity, while base64 <code>X-MS-CLIENT-PRINCIPAL</code> carries claims. Easy Auth authenticates all non-health routes, and the app requires the configured operator-group claim on POST triggers. Viewers can read but cannot launch. Local mode simulates the identity and trusts the laptop boundary.</p>
+<p>Unknown, non-scalar, or job-inappropriate parameters are rejected before an execution starts. Separate requests are independent: <code>parallelism = 1</code> controls replicas inside one ACA execution, not how many Job executions may coexist.</p>
+</section>
+<section id="promotion-semantics" class="level2">
+<h2 class="anchored" data-anchor-id="promotion-semantics">Promotion semantics</h2>
+<p>Promotion follows six rules:</p>
+<ol type="1">
+<li><strong>Images carry code only.</strong> Model artifacts live in the registry, keyed by immutable version.</li>
+<li><strong>A passing evaluation is mandatory.</strong> Before changing anything, <code>demo/promote.py</code> searches the configured evaluation experiment for a run whose <code>eval.model_uri</code> names the exact candidate and whose <code>eval.passed</code> tag is <code>True</code>.</li>
+<li><strong>The registry alias records the release decision.</strong> After the gate passes, <code>production → N</code> is one MLflow alias update in either environment.</li>
+<li><strong>Only the long-running consumer is redeployed.</strong> Serving receives <code>MODEL_VERSION=N</code> and restarts; ephemeral jobs take a version as an ordinary execution parameter.</li>
+<li><strong>A failed consumer update compensates the alias change.</strong> The script restores the previous alias, or deletes the newly created alias if the candidate was the first promotion.</li>
+<li><strong>Consumers never poll for new models.</strong> <code>/readyz</code> reports the exact version loaded at startup, so the deployed state is directly verifiable.</li>
+</ol>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Local</th>
+<th>Azure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Verify evaluation</td>
+<td>MLflow client searches <code>wine-quality-eval</code></td>
+<td>same call against the cloud MLflow URL</td>
+</tr>
+<tr class="even">
+<td>Flip alias</td>
+<td><code>production → N</code></td>
+<td>same registry operation</td>
+</tr>
+<tr class="odd">
+<td>Repoint serving</td>
+<td>write <code>DEMO_MODEL_VERSION=N</code>; recreate Compose <code>serving</code></td>
+<td>update ACA <code>MODEL_VERSION=N</code>; create a revision</td>
+</tr>
+<tr class="even">
+<td>Wrapper</td>
+<td><code>python demo/promote.py --backend local --version N</code></td>
+<td><code>python demo/promote.py --backend aca --version N ... --execute</code></td>
+</tr>
+</tbody>
+</table>
+<p>Rollback points the same operation at an older, already evaluated version. No image or model artifact is rebuilt. Promotion is complete only when <code>/readyz</code> reports the requested version after its startup canary passes.</p>
+<p>Under the wrapper, the local backend edits <code>demo/.env</code> and shells out to <code>docker compose up -d serving</code>, so only the serving service is recreated; the ACA backend calls <code>az containerapp update --set-env-vars MODEL_VERSION=N</code>, which rolls a new revision with ACA handling the traffic switch. Either way the promotion is not finished when the command returns: it is finished when <code>GET /readyz</code> reports exactly the new version, which happens only after the model is loaded and the startup canary prediction has passed.</p>
+<p>This is why <code>/readyz</code> exists as a version-aware probe. It turns “which model is live?” from a question about deployment history into an observable fact, and it gives the golden-path suite below something exact to assert on.</p>
+</section>
+<section id="compose-azure-mapping" class="level2">
+<h2 class="anchored" data-anchor-id="compose-azure-mapping">Compose ↔︎ Azure mapping</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Platform piece</th>
+<th>Part I: Docker Compose</th>
+<th>Part II: Azure</th>
+<th>Access</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Registry + operational DB</td>
+<td>Postgres container (<code>mlflow</code> and <code>results</code>)</td>
+<td>Azure Database for PostgreSQL</td>
+<td>static demo password vs managed identities with Entra token auth</td>
+</tr>
+<tr class="even">
+<td>Object storage</td>
+<td>MinIO (S3 API)</td>
+<td>Blob Storage</td>
+<td>demo keys vs workload identity</td>
+</tr>
+<tr class="odd">
+<td>Model registry + tracking UI</td>
+<td>MLflow container</td>
+<td>MLflow ACA App</td>
+<td>Compose DNS name vs HTTPS ingress FQDN</td>
+</tr>
+<tr class="even">
+<td>Train/eval/batch execution</td>
+<td>one-shot services plus the local runner</td>
+<td>independent ACA Job executions</td>
+<td>runner HTTP API vs ACA Jobs API; scalar CLI overrides in both</td>
+</tr>
+<tr class="odd">
+<td>Online serving</td>
+<td>serving container</td>
+<td>serving ACA App (<code>id-serving</code>)</td>
+<td>published port vs ingress and probes</td>
+</tr>
+<tr class="even">
+<td>Dashboard</td>
+<td>dashboard container, <code>TRIGGER_BACKEND=local</code></td>
+<td>dashboard ACA App, <code>TRIGGER_BACKEND=aca</code></td>
+<td>laptop trust vs Easy Auth plus operator-group authorization</td>
+</tr>
+<tr class="odd">
+<td>Operational logs</td>
+<td>Compose stdout/stderr</td>
+<td>ACA console logs in Log Analytics</td>
+<td>direct CLI vs workspace queries and two batch alerts</td>
+</tr>
+<tr class="even">
+<td>Secrets</td>
+<td>static demo credentials in Compose</td>
+<td>managed identities plus one dashboard app-registration secret</td>
+<td>ignored local config and protected Terraform state; never images or Git</td>
+</tr>
+</tbody>
+</table>
+<p>The local runner has no Azure counterpart by design. It supplies the asynchronous execution shape a laptop needs; ACA supplies that control plane in the cloud. The workload entrypoints, parameter names, status vocabulary, and model identity remain shared.</p>
+</section>
+<section id="behavioral-checks-with-separate-trigger-adapters" class="level2">
+<h2 class="anchored" data-anchor-id="behavioral-checks-with-separate-trigger-adapters">Behavioral checks, with separate trigger adapters</h2>
+<p>The contract ends where it can be tested. The local <code>demo/golden_path.py</code> and the cloud <code>deploy/smoke-tests.sh</code> / <code>.ps1</code> scripts intentionally use different trigger mechanisms, but preserve the same assertions:</p>
+<ol type="1">
+<li>Training reaches terminal success and produces a registered model version.</li>
+<li>Evaluation of that exact version reaches terminal success and leaves the passing MLflow evidence required by promotion.</li>
+<li>Promotion moves the <code>production</code> alias only after that evidence exists.</li>
+<li>Serving <code>/readyz</code> reports the exact promoted version, and a prediction response echoes it.</li>
+<li>Batch reaches terminal success and its parent result is successful.</li>
+<li>The dashboard health endpoint remains available while non-health Azure routes require Entra authentication.</li>
+</ol>
+<p>Only the adapter changes. Local calls use runner execution IDs and direct results polling; cloud calls use ACA execution names, authenticated dashboard access, and Log Analytics. Keeping the suites separate makes failures diagnostic while keeping their behavioral assertions aligned.</p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../../nb/courses/ml-platform/07-llm-release-artifacts.html" class="pagination-link" aria-label="07. LLM release artifacts">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">07. LLM release artifacts</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/ml-platform/09-just-enough-terraform.html" class="pagination-link" aria-label="Part II — Production (Azure)">
+        <span class="nav-page-text">Part II — Production (Azure)</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

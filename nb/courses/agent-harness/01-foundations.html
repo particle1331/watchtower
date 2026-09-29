@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="From a stateless completion to a measured think-act-observe loop.">
+
+<title>Model versus Harness – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/agent-harness/02-streaming-client.html" rel="next">
+<link href="../../../nb/courses/agent-harness/00-overview.html" rel="prev">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/agent-harness/01-foundations.html">Part I: The Engine Exposed</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/agent-harness/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The Agent Harness: Building a Coding Agent from Scratch</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/00-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">00. Overview</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/agent-harness/01-foundations.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Part I: The Engine Exposed</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/01-foundations.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">01. Model vs.&nbsp;harness</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/02-streaming-client.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Streaming client</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/03-tool-protocol.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. Tool protocol</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/agent-harness/04-coding-tools.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part II: Making It a Coding Agent</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/04-coding-tools.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Coding tools</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/05-agent-loop.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Agent loop</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/agent-harness/06-context-management.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part III: Controlling It</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/06-context-management.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Context management</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/07-instructions-and-memory.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Instructions &amp; memory</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/08-permissions-and-sandboxing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Permissions &amp; sandboxing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/09-hooks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Hooks</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/agent-harness/10-subagents-and-patterns.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Part IV: Scaling Out, Then Proving It</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/10-subagents-and-patterns.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Sub-agents &amp; patterns</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/11-model-context-protocol.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Model Context Protocol</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/agent-harness/12-capstone.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. Capstone</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#model-and-harness" id="toc-model-and-harness" class="nav-link active" data-scroll-target="#model-and-harness">Model and harness</a></li>
+  <li><a href="#episodes-and-think-act-observe" id="toc-episodes-and-think-act-observe" class="nav-link" data-scroll-target="#episodes-and-think-act-observe">Episodes and think-act-observe</a></li>
+  <li><a href="#artifact-lineage" id="toc-artifact-lineage" class="nav-link" data-scroll-target="#artifact-lineage">Artifact lineage</a>
+  <ul class="collapse">
+  <li><a href="#where-reasoning-prompts-fail" id="toc-where-reasoning-prompts-fail" class="nav-link" data-scroll-target="#where-reasoning-prompts-fail">Where reasoning prompts fail</a></li>
+  </ul></li>
+  <li><a href="#naive-implementations" id="toc-naive-implementations" class="nav-link" data-scroll-target="#naive-implementations">Naive implementations</a>
+  <ul class="collapse">
+  <li><a href="#implementation-2-one-raw-tool-call" id="toc-implementation-2-one-raw-tool-call" class="nav-link" data-scroll-target="#implementation-2-one-raw-tool-call">Implementation 2: one raw tool call</a></li>
+  <li><a href="#optional-live-api-adapter" id="toc-optional-live-api-adapter" class="nav-link" data-scroll-target="#optional-live-api-adapter">Optional live API adapter</a></li>
+  <li><a href="#implementation-3-the-small-multi-turn-loop" id="toc-implementation-3-the-small-multi-turn-loop" class="nav-link" data-scroll-target="#implementation-3-the-small-multi-turn-loop">Implementation 3: the small multi-turn loop</a></li>
+  </ul></li>
+  <li><a href="#deterministic-offline-tests" id="toc-deterministic-offline-tests" class="nav-link" data-scroll-target="#deterministic-offline-tests">Deterministic offline tests</a></li>
+  <li><a href="#one-shot-versus-loop" id="toc-one-shot-versus-loop" class="nav-link" data-scroll-target="#one-shot-versus-loop">One-shot versus loop</a></li>
+  <li><a href="#lying-tool" id="toc-lying-tool" class="nav-link" data-scroll-target="#lying-tool">Lying tool</a></li>
+  <li><a href="#malformed-call-recovery" id="toc-malformed-call-recovery" class="nav-link" data-scroll-target="#malformed-call-recovery">Malformed-call recovery</a></li>
+  <li><a href="#reliability-ledger" id="toc-reliability-ledger" class="nav-link" data-scroll-target="#reliability-ledger">Reliability ledger</a></li>
+  <li><a href="#transport-observability" id="toc-transport-observability" class="nav-link" data-scroll-target="#transport-observability">Transport observability</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Model versus Harness</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">agents</div>
+    <div class="quarto-category">engineering</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    From a stateless completion to a measured think-act-observe loop.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A language model can predict the next message in a conversation, but prediction alone does not read a file, call a function, or learn what happened after an action. This week draws the boundary between that <strong>raw model</strong> and the <strong>harness</strong> around it. The build is intentionally small: a raw completion, one hand-parsed tool call, and a roughly fifty-line multi-turn loop.</p>
+<p>The examples use a deterministic offline model-shaped function. The protocol is the object of study, so no API key, network connection, or particular provider is required.</p>
+<p><strong>Design rule:</strong> every new capability must come with an observable contract and a failure test before it is called agency.</p>
+<p>By the end of the chapter, the episode, the think-act-observe pattern, and its loop invariant will be executable rather than just named. The final ledger records what this small harness can establish, what it cannot, and why Week 2 starts with transport rather than a larger agent framework.</p>
+<section id="model-and-harness" class="level2">
+<h2 class="anchored" data-anchor-id="model-and-harness">Model and harness</h2>
+<p>A completion endpoint consumes messages and returns more messages. Unless the caller adds state, each request has no memory of a previous request. The model has no intrinsic <strong>persistent state</strong>: a variable in a Python process, a file in a repository, or a previous observation exists only if the harness serializes it back into the next context.</p>
+<p>The model also has no intrinsic <strong>effect on the world</strong>. A sentence such as “I wrote the file” is still a sentence until a local program performs the write and reports its result. Finally, a model has no guaranteed <strong>ground truth</strong> about the current filesystem, clock, network, or tool state. Its useful knowledge can be stale, and a plausible answer is not an observation.</p>
+<p>These are separate gaps:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Gap</th>
+<th>What the model emits</th>
+<th>What the harness must add</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>State</td>
+<td>a continuation conditioned on supplied messages</td>
+<td>history, session state, or durable storage</td>
+</tr>
+<tr class="even">
+<td>Effect</td>
+<td>a proposed action or tool call</td>
+<td>a dispatcher that executes a permitted function</td>
+</tr>
+<tr class="odd">
+<td>Ground truth</td>
+<td>a claim about the world</td>
+<td>an observation returned by the world or a tool</td>
+</tr>
+</tbody>
+</table>
+<p>A harness does not make the model omniscient. It creates a controlled channel through which the model can request an action and receive evidence about that action.</p>
+<div id="8b0e207e" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.832279Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.831668Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.848077Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.846287Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pprint <span class="im">import</span> pprint</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Any, Callable</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span>(frozen<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> StatelessModel:</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A model-shaped function with no state or side effects."""</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span> <span class="op">=</span> <span class="st">"offline-raw-model"</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> complete(<span class="va">self</span>, messages: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]]) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"assistant"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"content"</span>: (</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>                <span class="st">"I can suggest a procedure, but I have no filesystem observation "</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>                <span class="st">"and cannot change the repository."</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            ),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>raw_model <span class="op">=</span> StatelessModel()</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>request <span class="op">=</span> [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Read README.md and summarize its license."</span>}]</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>first <span class="op">=</span> raw_model.complete(request)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>second <span class="op">=</span> raw_model.complete(request)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> first <span class="op">==</span> second</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>pprint(first)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"same request, same supplied context -&gt; identical model state:"</span>, first <span class="op">==</span> second)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'content': 'I can suggest a procedure, but I have no filesystem observation '
+            'and cannot change the repository.',
+ 'role': 'assistant'}
+same request, same supplied context -&gt; identical model state: True</code></pre>
+</div>
+</div>
+<p>The baseline is not a claim that every model is deterministic. It isolates the boundary: this function receives no repository bytes, has no file-writing capability, and returns no observation from the outside world. Repeating the call with the same supplied messages cannot create persistence or an effect. Randomness or a stronger model would change the text, not those missing channels.</p>
+<p>A harness therefore has to preserve a conversation, translate a model decision into an executable call, and append the result without pretending that the model observed it directly.</p>
+</section>
+<section id="episodes-and-think-act-observe" class="level2">
+<h2 class="anchored" data-anchor-id="episodes-and-think-act-observe">Episodes and think-act-observe</h2>
+<p>An <strong>episode</strong> is a message stream</p>
+<p><span class="math display">
+m_{0:t}=(m_0,m_1,\ldots,m_t),
+\qquad m_i \in \{\text{system},\text{user},\text{assistant},\text{tool}\}.
+</span></p>
+<p>An assistant message may contain zero or more tool calls. Each call has an identifier, a tool name, and serialized arguments. Before the next model turn, that call must receive exactly one tool message with the same identifier. A final assistant message has no tool calls and ends the episode.</p>
+<p>A tool call is correct only when three conditions hold: the selected tool exists and is appropriate for the request; its arguments parse and satisfy the tool schema; and calling it is the right decision rather than answering directly. The model may propose all three, but the harness is where their runtime consequences become observable.</p>
+<p>The smallest controller alternates three conceptual steps:</p>
+<ol type="1">
+<li><strong>Think:</strong> ask the model for its next assistant message. “Think” names a decision turn; it does not require exposing private chain-of-thought.</li>
+<li><strong>Act:</strong> if the message contains calls, execute the selected local functions under whatever policy exists.</li>
+<li><strong>Observe:</strong> append each function’s returned string as a tool message, then give the expanded history to the model again.</li>
+</ol>
+<p>The loop invariant is the integrity anchor:</p>
+<blockquote class="blockquote">
+<p>Every assistant turn ends in either a final answer or well-formed tool calls; every tool call produces exactly one observation; no observation is fabricated by the harness.</p>
+</blockquote>
+<p>A <strong>trajectory</strong> <span class="math inline">\tau</span> is the episode plus the harness record around it: events, token counts, costs, permission decisions, hook verdicts, and context operations. Week 1 records only messages and simple events. Later weeks add the rest without changing the episode contract.</p>
+<div id="05ead780" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.854721Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.854372Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.877480Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.869886Z&quot;}}" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> validate_episode(messages: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]]) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Check the structural part of the Week 1 loop invariant."""</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    pending: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">dict</span>[<span class="bu">str</span>, Any]] <span class="op">=</span> {}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    finished <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> index, message <span class="kw">in</span> <span class="bu">enumerate</span>(messages):</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        role <span class="op">=</span> message.get(<span class="st">"role"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> finished:</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="ss">f"message </span><span class="sc">{</span>index<span class="sc">}</span><span class="ss"> appears after a final answer"</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> role <span class="op">==</span> <span class="st">"assistant"</span>:</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>            calls <span class="op">=</span> message.get(<span class="st">"tool_calls"</span>) <span class="kw">or</span> []</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> calls:</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> call <span class="kw">in</span> calls:</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>                    call_id <span class="op">=</span> call[<span class="st">"id"</span>]</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> call_id <span class="kw">in</span> pending:</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="ss">f"duplicate pending call id: </span><span class="sc">{</span>call_id<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                    function <span class="op">=</span> call[<span class="st">"function"</span>]</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(function[<span class="st">"name"</span>], <span class="bu">str</span>):</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="st">"tool name must be a string"</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(function[<span class="st">"arguments"</span>], <span class="bu">str</span>):</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="st">"serialized arguments must be a string"</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>                    pending[call_id] <span class="op">=</span> call</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(message.get(<span class="st">"content"</span>), <span class="bu">str</span>):</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="st">"a final answer must contain text"</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> pending:</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="st">"a final answer has unanswered tool calls"</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>                finished <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> role <span class="op">==</span> <span class="st">"tool"</span>:</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>            call_id <span class="op">=</span> message[<span class="st">"tool_call_id"</span>]</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> call_id <span class="kw">not</span> <span class="kw">in</span> pending:</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>                <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="ss">f"observation without one pending call: </span><span class="sc">{</span>call_id<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(message.get(<span class="st">"content"</span>), <span class="bu">str</span>):</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>                <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="st">"tool observations must be strings"</span>)</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>            pending.pop(call_id)</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> role <span class="kw">in</span> {<span class="st">"system"</span>, <span class="st">"user"</span>}:</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(message.get(<span class="st">"content"</span>), <span class="bu">str</span>):</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>                <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="ss">f"</span><span class="sc">{</span>role<span class="sc">}</span><span class="ss"> message must contain text"</span>)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="ss">f"unknown message role: </span><span class="sc">{</span>role<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> pending:</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="ss">f"unanswered calls: </span><span class="sc">{</span><span class="bu">sorted</span>(pending)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>good_episode <span class="op">=</span> [</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"What is 2 + 3?"</span>},</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>        <span class="st">"role"</span>: <span class="st">"assistant"</span>,</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>        <span class="st">"content"</span>: <span class="va">None</span>,</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tool_calls"</span>: [</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>            {</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>                <span class="st">"id"</span>: <span class="st">"call-1"</span>,</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>                <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>                <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"add"</span>, <span class="st">"arguments"</span>: <span class="st">'{"a": 2, "b": 3}'</span>},</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>        ],</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"role"</span>: <span class="st">"tool"</span>, <span class="st">"tool_call_id"</span>: <span class="st">"call-1"</span>, <span class="st">"name"</span>: <span class="st">"add"</span>, <span class="st">"content"</span>: <span class="st">"5"</span>},</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="st">"5"</span>},</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate_episode(good_episode)</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"structural invariant holds for a two-turn episode"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>structural invariant holds for a two-turn episode</code></pre>
+</div>
+</div>
+<p>The validator checks pairing and ordering, not whether the tool told the truth. That distinction matters. The harness can establish that a result came back through the expected channel, but it needs a tool contract, a second check, or an evaluator to establish semantic correctness.</p>
+<p>The controller is also budget constrained. In the complete course, execution stops when a turn, cost, or context budget binds:</p>
+<p><span class="math display">
+t \le B_{\text{turns}}, \qquad c(\tau) \le B_{\text{cost}}, \qquad n(\tau) \le B_{\text{context}}.
+</span></p>
+<p>This week implements only the hard turn bound. A hard stop is an honest trajectory outcome, not a final answer. Cost and context become real control surfaces in Weeks 2 and 6.</p>
+</section>
+<section id="artifact-lineage" class="level2">
+<h2 class="anchored" data-anchor-id="artifact-lineage">Artifact lineage</h2>
+<p>The loop is not a new name for chain-of-thought. Four influential lines of work supply different pieces of the story:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Work</th>
+<th>Contribution</th>
+<th>Boundary that remains</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://arxiv.org/abs/2201.11903">Chain-of-Thought prompting</a> (Wei et al., 2022)</td>
+<td>elicits intermediate reasoning steps so a model can solve some multi-step problems</td>
+<td>reasoning remains inside the completion; it does not itself execute or observe an action</td>
+</tr>
+<tr class="even">
+<td><a href="https://arxiv.org/abs/2210.03629">ReAct</a> (Yao et al., 2022)</td>
+<td>interleaves reasoning, actions, and observations in a trajectory</td>
+<td>the environment and parser still need explicit contracts</td>
+</tr>
+<tr class="odd">
+<td><a href="https://arxiv.org/abs/2302.04761">Toolformer</a> (Schick et al., 2023)</td>
+<td>trains a model to decide when and how to insert API calls into text</td>
+<td>learned call propensity is not a permission layer or a durable session</td>
+</tr>
+<tr class="even">
+<td><a href="https://arxiv.org/abs/2304.03442">Generative Agents</a> (Park et al., 2023)</td>
+<td>makes memory streams, retrieval, reflection, and planning part of an agent simulation</td>
+<td>persistent memory adds retrieval and consistency failure modes</td>
+</tr>
+</tbody>
+</table>
+<p>ReAct is the closest conceptual predecessor for this week’s loop: an assistant turn proposes an action, the environment returns an observation, and the next turn conditions on the resulting history. Toolformer focuses on learning the call behavior. Generative Agents shows what happens when the trace becomes a persistent memory stream. CoT is useful as a prompting technique, but an agent should not be defined by whether it prints a reasoning trace.</p>
+<p>The thesis under examination is the course shorthand that Claude Code is a thin loop plus twenty good decisions. Week 1 isolates the loop before those decisions are hidden in a framework; later weeks add and measure the decisions one mechanism at a time.</p>
+<section id="where-reasoning-prompts-fail" class="level3">
+<h3 class="anchored" data-anchor-id="where-reasoning-prompts-fail">Where reasoning prompts fail</h3>
+<p>A reasoning trace can improve a result and still fail in ways a harness must expose:</p>
+<ul>
+<li><strong>Error propagation:</strong> an early wrong premise can be repeated and elaborated until the final answer sounds more certain than the evidence supports.</li>
+<li><strong>Sycophancy:</strong> the model can accept a user’s leading claim or a previous assistant statement instead of checking it against an observation.</li>
+<li><strong>Distraction:</strong> extra retrieved facts or irrelevant instructions can consume context and pull the reasoning away from the task.</li>
+</ul>
+<p>The think step in this chapter is therefore an abstraction over a model turn, not a request to reveal hidden reasoning. The observable artifact is the message and the tool call; the evaluation target is whether the trajectory reaches a correct, constrained result. Later context and instruction mechanisms create deliberate probes for distraction and correction survival.</p>
+</section>
+</section>
+<section id="naive-implementations" class="level2">
+<h2 class="anchored" data-anchor-id="naive-implementations">Naive implementations</h2>
+<p>The three baselines make the boundary visible:</p>
+<ol type="1">
+<li>the model-only completion above, which cannot act;</li>
+<li>one raw API-shaped tool call, parsed and executed by hand, which can act once but cannot complete a tool-mediated answer; and</li>
+<li>a roughly fifty-line multi-turn loop, which sends history, executes Python functions, appends results, and stops at a final answer or a turn budget.</li>
+</ol>
+<p>None of these implementations has retries, schema validation, permissions, context management, or a durable event journal. That omission is deliberate. The failures are easier to attribute before the later mechanisms arrive.</p>
+<section id="implementation-2-one-raw-tool-call" class="level3">
+<h3 class="anchored" data-anchor-id="implementation-2-one-raw-tool-call">Implementation 2: one raw tool call</h3>
+<p>A provider API normally returns a JSON envelope containing a choice, an assistant message, and possibly <code>tool_calls</code>. The next cell uses that envelope without an SDK. <code>offline_raw_api</code> is a deterministic stand-in for the HTTP response, so the parser and the control boundary can be tested offline.</p>
+<p>This baseline does one request, parses one call, executes one local function, and returns the observation to its caller. It does not send the observation back to the model. That is the exact missing turn the loop will add.</p>
+<div id="97c5ea87" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.882458Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.881189Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.910897Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.909654Z&quot;}}" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add_ints(a: <span class="bu">int</span>, b: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">type</span>(a) <span class="kw">is</span> <span class="kw">not</span> <span class="bu">int</span> <span class="kw">or</span> <span class="bu">type</span>(b) <span class="kw">is</span> <span class="kw">not</span> <span class="bu">int</span>:</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">TypeError</span>(<span class="st">"a and b must be integers"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">str</span>(a <span class="op">+</span> b)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> count_letters(text: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(text, <span class="bu">str</span>):</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">TypeError</span>(<span class="st">"text must be a string"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">str</span>(<span class="bu">len</span>(text.replace(<span class="st">" "</span>, <span class="st">""</span>)))</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lookup_fact(topic: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(topic, <span class="bu">str</span>):</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">TypeError</span>(<span class="st">"topic must be a string"</span>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    facts <span class="op">=</span> {<span class="st">"sky"</span>: <span class="st">"blue"</span>, <span class="st">"grass"</span>: <span class="st">"green"</span>}</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> facts.get(topic, <span class="st">"unknown"</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> echo(value: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(value, <span class="bu">str</span>):</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">TypeError</span>(<span class="st">"value must be a string"</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>TOOLS: <span class="bu">dict</span>[<span class="bu">str</span>, Callable[..., <span class="bu">str</span>]] <span class="op">=</span> {</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">"add"</span>: add_ints,</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"count_letters"</span>: count_letters,</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lookup_fact"</span>: lookup_fact,</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"echo"</span>: echo,</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>TOOL_DESCRIPTIONS <span class="op">=</span> [</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>        <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        <span class="st">"function"</span>: {</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>            <span class="st">"name"</span>: <span class="st">"add"</span>,</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>            <span class="st">"description"</span>: <span class="st">"Add two integer values."</span>,</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>            <span class="st">"parameters"</span>: {</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>                <span class="st">"type"</span>: <span class="st">"object"</span>,</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                <span class="st">"properties"</span>: {</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"a"</span>: {<span class="st">"type"</span>: <span class="st">"integer"</span>},</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"b"</span>: {<span class="st">"type"</span>: <span class="st">"integer"</span>},</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>                },</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>                <span class="st">"required"</span>: [<span class="st">"a"</span>, <span class="st">"b"</span>],</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>        <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>        <span class="st">"function"</span>: {</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>            <span class="st">"name"</span>: <span class="st">"count_letters"</span>,</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>            <span class="st">"description"</span>: <span class="st">"Count non-space characters in text."</span>,</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>            <span class="st">"parameters"</span>: {</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>                <span class="st">"type"</span>: <span class="st">"object"</span>,</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>                <span class="st">"properties"</span>: {<span class="st">"text"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>                <span class="st">"required"</span>: [<span class="st">"text"</span>],</span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>        <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>        <span class="st">"function"</span>: {</span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>            <span class="st">"name"</span>: <span class="st">"lookup_fact"</span>,</span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>            <span class="st">"description"</span>: <span class="st">"Look up a small offline fact by topic."</span>,</span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>            <span class="st">"parameters"</span>: {</span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>                <span class="st">"type"</span>: <span class="st">"object"</span>,</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>                <span class="st">"properties"</span>: {<span class="st">"topic"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>                <span class="st">"required"</span>: [<span class="st">"topic"</span>],</span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>        <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>        <span class="st">"function"</span>: {</span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>            <span class="st">"name"</span>: <span class="st">"echo"</span>,</span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a>            <span class="st">"description"</span>: <span class="st">"Return the supplied string unchanged."</span>,</span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>            <span class="st">"parameters"</span>: {</span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a>                <span class="st">"type"</span>: <span class="st">"object"</span>,</span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a>                <span class="st">"properties"</span>: {<span class="st">"value"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},</span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>                <span class="st">"required"</span>: [<span class="st">"value"</span>],</span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> raw_response(message: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a>    finish_reason <span class="op">=</span> <span class="st">"tool_calls"</span> <span class="cf">if</span> message.get(<span class="st">"tool_calls"</span>) <span class="cf">else</span> <span class="st">"stop"</span></span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> json.dumps(</span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="st">"offline-response"</span>,</span>
+<span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a>            <span class="st">"choices"</span>: [</span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>                {<span class="st">"index"</span>: <span class="dv">0</span>, <span class="st">"message"</span>: message, <span class="st">"finish_reason"</span>: finish_reason}</span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>            ],</span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> offline_raw_api(request: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> request[<span class="st">"messages"</span>]</span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>    goal <span class="op">=</span> <span class="bu">next</span>(message[<span class="st">"content"</span>] <span class="cf">for</span> message <span class="kw">in</span> messages <span class="cf">if</span> message[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"user"</span>)</span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>    observations <span class="op">=</span> [message <span class="cf">for</span> message <span class="kw">in</span> messages <span class="cf">if</span> message[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span>]</span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> observations:</span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: observations[<span class="op">-</span><span class="dv">1</span>][<span class="st">"content"</span>]})</span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> goal <span class="op">==</span> <span class="st">"What is 2 + 3?"</span>:</span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="st">"5"</span>})</span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> goal <span class="op">==</span> <span class="st">"What is 19 + 23?"</span>:</span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a>        call <span class="op">=</span> {</span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="st">"call-1"</span>,</span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a>            <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>            <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"add"</span>, <span class="st">"arguments"</span>: <span class="st">'{"a": 19, "b": 23}'</span>},</span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> goal <span class="op">==</span> <span class="st">"How many letters are in harness?"</span>:</span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a>        call <span class="op">=</span> {</span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="st">"call-1"</span>,</span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>            <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a>            <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"count_letters"</span>, <span class="st">"arguments"</span>: <span class="st">'{"text": "harness"}'</span>},</span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> goal <span class="op">==</span> <span class="st">"What color is the sky?"</span>:</span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a>        call <span class="op">=</span> {</span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="st">"call-1"</span>,</span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a>            <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a>            <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"lookup_fact"</span>, <span class="st">"arguments"</span>: <span class="st">'{"topic": "sky"}'</span>},</span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="st">"unknown task"</span>})</span>
+<span id="cb5-131"><a href="#cb5-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-132"><a href="#cb5-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-133"><a href="#cb5-133" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> naive_one_shot(</span>
+<span id="cb5-134"><a href="#cb5-134" aria-hidden="true" tabindex="-1"></a>    goal: <span class="bu">str</span>,</span>
+<span id="cb5-135"><a href="#cb5-135" aria-hidden="true" tabindex="-1"></a>    api: Callable[[<span class="bu">dict</span>[<span class="bu">str</span>, Any]], <span class="bu">str</span>] <span class="op">=</span> offline_raw_api,</span>
+<span id="cb5-136"><a href="#cb5-136" aria-hidden="true" tabindex="-1"></a>    tools: <span class="bu">dict</span>[<span class="bu">str</span>, Callable[..., <span class="bu">str</span>]] <span class="op">=</span> TOOLS,</span>
+<span id="cb5-137"><a href="#cb5-137" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
+<span id="cb5-138"><a href="#cb5-138" aria-hidden="true" tabindex="-1"></a>    request <span class="op">=</span> {</span>
+<span id="cb5-139"><a href="#cb5-139" aria-hidden="true" tabindex="-1"></a>        <span class="st">"model"</span>: <span class="st">"offline-script-v1"</span>,</span>
+<span id="cb5-140"><a href="#cb5-140" aria-hidden="true" tabindex="-1"></a>        <span class="st">"messages"</span>: [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: goal}],</span>
+<span id="cb5-141"><a href="#cb5-141" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tools"</span>: TOOL_DESCRIPTIONS,</span>
+<span id="cb5-142"><a href="#cb5-142" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-143"><a href="#cb5-143" aria-hidden="true" tabindex="-1"></a>    payload <span class="op">=</span> json.loads(api(request))</span>
+<span id="cb5-144"><a href="#cb5-144" aria-hidden="true" tabindex="-1"></a>    assistant <span class="op">=</span> payload[<span class="st">"choices"</span>][<span class="dv">0</span>][<span class="st">"message"</span>]</span>
+<span id="cb5-145"><a href="#cb5-145" aria-hidden="true" tabindex="-1"></a>    calls <span class="op">=</span> assistant.get(<span class="st">"tool_calls"</span>) <span class="kw">or</span> []</span>
+<span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> calls:</span>
+<span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {<span class="st">"status"</span>: <span class="st">"final"</span>, <span class="st">"answer"</span>: assistant[<span class="st">"content"</span>], <span class="st">"messages"</span>: [assistant]}</span>
+<span id="cb5-148"><a href="#cb5-148" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-149"><a href="#cb5-149" aria-hidden="true" tabindex="-1"></a>    call <span class="op">=</span> calls[<span class="dv">0</span>]</span>
+<span id="cb5-150"><a href="#cb5-150" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> call[<span class="st">"function"</span>][<span class="st">"name"</span>]</span>
+<span id="cb5-151"><a href="#cb5-151" aria-hidden="true" tabindex="-1"></a>    arguments <span class="op">=</span> json.loads(call[<span class="st">"function"</span>][<span class="st">"arguments"</span>])</span>
+<span id="cb5-152"><a href="#cb5-152" aria-hidden="true" tabindex="-1"></a>    observation <span class="op">=</span> tools[name](<span class="op">**</span>arguments)</span>
+<span id="cb5-153"><a href="#cb5-153" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb5-154"><a href="#cb5-154" aria-hidden="true" tabindex="-1"></a>        <span class="st">"status"</span>: <span class="st">"needs_follow_up"</span>,</span>
+<span id="cb5-155"><a href="#cb5-155" aria-hidden="true" tabindex="-1"></a>        <span class="st">"answer"</span>: <span class="va">None</span>,</span>
+<span id="cb5-156"><a href="#cb5-156" aria-hidden="true" tabindex="-1"></a>        <span class="st">"assistant"</span>: assistant,</span>
+<span id="cb5-157"><a href="#cb5-157" aria-hidden="true" tabindex="-1"></a>        <span class="st">"observation"</span>: observation,</span>
+<span id="cb5-158"><a href="#cb5-158" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-159"><a href="#cb5-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-160"><a href="#cb5-160" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-161"><a href="#cb5-161" aria-hidden="true" tabindex="-1"></a>demo_one_shot <span class="op">=</span> naive_one_shot(<span class="st">"What is 19 + 23?"</span>)</span>
+<span id="cb5-162"><a href="#cb5-162" aria-hidden="true" tabindex="-1"></a>pprint({key: demo_one_shot[key] <span class="cf">for</span> key <span class="kw">in</span> (<span class="st">"status"</span>, <span class="st">"observation"</span>)})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'observation': '42', 'status': 'needs_follow_up'}</code></pre>
+</div>
+</div>
+<p>The one-shot output is an observation, not a completed answer. A caller could display <code>42</code>, but the model did not receive that evidence and could not explain or use it in a subsequent decision. The parser also assumes every envelope, choice, call, function name, and argument string has exactly the expected shape. Those assumptions are useful for a teaching baseline and unsafe as a production contract.</p>
+</section>
+<section id="optional-live-api-adapter" class="level3">
+<h3 class="anchored" data-anchor-id="optional-live-api-adapter">Optional live API adapter</h3>
+<p>The protocol can be pointed at an OpenAI-compatible endpoint, but this chapter does not need a key. The helper below is definition-only: it is never invoked during the offline run. Set <code>OPENAI_API_KEY</code> and call it explicitly in a separate experiment if you want to compare a provider’s response envelope with the fixture.</p>
+<div id="aed0aa59" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.913545Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.913296Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.922603Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.921205Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> urllib.request <span class="im">import</span> Request, urlopen</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> optional_openai_compatible_call(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    messages: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]],</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    tools: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]],</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    base_url: <span class="bu">str</span> <span class="op">=</span> <span class="st">"https://api.openai.com/v1"</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    api_key <span class="op">=</span> os.environ.get(<span class="st">"OPENAI_API_KEY"</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> api_key:</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">RuntimeError</span>(<span class="st">"Set OPENAI_API_KEY before opting into a live request"</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    payload <span class="op">=</span> {<span class="st">"model"</span>: <span class="st">"replace-me"</span>, <span class="st">"messages"</span>: messages, <span class="st">"tools"</span>: tools}</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    request <span class="op">=</span> Request(</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        base_url.rstrip(<span class="st">"/"</span>) <span class="op">+</span> <span class="st">"/chat/completions"</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>json.dumps(payload).encode(<span class="st">"utf-8"</span>),</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            <span class="st">"Authorization"</span>: <span class="ss">f"Bearer </span><span class="sc">{</span>api_key<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            <span class="st">"Content-Type"</span>: <span class="st">"application/json"</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        method<span class="op">=</span><span class="st">"POST"</span>,</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urlopen(request, timeout<span class="op">=</span><span class="dv">30</span>) <span class="im">as</span> response:</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.loads(response.read())</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"live adapter defined; no network request made"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>live adapter defined; no network request made</code></pre>
+</div>
+</div>
+</section>
+<section id="implementation-3-the-small-multi-turn-loop" class="level3">
+<h3 class="anchored" data-anchor-id="implementation-3-the-small-multi-turn-loop">Implementation 3: the small multi-turn loop</h3>
+<p>The loop adds only the missing turn. It keeps a list of messages, asks the model for a raw JSON response, executes every call in that response, appends each result unchanged, and asks again. It returns a final answer or an explicit <code>max_turns</code> status.</p>
+<p>The code is intentionally naive. It catches a tool exception and turns it into an error string, but it does not yet validate schemas, retry transport failures, ask for permission, or limit cost. Those are mechanisms for later chapters, not hidden behavior in this baseline.</p>
+<div id="c2d088e1" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.925981Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.925570Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.945144Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.942347Z&quot;}}" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-5"><pre class="sourceCode python code-annotation-code code-with-copy"><code class="sourceCode python"><span id="annotated-cell-5-1"><a href="#annotated-cell-5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> naive_agent_loop(</span>
+<span id="annotated-cell-5-2"><a href="#annotated-cell-5-2" aria-hidden="true" tabindex="-1"></a>    goal: <span class="bu">str</span>,</span>
+<span id="annotated-cell-5-3"><a href="#annotated-cell-5-3" aria-hidden="true" tabindex="-1"></a>    model: Callable[[<span class="bu">dict</span>[<span class="bu">str</span>, Any]], <span class="bu">str</span>] <span class="op">=</span> offline_raw_api,</span>
+<span id="annotated-cell-5-4"><a href="#annotated-cell-5-4" aria-hidden="true" tabindex="-1"></a>    tools: <span class="bu">dict</span>[<span class="bu">str</span>, Callable[..., <span class="bu">str</span>]] <span class="op">=</span> TOOLS,</span>
+<span id="annotated-cell-5-5"><a href="#annotated-cell-5-5" aria-hidden="true" tabindex="-1"></a>    max_turns: <span class="bu">int</span> <span class="op">=</span> <span class="dv">4</span>,</span>
+<span id="annotated-cell-5-6"><a href="#annotated-cell-5-6" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
+<span id="annotated-cell-5-7"><a href="#annotated-cell-5-7" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: goal}]</span>
+<span id="annotated-cell-5-8"><a href="#annotated-cell-5-8" aria-hidden="true" tabindex="-1"></a>    events: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]] <span class="op">=</span> []</span>
+<span id="annotated-cell-5-9"><a href="#annotated-cell-5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-10"><a href="#annotated-cell-5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> turn <span class="kw">in</span> <span class="bu">range</span>(max_turns):</span>
+<span id="annotated-cell-5-11"><a href="#annotated-cell-5-11" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> {</span>
+<span id="annotated-cell-5-12"><a href="#annotated-cell-5-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"model"</span>: <span class="st">"offline-script-v1"</span>,</span>
+<span id="annotated-cell-5-13"><a href="#annotated-cell-5-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">"messages"</span>: messages,</span>
+<span id="annotated-cell-5-14"><a href="#annotated-cell-5-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"tools"</span>: TOOL_DESCRIPTIONS,</span>
+<span id="annotated-cell-5-15"><a href="#annotated-cell-5-15" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="annotated-cell-5-16"><a href="#annotated-cell-5-16" aria-hidden="true" tabindex="-1"></a>        payload <span class="op">=</span> json.loads(model(request))</span>
+<span id="annotated-cell-5-17"><a href="#annotated-cell-5-17" aria-hidden="true" tabindex="-1"></a>        assistant <span class="op">=</span> payload[<span class="st">"choices"</span>][<span class="dv">0</span>][<span class="st">"message"</span>]</span>
+<span id="annotated-cell-5-18"><a href="#annotated-cell-5-18" aria-hidden="true" tabindex="-1"></a>        messages.append(assistant)</span>
+<span id="annotated-cell-5-19"><a href="#annotated-cell-5-19" aria-hidden="true" tabindex="-1"></a>        events.append({<span class="st">"kind"</span>: <span class="st">"assistant"</span>, <span class="st">"turn"</span>: turn, <span class="st">"message"</span>: assistant})</span>
+<span id="annotated-cell-5-20"><a href="#annotated-cell-5-20" aria-hidden="true" tabindex="-1"></a>        calls <span class="op">=</span> assistant.get(<span class="st">"tool_calls"</span>) <span class="kw">or</span> []</span>
+<span id="annotated-cell-5-21"><a href="#annotated-cell-5-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> calls:</span>
+<span id="annotated-cell-5-22"><a href="#annotated-cell-5-22" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> {</span>
+<span id="annotated-cell-5-23"><a href="#annotated-cell-5-23" aria-hidden="true" tabindex="-1"></a>                <span class="st">"status"</span>: <span class="st">"final"</span>,</span>
+<span id="annotated-cell-5-24"><a href="#annotated-cell-5-24" aria-hidden="true" tabindex="-1"></a>                <span class="st">"answer"</span>: assistant[<span class="st">"content"</span>],</span>
+<span id="annotated-cell-5-25"><a href="#annotated-cell-5-25" aria-hidden="true" tabindex="-1"></a>                <span class="st">"messages"</span>: messages,</span>
+<span id="annotated-cell-5-26"><a href="#annotated-cell-5-26" aria-hidden="true" tabindex="-1"></a>                <span class="st">"events"</span>: events,</span>
+<span id="annotated-cell-5-27"><a href="#annotated-cell-5-27" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="annotated-cell-5-28"><a href="#annotated-cell-5-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-29"><a href="#annotated-cell-5-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> call <span class="kw">in</span> calls:</span>
+<span id="annotated-cell-5-30"><a href="#annotated-cell-5-30" aria-hidden="true" tabindex="-1"></a>            name <span class="op">=</span> call[<span class="st">"function"</span>][<span class="st">"name"</span>]</span>
+<span id="annotated-cell-5-31"><a href="#annotated-cell-5-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span>:</span>
+<span id="annotated-cell-5-32"><a href="#annotated-cell-5-32" aria-hidden="true" tabindex="-1"></a>                arguments <span class="op">=</span> json.loads(call[<span class="st">"function"</span>][<span class="st">"arguments"</span>])</span>
+<span id="annotated-cell-5-33"><a href="#annotated-cell-5-33" aria-hidden="true" tabindex="-1"></a>                result <span class="op">=</span> tools[name](<span class="op">**</span>arguments)</span>
+<span id="annotated-cell-5-34"><a href="#annotated-cell-5-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> exc:</span>
+<span id="annotated-cell-5-35"><a href="#annotated-cell-5-35" aria-hidden="true" tabindex="-1"></a>                result <span class="op">=</span> <span class="ss">f"tool_error: </span><span class="sc">{</span><span class="bu">type</span>(exc)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>exc<span class="sc">}</span><span class="ss">"</span></span>
+<span id="annotated-cell-5-36"><a href="#annotated-cell-5-36" aria-hidden="true" tabindex="-1"></a>            observation <span class="op">=</span> {</span>
+<span id="annotated-cell-5-37"><a href="#annotated-cell-5-37" aria-hidden="true" tabindex="-1"></a>                <span class="st">"role"</span>: <span class="st">"tool"</span>,</span>
+<span id="annotated-cell-5-38"><a href="#annotated-cell-5-38" aria-hidden="true" tabindex="-1"></a>                <span class="st">"tool_call_id"</span>: call[<span class="st">"id"</span>],</span>
+<span id="annotated-cell-5-39"><a href="#annotated-cell-5-39" aria-hidden="true" tabindex="-1"></a>                <span class="st">"name"</span>: name,</span>
+<span id="annotated-cell-5-40"><a href="#annotated-cell-5-40" aria-hidden="true" tabindex="-1"></a>                <span class="st">"content"</span>: result,</span>
+<span id="annotated-cell-5-41"><a href="#annotated-cell-5-41" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="annotated-cell-5-42"><a href="#annotated-cell-5-42" aria-hidden="true" tabindex="-1"></a>            messages.append(observation)</span>
+<span id="annotated-cell-5-43"><a href="#annotated-cell-5-43" aria-hidden="true" tabindex="-1"></a>            events.append(</span>
+<span id="annotated-cell-5-44"><a href="#annotated-cell-5-44" aria-hidden="true" tabindex="-1"></a>                {</span>
+<span id="annotated-cell-5-45"><a href="#annotated-cell-5-45" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"kind"</span>: <span class="st">"tool"</span>,</span>
+<span id="annotated-cell-5-46"><a href="#annotated-cell-5-46" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"turn"</span>: turn,</span>
+<span id="annotated-cell-5-47"><a href="#annotated-cell-5-47" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"name"</span>: name,</span>
+<span id="annotated-cell-5-48"><a href="#annotated-cell-5-48" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"call_id"</span>: call[<span class="st">"id"</span>],</span>
+<span id="annotated-cell-5-49"><a href="#annotated-cell-5-49" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"content"</span>: result,</span>
+<span id="annotated-cell-5-50"><a href="#annotated-cell-5-50" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="annotated-cell-5-51"><a href="#annotated-cell-5-51" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="annotated-cell-5-52"><a href="#annotated-cell-5-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-53"><a href="#annotated-cell-5-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="annotated-cell-5-54"><a href="#annotated-cell-5-54" aria-hidden="true" tabindex="-1"></a>        <span class="st">"status"</span>: <span class="st">"max_turns"</span>,</span>
+<span id="annotated-cell-5-55"><a href="#annotated-cell-5-55" aria-hidden="true" tabindex="-1"></a>        <span class="st">"answer"</span>: <span class="va">None</span>,</span>
+<span id="annotated-cell-5-56"><a href="#annotated-cell-5-56" aria-hidden="true" tabindex="-1"></a>        <span class="st">"messages"</span>: messages,</span>
+<span id="annotated-cell-5-57"><a href="#annotated-cell-5-57" aria-hidden="true" tabindex="-1"></a>        <span class="st">"events"</span>: events,</span>
+<span id="annotated-cell-5-58"><a href="#annotated-cell-5-58" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="annotated-cell-5-59"><a href="#annotated-cell-5-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-60"><a href="#annotated-cell-5-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-5-61"><a href="#annotated-cell-5-61" aria-hidden="true" tabindex="-1"></a>loop_demo <span class="op">=</span> naive_agent_loop(<span class="st">"What is 19 + 23?"</span>)</span>
+<span id="annotated-cell-5-62"><a href="#annotated-cell-5-62" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(loop_demo[<span class="st">"status"</span>], <span class="st">"-&gt;"</span>, loop_demo[<span class="st">"answer"</span>])</span>
+<span id="annotated-cell-5-63"><a href="#annotated-cell-5-63" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate_episode(loop_demo[<span class="st">"messages"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>final -&gt; 42</code></pre>
+</div>
+</div>
+<p>The four marked lines are the entire state transition. <strong>&lt;1&gt;</strong> creates the user history; <strong>&lt;2&gt;</strong> preserves the assistant message, including its serialized calls; <strong>&lt;3&gt;</strong> records the local function’s result or an explicit error; and <strong>&lt;4&gt;</strong> makes that exact string visible to the next model turn. The event list is not yet a journal, but it makes the trajectory inspectable without changing the message protocol.</p>
+<p>Notice what the loop does not do: it does not infer that a tool succeeded, rewrite an error into friendly prose, or manufacture a result when a call is malformed. Its error string is a correction delivered through the same observation channel. Whether the model uses that correction is an empirical question.</p>
+</section>
+</section>
+<section id="deterministic-offline-tests" class="level2">
+<h2 class="anchored" data-anchor-id="deterministic-offline-tests">Deterministic offline tests</h2>
+<p>The tests below are ordinary assertions rather than a call to a provider or a stochastic benchmark. Each fake model is a pure function of the supplied request, and each tool has fixed output. They encode the three minimum Week 1 contracts:</p>
+<ol type="1">
+<li>a final answer terminates the loop;</li>
+<li>repeated calls terminate at <code>max_turns</code>; and</li>
+<li>a tool result, including punctuation and newlines, reaches the next turn verbatim.</li>
+</ol>
+<p>The last test also runs the structural episode validator. A hard stop may end after all calls in the final turn have been answered, so it is a valid incomplete trajectory but never a fabricated final answer.</p>
+<div id="2231166b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.950280Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.949941Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.967780Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.966395Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> final_only_model(request: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="st">"done"</span>})</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> thrashing_model(request: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    tool_count <span class="op">=</span> <span class="bu">sum</span>(message[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span> <span class="cf">for</span> message <span class="kw">in</span> request[<span class="st">"messages"</span>])</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    call <span class="op">=</span> {</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"id"</span>: <span class="ss">f"thrash-</span><span class="sc">{</span>tool_count <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"add"</span>, <span class="st">"arguments"</span>: <span class="st">'{"a": 1, "b": 1}'</span>},</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> verbatim_model(request: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">any</span>(message[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span> <span class="cf">for</span> message <span class="kw">in</span> request[<span class="st">"messages"</span>]):</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        raw_value <span class="op">=</span> <span class="st">"line 1</span><span class="ch">\n</span><span class="st">line 2 | no summary"</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        call <span class="op">=</span> {</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="st">"verbatim-1"</span>,</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>            <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>            <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"echo"</span>, <span class="st">"arguments"</span>: json.dumps({<span class="st">"value"</span>: raw_value})},</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="st">"observed"</span>})</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>final_run <span class="op">=</span> naive_agent_loop(<span class="st">"finish"</span>, model<span class="op">=</span>final_only_model, max_turns<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> final_run[<span class="st">"status"</span>] <span class="op">==</span> <span class="st">"final"</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> final_run[<span class="st">"answer"</span>] <span class="op">==</span> <span class="st">"done"</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate_episode(final_run[<span class="st">"messages"</span>])</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>thrash_run <span class="op">=</span> naive_agent_loop(<span class="st">"keep going"</span>, model<span class="op">=</span>thrashing_model, max_turns<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> thrash_run[<span class="st">"status"</span>] <span class="op">==</span> <span class="st">"max_turns"</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> thrash_run[<span class="st">"answer"</span>] <span class="kw">is</span> <span class="va">None</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate_episode(thrash_run[<span class="st">"messages"</span>])</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>verbatim_run <span class="op">=</span> naive_agent_loop(<span class="st">"preserve this"</span>, model<span class="op">=</span>verbatim_model, max_turns<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> verbatim_run[<span class="st">"status"</span>] <span class="op">==</span> <span class="st">"final"</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate_episode(verbatim_run[<span class="st">"messages"</span>])</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>tool_messages <span class="op">=</span> [m <span class="cf">for</span> m <span class="kw">in</span> verbatim_run[<span class="st">"messages"</span>] <span class="cf">if</span> m[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span>]</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(tool_messages) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> tool_messages[<span class="dv">0</span>][<span class="st">"content"</span>] <span class="op">==</span> <span class="st">"line 1</span><span class="ch">\n</span><span class="st">line 2 | no summary"</span></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"PASS: final answer terminates"</span>)</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"PASS: thrashing stops at max_turns"</span>)</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"PASS: tool result is appended verbatim"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>PASS: final answer terminates
+PASS: thrashing stops at max_turns
+PASS: tool result is appended verbatim</code></pre>
+</div>
+</div>
+<p>These tests establish termination and message integrity, not task intelligence. The thrashing case is especially important: a loop that keeps asking for work without a hard boundary is not more agentic, it is an unbounded process. The verbatim assertion leaves semantic interpretation to the next model turn and makes any harness paraphrase observable.</p>
+</section>
+<section id="one-shot-versus-loop" class="level2">
+<h2 class="anchored" data-anchor-id="one-shot-versus-loop">One-shot versus loop</h2>
+<p>Use one fixed task set and the same deterministic response policy in both conditions. A task is successful only when the returned <code>answer</code> exactly equals its known answer. The one-shot baseline receives one model response and can execute one tool, but a tool-mediated task is marked incomplete because no final model turn occurs. The loop receives the same first response and then replays the tool observation.</p>
+<p><strong>Protocol.</strong> Model <code>offline-script-v1</code>; greedy scripted decoding; seed <code>0</code>; four fixed tasks; <code>max_turns=4</code>; no network; no retries; no hidden judge. Report completion, tool calls, and exact task success together. This is a protocol experiment, not a population estimate for a frontier model.</p>
+<div id="ce708216" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.971296Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.970998Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:42.989852Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:42.988059Z&quot;}}" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>TASKS <span class="op">=</span> [</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"goal"</span>: <span class="st">"What is 2 + 3?"</span>, <span class="st">"answer"</span>: <span class="st">"5"</span>},</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"goal"</span>: <span class="st">"What is 19 + 23?"</span>, <span class="st">"answer"</span>: <span class="st">"42"</span>},</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"goal"</span>: <span class="st">"How many letters are in harness?"</span>, <span class="st">"answer"</span>: <span class="st">"7"</span>},</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"goal"</span>: <span class="st">"What color is the sky?"</span>, <span class="st">"answer"</span>: <span class="st">"blue"</span>},</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> exact_success(result: <span class="bu">dict</span>[<span class="bu">str</span>, Any], expected: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result.get(<span class="st">"status"</span>) <span class="op">==</span> <span class="st">"final"</span> <span class="kw">and</span> result.get(<span class="st">"answer"</span>) <span class="op">==</span> expected</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>comparison: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]] <span class="op">=</span> []</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> task <span class="kw">in</span> TASKS:</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    one_shot <span class="op">=</span> naive_one_shot(task[<span class="st">"goal"</span>])</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    loop <span class="op">=</span> naive_agent_loop(task[<span class="st">"goal"</span>])</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    comparison.append(</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>            <span class="st">"goal"</span>: task[<span class="st">"goal"</span>],</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>            <span class="st">"one_shot_success"</span>: exact_success(one_shot, task[<span class="st">"answer"</span>]),</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>            <span class="st">"loop_success"</span>: exact_success(loop, task[<span class="st">"answer"</span>]),</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>            <span class="st">"one_shot_status"</span>: one_shot[<span class="st">"status"</span>],</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>            <span class="st">"loop_status"</span>: loop[<span class="st">"status"</span>],</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>            <span class="st">"loop_tool_calls"</span>: <span class="bu">sum</span>(event[<span class="st">"kind"</span>] <span class="op">==</span> <span class="st">"tool"</span> <span class="cf">for</span> event <span class="kw">in</span> loop[<span class="st">"events"</span>]),</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> row <span class="kw">in</span> comparison:</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>row[<span class="st">'goal'</span>]<span class="sc">:&lt;38}</span><span class="ss"> one-shot=</span><span class="sc">{</span>row[<span class="st">'one_shot_success'</span>]<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"(</span><span class="sc">{</span>row[<span class="st">'one_shot_status'</span>]<span class="sc">:&lt;16}</span><span class="ss">) loop=</span><span class="sc">{</span>row[<span class="st">'loop_success'</span>]<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"(</span><span class="sc">{</span>row[<span class="st">'loop_status'</span>]<span class="sc">:&lt;5}</span><span class="ss">) tools=</span><span class="sc">{</span>row[<span class="st">'loop_tool_calls'</span>]<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>one_shot_successes <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"one_shot_success"</span>] <span class="cf">for</span> row <span class="kw">in</span> comparison)</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>loop_successes <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"loop_success"</span>] <span class="cf">for</span> row <span class="kw">in</span> comparison)</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>completed_one_shots <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"one_shot_status"</span>] <span class="op">==</span> <span class="st">"final"</span> <span class="cf">for</span> row <span class="kw">in</span> comparison)</span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>completed_loops <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"loop_status"</span>] <span class="op">==</span> <span class="st">"final"</span> <span class="cf">for</span> row <span class="kw">in</span> comparison)</span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"one-shot success: </span><span class="sc">{</span>one_shot_successes<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(TASKS)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"loop success:     </span><span class="sc">{</span>loop_successes<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(TASKS)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>    <span class="st">"success-rate delta: "</span></span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>(loop_successes <span class="op">-</span> one_shot_successes) <span class="op">/</span> <span class="bu">len</span>(TASKS)<span class="sc">:+.0%}</span><span class="ss">"</span></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> one_shot_successes <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> loop_successes <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> completed_one_shots <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> completed_loops <span class="op">==</span> <span class="dv">4</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>What is 2 + 3?                         one-shot=True (final           ) loop=True (final) tools=0
+What is 19 + 23?                       one-shot=False (needs_follow_up ) loop=True (final) tools=1
+How many letters are in harness?       one-shot=False (needs_follow_up ) loop=True (final) tools=1
+What color is the sky?                 one-shot=False (needs_follow_up ) loop=True (final) tools=1
+one-shot success: 1/4
+loop success:     4/4
+success-rate delta: +75%</code></pre>
+</div>
+</div>
+<p>The smallest harness change raises exact success from <span class="math inline">1/4</span> to <span class="math inline">4/4</span> on this fixed set, a <span class="math inline">+75</span> percentage-point delta, while adding one follow-up model turn to each tool-mediated task. The result attributes the gap to completion of the protocol, not to a more capable tool: the one-shot condition already executed the same local functions.</p>
+<p>This number is intentionally narrow. It says that a response parser without a return path is incomplete on tasks requiring evidence. It says nothing about cost, latency, unsafe actions, or whether the model would notice a wrong observation. The next experiments probe those failure surfaces.</p>
+</section>
+<section id="lying-tool" class="level2">
+<h2 class="anchored" data-anchor-id="lying-tool">Lying tool</h2>
+<p>Now break one tool without raising an exception. <code>lying_add</code> accepts valid integers but returns <code>43</code> for <span class="math inline">19+23</span>. The harness delivers that string exactly as it delivered the honest result. Two deterministic response policies expose the model-side distinction:</p>
+<ul>
+<li>a <em>trusting</em> policy repeats the observation as its answer;</li>
+<li>a <em>checking</em> policy independently recomputes the expression and reports a conflict.</li>
+</ul>
+<p>The fixture alternates those policies across eight cases. The frequency is a count of prescribed response styles, not a claim about how often an unobserved real model would check its tools.</p>
+<div id="2e217688" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:42.993331Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:42.993042Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:43.007736Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:43.006720Z&quot;}}" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lying_add(a: <span class="bu">int</span>, b: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    add_ints(a, b)  <span class="co"># retain argument validation while corrupting the result</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">"43"</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_lie_probe_model(policy: <span class="bu">str</span>) <span class="op">-&gt;</span> Callable[[<span class="bu">dict</span>[<span class="bu">str</span>, Any]], <span class="bu">str</span>]:</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> model(request: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        observations <span class="op">=</span> [m <span class="cf">for</span> m <span class="kw">in</span> request[<span class="st">"messages"</span>] <span class="cf">if</span> m[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span>]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> observations:</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>            call <span class="op">=</span> {</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                <span class="st">"id"</span>: <span class="st">"lie-1"</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>                <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>                <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"add"</span>, <span class="st">"arguments"</span>: <span class="st">'{"a": 19, "b": 23}'</span>},</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        reported <span class="op">=</span> observations[<span class="op">-</span><span class="dv">1</span>][<span class="st">"content"</span>]</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> policy <span class="op">==</span> <span class="st">"checking"</span> <span class="kw">and</span> reported <span class="op">!=</span> <span class="st">"42"</span>:</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>            answer <span class="op">=</span> <span class="ss">f"CONFLICT: tool reported </span><span class="sc">{</span>reported<span class="sc">}</span><span class="ss">; independent check gives 42"</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>            answer <span class="op">=</span> reported</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: answer})</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> model</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>lie_records <span class="op">=</span> []</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> case_number, policy <span class="kw">in</span> <span class="bu">enumerate</span>([<span class="st">"trusting"</span>, <span class="st">"checking"</span>] <span class="op">*</span> <span class="dv">4</span>, start<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> naive_agent_loop(</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>        <span class="st">"What is 19 + 23?"</span>,</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>make_lie_probe_model(policy),</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>        tools<span class="op">=</span>{<span class="st">"add"</span>: lying_add},</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>        max_turns<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    answer <span class="op">=</span> result[<span class="st">"answer"</span>]</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    lie_records.append(</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>            <span class="st">"case"</span>: case_number,</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>            <span class="st">"policy"</span>: policy,</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>            <span class="st">"answer"</span>: answer,</span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>            <span class="st">"noticed"</span>: <span class="bu">isinstance</span>(answer, <span class="bu">str</span>) <span class="kw">and</span> answer.startswith(<span class="st">"CONFLICT"</span>),</span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>            <span class="st">"confabulated"</span>: answer <span class="op">==</span> <span class="st">"43"</span>,</span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> result[<span class="st">"status"</span>] <span class="op">==</span> <span class="st">"final"</span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> validate_episode(result[<span class="st">"messages"</span>])</span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> row <span class="kw">in</span> lie_records:</span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(</span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"case </span><span class="sc">{</span>row[<span class="st">'case'</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>row[<span class="st">'policy'</span>]<span class="sc">:&lt;8}</span><span class="ss"> "</span></span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"noticed=</span><span class="sc">{</span>row[<span class="st">'noticed'</span>]<span class="sc">}</span><span class="ss"> confabulated=</span><span class="sc">{</span>row[<span class="st">'confabulated'</span>]<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>notices <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"noticed"</span>] <span class="cf">for</span> row <span class="kw">in</span> lie_records)</span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>confabulations <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"confabulated"</span>] <span class="cf">for</span> row <span class="kw">in</span> lie_records)</span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"noticed lie:       </span><span class="sc">{</span>notices<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(lie_records)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"accepted lie:      </span><span class="sc">{</span>confabulations<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(lie_records)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> notices <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> confabulations <span class="op">==</span> <span class="dv">4</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>case 1: trusting noticed=False confabulated=True
+case 2: checking noticed=True confabulated=False
+case 3: trusting noticed=False confabulated=True
+case 4: checking noticed=True confabulated=False
+case 5: trusting noticed=False confabulated=True
+case 6: checking noticed=True confabulated=False
+case 7: trusting noticed=False confabulated=True
+case 8: checking noticed=True confabulated=False
+noticed lie:       4/8
+accepted lie:      4/8</code></pre>
+</div>
+</div>
+<p>The loop preserves transport integrity while remaining unable to certify truth. Four cases detect the bad result because the model policy performs an independent check; four cases silently answer <code>43</code> because the policy treats an observation as ground truth. The harness did not fabricate the lie, but it also had no semantic guard against a lying tool.</p>
+<p>This is a capability-control mismatch in miniature: the system can perform arithmetic, yet its current tool contract does not control whether the reported result is correct. A stronger protocol could add independent checks, provenance, or typed result validation. Those safeguards belong above this deliberately naive loop and should be measured rather than assumed.</p>
+</section>
+<section id="malformed-call-recovery" class="level2">
+<h2 class="anchored" data-anchor-id="malformed-call-recovery">Malformed-call recovery</h2>
+<p>A malformed call is different from a silent lie. The dispatcher can detect that <code>a</code> is a string where <code>add</code> requires an integer, and the loop can return the validator’s message as a tool observation. The correction test asks whether the next model turn improves after seeing that error.</p>
+<p>The response fixture always starts with the malformed call <code>{"a": "19", "b": 23}</code>. In the recovery condition, attempt two sends integer arguments after reading the error. In the non-recovery condition, it repeats the malformed call until the hard stop. Six alternating cases make the rate visible while remaining deterministic.</p>
+<div id="c94227d2" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:16:43.010703Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:16:43.010416Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:16:43.028491Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:16:43.026589Z&quot;}}" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_recovery_model(should_recover: <span class="bu">bool</span>) <span class="op">-&gt;</span> Callable[[<span class="bu">dict</span>[<span class="bu">str</span>, Any]], <span class="bu">str</span>]:</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> model(request: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        observations <span class="op">=</span> [m <span class="cf">for</span> m <span class="kw">in</span> request[<span class="st">"messages"</span>] <span class="cf">if</span> m[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span>]</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> observations:</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>            arguments <span class="op">=</span> <span class="st">'{"a": "19", "b": 23}'</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> observations[<span class="op">-</span><span class="dv">1</span>][<span class="st">"content"</span>].startswith(<span class="st">"tool_error"</span>):</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>            arguments <span class="op">=</span> <span class="st">'{"a": 19, "b": 23}'</span> <span class="cf">if</span> should_recover <span class="cf">else</span> <span class="st">'{"a": "19", "b": 23}'</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: observations[<span class="op">-</span><span class="dv">1</span>][<span class="st">"content"</span>]})</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        call <span class="op">=</span> {</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="ss">f"recovery-</span><span class="sc">{</span><span class="bu">len</span>(observations) <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"function"</span>: {<span class="st">"name"</span>: <span class="st">"add"</span>, <span class="st">"arguments"</span>: arguments},</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> raw_response({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="va">None</span>, <span class="st">"tool_calls"</span>: [call]})</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> model</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> call_arguments(result: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]]:</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    calls <span class="op">=</span> [</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>        message[<span class="st">"tool_calls"</span>][<span class="dv">0</span>]</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> message <span class="kw">in</span> result[<span class="st">"messages"</span>]</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> message[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"assistant"</span> <span class="kw">and</span> message.get(<span class="st">"tool_calls"</span>)</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [json.loads(call[<span class="st">"function"</span>][<span class="st">"arguments"</span>]) <span class="cf">for</span> call <span class="kw">in</span> calls]</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>recovery_records <span class="op">=</span> []</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> case_number, should_recover <span class="kw">in</span> <span class="bu">enumerate</span>([<span class="va">True</span>, <span class="va">False</span>] <span class="op">*</span> <span class="dv">3</span>, start<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> naive_agent_loop(</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>        <span class="st">"What is 19 + 23?"</span>,</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>make_recovery_model(should_recover),</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>        max_turns<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    arguments <span class="op">=</span> call_arguments(result)</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    tool_messages <span class="op">=</span> [m <span class="cf">for</span> m <span class="kw">in</span> result[<span class="st">"messages"</span>] <span class="cf">if</span> m[<span class="st">"role"</span>] <span class="op">==</span> <span class="st">"tool"</span>]</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    attempt_two_valid <span class="op">=</span> (</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>        <span class="bu">len</span>(arguments) <span class="op">&gt;=</span> <span class="dv">2</span></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>        <span class="kw">and</span> <span class="bu">type</span>(arguments[<span class="dv">1</span>][<span class="st">"a"</span>]) <span class="kw">is</span> <span class="bu">int</span></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>        <span class="kw">and</span> <span class="bu">type</span>(arguments[<span class="dv">1</span>][<span class="st">"b"</span>]) <span class="kw">is</span> <span class="bu">int</span></span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>    recovered <span class="op">=</span> result[<span class="st">"status"</span>] <span class="op">==</span> <span class="st">"final"</span> <span class="kw">and</span> result[<span class="st">"answer"</span>] <span class="op">==</span> <span class="st">"42"</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>    error_replayed <span class="op">=</span> <span class="bu">bool</span>(tool_messages) <span class="kw">and</span> tool_messages[<span class="dv">0</span>][<span class="st">"content"</span>].startswith(<span class="st">"tool_error"</span>)</span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>    recovery_records.append(</span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>            <span class="st">"case"</span>: case_number,</span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>            <span class="st">"condition"</span>: <span class="st">"recovery"</span> <span class="cf">if</span> should_recover <span class="cf">else</span> <span class="st">"repeat-error"</span>,</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>            <span class="st">"attempt_2_valid"</span>: attempt_two_valid,</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>            <span class="st">"recovered"</span>: recovered,</span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a>            <span class="st">"error_replayed"</span>: error_replayed,</span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> error_replayed</span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> validate_episode(result[<span class="st">"messages"</span>])</span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> row <span class="kw">in</span> recovery_records:</span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(</span>
+<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"case </span><span class="sc">{</span>row[<span class="st">'case'</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>row[<span class="st">'condition'</span>]<span class="sc">:&lt;13}</span><span class="ss"> "</span></span>
+<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"attempt-2-valid=</span><span class="sc">{</span>row[<span class="st">'attempt_2_valid'</span>]<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"recovered=</span><span class="sc">{</span>row[<span class="st">'recovered'</span>]<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a>recovered_count <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"recovered"</span>] <span class="cf">for</span> row <span class="kw">in</span> recovery_records)</span>
+<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a>valid_second_attempts <span class="op">=</span> <span class="bu">sum</span>(row[<span class="st">"attempt_2_valid"</span>] <span class="cf">for</span> row <span class="kw">in</span> recovery_records)</span>
+<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"recovery rate:       </span><span class="sc">{</span>recovered_count<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(recovery_records)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"valid attempt two:   </span><span class="sc">{</span>valid_second_attempts<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(recovery_records)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> recovered_count <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> valid_second_attempts <span class="op">==</span> <span class="dv">3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>case 1: recovery      attempt-2-valid=True recovered=True
+case 2: repeat-error  attempt-2-valid=False recovered=False
+case 3: recovery      attempt-2-valid=True recovered=True
+case 4: repeat-error  attempt-2-valid=False recovered=False
+case 5: recovery      attempt-2-valid=True recovered=True
+case 6: repeat-error  attempt-2-valid=False recovered=False
+recovery rate:       3/6
+valid attempt two:   3/6</code></pre>
+</div>
+</div>
+<p>The recovery condition validates on attempt two in three of six cases and reaches a final answer in those same three. The other three cases receive the same correction but repeat it until <code>max_turns</code>, which is <strong>correction failure</strong> rather than a harness crash. The loop’s useful guarantee is narrower and concrete: it re-feeds the exact error through the observation channel and records whether the next call changed.</p>
+<p>The malformed call also shows why later tool-protocol work returns errors as structured results instead of raising into the session. A correction is only useful when it is attributable, visible in the history, and followed by a measurable change in behavior.</p>
+</section>
+<section id="reliability-ledger" class="level2">
+<h2 class="anchored" data-anchor-id="reliability-ledger">Reliability ledger</h2>
+<p>The Week 1 evidence is small by design. It establishes the protocol boundary and three repeatable failure probes; it does not claim that this loop is safe for an unattended repository.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Mechanism</th>
+<th>Assumption</th>
+<th>New failure exposed</th>
+<th>Evidence and current status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Raw completion</td>
+<td>supplied context is enough to ground the answer</td>
+<td>no persistent state, effect, or ground truth</td>
+<td>repeated stateless baseline; <strong>unresolved by design</strong></td>
+</tr>
+<tr class="even">
+<td>One-shot parser</td>
+<td>one response and one valid call are enough</td>
+<td>tool-mediated episodes end without a final answer; malformed envelopes can crash</td>
+<td><span class="math inline">1/4</span> exact success; <strong>bounded only by the caller</strong></td>
+</tr>
+<tr class="odd">
+<td>Think-act-observe loop</td>
+<td>responses and tools remain usable within a turn budget</td>
+<td>thrashing and unknown or malformed calls</td>
+<td>termination, max-turn, and verbatim tests pass; <strong>protocol established</strong></td>
+</tr>
+<tr class="even">
+<td>Observation channel</td>
+<td>a returned string is truthful</td>
+<td>silently lying tool is accepted as fact</td>
+<td><span class="math inline">4/8</span> scripted policies detect, <span class="math inline">4/8</span> confabulate; <strong>semantic truth unresolved</strong></td>
+</tr>
+<tr class="odd">
+<td>Error-as-result correction</td>
+<td>the next model turn will use feedback</td>
+<td>repeated malformed calls</td>
+<td><span class="math inline">3/6</span> recover; <span class="math inline">3/6</span> correction failures at the bound; <strong>measured, not solved</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The relevant reliability terms are now observable. A wrong tool implementation is <strong>specification error</strong>; treating “no exception” as success would be <strong>proxy optimization</strong>; repeating a supplied error is <strong>correction failure</strong>; and the model’s ability to call a tool without a truth or permission guard is a small <strong>capability-control mismatch</strong>. The trajectory and its failed cases are more informative than a single success rate.</p>
+<p>No project library was added this week. The plain functions stay in the notebook so that the later package mechanisms can be compared against a transparent baseline rather than silently replacing it.</p>
+</section>
+<section id="transport-observability" class="level2">
+<h2 class="anchored" data-anchor-id="transport-observability">Transport observability</h2>
+<p>The loop currently receives a complete JSON string in one synchronous step. A real provider may stream content deltas and tool-call deltas, split one call across many chunks, report usage separately, disconnect midway, or return a retryable status. If the client loses a delta, the loop’s invariant is already broken before it reaches a tool.</p>
+<p>Week 2 therefore builds the streaming client first:</p>
+<ul>
+<li>parse Server-Sent Events by hand and distinguish content from tool-call deltas;</li>
+<li>stitch parallel calls by index without silently dropping fragments;</li>
+<li>record reported usage and accumulated cost in a token ledger; and</li>
+<li>retry only where the request policy makes that safe, with explicit timeout behavior.</li>
+</ul>
+<p>The semantic loop remains the same: every assistant call receives one observation, and no observation is invented. Week 2 changes how a complete assistant message is transported and measured. Once that boundary is reliable, Week 3 can turn these hand-written function dictionaries into a typed tool protocol.</p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../../nb/courses/agent-harness/00-overview.html" class="pagination-link" aria-label="00. Overview">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">00. Overview</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/agent-harness/02-streaming-client.html" class="pagination-link" aria-label="02. Streaming client">
+        <span class="nav-page-text">02. Streaming client</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

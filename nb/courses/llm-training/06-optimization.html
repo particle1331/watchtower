@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Derive optimizer updates, then measure PyTorch schedules, clipping, and token budgets.">
+
+<title>Optimization, Scaling, and Checkpointing – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/llm-training/07-evaluation.html" rel="next">
+<link href="../../../nb/courses/llm-training/05-pretraining.html" rel="prev">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/01-introduction.html">Phase I: Data and foundations</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/06-optimization.html">06. Optimization and systems</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building a Language Model: From Pretraining to Function Calling</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/00-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">00. Overview</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase I: Data and foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Corpus and data systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/02-tokenization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Tokenization and batching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/03-baselines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. PyTorch foundations and baselines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/04-transformer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Decoder-only Transformer</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/05-pretraining.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Causal pretraining</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/06-optimization.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">06. Optimization and systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/07-evaluation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Checkpoint evaluation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/08-sft.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase II: Posttraining and adaptation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/08-sft.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Proof supervised fine-tuning</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/09-preferences.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Preference learning and DPO</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/10-rl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Verifier-guided RL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/11-tools.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Proof-tool calling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/12-lora.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. LoRA and full fine-tuning</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/13-failure-modes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase III: Reliability and capstone</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/13-failure-modes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Measured failure modes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/14-capstone.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. End-to-end proof-model study</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#optimization-algorithms" id="toc-optimization-algorithms" class="nav-link active" data-scroll-target="#optimization-algorithms">Optimization algorithms</a></li>
+  <li><a href="#learning-rate-warmup" id="toc-learning-rate-warmup" class="nav-link" data-scroll-target="#learning-rate-warmup">Learning-rate warmup</a></li>
+  <li><a href="#gradient-clipping" id="toc-gradient-clipping" class="nav-link" data-scroll-target="#gradient-clipping">Gradient clipping</a></li>
+  <li><a href="#training-counters" id="toc-training-counters" class="nav-link" data-scroll-target="#training-counters">Training counters</a></li>
+  <li><a href="#reusable-optimizer-path" id="toc-reusable-optimizer-path" class="nav-link" data-scroll-target="#reusable-optimizer-path">Reusable optimizer path</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises">Exercises</a>
+  <ul class="collapse">
+  <li><a href="#p6.1-adamw-update" id="toc-p6.1-adamw-update" class="nav-link" data-scroll-target="#p6.1-adamw-update">[P6.1] AdamW update</a></li>
+  <li><a href="#p6.2-token-budget-accounting" id="toc-p6.2-token-budget-accounting" class="nav-link" data-scroll-target="#p6.2-token-budget-accounting">[P6.2] Token-budget accounting</a></li>
+  <li><a href="#p6.3" id="toc-p6.3" class="nav-link" data-scroll-target="#p6.3">[P6.3]</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/01-introduction.html">Phase I: Data and foundations</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/06-optimization.html">06. Optimization and systems</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Optimization, Scaling, and Checkpointing</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">machine-learning</div>
+    <div class="quarto-category">optimization</div>
+    <div class="quarto-category">language-models</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Derive optimizer updates, then measure PyTorch schedules, clipping, and token budgets.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>The pretraining loop from Chapter 05 exposed a gradient and a learning rate, but it treated the optimizer as one line. This chapter opens that line. The NumPy cells preserve update equations on a fixed loss surface; the reusable PyTorch path then applies warmup, cosine decay, global clipping, AdamW parameter groups, and token accounting to the ProofLM decoder.</p>
+<p>The experiments are intentionally small. Their purpose is to make update equations and accounting rules testable before they are applied to a larger model.</p>
+<section id="optimization-algorithms" class="level2">
+<h2 class="anchored" data-anchor-id="optimization-algorithms">Optimization algorithms</h2>
+<p>Use a positive-definite quadratic</p>
+<p><span class="math display">
+f(\theta)=\frac{1}{2}\theta^\top A\theta+b^\top\theta,
+\qquad
+\nabla f(\theta)=A\theta+b.
+</span></p>
+<p>Its minimizer is <span class="math inline">\theta^*=-A^{-1}b</span>, so optimization error can be measured independently of the update rule. Plain gradient descent uses <span class="math inline">\theta_{t+1}=\theta_t-\eta g_t</span>. Momentum keeps a velocity <span class="math inline">v_t=\beta v_{t-1}+g_t</span> and updates with that velocity. AdamW keeps first and second moments, corrects their initialization bias, and applies weight decay directly to the parameter rather than adding it to the gradient.</p>
+<p>Implement each state transition explicitly and compare the trajectories from one common starting point.</p>
+<div id="8becaee3" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.213681Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.213116Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:48.854018Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:48.850697Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>SEED <span class="op">=</span> <span class="dv">61</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.array([[<span class="fl">4.0</span>, <span class="fl">1.0</span>], [<span class="fl">1.0</span>, <span class="fl">2.0</span>]])</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> np.array([<span class="op">-</span><span class="fl">2.0</span>, <span class="fl">1.0</span>])</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>theta_star <span class="op">=</span> <span class="op">-</span>np.linalg.solve(A, b)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> quadratic(theta):</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> theta <span class="op">@</span> A <span class="op">@</span> theta <span class="op">+</span> b <span class="op">@</span> theta</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    gradient <span class="op">=</span> A <span class="op">@</span> theta <span class="op">+</span> b</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(value), gradient</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gd_update(theta, gradient, learning_rate):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> theta <span class="op">-</span> learning_rate <span class="op">*</span> gradient</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> momentum_update(theta, gradient, velocity, learning_rate, beta<span class="op">=</span><span class="fl">0.9</span>):</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    velocity <span class="op">=</span> beta <span class="op">*</span> velocity <span class="op">+</span> gradient</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> theta <span class="op">-</span> learning_rate <span class="op">*</span> velocity, velocity</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> adamw_update(theta, gradient, first_moment, second_moment, step, learning_rate,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                 beta1<span class="op">=</span><span class="fl">0.9</span>, beta2<span class="op">=</span><span class="fl">0.99</span>, epsilon<span class="op">=</span><span class="fl">1e-8</span>, weight_decay<span class="op">=</span><span class="fl">0.01</span>):</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    first_moment <span class="op">=</span> beta1 <span class="op">*</span> first_moment <span class="op">+</span> (<span class="fl">1.0</span> <span class="op">-</span> beta1) <span class="op">*</span> gradient</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    second_moment <span class="op">=</span> beta2 <span class="op">*</span> second_moment <span class="op">+</span> (<span class="fl">1.0</span> <span class="op">-</span> beta2) <span class="op">*</span> gradient <span class="op">**</span> <span class="dv">2</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    first_hat <span class="op">=</span> first_moment <span class="op">/</span> (<span class="fl">1.0</span> <span class="op">-</span> beta1 <span class="op">**</span> step)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    second_hat <span class="op">=</span> second_moment <span class="op">/</span> (<span class="fl">1.0</span> <span class="op">-</span> beta2 <span class="op">**</span> step)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    adaptive_step <span class="op">=</span> learning_rate <span class="op">*</span> first_hat <span class="op">/</span> (np.sqrt(second_hat) <span class="op">+</span> epsilon)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    theta <span class="op">=</span> (<span class="fl">1.0</span> <span class="op">-</span> learning_rate <span class="op">*</span> weight_decay) <span class="op">*</span> theta <span class="op">-</span> adaptive_step</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> theta, first_moment, second_moment</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_optimizer(name, steps<span class="op">=</span><span class="dv">80</span>):</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    theta <span class="op">=</span> np.array([<span class="fl">3.0</span>, <span class="op">-</span><span class="fl">3.0</span>])</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    losses <span class="op">=</span> []</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    velocity <span class="op">=</span> np.zeros_like(theta)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    first_moment <span class="op">=</span> np.zeros_like(theta)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    second_moment <span class="op">=</span> np.zeros_like(theta)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> step <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, steps <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        value, gradient <span class="op">=</span> quadratic(theta)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        losses.append(value)</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> name <span class="op">==</span> <span class="st">"gd"</span>:</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>            theta <span class="op">=</span> gd_update(theta, gradient, learning_rate<span class="op">=</span><span class="fl">0.18</span>)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> name <span class="op">==</span> <span class="st">"momentum"</span>:</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>            theta, velocity <span class="op">=</span> momentum_update(theta, gradient, velocity, learning_rate<span class="op">=</span><span class="fl">0.08</span>)</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> name <span class="op">==</span> <span class="st">"adamw"</span>:</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>            theta, first_moment, second_moment <span class="op">=</span> adamw_update(</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>                theta, gradient, first_moment, second_moment, step, learning_rate<span class="op">=</span><span class="fl">0.08</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(name)</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> theta, np.asarray(losses)</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> optimizer_name <span class="kw">in</span> (<span class="st">"gd"</span>, <span class="st">"momentum"</span>, <span class="st">"adamw"</span>):</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    final_theta, losses <span class="op">=</span> run_optimizer(optimizer_name)</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>optimizer_name<span class="sc">:&gt;8}</span><span class="ss">: loss </span><span class="sc">{</span>losses[<span class="dv">0</span>]<span class="sc">:7.3f}</span><span class="ss"> -&gt; </span><span class="sc">{</span>losses[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:9.6f}</span><span class="ss">, "</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"distance to optimum=</span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(final_theta <span class="op">-</span> theta_star)<span class="sc">:.5f}</span><span class="ss">"</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> losses[<span class="op">-</span><span class="dv">1</span>] <span class="op">&lt;</span> losses[<span class="dv">0</span>]</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"quadratic optimum:"</span>, theta_star)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      gd: loss   9.000 -&gt; -1.142857, distance to optimum=0.00000
+momentum: loss   9.000 -&gt; -1.141568, distance to optimum=0.03134
+   adamw: loss   9.000 -&gt; -1.141892, distance to optimum=0.03144
+quadratic optimum: [ 0.71428571 -0.85714286]</code></pre>
+</div>
+</div>
+<p>The quadratic makes the comparison independent of data sampling and model architecture. Plain gradient descent follows the local slope, momentum smooths successive slopes through its velocity, and AdamW rescales coordinates using their estimated second moments while shrinking the parameter separately. Their final losses need not rank the same way for every learning rate; the useful invariant is that each stateful implementation is evaluated on the same known surface.</p>
+</section>
+<section id="learning-rate-warmup" class="level2">
+<h2 class="anchored" data-anchor-id="learning-rate-warmup">Learning-rate warmup</h2>
+<p>A warmup schedule increases the learning rate from a small value to a peak over <span class="math inline">W</span> updates. Cosine decay then moves it toward a floor over the remaining <span class="math inline">S-W</span> updates:</p>
+<p><span class="math display">
+\eta_t=\eta_{\min}+\frac{1}{2}(\eta_{\max}-\eta_{\min})
+\left(1+\cos\frac{\pi(t-W)}{S-W}\right).
+</span></p>
+<p>The schedule is indexed by optimizer updates, not epochs. This matters when batch size changes because one epoch then contains a different number of updates and a different number of processed tokens.</p>
+<div id="6f619c98" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.864230Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.862508Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:48.919471Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:48.916455Z&quot;}}" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> warmup_cosine(step, warmup_steps, total_steps, maximum_rate, minimum_rate<span class="op">=</span><span class="fl">0.0</span>):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="dv">0</span> <span class="op">&lt;=</span> step <span class="op">&lt;</span> total_steps:</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"step must lie in [0, total_steps)"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> warmup_steps <span class="op">&lt;</span> <span class="dv">1</span> <span class="kw">or</span> warmup_steps <span class="op">&gt;=</span> total_steps:</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"warmup_steps must be smaller than total_steps"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> step <span class="op">&lt;</span> warmup_steps:</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> maximum_rate <span class="op">*</span> (step <span class="op">+</span> <span class="dv">1</span>) <span class="op">/</span> warmup_steps</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    progress <span class="op">=</span> (step <span class="op">-</span> warmup_steps) <span class="op">/</span> (total_steps <span class="op">-</span> warmup_steps <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    cosine <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> (<span class="fl">1.0</span> <span class="op">+</span> np.cos(np.pi <span class="op">*</span> progress))</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> minimum_rate <span class="op">+</span> (maximum_rate <span class="op">-</span> minimum_rate) <span class="op">*</span> cosine</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>schedule <span class="op">=</span> np.asarray([</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    warmup_cosine(step, warmup_steps<span class="op">=</span><span class="dv">4</span>, total_steps<span class="op">=</span><span class="dv">16</span>, maximum_rate<span class="op">=</span><span class="fl">0.2</span>, minimum_rate<span class="op">=</span><span class="fl">0.02</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> step <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">16</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"warmup+cosine schedule:"</span>, np.<span class="bu">round</span>(schedule, <span class="dv">4</span>))</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.<span class="bu">all</span>(np.diff(schedule[:<span class="dv">4</span>]) <span class="op">&gt;</span> <span class="fl">0.0</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.isclose(schedule[<span class="dv">3</span>], <span class="fl">0.2</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.isclose(schedule[<span class="op">-</span><span class="dv">1</span>], <span class="fl">0.02</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.<span class="bu">all</span>(np.diff(schedule[<span class="dv">4</span>:]) <span class="op">&lt;=</span> <span class="fl">1e-12</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>warmup+cosine schedule: [0.05   0.1    0.15   0.2    0.2    0.1964 0.1857 0.1689 0.1474 0.1228
+ 0.0972 0.0726 0.0511 0.0343 0.0236 0.02  ]</code></pre>
+</div>
+</div>
+<p>The first four rates rise to the configured maximum, then the cosine segment decreases smoothly to the floor. The <code>step + 1</code> in warmup makes update zero a nonzero but reduced learning rate; the final cosine denominator maps the last valid update exactly to the minimum. A schedule saved in a checkpoint must retain its update position, just as the random state did in Chapter 05.</p>
+</section>
+<section id="gradient-clipping" class="level2">
+<h2 class="anchored" data-anchor-id="gradient-clipping">Gradient clipping</h2>
+<p>For a model with parameter gradients <span class="math inline">g_1,\ldots,g_m</span>, define the global norm</p>
+<p><span class="math display">
+\lVert g\rVert_2=\sqrt{\sum_j\lVert g_j\rVert_2^2}.
+</span></p>
+<p>Global clipping uses one scale for all arrays. It prevents an occasional large batch from producing an update larger than the configured trust threshold while preserving the relative direction among layers. The clipping operation should be logged separately from the raw norm so frequent clipping is visible as a training-dynamics change.</p>
+<div id="5d37ec28" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.923535Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.923175Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:48.937079Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:48.934752Z&quot;}}" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> global_norm(gradients):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(gradients, <span class="bu">dict</span>):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        values <span class="op">=</span> gradients.values()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        values <span class="op">=</span> gradients</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(np.sqrt(<span class="bu">sum</span>(np.<span class="bu">sum</span>(np.asarray(value) <span class="op">**</span> <span class="dv">2</span>) <span class="cf">for</span> value <span class="kw">in</span> values)))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> clip_by_global_norm(gradients, maximum_norm):</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    norm <span class="op">=</span> global_norm(gradients)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    scale <span class="op">=</span> <span class="bu">min</span>(<span class="fl">1.0</span>, maximum_norm <span class="op">/</span> (norm <span class="op">+</span> <span class="fl">1e-12</span>))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(gradients, <span class="bu">dict</span>):</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        clipped <span class="op">=</span> {name: np.asarray(value) <span class="op">*</span> scale <span class="cf">for</span> name, value <span class="kw">in</span> gradients.items()}</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        clipped <span class="op">=</span> [np.asarray(value) <span class="op">*</span> scale <span class="cf">for</span> value <span class="kw">in</span> gradients]</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> clipped, norm</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>gradients <span class="op">=</span> {<span class="st">"embedding"</span>: np.array([[<span class="fl">3.0</span>, <span class="fl">4.0</span>]]), <span class="st">"projection"</span>: np.array([<span class="fl">12.0</span>])}</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>clipped_gradients, raw_norm <span class="op">=</span> clip_by_global_norm(gradients, maximum_norm<span class="op">=</span><span class="fl">5.0</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"raw norm:"</span>, raw_norm, <span class="st">"clipped norm:"</span>, global_norm(clipped_gradients))</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.isclose(raw_norm, <span class="fl">13.0</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.isclose(global_norm(clipped_gradients), <span class="fl">5.0</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>ratio <span class="op">=</span> clipped_gradients[<span class="st">"projection"</span>] <span class="op">/</span> gradients[<span class="st">"projection"</span>]</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.allclose(clipped_gradients[<span class="st">"embedding"</span>] <span class="op">/</span> gradients[<span class="st">"embedding"</span>], ratio)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>raw norm: 13.0 clipped norm: 4.999999999999615</code></pre>
+</div>
+</div>
+<p>The example has a raw norm of <span class="math inline">13</span> and is scaled to <span class="math inline">5</span>; both arrays receive the same factor. That common factor is the behavior needed when a Transformer has layers with very different gradient magnitudes. Clipping does not repair an incorrect objective or a consistently unsuitable learning rate, so the unclipped norm and the clipping frequency remain experiment metrics.</p>
+</section>
+<section id="training-counters" class="level2">
+<h2 class="anchored" data-anchor-id="training-counters">Training counters</h2>
+<p>An epoch count hides the amount of computation when batch size changes. For a sequence task with <span class="math inline">L</span> tokens per example, a run with batch size <span class="math inline">B</span> and <span class="math inline">U</span> optimizer updates processes approximately</p>
+<p><span class="math display">
+\text{tokens}=B\times L\times U
+</span></p>
+<p>before accounting for the final partial batch. Hold the update budget fixed in the sweep below, vary batch size and learning rate, and report the resulting token budget explicitly. The objective is a small linear regression only because its loss is quick to evaluate; the accounting rule is the same for language-model batches.</p>
+<div id="0e43ef6d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.942946Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.942523Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:49.262601Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:49.239273Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sweep_rng <span class="op">=</span> np.random.default_rng(SEED <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>features <span class="op">=</span> sweep_rng.normal(size<span class="op">=</span>(<span class="dv">64</span>, <span class="dv">3</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>true_weights <span class="op">=</span> np.array([<span class="fl">1.5</span>, <span class="op">-</span><span class="fl">0.8</span>, <span class="fl">0.4</span>])</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>responses <span class="op">=</span> features <span class="op">@</span> true_weights <span class="op">+</span> <span class="fl">0.1</span> <span class="op">*</span> sweep_rng.normal(size<span class="op">=</span><span class="dv">64</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>SEQUENCE_LENGTH <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> regression_loss_and_gradient(weights, batch_features, batch_responses):</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    errors <span class="op">=</span> batch_features <span class="op">@</span> weights <span class="op">-</span> batch_responses</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(<span class="fl">0.5</span> <span class="op">*</span> np.mean(errors <span class="op">**</span> <span class="dv">2</span>)), batch_features.T <span class="op">@</span> errors <span class="op">/</span> <span class="bu">len</span>(errors)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> regression_run(batch_size, learning_rate, updates<span class="op">=</span><span class="dv">40</span>, seed<span class="op">=</span><span class="dv">0</span>, maximum_norm<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    weights <span class="op">=</span> np.zeros(features.shape[<span class="dv">1</span>])</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    random_generator <span class="op">=</span> np.random.default_rng(seed)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(updates):</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        indices <span class="op">=</span> random_generator.integers(<span class="dv">0</span>, <span class="bu">len</span>(features), size<span class="op">=</span>batch_size)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        _, gradient <span class="op">=</span> regression_loss_and_gradient(</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            weights, features[indices], responses[indices]</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> maximum_norm <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>            gradient, _ <span class="op">=</span> clip_by_global_norm([gradient], maximum_norm)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>            gradient <span class="op">=</span> gradient[<span class="dv">0</span>]</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        weights <span class="op">=</span> gd_update(weights, gradient, learning_rate)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    final_loss <span class="op">=</span> regression_loss_and_gradient(weights, features, responses)[<span class="dv">0</span>]</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> batch_size <span class="op">*</span> SEQUENCE_LENGTH <span class="op">*</span> updates</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> final_loss, updates, tokens</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> []</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> batch_size <span class="kw">in</span> (<span class="dv">2</span>, <span class="dv">8</span>, <span class="dv">32</span>):</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> learning_rate <span class="kw">in</span> (<span class="fl">0.03</span>, <span class="fl">0.1</span>):</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> regression_run(batch_size, learning_rate, seed<span class="op">=</span>SEED <span class="op">+</span> batch_size)</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        results.append((batch_size, learning_rate, <span class="op">*</span>result))</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"batch=</span><span class="sc">{</span>batch_size<span class="sc">:&gt;2}</span><span class="ss">, lr=</span><span class="sc">{</span>learning_rate<span class="sc">:.2f}</span><span class="ss">, "</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"updates=</span><span class="sc">{</span>result[<span class="dv">1</span>]<span class="sc">:&gt;2}</span><span class="ss">, tokens=</span><span class="sc">{</span>result[<span class="dv">2</span>]<span class="sc">:&gt;4}</span><span class="ss">, loss=</span><span class="sc">{</span>result[<span class="dv">0</span>]<span class="sc">:.5f}</span><span class="ss">"</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">all</span>(row[<span class="dv">3</span>] <span class="op">==</span> <span class="dv">40</span> <span class="cf">for</span> row <span class="kw">in</span> results)</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">all</span>(row[<span class="dv">4</span>] <span class="op">==</span> row[<span class="dv">0</span>] <span class="op">*</span> SEQUENCE_LENGTH <span class="op">*</span> row[<span class="dv">3</span>] <span class="cf">for</span> row <span class="kw">in</span> results)</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(results) <span class="op">==</span> <span class="dv">6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>batch= 2, lr=0.03, updates=40, tokens= 400, loss=0.20330
+batch= 2, lr=0.10, updates=40, tokens= 400, loss=0.01465
+batch= 8, lr=0.03, updates=40, tokens=1600, loss=0.18862
+batch= 8, lr=0.10, updates=40, tokens=1600, loss=0.00678
+batch=32, lr=0.03, updates=40, tokens=6400, loss=0.19016
+batch=32, lr=0.10, updates=40, tokens=6400, loss=0.00584</code></pre>
+</div>
+</div>
+</section>
+<section id="reusable-optimizer-path" class="level2">
+<h2 class="anchored" data-anchor-id="reusable-optimizer-path">Reusable optimizer path</h2>
+<p>The fixed-surface derivations identify what each state variable means. The training path below applies the same ideas to a real ProofLM module: matrix weights receive decoupled decay, normalization and bias parameters do not, the schedule is indexed by optimizer update, and the raw gradient norm is recorded before clipping.</p>
+<div id="782b2687" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> proof_lm.model <span class="im">import</span> DecoderConfig, ProofLM</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> proof_lm.optimization <span class="im">import</span> (</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    adamw_parameter_groups,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    clip_gradients,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    warmup_cosine_factor,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(SEED)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>optimizer_model <span class="op">=</span> ProofLM(</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    DecoderConfig(</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        vocab_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        context_length<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        n_layers<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        d_model<span class="op">=</span><span class="dv">32</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        n_heads<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        d_ff<span class="op">=</span><span class="dv">64</span>,</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>optimizer <span class="op">=</span> torch.optim.AdamW(</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    adamw_parameter_groups(optimizer_model, weight_decay<span class="op">=</span><span class="fl">0.1</span>),</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    lr<span class="op">=</span><span class="fl">0.02</span>,</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>optimizer_inputs <span class="op">=</span> torch.randint(<span class="dv">0</span>, <span class="dv">24</span>, (<span class="dv">4</span>, <span class="dv">8</span>))</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>optimizer_targets <span class="op">=</span> torch.roll(optimizer_inputs, shifts<span class="op">=-</span><span class="dv">1</span>, dims<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>learning_rates <span class="op">=</span> []</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>raw_norms <span class="op">=</span> []</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> update <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">6</span>):</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    factor <span class="op">=</span> warmup_cosine_factor(</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>        update, warmup_updates<span class="op">=</span><span class="dv">2</span>, total_updates<span class="op">=</span><span class="dv">6</span>, minimum_ratio<span class="op">=</span><span class="fl">0.2</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> group <span class="kw">in</span> optimizer.param_groups:</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>        group[<span class="st">"lr"</span>] <span class="op">=</span> <span class="fl">0.02</span> <span class="op">*</span> factor</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    optimizer.zero_grad(set_to_none<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    _, optimizer_loss <span class="op">=</span> optimizer_model(</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>        optimizer_inputs,</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>        labels<span class="op">=</span>optimizer_targets,</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>    optimizer_loss.backward()</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>    raw_norms.append(clip_gradients(optimizer_model.parameters(), <span class="fl">0.5</span>))</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>    optimizer.step()</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>    learning_rates.append(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"lr"</span>])</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>processed_tokens <span class="op">=</span> optimizer_inputs.numel() <span class="op">*</span> <span class="bu">len</span>(learning_rates)</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"learning rates:"</span>, [<span class="bu">round</span>(value, <span class="dv">5</span>) <span class="cf">for</span> value <span class="kw">in</span> learning_rates])</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"raw gradient norms:"</span>, [<span class="bu">round</span>(value, <span class="dv">4</span>) <span class="cf">for</span> value <span class="kw">in</span> raw_norms])</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"processed tokens:"</span>, processed_tokens)</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> learning_rates[<span class="dv">0</span>] <span class="op">&lt;</span> learning_rates[<span class="dv">1</span>]</span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> learning_rates[<span class="op">-</span><span class="dv">1</span>] <span class="op">&lt;</span> learning_rates[<span class="dv">1</span>]</span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">all</span>(value <span class="op">&gt;=</span> <span class="dv">0</span> <span class="cf">for</span> value <span class="kw">in</span> raw_norms)</span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> processed_tokens <span class="op">==</span> <span class="dv">4</span> <span class="op">*</span> <span class="dv">8</span> <span class="op">*</span> <span class="dv">6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>learning rates: [0.01, 0.02, 0.02, 0.01766, 0.012, 0.00634]
+raw gradient norms: [1.9901, 1.2494, 2.7686, 2.1888, 1.9198, 1.0681]
+processed tokens: 192</code></pre>
+</div>
+</div>
+<p>The sweep keeps updates fixed, so the batch-32 runs process sixteen times as many examples and tokens as batch-2 runs. A lower final loss at a larger batch may therefore reflect a larger token budget rather than a more efficient optimizer. Report both axes when comparing learning rates, and add wall-clock time or hardware throughput when the experiment is intended to make a scaling claim.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>Plain gradient descent, momentum, and AdamW differ in the state they carry and in where weight decay enters the update.</li>
+<li>Warmup and cosine decay are functions of optimizer updates; changing batch size changes the token count per scheduled step.</li>
+<li>Global gradient clipping applies one scale to all parameter arrays and should be logged with the raw norm.</li>
+<li>The fixed-surface and regression experiments make optimizer behavior and learning-rate sensitivity measurable without a deep-learning framework.</li>
+<li>Batch size, updates, examples, and tokens are separate accounting fields; epochs alone cannot compare these runs.</li>
+</ul>
+<p>Chapter 07 packages loss, calibration, memorization, overlap, and diversity measurements into composable evaluation functions.</p>
+</section>
+<section id="exercises" class="level2">
+<h2 class="anchored" data-anchor-id="exercises">Exercises</h2>
+<p>Use the exercises to test the chapter’s invariants and connect the derivations to the reusable implementation. Solutions are hidden in the notebook source and are available through the course tooling when needed.</p>
+<section id="p6.1-adamw-update" class="level3">
+<h3 class="anchored" data-anchor-id="p6.1-adamw-update">[P6.1] AdamW update</h3>
+<p>AdamW derivation. Write the first-moment and second-moment recurrences, explain the bias-correction factors at step one, and state where decoupled weight decay appears in the parameter update.</p>
+</section>
+<section id="p6.2-token-budget-accounting" class="level3">
+<h3 class="anchored" data-anchor-id="p6.2-token-budget-accounting">[P6.2] Token-budget accounting</h3>
+<p>Budget accounting. A run uses batch size 16, sequence length 128, and 250 optimizer updates. Compute processed tokens and explain why comparing it with a batch-size-4 run by epoch count alone is misleading.</p>
+</section>
+<section id="p6.3" class="level3">
+<h3 class="anchored" data-anchor-id="p6.3">[P6.3]</h3>
+<p>Update-indexed schedules. A cosine schedule is a function of optimizer updates, not epochs. Given <code>warmup_updates=2</code> and <code>total_updates=6</code>, explain why the first two learning-rate factors differ from the later factors, and state which token-accounting fields must be reported when batch size changes.</p>
+<div id="c6257b78" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_report(batch_size, context_length, updates):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Return processed tokens and the schedule's final update index.</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../../nb/courses/llm-training/05-pretraining.html" class="pagination-link" aria-label="05. Causal pretraining">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">05. Causal pretraining</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/llm-training/07-evaluation.html" class="pagination-link" aria-label="07. Checkpoint evaluation">
+        <span class="nav-page-text">07. Checkpoint evaluation</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

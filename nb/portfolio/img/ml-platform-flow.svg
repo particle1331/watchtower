@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-labelledby="title desc">
+  <title id="title">ML Platform lifecycle and operations flow</title>
+  <desc id="desc">Training jobs register versioned models and artifacts in MLflow. Serving loads an exact model version. Results from jobs and serving are available to an operational dashboard.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M1 1 L8 4.5 L1 8" fill="none" stroke="#e95420" stroke-width="1.7"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="898" height="298" rx="14" fill="#f8f8f8" stroke="#dedede"/>
+  <text x="36" y="43" fill="#343a40" font-family="system-ui, sans-serif" font-size="20" font-weight="650">From a reproducible run to observable serving</text>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect x="34" y="81" width="235" height="86" rx="10" fill="#ffffff" stroke="#c9c9c9"/>
+    <text x="151" y="117" fill="#343a40" font-size="18" font-weight="650">Training + evaluation</text>
+    <text x="151" y="143" fill="#626970" font-size="14">Versioned jobs</text>
+    <rect x="333" y="81" width="235" height="86" rx="10" fill="#ffffff" stroke="#e95420" stroke-width="2"/>
+    <text x="450" y="117" fill="#343a40" font-size="18" font-weight="650">MLflow</text>
+    <text x="450" y="143" fill="#626970" font-size="14">Runs and model artifacts</text>
+    <rect x="632" y="81" width="235" height="86" rx="10" fill="#ffffff" stroke="#c9c9c9"/>
+    <text x="749" y="117" fill="#343a40" font-size="18" font-weight="650">Serving app</text>
+    <text x="749" y="143" fill="#626970" font-size="14">Exact model version</text>
+    <rect x="184" y="213" width="235" height="62" rx="10" fill="#fff3ee" stroke="#e95420"/>
+    <text x="301" y="250" fill="#343a40" font-size="16" font-weight="600">Results database</text>
+    <rect x="483" y="213" width="235" height="62" rx="10" fill="#fff3ee" stroke="#e95420"/>
+    <text x="600" y="250" fill="#343a40" font-size="16" font-weight="600">Operations dashboard</text>
+  </g>
+  <g fill="none" stroke="#e95420" stroke-width="2.5" marker-end="url(#arrow)">
+    <path d="M278 124 H320"/>
+    <path d="M577 124 H619"/>
+    <path d="M151 177 V192 H301 V202"/>
+    <path d="M428 244 H470"/>
+  </g>
+</svg>

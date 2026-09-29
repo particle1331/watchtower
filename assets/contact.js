@@ -1,0 +1,63 @@
+(function() {
+  var contactCodes = {
+    email: [114, 111, 110, 46, 109, 100, 110, 64, 103, 109, 97, 105, 108, 46, 99, 111, 109],
+    phone: [40, 43, 54, 51, 41, 32, 57, 54, 50, 32, 56, 51, 49, 32, 54, 55, 51, 48]
+  };
+
+  function getContact(name) {
+    return contactCodes[name].map(function(code) {
+      return String.fromCharCode(code);
+    }).join('');
+  }
+
+  function getClipboardValue(name) {
+    var value = getContact(name);
+    return name === 'phone' ? value.replace(/[^+\d]/g, '') : value;
+  }
+
+  document.querySelectorAll('.contact-value[data-contact]').forEach(function(contact) {
+    contact.textContent = getContact(contact.getAttribute('data-contact'));
+  });
+
+  document.querySelectorAll('.copy-contact').forEach(function(button) {
+    button.addEventListener('click', function() {
+      var name = button.getAttribute('data-contact');
+      var displayValue = getContact(name);
+      var value = getClipboardValue(name);
+      var contact = document.querySelector('.contact-value[data-contact="' + name + '"]');
+      var copiedLabel = button.getAttribute('aria-label').replace(/^Copy /, 'Copied ');
+
+      if (contact) contact.textContent = displayValue;
+
+      function showCopied() {
+        var icon = button.querySelector('i');
+        button.setAttribute('aria-label', copiedLabel);
+        button.setAttribute('title', copiedLabel);
+        button.classList.add('copied');
+        if (icon) icon.className = 'bi bi-check2';
+        window.setTimeout(function() {
+          button.setAttribute('aria-label', copiedLabel.replace(/^Copied /, 'Copy '));
+          button.setAttribute('title', copiedLabel.replace(/^Copied /, 'Copy '));
+          button.classList.remove('copied');
+          if (icon) icon.className = 'bi bi-clipboard';
+        }, 1400);
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(value).then(showCopied);
+        return;
+      }
+
+      var input = document.createElement('textarea');
+      input.value = value;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+      showCopied();
+    });
+  });
+})();

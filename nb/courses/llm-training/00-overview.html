@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Define the model, data, checkpoint lineage, execution profiles, and evaluation standard that organize the course.">
+
+<title>ProofLM: Course Architecture and Evidence Contract – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/llm-training/01-introduction.html" rel="next">
+<link href="../../../nb/courses/llm-training/index.html" rel="prev">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/index.html">Building a Language Model: From Pretraining to Function Calling</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/00-overview.html">00. Overview</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building a Language Model: From Pretraining to Function Calling</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/00-overview.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">00. Overview</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase I: Data and foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Corpus and data systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/02-tokenization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Tokenization and batching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/03-baselines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. PyTorch foundations and baselines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/04-transformer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Decoder-only Transformer</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/05-pretraining.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Causal pretraining</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/06-optimization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Optimization and systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/07-evaluation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">07. Checkpoint evaluation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/08-sft.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase II: Posttraining and adaptation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/08-sft.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Proof supervised fine-tuning</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/09-preferences.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Preference learning and DPO</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/10-rl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Verifier-guided RL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/11-tools.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Proof-tool calling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/12-lora.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. LoRA and full fine-tuning</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/13-failure-modes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase III: Reliability and capstone</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/13-failure-modes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Measured failure modes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/14-capstone.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. End-to-end proof-model study</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#one-base-model-explicit-branches" id="toc-one-base-model-explicit-branches" class="nav-link active" data-scroll-target="#one-base-model-explicit-branches">One base model, explicit branches</a></li>
+  <li><a href="#the-target-model-is-small-enough-to-inspect" id="toc-the-target-model-is-small-enough-to-inspect" class="nav-link" data-scroll-target="#the-target-model-is-small-enough-to-inspect">The target model is small enough to inspect</a></li>
+  <li><a href="#two-execution-paths-share-one-contract" id="toc-two-execution-paths-share-one-contract" class="nav-link" data-scroll-target="#two-execution-paths-share-one-contract">Two execution paths share one contract</a></li>
+  <li><a href="#the-corpus-must-support-language-and-proof" id="toc-the-corpus-must-support-language-and-proof" class="nav-link" data-scroll-target="#the-corpus-must-support-language-and-proof">The corpus must support language and proof</a></li>
+  <li><a href="#valid-proofs-are-generated-from-derivations" id="toc-valid-proofs-are-generated-from-derivations" class="nav-link" data-scroll-target="#valid-proofs-are-generated-from-derivations">Valid proofs are generated from derivations</a></li>
+  <li><a href="#objectives-change-evaluation-remains-comparable" id="toc-objectives-change-evaluation-remains-comparable" class="nav-link" data-scroll-target="#objectives-change-evaluation-remains-comparable">Objectives change; evaluation remains comparable</a></li>
+  <li><a href="#tools-make-recovery-observable" id="toc-tools-make-recovery-observable" class="nav-link" data-scroll-target="#tools-make-recovery-observable">Tools make recovery observable</a></li>
+  <li><a href="#evidence-travels-with-the-checkpoint" id="toc-evidence-travels-with-the-checkpoint" class="nav-link" data-scroll-target="#evidence-travels-with-the-checkpoint">Evidence travels with the checkpoint</a></li>
+  <li><a href="#the-build-accumulates-chapter-by-chapter" id="toc-the-build-accumulates-chapter-by-chapter" class="nav-link" data-scroll-target="#the-build-accumulates-chapter-by-chapter">The build accumulates chapter by chapter</a></li>
+  <li><a href="#the-package-owns-computation-notebooks-own-the-argument" id="toc-the-package-owns-computation-notebooks-own-the-argument" class="nav-link" data-scroll-target="#the-package-owns-computation-notebooks-own-the-argument">The package owns computation; notebooks own the argument</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/index.html">Building a Language Model: From Pretraining to Function Calling</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/00-overview.html">00. Overview</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">ProofLM: Course Architecture and Evidence Contract</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">machine-learning</div>
+    <div class="quarto-category">language-models</div>
+    <div class="quarto-category">deep-learning</div>
+    <div class="quarto-category">reproducibility</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Define the model, data, checkpoint lineage, execution profiles, and evaluation standard that organize the course.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This course trains one decoder-only language model from random initialization and follows it through pretraining, proof specialization, preference optimization, verifier-guided reinforcement learning, tool use, and parameter-efficient adaptation. The point is not to reproduce the scale or breadth of a frontier assistant. It is to make the complete causal chain small enough to inspect: data becomes tokens, tokens update parameters, objectives create behavioral pressure, tools extend what the model can do, and frozen evaluators determine which claims survive contact with held-out cases.</p>
+<p>The project thesis is:</p>
+<blockquote class="blockquote">
+<p>Train a decoder-only language model from random initialization on natural-language and mathematical text, specialize it for formal proof synthesis, then teach it to use proof tools and compare full fine-tuning with LoRA.</p>
+</blockquote>
+<p>“From scratch” has a precise boundary. The course uses no pretrained model weights. It owns the tokenizer, model architecture, data manifests, proof generator and verifier, training loop, checkpoint format, posttraining objectives, tool protocol, and evaluation harness. PyTorch supplies tensor operations, autograd, device kernels, and optimizers. Reimplementing automatic differentiation or matrix multiplication would enlarge the implementation without strengthening the learning objective.</p>
+<p>PyTorch is therefore the only numerical framework in the core course. Equations provide the conceptual reference; elementary PyTorch expressions provide executable references; reusable PyTorch modules provide the implementation that later chapters actually train. A bounded MLX appendix may port the smoke path, but it does not create a second theory track or a second canonical lineage.</p>
+<section id="one-base-model-explicit-branches" class="level2">
+<h2 class="anchored" data-anchor-id="one-base-model-explicit-branches">One base model, explicit branches</h2>
+<p>The course does not apply every posttraining method in one irreversible sequence. It freezes shared parent checkpoints and creates matched branches so that a later change can be attributed to a specific intervention.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    init["Random initialization"] --&gt; base["Base pretraining"]
+    base --&gt; sft["Proof SFT"]
+    sft --&gt; dpo["DPO"]
+    sft --&gt; rl["Verifier-guided RL"]
+    sft --&gt; full["Full tool fine-tuning"]
+    sft --&gt; lora["Tool-calling LoRA"]
+
+    classDef root fill:#ffffff,stroke:#1f2937,stroke-width:2px,color:#111827
+    classDef checkpoint fill:#fef3c7,stroke:#92400e,stroke-width:2px,color:#111827
+    classDef branch fill:#dcfce7,stroke:#166534,stroke-width:2px,color:#111827
+    class init root
+    class base,sft checkpoint
+    class dpo,rl,full,lora branch
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>Base pretraining produces one canonical PyTorch CUDA checkpoint. Proof SFT starts from that base and becomes the common parent for the posttraining comparisons. DPO and verifier-guided reinforcement learning branch separately. Full tool fine-tuning and tool-calling LoRA also start from the same proof-SFT parent and receive matched examples, masks, update counts, decoding settings, and evaluators.</p>
+<p>CPU smoke checkpoints traverse the same graph with smaller budgets and identical artifact schemas. The optional MLX run produces a separate smoke-scale comparison artifact and is never presented as part of the canonical checkpoint family.</p>
+<p>Every result records its parent checkpoint and the identities of the model configuration, tokenizer, dataset, decoding policy, and evaluator. This lineage converts “the model improved” into a testable claim about one controlled intervention.</p>
+</section>
+<section id="the-target-model-is-small-enough-to-inspect" class="level2">
+<h2 class="anchored" data-anchor-id="the-target-model-is-small-enough-to-inspect">The target model is small enough to inspect</h2>
+<p>The standard model is named <strong>ProofLM</strong>. It is a GPT-style pre-norm causal decoder with a deliberately conventional architecture:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">model</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">vocab_size</span><span class="kw">:</span><span class="at"> </span><span class="dv">8192</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">context_length</span><span class="kw">:</span><span class="at"> </span><span class="dv">512</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">n_layers</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">d_model</span><span class="kw">:</span><span class="at"> </span><span class="dv">640</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">n_heads</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">d_head</span><span class="kw">:</span><span class="at"> </span><span class="dv">64</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">d_ff</span><span class="kw">:</span><span class="at"> </span><span class="dv">2560</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">normalization</span><span class="kw">:</span><span class="at"> layer_norm</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">position_encoding</span><span class="kw">:</span><span class="at"> rope</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">activation</span><span class="kw">:</span><span class="at"> gelu</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">dropout</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.1</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tie_embeddings</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">bias</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">training</span><span class="kw">:</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">objective</span><span class="kw">:</span><span class="at"> causal_language_modeling</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">optimizer</span><span class="kw">:</span><span class="at"> adamw</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">precision</span><span class="kw">:</span><span class="at"> bf16_or_fp32</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>For vocabulary size <span class="math inline">V</span>, model width <span class="math inline">d</span>, and <span class="math inline">L</span> decoder blocks, the attention-plus-MLP parameter estimate is</p>
+<p><span class="math display">
+N \approx Vd + L\left(4d^2 + 8d^2\right) + O(d).
+</span></p>
+<p>At <span class="math inline">V=8192</span>, <span class="math inline">d=640</span>, and <span class="math inline">L=10</span>,</p>
+<p><span class="math display">
+N \approx 8192(640) + 10(12)(640^2)
+  \approx 54.4\text{M parameters}.
+</span></p>
+<p>That estimate guides compute planning; it does not replace inspecting the instantiated model. Chapter 04 computes the exact count, verifies that tied embeddings share storage, proves that future tokens cannot affect earlier logits, checks finite gradients for every trainable parameter, round-trips the state through serialization, and overfits a tiny batch before any substantial run is allowed.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Profile</th>
+<th style="text-align: right;">Approximate model</th>
+<th style="text-align: right;">Context</th>
+<th style="text-align: right;">Token budget</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Smoke</td>
+<td style="text-align: right;">4 layers, width 256, about 5M parameters</td>
+<td style="text-align: right;">256</td>
+<td style="text-align: right;">2M</td>
+<td>Unit tests, notebook execution, and the complete local pipeline</td>
+</tr>
+<tr class="even">
+<td>Standard</td>
+<td style="text-align: right;">10 layers, width 640, about 54M parameters</td>
+<td style="text-align: right;">512</td>
+<td style="text-align: right;">1B</td>
+<td>Canonical course checkpoint and substantial posttraining lineage</td>
+</tr>
+<tr class="odd">
+<td>Future scale study</td>
+<td style="text-align: right;">12 layers, width 768, about 97M parameters</td>
+<td style="text-align: right;">512–1024</td>
+<td style="text-align: right;">2B</td>
+<td>Explicitly outside the first-release budget</td>
+</tr>
+</tbody>
+</table>
+<p>The rough dense-transformer estimate <span class="math inline">6NT</span> gives approximately <span class="math inline">3.26\times10^{17}</span> training FLOPs for the standard profile. It is a comparison tool, not a wall-time promise. Sustained throughput must be measured with the exact model, sequence length, microbatch, precision, and data path on the candidate device.</p>
+</section>
+<section id="two-execution-paths-share-one-contract" class="level2">
+<h2 class="anchored" data-anchor-id="two-execution-paths-share-one-contract">Two execution paths share one contract</h2>
+<p>The <code>smoke</code> and <code>standard</code> profiles select budgets, not different implementations. They share tokenizer IDs, serialization, loss definitions, evaluator interfaces, and checkpoint metadata. They may differ in width, microbatch size, gradient accumulation, sampled candidates, evaluation subset, and token or update budget; every difference belongs in a versioned configuration.</p>
+<p><strong>The local path.</strong> PyTorch CPU is the numerical reference and the default environment for explanations, unit tests, exercises, tiny overfits, and the complete smoke pipeline. The ordinary Watchtower checkout supplies the backing package and small fixtures. PyTorch MPS is not required. Colab is only an optional clone-based sandbox: it must check out a recorded commit, install the backing package, verify downloaded fixture hashes, and export useful artifacts before the runtime disappears.</p>
+<p><strong>The standard path.</strong> RunPod CUDA hosts substantial labs from model qualification onward. A candidate environment first runs a CPU/CUDA canary on the same state and fixed batch with dropout disabled. The comparison covers functional attention, block outputs, logits, scalar loss, every parameter gradient, the global gradient norm, one AdamW update, save/load, and resume behavior. A new PyTorch version, CUDA version, GPU architecture, precision policy, or optimized attention path triggers a new qualification.</p>
+<p>Device memory is measured over a complete forward, backward, optimizer, validation, generation, and checkpoint cycle. The higher relevant peak must stay at or below 80% of physical VRAM. The standard search begins with a qualified 24 GiB GPU; a 16 GiB device is eligible only when the exact stage passes the headroom gate and is cheaper per processed token. Larger devices require evidence that batching, accumulation, memory-efficient attention, and acceptable checkpointing cannot fit the stage economically.</p>
+<p>Before a substantial stage, a short exact-workload pilot records sustained tokens per second and dollars per hour. The projection is</p>
+<p><span class="math display">
+\widehat t = \frac{T_{\mathrm{stage}}}{\text{measured sustained tokens/second}},
+\qquad
+\widehat C = \widehat t_{\mathrm{hours}}\times\text{GPU dollars/hour}.
+</span></p>
+<p>The first release keeps RunPod compute, persistent storage, and transfer under a cumulative $20 ceiling. Checkpoints are written atomically at least every ten minutes and after evaluation, include the complete optimizer and random state, and are copied off temporary container storage before a Pod is stopped or deleted.</p>
+<p>The optional MLX appendix ports only the 5M-parameter smoke model to the 16 GB M5. Because unified memory is shared with macOS and every process, the lab enforces a 10 GiB process ceiling and rejects sustained swapping. PyTorch CPU versus MLX is reported as an end-to-end system comparison, not as a framework-only benchmark.</p>
+</section>
+<section id="the-corpus-must-support-language-and-proof" class="level2">
+<h2 class="anchored" data-anchor-id="the-corpus-must-support-language-and-proof">The corpus must support language and proof</h2>
+<p>Pretraining only on symbolic formulas would make later tool calling a schema-memorization exercise. ProofLM first needs bounded competence in natural and mathematical language, then a verified formal domain in which posttraining rewards and tool outputs can be checked exactly.</p>
+<p>The canonical 1B-token mixture is fixed for the first standard run:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Source</th>
+<th style="text-align: right;">Share</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu">FineWeb-Edu</a></td>
+<td style="text-align: right;">60%</td>
+<td>Natural-language educational prose</td>
+</tr>
+<tr class="even">
+<td><a href="https://huggingface.co/datasets/open-web-math/open-web-math">OpenWebMath</a></td>
+<td style="text-align: right;">25%</td>
+<td>Mathematical prose and symbolic text</td>
+</tr>
+<tr class="odd">
+<td>Locally generated verified data</td>
+<td style="text-align: right;">15%</td>
+<td>Theorems, proof states, derivations, countermodels, corrections, and controlled natural-language renderings</td>
+</tr>
+</tbody>
+</table>
+<p>Each source receives a manifest containing origin, license information, pinned revision or generator version, normalization version, content hash, document identity, split, and token count. Source-level declarations do not erase the licensing obligations of underlying documents. Optional corpora and transfer suites remain separate from the canonical mixture until their component licenses and evaluation roles are explicit.</p>
+<p>The tokenizer is a byte-level BPE model trained with the Hugging Face <code>tokenizers</code> library on a pinned 20M-token sample with the same mixture proportions. Its 8,192-token vocabulary includes stable document, theorem, proof, role, tool-call, tool-result, and turn-boundary tokens. UTF-8 byte fallback preserves coverage for arbitrary input. Vocabulary, merges, normalization, special-token IDs, and tokenizer hash freeze before base pretraining begins.</p>
+<p>Chapter 02 keeps small character, byte, word, and toy-BPE constructions as counter-examples that reveal coverage and compression tradeoffs. The reusable artifact, however, is the serialized tokenizer consumed by every later chapter. It is evaluated on ordinary-text compression, formula fragmentation, proof-line length, fallback behavior, padding utilization, and truncation at context length 512.</p>
+</section>
+<section id="valid-proofs-are-generated-from-derivations" class="level2">
+<h2 class="anchored" data-anchor-id="valid-proofs-are-generated-from-derivations">Valid proofs are generated from derivations</h2>
+<p>Positive examples are not created by sampling arbitrary premises and conclusions and hoping they are provable. The generator samples a natural-deduction proof skeleton, instantiates its metavariables, computes open and discharged assumptions, renders the theorem and proof states, and verifies every result with an independent checker. Controlled negative examples perturb a rule, citation, formula, discharge boundary, or conclusion. Invalid entailments carry a truth assignment checked as a genuine countermodel.</p>
+<p>The first formal domain uses</p>
+<p><span class="math display">
+\{\neg,\land,\lor,\to,\bot\}
+</span></p>
+<p>with premise, assumption, reiteration, conjunction introduction and elimination, disjunction introduction and elimination, implication introduction and elimination, negation introduction and elimination, contradiction elimination, and explicit assumption discharge.</p>
+<p>A canonical proof has a stable machine-checkable surface:</p>
+<pre class="text"><code>&lt;theorem&gt;
+premises:
+1. P -&gt; Q
+2. P
+goal: Q
+&lt;/theorem&gt;
+&lt;proof&gt;
+1. P -&gt; Q ; premise
+2. P      ; premise
+3. Q      ; implication_elimination 1 2
+&lt;/proof&gt;</code></pre>
+<p>Natural-language prompts may wrap that object, but the parser, renderer, and verifier must round-trip the structured form. The evaluator judges the proof object rather than the fluency of its surrounding prose.</p>
+<p>Random row splits are inadequate because renamed formulas or cosmetically different prompts can share the same latent proof. The canonical boundary holds out complete equivalence classes: theorem skeletons, proof-tree shapes, connective combinations, proof depth and length, proposition-symbol families, paraphrase templates, invalid-example perturbations, and tool schemas. Shifted suites add deeper proofs, longer contexts, irrelevant or reordered premises, renamed variables, alternative valid derivations, and unprovable goals requiring countermodels.</p>
+</section>
+<section id="objectives-change-evaluation-remains-comparable" class="level2">
+<h2 class="anchored" data-anchor-id="objectives-change-evaluation-remains-comparable">Objectives change; evaluation remains comparable</h2>
+<p>Pretraining minimizes causal next-token loss. For tokens <span class="math inline">x_1,\ldots,x_T</span>,</p>
+<p><span class="math display">
+\mathcal{L}_{\mathrm{CLM}}(\theta)
+=-\frac{1}{T-1}\sum_{t=1}^{T-1}
+\log p_\theta(x_{t+1}\mid x_{\le t}).
+</span></p>
+<p>Packed documents receive explicit boundary tokens and a declared cross-boundary loss policy.</p>
+<p>Proof supervised fine-tuning applies loss only to assistant or proof tokens. For serialized tokens <span class="math inline">z</span> and a response mask <span class="math inline">m</span>,</p>
+<p><span class="math display">
+\mathcal{L}_{\mathrm{SFT}}(\theta)
+=-\frac{\sum_t m_t\log p_\theta(z_t\mid z_{&lt;t})}{\sum_t m_t},
+\qquad
+m_t=\mathbb{1}[z_t\text{ belongs to the response}].
+</span></p>
+<p>The mask comes from serialization metadata rather than a hard-coded offset. Full proof SFT establishes the attainable ceiling before parameter-efficient adaptation is introduced.</p>
+<p>DPO starts from the frozen proof-SFT checkpoint with an identical frozen reference. For preferred proof <span class="math inline">y_w</span> and rejected proof <span class="math inline">y_l</span>,</p>
+<p><span class="math display">
+\mathcal{L}_{\mathrm{DPO}}(\theta)
+=-\log\sigma\left(
+\beta\left[
+\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}
+-\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}
+\right]\right).
+</span></p>
+<p>Pairs isolate proof validity, incorrect citations, missing discharge, malformed syntax, successful repair, and valid-proof concision. Length-matched controls test whether the policy learned the intended preference rather than “shorter” or “longer.”</p>
+<p>Verifier-guided reinforcement learning branches separately from proof SFT. A first reward decomposes into exact parse, exact goal, verifier validity, formatting, and proof length:</p>
+<p><span class="math display">
+R(y)=
+w_v\mathbb{1}[\operatorname{valid}(y)]
++w_g\mathbb{1}[\operatorname{goal}(y)=g]
+-w_s\,\operatorname{steps}(y)
+-w_f\mathbb{1}[\operatorname{format\_error}(y)].
+</span></p>
+<p>Validity and goal agreement are hard constraints; step cost distinguishes already-valid proofs. A deliberately weak verifier supplies the counter-example: if training reward rises while the independent verifier degrades, the run demonstrates proxy exploitation rather than improved reasoning.</p>
+</section>
+<section id="tools-make-recovery-observable" class="level2">
+<h2 class="anchored" data-anchor-id="tools-make-recovery-observable">Tools make recovery observable</h2>
+<p>The initial tool environment stays inside the proof domain:</p>
+<ul>
+<li><code>parse_formula</code> converts natural or symbolic input into the canonical abstract syntax tree;</li>
+<li><code>check_proof</code> returns line-level errors and the first invalid step;</li>
+<li><code>find_countermodel</code> returns a checked truth assignment for an invalid entailment;</li>
+<li><code>simplify_formula</code> returns a checked equivalent normal form; and</li>
+<li><code>inspect_goal</code> returns assumptions, target, and admissible rule applications.</li>
+</ul>
+<p>Tool evaluation separates choosing the correct tool, producing schema-valid arguments, deciding not to call, using the returned result, repairing a rejected or malformed call, respecting a step budget, and handling a held-out schema. A non-learning router provides a baseline. Generic tools are excluded from the first release because they broaden the language and evaluation problem without strengthening the proof-centered thesis.</p>
+<p>The tool-adaptation comparison starts two branches from the same proof-SFT checkpoint. Full fine-tuning updates every parameter. LoRA freezes a linear map <span class="math inline">W\in\mathbb{R}^{d\times k}</span> and trains</p>
+<p><span class="math display">
+W' = W + \frac{\alpha}{r}BA,
+\qquad
+A\in\mathbb{R}^{r\times k},
+\quad
+B\in\mathbb{R}^{d\times r}.
+</span></p>
+<p>The rank-8 course adapter targets named attention and MLP projections, starts with exactly zero effect, saves separately, and supports merge, unmerge, and exact restoration of the base weights. The full and LoRA branches see the same ordered tool traces, response masks, tokens, optimizer updates, decoding settings, and evaluator. The comparison reports trainable parameters, optimizer-state memory, checkpoint size, wall time, proof validity, tool behavior, and retention.</p>
+</section>
+<section id="evidence-travels-with-the-checkpoint" class="level2">
+<h2 class="anchored" data-anchor-id="evidence-travels-with-the-checkpoint">Evidence travels with the checkpoint</h2>
+<p>Every published result identifies:</p>
+<ul>
+<li>model configuration and exact parameter count;</li>
+<li>tokenizer hash and dataset manifest;</li>
+<li>parent and child checkpoint hashes;</li>
+<li>random seed and decoding configuration;</li>
+<li>optimizer-update count and processed tokens or examples;</li>
+<li>device, software environment, wall time, memory, and cost when applicable; and</li>
+<li>evaluator version and the exact held-out suite.</li>
+</ul>
+<p>The shared evaluation harness runs held-out likelihood by corpus source; calibration; memorization canaries and overlap audits; generation diversity; mathematical-symbol well-formedness; theorem and proof-prefix completion; verifier validity and pass@<span class="math inline">k</span>; proof length; countermodel correctness; tool choice, argument validity, no-call behavior, result use, and repair; plus general-language and proof-retention suites.</p>
+<p>The principal acceptance gates are causal rather than ceremonial:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Gate before the claim is accepted</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Data</td>
+<td>Sources are hashed; generated positives verify; countermodels check; structural split keys are disjoint.</td>
+</tr>
+<tr class="even">
+<td>Tokenizer</td>
+<td>Special IDs are stable; serialization round-trips; formula fragmentation and truncation satisfy declared thresholds.</td>
+</tr>
+<tr class="odd">
+<td>Model</td>
+<td>Future tokens cannot affect earlier logits; gradients are finite; tied weights share storage; save/load is exact; a tiny batch overfits.</td>
+</tr>
+<tr class="even">
+<td>Trainer</td>
+<td>Interrupted and uninterrupted smoke runs match exactly under the deterministic profile; the standard path records qualified tolerances and recoverable state.</td>
+</tr>
+<tr class="odd">
+<td>Base checkpoint</td>
+<td>ProofLM beats declared n-gram and MLP baselines on held-out likelihood and produces syntactically measurable text.</td>
+</tr>
+<tr class="even">
+<td>Proof posttraining</td>
+<td>Ground-truth validity improves on structurally held-out theorems without crossing the retention threshold.</td>
+</tr>
+<tr class="odd">
+<td>DPO and RL</td>
+<td>The independent verifier remains stable or improves when the optimized objective rises; KL, entropy, length, and retention remain visible.</td>
+</tr>
+<tr class="even">
+<td>Tools</td>
+<td>The model beats the router baseline, handles no-call cases, and repairs at least some verifier-rejected proofs.</td>
+</tr>
+<tr class="odd">
+<td>LoRA</td>
+<td>The untrained adapter has zero effect; merge/unmerge is consistent; the comparison with full fine-tuning is matched.</td>
+</tr>
+<tr class="even">
+<td>Capstone</td>
+<td>Another implementer can reproduce the smoke pipeline, verify the evaluators, trace every branch, and identify concrete limitations.</td>
+</tr>
+</tbody>
+</table>
+<p>These gates prevent a lower training loss, higher proxy reward, or fluent sample from standing in for the behavior the course claims to teach.</p>
+</section>
+<section id="the-build-accumulates-chapter-by-chapter" class="level2">
+<h2 class="anchored" data-anchor-id="the-build-accumulates-chapter-by-chapter">The build accumulates chapter by chapter</h2>
+<p>Each chapter adds a reusable artifact and a controlled result. Later chapters import the package rather than copy implementation code into notebook cells.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 30%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Ch</th>
+<th>Concept and build</th>
+<th>Preserved artifact or evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">01</td>
+<td>Corpus manifests, proof generator, verifier, and structural splits</td>
+<td>Checked smoke manifest and leakage report</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">02</td>
+<td>Byte-level BPE, special tokens, packing, and masks</td>
+<td>Frozen tokenizer and packed smoke shards</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">03</td>
+<td>PyTorch tensors, autograd, cross-entropy, bigram and MLP baselines</td>
+<td>Baseline likelihood and proof-completion thresholds</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">04</td>
+<td>Causal attention, RoPE, decoder blocks, generation, and serialization</td>
+<td>Qualified ProofLM model and CPU/CUDA canary report</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">05</td>
+<td>Gradient accumulation, checkpoint state, resume, and pretraining</td>
+<td>Exact-resume smoke checkpoint and canonical base checkpoint</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">06</td>
+<td>AdamW state, schedules, clipping, precision, memory, and throughput</td>
+<td>Systems sweep and interruption-recovery report</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">07</td>
+<td>Frozen language, proof, shift, memorization, and retention evaluators</td>
+<td>Versioned checkpoint evaluation reports</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">08</td>
+<td>Response-only proof SFT</td>
+<td>Frozen proof-SFT checkpoint and structural-transfer report</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">09</td>
+<td>Sequence-level preference optimization</td>
+<td>DPO branch with length and retention controls</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td>Group-normalized verifier-guided policy updates</td>
+<td>RL branch and weak-verifier exploit comparison</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">11</td>
+<td>Typed proof tools, execution loop, traces, and structured errors</td>
+<td>Tool-trained branch and episode evaluation</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">12</td>
+<td>LoRA injection, adapter state, merge, and restoration</td>
+<td>Matched LoRA versus full-fine-tuning report</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">13</td>
+<td>Shift, shortcut, correction, and intervention suites</td>
+<td>Failure taxonomy populated with examples and effect sizes</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">14</td>
+<td>Frozen manifests, lineage validation, and report assembly</td>
+<td>Reproducible smoke command and standard artifact scorecard</td>
+</tr>
+</tbody>
+</table>
+<p>Chapters 01–07 establish the shared base model and evaluators. Chapters 08–12 create controlled branches from frozen parents. Chapters 13–14 compare the family without silently retraining it. CUDA concepts appear where first required, beginning with model qualification in Chapter 04; an eventual CUDA reference consolidates those recurring labs. The optional MLX appendix remains off the critical path and begins only after the PyTorch smoke artifact and checkpoint bridge are stable.</p>
+</section>
+<section id="the-package-owns-computation-notebooks-own-the-argument" class="level2">
+<h2 class="anchored" data-anchor-id="the-package-owns-computation-notebooks-own-the-argument">The package owns computation; notebooks own the argument</h2>
+<p>Reusable code belongs in <code>projects/proof-lm/</code>:</p>
+<pre class="text"><code>projects/proof-lm/
+  src/proof_lm/
+    data/           # manifests, normalization, mixture, packing
+    logic/          # AST, parser, rules, generator, verifier, countermodels
+    tokenization/   # tokenizer training and loading
+    model/          # attention, blocks, decoder, LoRA
+    training/       # pretraining, SFT, DPO, verifier RL, checkpoints
+    tools/          # typed schemas, registry, execution loop
+    evaluation/     # language, proofs, tools, retention, backend parity
+    portability/    # bounded MLX model, bridge, and benchmark
+    experiments/    # configuration-driven entrypoints
+  tests/</code></pre>
+<p>The notebooks define the learning sequence: derive the idea, expose a counter-example, import and exercise the reusable implementation, run the controlled comparison, and interpret the stored output. The package holds the cumulative implementation so that a correction in one module reaches every later chapter. Large corpora and checkpoints stay in project-owned, gitignored artifact storage; the repository keeps small fixtures, versioned configurations, manifests, hashes, tests, and compact reports.</p>
+<p>This separation also clarifies the first dependency. Before a tokenizer can be frozen or a model can be trained, the course must know which documents and generated theorem families belong to training, validation, test, and shifted evaluation. Chapter 01 therefore begins with manifests, identities, duplicate detection, proof generation, and structural split invariants. The data boundary is the first part of the model claim, not preliminary bookkeeping around it.</p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../../nb/courses/llm-training/index.html" class="pagination-link" aria-label="Building a Language Model: From Pretraining to Function Calling">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Building a Language Model: From Pretraining to Function Calling</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/llm-training/01-introduction.html" class="pagination-link" aria-label="Phase I: Data and foundations">
+        <span class="nav-page-text">Phase I: Data and foundations</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

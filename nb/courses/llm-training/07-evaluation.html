@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Build a composable harness for perplexity, calibration, memorization, overlap, and generation diversity.">
+
+<title>Pretraining Evaluation and Analysis – Ron Medina ∷ AI &amp; ML</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../nb/courses/llm-training/08-sft.html" rel="next">
+<link href="../../../nb/courses/llm-training/06-optimization.html" rel="prev">
+<link href="../../../assets/favicon.jpg" rel="icon" type="image/jpeg">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-68f24c46d8e09aa80e7616e5157e7e16.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Ron Medina ∷ AI &amp; ML</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../resume.html"> 
+<span class="menu-text">résumé</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/portfolio/portfolio.html"> 
+<span class="menu-text">portfolio</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts.html"> 
+<span class="menu-text">posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/courses/index.html"> 
+<span class="menu-text">courses</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../nb/photos/photos.html"> 
+<span class="menu-text">personal</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/particle1331/watchtower/tree/main/src/watchtower"> <i class="bi bi-github" role="img" aria-label="watchtower source on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/01-introduction.html">Phase I: Data and foundations</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/07-evaluation.html">07. Checkpoint evaluation</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building a Language Model: From Pretraining to Function Calling</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/00-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">00. Overview</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase I: Data and foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01. Corpus and data systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/02-tokenization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">02. Tokenization and batching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/03-baselines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">03. PyTorch foundations and baselines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/04-transformer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">04. Decoder-only Transformer</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/05-pretraining.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">05. Causal pretraining</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/06-optimization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">06. Optimization and systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/07-evaluation.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">07. Checkpoint evaluation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/08-sft.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase II: Posttraining and adaptation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/08-sft.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">08. Proof supervised fine-tuning</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/09-preferences.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">09. Preference learning and DPO</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/10-rl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Verifier-guided RL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/11-tools.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">11. Proof-tool calling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/12-lora.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">12. LoRA and full fine-tuning</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../nb/courses/llm-training/13-failure-modes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase III: Reliability and capstone</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/13-failure-modes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">13. Measured failure modes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../nb/courses/llm-training/14-capstone.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">14. End-to-end proof-model study</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#perplexity" id="toc-perplexity" class="nav-link active" data-scroll-target="#perplexity">Perplexity</a></li>
+  <li><a href="#calibration" id="toc-calibration" class="nav-link" data-scroll-target="#calibration">Calibration</a></li>
+  <li><a href="#memorization-canaries" id="toc-memorization-canaries" class="nav-link" data-scroll-target="#memorization-canaries">Memorization canaries</a></li>
+  <li><a href="#n-gram-overlap" id="toc-n-gram-overlap" class="nav-link" data-scroll-target="#n-gram-overlap">N-gram overlap</a></li>
+  <li><a href="#generation-diversity" id="toc-generation-diversity" class="nav-link" data-scroll-target="#generation-diversity">Generation diversity</a></li>
+  <li><a href="#evaluation-suite" id="toc-evaluation-suite" class="nav-link" data-scroll-target="#evaluation-suite">Evaluation suite</a></li>
+  <li><a href="#shared-evaluator-identity" id="toc-shared-evaluator-identity" class="nav-link" data-scroll-target="#shared-evaluator-identity">Shared evaluator identity</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises">Exercises</a>
+  <ul class="collapse">
+  <li><a href="#p7.1-expected-calibration-error" id="toc-p7.1-expected-calibration-error" class="nav-link" data-scroll-target="#p7.1-expected-calibration-error">[P7.1] Expected calibration error</a></li>
+  <li><a href="#p7.2-generation-memorization-audit" id="toc-p7.2-generation-memorization-audit" class="nav-link" data-scroll-target="#p7.2-generation-memorization-audit">[P7.2] Generation memorization audit</a></li>
+  <li><a href="#p7.3" id="toc-p7.3" class="nav-link" data-scroll-target="#p7.3">[P7.3]</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/01-introduction.html">Phase I: Data and foundations</a></li><li class="breadcrumb-item"><a href="../../../nb/courses/llm-training/07-evaluation.html">07. Checkpoint evaluation</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Pretraining Evaluation and Analysis</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">machine-learning</div>
+    <div class="quarto-category">language-models</div>
+    <div class="quarto-category">evaluation</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Build a composable harness for perplexity, calibration, memorization, overlap, and generation diversity.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A lower next-token loss is evidence about one prediction task, not a complete description of a language model. This chapter builds the evaluation harness that later posttraining chapters can reuse. The NumPy functions keep calibration, canary, overlap, and diversity definitions inspectable; the shared ProofLM evaluators attach explicit checkpoint-stage identities to masked likelihood and verifier reports.</p>
+<p>Each metric is a small function with explicit inputs and no hidden model state. That design makes it possible to rerun the same suite after a checkpoint, a data change, or a posttraining update and to report the measurements together rather than selecting a single favorable score.</p>
+<section id="perplexity" class="level2">
+<h2 class="anchored" data-anchor-id="perplexity">Perplexity</h2>
+<p>For target tokens <span class="math inline">y_i</span> and logits <span class="math inline">z_i</span>, the token negative log-likelihood is</p>
+<p><span class="math display">
+\operatorname{NLL}(z,y)=-\frac{1}{n}\sum_{i=1}^n\log\operatorname{softmax}(z_i)_{y_i},
+</span></p>
+<p>and perplexity is <span class="math inline">\exp(\operatorname{NLL})</span>. Aggregate the numerator and token count before exponentiating. Averaging sequence-level perplexities would give short sequences the same weight as long ones and would not equal the corpus-level likelihood.</p>
+<p>The evaluator below accepts records with <code>split</code>, <code>source</code>, and token IDs, plus a predictor that returns one logit vector for each input token. The model is fitted only on training records so the grouping can expose both source and split effects.</p>
+<div id="cf5dd64c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.215338Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.214859Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:48.839328Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:48.784194Z&quot;}}" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>SEED <span class="op">=</span> <span class="dv">71</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> log_softmax(logits):</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    logits <span class="op">=</span> np.asarray(logits, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    shifted <span class="op">=</span> logits <span class="op">-</span> np.<span class="bu">max</span>(logits, axis<span class="op">=-</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> shifted <span class="op">-</span> np.log(np.exp(shifted).<span class="bu">sum</span>(axis<span class="op">=-</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> token_nlls(logits, targets):</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    logits <span class="op">=</span> np.asarray(logits, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    targets <span class="op">=</span> np.asarray(targets, dtype<span class="op">=</span>np.int64)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> logits.ndim <span class="op">!=</span> <span class="dv">2</span> <span class="kw">or</span> <span class="bu">len</span>(targets) <span class="op">!=</span> <span class="bu">len</span>(logits):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"logits must be (tokens, vocab) and targets must match"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>log_softmax(logits)[np.arange(<span class="bu">len</span>(targets)), targets]</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> perplexity(total_nll, token_count):</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> token_count <span class="op">&lt;</span> <span class="dv">1</span>:</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"token_count must be positive"</span>)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(np.exp(total_nll <span class="op">/</span> token_count))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fit_bigram_predictor(records, vocab_size, smoothing<span class="op">=</span><span class="fl">0.1</span>):</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    counts <span class="op">=</span> np.full((vocab_size, vocab_size), smoothing, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> record <span class="kw">in</span> records:</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        tokens <span class="op">=</span> np.asarray(record[<span class="st">"tokens"</span>], dtype<span class="op">=</span>np.int64)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        np.add.at(counts, (tokens[:<span class="op">-</span><span class="dv">1</span>], tokens[<span class="dv">1</span>:]), <span class="fl">1.0</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    probabilities <span class="op">=</span> counts <span class="op">/</span> counts.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> predict(previous_tokens):</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.log(probabilities[np.asarray(previous_tokens, dtype<span class="op">=</span>np.int64)])</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> predict</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluate_by_group(records, predictor):</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    totals <span class="op">=</span> {}</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> record <span class="kw">in</span> records:</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        tokens <span class="op">=</span> np.asarray(record[<span class="st">"tokens"</span>], dtype<span class="op">=</span>np.int64)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        losses <span class="op">=</span> token_nlls(predictor(tokens[:<span class="op">-</span><span class="dv">1</span>]), tokens[<span class="dv">1</span>:])</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> (record[<span class="st">"split"</span>], record[<span class="st">"source"</span>])</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>        total_nll, count <span class="op">=</span> totals.get(key, (<span class="fl">0.0</span>, <span class="dv">0</span>))</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>        totals[key] <span class="op">=</span> (total_nll <span class="op">+</span> <span class="bu">float</span>(losses.<span class="bu">sum</span>()), count <span class="op">+</span> <span class="bu">len</span>(losses))</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        key: {</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>            <span class="st">"nll"</span>: total_nll <span class="op">/</span> count,</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>            <span class="st">"tokens"</span>: count,</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>            <span class="st">"perplexity"</span>: perplexity(total_nll, count),</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> key, (total_nll, count) <span class="kw">in</span> <span class="bu">sorted</span>(totals.items())</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>records <span class="op">=</span> [</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"split"</span>: <span class="st">"train"</span>, <span class="st">"source"</span>: <span class="st">"prose"</span>, <span class="st">"tokens"</span>: np.array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">2</span>])},</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"split"</span>: <span class="st">"train"</span>, <span class="st">"source"</span>: <span class="st">"code"</span>, <span class="st">"tokens"</span>: np.array([<span class="dv">0</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">4</span>])},</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"split"</span>: <span class="st">"validation"</span>, <span class="st">"source"</span>: <span class="st">"prose"</span>, <span class="st">"tokens"</span>: np.array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>])},</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"split"</span>: <span class="st">"test"</span>, <span class="st">"source"</span>: <span class="st">"code"</span>, <span class="st">"tokens"</span>: np.array([<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">4</span>, <span class="dv">5</span>])},</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>predictor <span class="op">=</span> fit_bigram_predictor(records[:<span class="dv">2</span>], vocab_size<span class="op">=</span><span class="dv">7</span>)</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>perplexity_report <span class="op">=</span> evaluate_by_group(records, predictor)</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, result <span class="kw">in</span> perplexity_report.items():</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">: tokens=</span><span class="sc">{</span>result[<span class="st">'tokens'</span>]<span class="sc">}</span><span class="ss">, nll=</span><span class="sc">{</span>result[<span class="st">'nll'</span>]<span class="sc">:.4f}</span><span class="ss">, ppl=</span><span class="sc">{</span>result[<span class="st">'perplexity'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">set</span>(perplexity_report) <span class="op">==</span> {</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"train"</span>, <span class="st">"prose"</span>), (<span class="st">"train"</span>, <span class="st">"code"</span>), (<span class="st">"validation"</span>, <span class="st">"prose"</span>), (<span class="st">"test"</span>, <span class="st">"code"</span>)</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">all</span>(result[<span class="st">"perplexity"</span>] <span class="op">&gt;=</span> <span class="fl">1.0</span> <span class="cf">for</span> result <span class="kw">in</span> perplexity_report.values())</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">all</span>(result[<span class="st">"tokens"</span>] <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">for</span> result <span class="kw">in</span> perplexity_report.values())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>('test', 'code'): tokens=5, nll=1.1925, ppl=3.295
+('train', 'code'): tokens=5, nll=0.7129, ppl=2.040
+('train', 'prose'): tokens=6, nll=0.6857, ppl=1.985
+('validation', 'prose'): tokens=5, nll=0.7096, ppl=2.033</code></pre>
+</div>
+</div>
+<p>The grouped report keeps token counts beside NLL and perplexity, so a reader can see how much evidence supports each number. Training-like rows should usually be easier for a fitted predictor than shifted rows, but that difference is not itself a capability measure. Source grouping can reveal that an aggregate validation value is being driven by one easy source while another source has much higher uncertainty.</p>
+<p>The predictor is a closure over a fixed probability table, while the evaluator knows nothing about how that table was made. Later chapters can replace the predictor with a Transformer checkpoint without changing the grouping logic.</p>
+</section>
+<section id="calibration" class="level2">
+<h2 class="anchored" data-anchor-id="calibration">Calibration</h2>
+<p>For a next-token prediction, let <span class="math inline">c_i</span> be the maximum predicted probability and let <span class="math inline">r_i</span> indicate whether the selected token is correct. Partition confidences into bins <span class="math inline">I_b</span>. The expected calibration error is</p>
+<p><span class="math display">
+\operatorname{ECE}=\sum_b\frac{|I_b|}{n}
+\left|\frac{1}{|I_b|}\sum_{i\in I_b}r_i
+-\frac{1}{|I_b|}\sum_{i\in I_b}c_i\right|.
+</span></p>
+<p>A reliability table must retain count, mean confidence, and empirical accuracy for every nonempty bin. ECE compresses those discrepancies to one number, so the table remains the primary diagnostic.</p>
+<div id="59dadfbb" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.864372Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.862929Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:48.919846Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:48.917776Z&quot;}}" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> reliability_bins(confidences, correct, bin_count<span class="op">=</span><span class="dv">5</span>):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    confidences <span class="op">=</span> np.asarray(confidences, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    correct <span class="op">=</span> np.asarray(correct, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> confidences.shape <span class="op">!=</span> correct.shape:</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"confidence and correctness arrays must match"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> np.<span class="bu">any</span>((confidences <span class="op">&lt;</span> <span class="fl">0.0</span>) <span class="op">|</span> (confidences <span class="op">&gt;</span> <span class="fl">1.0</span>)):</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"confidence values must be in [0, 1]"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    assignments <span class="op">=</span> np.minimum((confidences <span class="op">*</span> bin_count).astype(<span class="bu">int</span>), bin_count <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> []</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> bin_index <span class="kw">in</span> <span class="bu">range</span>(bin_count):</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        selected <span class="op">=</span> assignments <span class="op">==</span> bin_index</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> selected.<span class="bu">any</span>():</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        rows.append({</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">"bin"</span>: bin_index,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"count"</span>: <span class="bu">int</span>(selected.<span class="bu">sum</span>()),</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"confidence"</span>: <span class="bu">float</span>(confidences[selected].mean()),</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>            <span class="st">"accuracy"</span>: <span class="bu">float</span>(correct[selected].mean()),</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        })</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> rows</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> expected_calibration_error(confidences, correct, bin_count<span class="op">=</span><span class="dv">5</span>):</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    confidences <span class="op">=</span> np.asarray(confidences, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    correct <span class="op">=</span> np.asarray(correct, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> reliability_bins(confidences, correct, bin_count)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">len</span>(confidences)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(<span class="bu">sum</span>(</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        row[<span class="st">"count"</span>] <span class="op">/</span> total <span class="op">*</span> <span class="bu">abs</span>(row[<span class="st">"accuracy"</span>] <span class="op">-</span> row[<span class="st">"confidence"</span>])</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> row <span class="kw">in</span> rows</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>confidences <span class="op">=</span> np.array([<span class="fl">0.12</span>, <span class="fl">0.18</span>, <span class="fl">0.32</span>, <span class="fl">0.38</span>, <span class="fl">0.62</span>, <span class="fl">0.68</span>, <span class="fl">0.82</span>, <span class="fl">0.92</span>])</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>correct <span class="op">=</span> np.array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>])</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>calibration_table <span class="op">=</span> reliability_bins(confidences, correct, bin_count<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>calibration_error <span class="op">=</span> expected_calibration_error(confidences, correct, bin_count<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> row <span class="kw">in</span> calibration_table:</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(row)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"ECE:"</span>, <span class="bu">round</span>(calibration_error, <span class="dv">4</span>))</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">sum</span>(row[<span class="st">"count"</span>] <span class="cf">for</span> row <span class="kw">in</span> calibration_table) <span class="op">==</span> <span class="bu">len</span>(confidences)</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="fl">0.0</span> <span class="op">&lt;=</span> calibration_error <span class="op">&lt;=</span> <span class="fl">1.0</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.isclose(</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    expected_calibration_error(np.array([<span class="fl">0.5</span>, <span class="fl">0.5</span>]), np.array([<span class="dv">1</span>, <span class="dv">0</span>]), bin_count<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.0</span>,</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'bin': 0, 'count': 2, 'confidence': 0.15, 'accuracy': 0.5}
+{'bin': 1, 'count': 2, 'confidence': 0.35, 'accuracy': 0.5}
+{'bin': 3, 'count': 2, 'confidence': 0.65, 'accuracy': 1.0}
+{'bin': 4, 'count': 2, 'confidence': 0.87, 'accuracy': 0.5}
+ECE: 0.305</code></pre>
+</div>
+</div>
+<p>The table distinguishes two kinds of calibration failure. A model can be overconfident when its accuracy is below its mean confidence, or underconfident when accuracy is higher. ECE weights each discrepancy by the number of predictions in its bin, but it does not identify which examples caused the discrepancy. Keep the bin rows and the prediction-level data when calibration affects a later call-or-no-call decision.</p>
+</section>
+<section id="memorization-canaries" class="level2">
+<h2 class="anchored" data-anchor-id="memorization-canaries">Memorization canaries</h2>
+<p>Insert a unique string into the training corpus and evaluate the conditional probability of its continuation from a prefix. Compare a model fitted with the canary against the same model fitted without it, holding the alphabet and smoothing constant. The probe is deliberately local: a high recovery probability shows that the model retained the sequence, not that it can generalize the surrounding task.</p>
+<p>A character bigram is sufficient to make the exposure effect measurable. Repeating the canary increases the counts of its internal transitions, while the held-out control shares the general format but not the exact transition.</p>
+<div id="f0fb30ab" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.927910Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.926709Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:48.968612Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:48.967094Z&quot;}}" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fit_character_bigram(texts, alphabet, smoothing<span class="op">=</span><span class="fl">0.05</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    symbol_to_id <span class="op">=</span> {symbol: index <span class="cf">for</span> index, symbol <span class="kw">in</span> <span class="bu">enumerate</span>(alphabet)}</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    counts <span class="op">=</span> np.full((<span class="bu">len</span>(alphabet), <span class="bu">len</span>(alphabet)), smoothing, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> text <span class="kw">in</span> texts:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        tokens <span class="op">=</span> np.asarray([symbol_to_id[symbol] <span class="cf">for</span> symbol <span class="kw">in</span> text], dtype<span class="op">=</span>np.int64)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        np.add.at(counts, (tokens[:<span class="op">-</span><span class="dv">1</span>], tokens[<span class="dv">1</span>:]), <span class="fl">1.0</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> counts <span class="op">/</span> counts.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>), symbol_to_id</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> continuation_logprob(probabilities, prefix, continuation):</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> prefix:</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"prefix must contain one symbol"</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    previous <span class="op">=</span> prefix[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> token <span class="kw">in</span> continuation:</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        total <span class="op">+=</span> np.log(probabilities[previous, token])</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        previous <span class="op">=</span> token</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(total)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> greedy_continuation(probabilities, prefix, length):</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    generated <span class="op">=</span> <span class="bu">list</span>(prefix)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(length):</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        generated.append(<span class="bu">int</span>(np.argmax(probabilities[generated[<span class="op">-</span><span class="dv">1</span>]])))</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> generated</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>base_text <span class="op">=</span> <span class="st">"the model reads data and reports loss. "</span> <span class="op">*</span> <span class="dv">6</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>canary <span class="op">=</span> <span class="st">"&lt;Q7|zebra|X9&gt;"</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>control <span class="op">=</span> <span class="st">"&lt;Q7|zebra|Y9&gt;"</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>alphabet <span class="op">=</span> <span class="bu">sorted</span>(<span class="bu">set</span>(base_text <span class="op">+</span> canary <span class="op">+</span> control))</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>canary_ids <span class="op">=</span> np.asarray([alphabet.index(symbol) <span class="cf">for</span> symbol <span class="kw">in</span> canary], dtype<span class="op">=</span>np.int64)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>control_ids <span class="op">=</span> np.asarray([alphabet.index(symbol) <span class="cf">for</span> symbol <span class="kw">in</span> control], dtype<span class="op">=</span>np.int64)</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>without_canary, symbol_to_id <span class="op">=</span> fit_character_bigram([base_text], alphabet)</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>with_canary, _ <span class="op">=</span> fit_character_bigram([base_text, canary], alphabet)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>prefix <span class="op">=</span> canary_ids[:<span class="op">-</span><span class="dv">2</span>].tolist()</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>continuation <span class="op">=</span> canary_ids[<span class="op">-</span><span class="dv">2</span>:].tolist()</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>seen_score <span class="op">=</span> continuation_logprob(with_canary, prefix, continuation)</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>unseen_score <span class="op">=</span> continuation_logprob(without_canary, prefix, continuation)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>recovered <span class="op">=</span> greedy_continuation(with_canary, prefix, <span class="bu">len</span>(continuation))</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"canary continuation log-prob, seen:"</span>, <span class="bu">round</span>(seen_score, <span class="dv">4</span>))</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"canary continuation log-prob, unseen:"</span>, <span class="bu">round</span>(unseen_score, <span class="dv">4</span>))</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"greedy recovery:"</span>, recovered <span class="op">==</span> canary_ids.tolist())</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"control differs at final transition:"</span>, control_ids[<span class="op">-</span><span class="dv">3</span>:].tolist())</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> seen_score <span class="op">&gt;</span> unseen_score</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> recovered <span class="op">==</span> canary_ids.tolist()</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"exposure by repetition count"</span>)</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>exposure_scores <span class="op">=</span> []</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> repetitions <span class="kw">in</span> (<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">8</span>):</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>    model, _ <span class="op">=</span> fit_character_bigram([base_text] <span class="op">+</span> [canary] <span class="op">*</span> repetitions, alphabet)</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>    score <span class="op">=</span> continuation_logprob(model, prefix, continuation)</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>    exposure_scores.append(score)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"repetitions=</span><span class="sc">{</span>repetitions<span class="sc">}</span><span class="ss">: log-prob=</span><span class="sc">{</span>score<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> exposure_scores[<span class="dv">0</span>] <span class="op">&lt;</span> exposure_scores[<span class="op">-</span><span class="dv">1</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>canary continuation log-prob, seen: -1.4793
+canary continuation log-prob, unseen: -6.3561
+greedy recovery: True
+control differs at final transition: [8, 3, 5]
+exposure by repetition count
+repetitions=1: log-prob=-1.4793
+repetitions=3: log-prob=-0.6399
+repetitions=8: log-prob=-0.2671</code></pre>
+</div>
+</div>
+<p>The seen model assigns more probability to the canary continuation and greedily recovers it, while the model without the inserted sequence has only the smoothing floor for the rare final transitions. The repetition sweep makes exposure a graded quantity rather than a binary label. This result is a memorization measurement under a specified model and prefix; it does not establish that every occurrence of the string would be recoverable from every prompt.</p>
+</section>
+<section id="n-gram-overlap" class="level2">
+<h2 class="anchored" data-anchor-id="n-gram-overlap">N-gram overlap</h2>
+<p>For a generated sequence <span class="math inline">g</span> and a set of training sequences <span class="math inline">D</span>, define the <span class="math inline">n</span>-gram overlap rate as</p>
+<p><span class="math display">
+\operatorname{overlap}_n(g,D)=
+\frac{\#\{u\in\operatorname{ngrams}_n(g):u\in\operatorname{ngrams}_n(D)\}}
+{\#\operatorname{ngrams}_n(g)}.
+</span></p>
+<p>Use unique candidate <span class="math inline">n</span>-grams in the numerator so a repeated phrase is not counted several times merely because it appears repeatedly in the same generation. Report several values of <span class="math inline">n</span>: unigram overlap mostly reflects vocabulary, while longer overlap is more sensitive to copied local sequences.</p>
+<div id="69ccd1f2" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:48.974654Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:48.973974Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:49.162311Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:49.142225Z&quot;}}" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ngram_set(sequence, n):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    sequence <span class="op">=</span> <span class="bu">tuple</span>(sequence)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> n <span class="op">&lt;</span> <span class="dv">1</span>:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"n must be positive"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        sequence[index:index <span class="op">+</span> n]</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> index <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">max</span>(<span class="dv">0</span>, <span class="bu">len</span>(sequence) <span class="op">-</span> n <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ngram_overlap(generated, training_sequences, n<span class="op">=</span><span class="dv">3</span>):</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    candidate <span class="op">=</span> ngram_set(generated, n)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> candidate:</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="fl">0.0</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    training <span class="op">=</span> <span class="bu">set</span>().union(<span class="op">*</span>(ngram_set(sequence, n) <span class="cf">for</span> sequence <span class="kw">in</span> training_sequences))</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>(candidate <span class="op">&amp;</span> training) <span class="op">/</span> <span class="bu">len</span>(candidate)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> overlap_report(generations, training_sequences, orders<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)):</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        n: <span class="bu">float</span>(np.mean([</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>            ngram_overlap(generation, training_sequences, n)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> generation <span class="kw">in</span> generations</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        ]))</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> n <span class="kw">in</span> orders</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>training_sequences <span class="op">=</span> [</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the cat sat on the mat"</span>.split(),</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the dog ran to the park"</span>.split(),</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"a model predicts the next token"</span>.split(),</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>generations <span class="op">=</span> [</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the cat sat on the mat"</span>.split(),</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the model predicts a token"</span>.split(),</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">"new birds fly above water"</span>.split(),</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>overlap <span class="op">=</span> overlap_report(generations, training_sequences)</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> order, value <span class="kw">in</span> overlap.items():</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"mean unique </span><span class="sc">{</span>order<span class="sc">}</span><span class="ss">-gram overlap: </span><span class="sc">{</span>value<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> ngram_overlap(training_sequences[<span class="dv">0</span>], training_sequences, n<span class="op">=</span><span class="dv">3</span>) <span class="op">==</span> <span class="fl">1.0</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> ngram_overlap(generations[<span class="op">-</span><span class="dv">1</span>], training_sequences, n<span class="op">=</span><span class="dv">3</span>) <span class="op">==</span> <span class="fl">0.0</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">set</span>(overlap) <span class="op">==</span> {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>mean unique 1-gram overlap: 0.667
+mean unique 2-gram overlap: 0.417
+mean unique 3-gram overlap: 0.333</code></pre>
+</div>
+</div>
+<p>The overlap report preserves the order of the comparison. A generation can have high unigram overlap because it uses the training vocabulary while having low trigram overlap, or it can copy a long phrase while changing individual word frequencies. No order alone distinguishes useful reuse from memorization, so interpret the rates with canary probes and held-out loss.</p>
+</section>
+<section id="generation-diversity" class="level2">
+<h2 class="anchored" data-anchor-id="generation-diversity">Generation diversity</h2>
+<p>A generation set can be diverse because its samples differ, because its token inventory is broad, or because it avoids repeating short phrases. Measure these separately:</p>
+<ul>
+<li><code>distinct_n</code> is the fraction of unique <span class="math inline">n</span>-grams among all generated <span class="math inline">n</span>-grams.</li>
+<li><code>unique_sequence_ratio</code> is the fraction of samples that are distinct as whole sequences.</li>
+<li><code>mean_pairwise_jaccard</code> compares <span class="math inline">n</span>-gram sets between pairs and detects collections that reuse the same local phrases.</li>
+</ul>
+<p>These metrics describe output variation. They do not establish correctness, factuality, or calibration.</p>
+<div id="6a4a8675" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:49.172588Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:49.170279Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:49.204012Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:49.202123Z&quot;}}" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> distinct_n(generations, n):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    all_ngrams <span class="op">=</span> [ngram <span class="cf">for</span> generation <span class="kw">in</span> generations <span class="cf">for</span> ngram <span class="kw">in</span> ngram_set(generation, n)]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(<span class="bu">max</span>(<span class="dv">0</span>, <span class="bu">len</span>(generation) <span class="op">-</span> n <span class="op">+</span> <span class="dv">1</span>) <span class="cf">for</span> generation <span class="kw">in</span> generations)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>(<span class="bu">set</span>(all_ngrams)) <span class="op">/</span> total <span class="cf">if</span> total <span class="cf">else</span> <span class="fl">0.0</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> unique_sequence_ratio(generations):</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>({<span class="bu">tuple</span>(generation) <span class="cf">for</span> generation <span class="kw">in</span> generations}) <span class="op">/</span> <span class="bu">len</span>(generations)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mean_pairwise_jaccard(generations, n<span class="op">=</span><span class="dv">2</span>):</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    sets <span class="op">=</span> [ngram_set(generation, n) <span class="cf">for</span> generation <span class="kw">in</span> generations]</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    scores <span class="op">=</span> []</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> left <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(sets)):</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> right <span class="kw">in</span> <span class="bu">range</span>(left <span class="op">+</span> <span class="dv">1</span>, <span class="bu">len</span>(sets)):</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            union <span class="op">=</span> sets[left] <span class="op">|</span> sets[right]</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>            scores.append(<span class="bu">len</span>(sets[left] <span class="op">&amp;</span> sets[right]) <span class="op">/</span> <span class="bu">len</span>(union) <span class="cf">if</span> union <span class="cf">else</span> <span class="fl">1.0</span>)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(np.mean(scores)) <span class="cf">if</span> scores <span class="cf">else</span> <span class="fl">0.0</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generation_diversity(generations):</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"distinct-1"</span>: distinct_n(generations, <span class="dv">1</span>),</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">"distinct-2"</span>: distinct_n(generations, <span class="dv">2</span>),</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">"unique-sequence-ratio"</span>: unique_sequence_ratio(generations),</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"mean-pairwise-2gram-jaccard"</span>: mean_pairwise_jaccard(generations, n<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>repetitive_generations <span class="op">=</span> [</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the cat sat on the mat"</span>.split(),</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the cat sat on the mat"</span>.split(),</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"the cat sat near the mat"</span>.split(),</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>varied_generations <span class="op">=</span> [</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"red birds fly above water"</span>.split(),</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">"small models read heldout data"</span>.split(),</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    <span class="st">"green fish swim below ice"</span>.split(),</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>repetitive_metrics <span class="op">=</span> generation_diversity(repetitive_generations)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>varied_metrics <span class="op">=</span> generation_diversity(varied_generations)</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"repetitive:"</span>, {key: <span class="bu">round</span>(value, <span class="dv">3</span>) <span class="cf">for</span> key, value <span class="kw">in</span> repetitive_metrics.items()})</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"varied:    "</span>, {key: <span class="bu">round</span>(value, <span class="dv">3</span>) <span class="cf">for</span> key, value <span class="kw">in</span> varied_metrics.items()})</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> repetitive_metrics[<span class="st">"unique-sequence-ratio"</span>] <span class="op">&lt;</span> varied_metrics[<span class="st">"unique-sequence-ratio"</span>]</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> varied_metrics[<span class="st">"distinct-2"</span>] <span class="op">&gt;</span> repetitive_metrics[<span class="st">"distinct-2"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>repetitive: {'distinct-1': 0.333, 'distinct-2': 0.467, 'unique-sequence-ratio': 0.667, 'mean-pairwise-2gram-jaccard': 0.619}
+varied:     {'distinct-1': 1.0, 'distinct-2': 1.0, 'unique-sequence-ratio': 1.0, 'mean-pairwise-2gram-jaccard': 0.0}</code></pre>
+</div>
+</div>
+<p>The repetitive set has duplicate whole sequences and shared local phrases, so its unique-sequence ratio and distinct-2 score are lower. The varied set scores better on those dimensions, but a diverse set could still be uniformly incorrect. Keep diversity as a companion to likelihood, calibration, and task-specific checks rather than using it as a quality proxy.</p>
+</section>
+<section id="evaluation-suite" class="level2">
+<h2 class="anchored" data-anchor-id="evaluation-suite">Evaluation suite</h2>
+<p>A reusable harness returns a structured report whose fields can be compared across checkpoints. The composition function below does not average unlike quantities. It keeps grouped perplexity, the calibration table and ECE, memorization evidence, overlap by order, and diversity metrics in separate namespaces. Later stages can add instruction accuracy or tool-call validity without changing these primitive functions.</p>
+<div id="9c59735a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-24T23:15:49.219578Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-08-24T23:15:49.213124Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-08-24T23:15:49.264344Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-24T23:15:49.260817Z&quot;}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluation_report(records, predictor, confidences, correct, training_sequences, generations):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">"perplexity_by_group"</span>: evaluate_by_group(records, predictor),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"calibration"</span>: {</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ece"</span>: expected_calibration_error(confidences, correct),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"bins"</span>: reliability_bins(confidences, correct),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"ngram_overlap"</span>: overlap_report(generations, training_sequences),</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"generation_diversity"</span>: generation_diversity(generations),</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>suite_report <span class="op">=</span> evaluation_report(</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    records,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    predictor,</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    confidences,</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    correct,</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    training_sequences,</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    generations,</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"report sections:"</span>, <span class="bu">list</span>(suite_report))</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"calibration ECE:"</span>, <span class="bu">round</span>(suite_report[<span class="st">"calibration"</span>][<span class="st">"ece"</span>], <span class="dv">4</span>))</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"generation diversity:"</span>, {</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    key: <span class="bu">round</span>(value, <span class="dv">3</span>)</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> key, value <span class="kw">in</span> suite_report[<span class="st">"generation_diversity"</span>].items()</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">set</span>(suite_report) <span class="op">==</span> {</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"perplexity_by_group"</span>, <span class="st">"calibration"</span>, <span class="st">"ngram_overlap"</span>, <span class="st">"generation_diversity"</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> suite_report[<span class="st">"calibration"</span>][<span class="st">"bins"</span>] <span class="op">==</span> calibration_table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>report sections: ['perplexity_by_group', 'calibration', 'ngram_overlap', 'generation_diversity']
+calibration ECE: 0.305
+generation diversity: {'distinct-1': 0.875, 'distinct-2': 1.0, 'unique-sequence-ratio': 1.0, 'mean-pairwise-2gram-jaccard': 0.0}</code></pre>
+</div>
+</div>
+</section>
+<section id="shared-evaluator-identity" class="level2">
+<h2 class="anchored" data-anchor-id="shared-evaluator-identity">Shared evaluator identity</h2>
+<p>The pure metric functions above define the measurements. The package-backed evaluators add the artifact boundary: masked likelihood reports an evaluator identity, while proof validity is scored by the independent verifier rather than by the model’s own likelihood. These compact reports are the interface consumed by later posttraining chapters.</p>
+<div id="f97ffdfa" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> proof_lm.data <span class="im">import</span> batch_packed_examples, pack_causal_examples</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> proof_lm.evaluation <span class="im">import</span> evaluate_language_model, evaluate_proof_fixtures</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> proof_lm.logic <span class="im">import</span> generate_examples</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> proof_lm.model <span class="im">import</span> DecoderConfig, ProofLM</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">71</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>identity_model <span class="op">=</span> ProofLM(</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    DecoderConfig(</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        vocab_size<span class="op">=</span><span class="dv">16</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        context_length<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        n_layers<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        d_model<span class="op">=</span><span class="dv">32</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        n_heads<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        d_ff<span class="op">=</span><span class="dv">64</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>identity_examples <span class="op">=</span> pack_causal_examples(</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    [[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>], [<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>]],</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    eos_id<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    pad_id<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    context_length<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>identity_batches <span class="op">=</span> batch_packed_examples(identity_examples, batch_size<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>likelihood_report <span class="op">=</span> evaluate_language_model(identity_model, identity_batches)</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>proof_report <span class="op">=</span> evaluate_proof_fixtures(generate_examples(count<span class="op">=</span><span class="dv">6</span>, seed<span class="op">=</span><span class="dv">71</span>))</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"likelihood evaluator:"</span>, likelihood_report[<span class="st">"evaluator_id"</span>])</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"masked perplexity:"</span>, <span class="bu">round</span>(<span class="bu">float</span>(likelihood_report[<span class="st">"perplexity"</span>]), <span class="dv">4</span>))</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"proof evaluator:"</span>, proof_report[<span class="st">"evaluator_id"</span>])</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"proof validity / rejection:"</span>,</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">round</span>(<span class="bu">float</span>(proof_report[<span class="st">"positive_validity"</span>]), <span class="dv">3</span>),</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>    <span class="bu">round</span>(<span class="bu">float</span>(proof_report[<span class="st">"negative_rejection"</span>]), <span class="dv">3</span>),</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">str</span>(likelihood_report[<span class="st">"evaluator_id"</span>]).startswith(<span class="st">"eval-"</span>)</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">str</span>(proof_report[<span class="st">"evaluator_id"</span>]).startswith(<span class="st">"eval-"</span>)</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> likelihood_report[<span class="st">"tokens"</span>] <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> proof_report[<span class="st">"positive_validity"</span>] <span class="op">==</span> <span class="fl">1.0</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> proof_report[<span class="st">"negative_rejection"</span>] <span class="op">==</span> <span class="fl">1.0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>likelihood evaluator: eval-4eea5ac0c26bf06f
+masked perplexity: 17.2463
+proof evaluator: eval-ab7e61e86fa5f72d
+proof validity / rejection: 1.0 1.0</code></pre>
+</div>
+</div>
+<p>The final object is intentionally a report of vectors, tables, and rates rather than a leaderboard scalar. A later checkpoint can be evaluated with the same <code>records</code>, prompts, and generation settings, then compared field by field. That comparison makes a regression visible when validation perplexity improves but calibration, canary recovery, or copied n-grams worsen.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>Perplexity is computed from aggregate token NLL and is grouped by split and source so data volume and domain effects remain visible.</li>
+<li>Reliability bins pair mean confidence with empirical correctness; ECE summarizes but does not replace the bin table.</li>
+<li>A canary inserted into training provides a controlled conditional-recovery probe whose exposure can be varied by repetition count.</li>
+<li>N-gram overlap measures local reuse at several orders, while diversity metrics separate token variety, whole-sequence variety, and shared phrases.</li>
+<li>The evaluation suite is composed from small pure functions and returns separate namespaces, allowing later posttraining stages to rerun the same measurements.</li>
+</ul>
+<p>Chapters 08 through 12 add posttraining objectives and tool-use behavior; each stage should rerun this base suite and add its own task-specific checks.</p>
+</section>
+<section id="exercises" class="level2">
+<h2 class="anchored" data-anchor-id="exercises">Exercises</h2>
+<p>Use the exercises to test the chapter’s invariants and connect the derivations to the reusable implementation. Solutions are hidden in the notebook source and are available through the course tooling when needed.</p>
+<section id="p7.1-expected-calibration-error" class="level3">
+<h3 class="anchored" data-anchor-id="p7.1-expected-calibration-error">[P7.1] Expected calibration error</h3>
+<p>Calibration calculation. Three predictions have confidences [0.2, 0.4, 0.9] and correctness [1, 0, 0]. Using three bins with one prediction in each, compute the ECE and identify whether the high-confidence prediction is overconfident.</p>
+</section>
+<section id="p7.2-generation-memorization-audit" class="level3">
+<h3 class="anchored" data-anchor-id="p7.2-generation-memorization-audit">[P7.2] Generation memorization audit</h3>
+<p>Generation audit. Explain why a high distinct-2 score does not prove correctness. Then state how n-gram overlap and a canary probe provide different evidence about memorization.</p>
+</section>
+<section id="p7.3" class="level3">
+<h3 class="anchored" data-anchor-id="p7.3">[P7.3]</h3>
+<p>Evaluator identity. Explain why likelihood and proof validity need separate evaluator IDs even when they are reported for the same checkpoint. Give one example of a regression that a lower perplexity would fail to reveal.</p>
+<div id="efbafd55" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluator_regression(lower_perplexity, proof_validity):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Return whether the checkpoint passes both independent gates.</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/ron-medina\.site");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../../nb/courses/llm-training/06-optimization.html" class="pagination-link" aria-label="06. Optimization and systems">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">06. Optimization and systems</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../../nb/courses/llm-training/08-sft.html" class="pagination-link" aria-label="Phase II: Posttraining and adaptation">
+        <span class="nav-page-text">Phase II: Posttraining and adaptation</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
