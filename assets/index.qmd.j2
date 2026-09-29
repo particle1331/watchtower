@@ -28,6 +28,10 @@ toc: false
 {% endfor %}
 
 [View my résumé →](resume.qmd)
+<br>
+[View the portfolio →](nb/portfolio/portfolio.ipynb)
+<br>
+[Browse all posts →](posts.qmd)
 
 :::
 
@@ -232,47 +236,3 @@ toc: false
   }
 })();
 </script>
-
-## Featured projects
-
-Selected code projects from this repository. Each project page explains the implementation and where to inspect it.
-
-::: {.home-preview-grid}
-
-::: {.home-preview-card}
-### Autocode
-
-A local-first browser application for a coding agent. Streaming events and a durable session timeline let you follow a task and return to it after refreshing the page.
-
-[Explore Autocode →](nb/portfolio/autocode.qmd)
-:::
-
-::: {.home-preview-card}
-### Change Planner Agent
-
-A read-only agent that investigates a proposed code change. It relates repository evidence to tests and history, then produces a reviewable plan.
-
-[Explore Change Planner →](nb/portfolio/change-planner.qmd)
-:::
-
-::: {.home-preview-card}
-### ML Platform
-
-A compact implementation for reproducible training, evaluation, batch inference, and online serving, with a local path and Azure deployment components.
-
-[Explore ML Platform →](nb/portfolio/ml-platform.qmd)
-:::
-
-:::
-
-[View the portfolio →](nb/portfolio/portfolio.ipynb)
-
-## Latest posts
-
-Recent writing from across the knowledge base.
-
-{% for post in latest_posts %}
-- [{{ post.title }}]({{ post.url }})
-{% endfor %}
-
-[Browse all posts →](posts.qmd)

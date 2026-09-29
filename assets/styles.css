@@ -119,9 +119,9 @@ h2 {
 
 /* --- Learning grid listing cards --- */
 .quarto-grid-item.card {
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 0;
+  border: 3px solid #171717;
+  box-shadow: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   overflow: hidden;
 }
@@ -355,12 +355,9 @@ h2 {
 
 /* --- Portfolio project sections --- */
 .portfolio-project {
-  padding: 1.75rem 0 2.75rem;
-  border-bottom: 1px solid #dedede;
-}
-
-.portfolio-project:last-of-type {
-  border-bottom: 0;
+  padding: 1.25rem 2rem 2rem;
+  margin-bottom: 1.25rem;
+  border: 3px solid #171717;
 }
 
 .portfolio-project h2 {
@@ -410,8 +407,14 @@ h2 {
 .resume-hero {
   position: relative;
   isolation: isolate;
-  padding: clamp(2rem, 5vw, 4.5rem) 0 1.5rem;
-  margin-bottom: 2rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - 12rem);
+  padding: clamp(4.5rem, 6vw, 6.5rem) 2.25vw 2rem;
+  margin: 3.5rem 0 0;
+  border: 4px solid #171717;
+  background: #fff;
   text-align: left;
 }
 
@@ -446,7 +449,7 @@ h2 {
 .resume-hero-links {
   position: relative;
   z-index: 1;
-  margin-top: 2.5rem;
+  margin-top: auto;
   padding-top: 1.5rem;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
@@ -532,6 +535,13 @@ h2 {
 }
 
 @media (max-width: 860px) {
+  .resume-hero {
+    min-height: 0;
+    padding: 2.5rem 1.25rem 1.25rem;
+    margin: 1.5rem 0 0;
+    border-width: 3px;
+  }
+
   .resume-hero-layout {
     grid-template-columns: 1fr;
   }
@@ -554,7 +564,7 @@ h2 {
   gap: 1.5rem;
   margin: 0.75rem 0 2.5rem;
   padding: 1.5rem;
-  border: 3px solid #777;
+  border: 3px solid #000;
   border-radius: 3px;
 }
 
@@ -631,6 +641,55 @@ h2 {
   font-size: 0.82rem;
 }
 
+/* Portfolio project navigation. */
+.portfolio-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14rem;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.portfolio-main {
+  min-width: 0;
+}
+
+.portfolio-project {
+  scroll-margin-top: 5rem;
+}
+
+.portfolio-sidebar {
+  position: sticky;
+  top: 5rem;
+  padding: 1rem 0 1rem 1.25rem;
+  border-left: 1px solid rgba(0, 0, 0, 0.14);
+  font-size: 0.92rem;
+}
+
+.portfolio-sidebar h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.portfolio-sidebar ul {
+  margin: 0 0 1.5rem;
+  padding-left: 1.1rem;
+}
+
+.portfolio-sidebar li {
+  margin: 0.4rem 0;
+}
+
+.portfolio-sidebar a {
+  text-decoration-color: rgba(0, 0, 0, 0.28);
+  text-underline-offset: 0.18em;
+}
+
+.portfolio-sidebar a:hover,
+.portfolio-sidebar a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 @media (max-width: 700px) {
   .resume-overview {
     grid-template-columns: 1fr;
@@ -641,6 +700,17 @@ h2 {
     padding-top: 1.1rem;
     padding-left: 0;
     border-top: 1px solid #e1e3e5;
+    border-left: 0;
+  }
+
+  .portfolio-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-sidebar {
+    position: static;
+    padding: 1.25rem 0 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.14);
     border-left: 0;
   }
 }
