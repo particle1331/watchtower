@@ -20,6 +20,7 @@ project:
   - index.qmd
   - resume.qmd
   - nb/photos/photos.ipynb
+  - portfolio.qmd
   - posts.qmd
   - nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
   - courses.qmd
@@ -49,6 +50,9 @@ project:
   - nb/courses/text-classification-from-scratch/08-efficiency.ipynb
   - nb/courses/text-classification-from-scratch/09-deployment.ipynb
   - nb/courses/text-classification-from-scratch/10-capstone.ipynb
+  - nb/portfolio/autocode.qmd
+  - nb/portfolio/change-planner.qmd
+  - nb/portfolio/ml-platform.qmd
   - '!archive/**'
   preview:
     port: 4200
@@ -67,12 +71,14 @@ website:
     left:
     - href: resume.qmd
       text: résumé
-    - href: nb/photos/photos.ipynb
-      text: personal
+    - href: portfolio.qmd
+      text: portfolio
     - href: posts.qmd
       text: posts
     - href: courses.qmd
       text: courses
+    - href: nb/photos/photos.ipynb
+      text: personal
     right:
     - icon: github
       href: https://github.com/particle1331/watchtower/tree/main/src/watchtower

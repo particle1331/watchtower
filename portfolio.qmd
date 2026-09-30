@@ -1,0 +1,20 @@
+---
+title: "Portfolio"
+page-layout: full
+sidebar: false
+toc: false
+---
+
+Selected project work. Each entry is a short starting point; fuller writeups can grow here.
+
+## [Autocode](nb/portfolio/autocode.qmd)
+
+Archived coding agent app with browser sessions, event streaming, and a durable session journal.
+
+## [Change Planner Agent](nb/portfolio/change-planner.qmd)
+
+Archived agent for investigating a proposed code change and producing an evidence-backed review plan.
+
+## [ML Platform](nb/portfolio/ml-platform.qmd)
+
+Archived platform project connecting training, model artifacts, batch jobs, and online serving.
