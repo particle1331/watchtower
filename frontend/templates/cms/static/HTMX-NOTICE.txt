@@ -1,0 +1,3 @@
+HTMX 2.0.8, vendored unmodified from the official project.
+Source: https://github.com/bigskysoftware/htmx/blob/v2.0.8/dist/htmx.min.js
+License: HTMX-LICENSE.txt (Zero-Clause BSD).

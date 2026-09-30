@@ -1,80 +1,51 @@
 # Course structure and navigation
 
-Read this reference when scaffolding a course or chapter, adding sections,
-registering or renaming sidebar entries, or changing course-level navigation.
+A course contract lives in `content/data/courses/<slug>.yaml`; authored home,
+overview, and chapters live in `content/notebooks/courses/<slug>/`. Supporting
+assets live under `content/assets/` or preserved notebook-relative sidecars.
+The contract owns purpose/audience, separate planned/actualized accounts, and
+ordered `toc` sections `{id, title, chapters: [stable chapter IDs]}`. The catalog
+chapter owns `parent`, `section`, full `title`, and short `toc_title`. Do not edit
+generated `_quarto.yml` or maintain a second sidebar source.
 
-## Course anatomy
-
-A course lives at `nb/courses/<name>/`:
-
-- `index.ipynb`: the learner-facing course home and README.
-- `course.yaml`: concise shared context with distinct planned and actualized sections.
-- `00-overview.ipynb`: an optional whole-course technical overview.
-- `NN-topic.ipynb`: one notebook per chapter, with a zero-padded prefix.
-- `img/`: figures referenced by notebooks.
-
-The sidebar registration lives in `_quarto.yml` under `website.sidebar`.
-Rendering never executes notebook code because `execute.enabled: false`; the
-site uses the outputs last stored by `wt run`.
-
-Historical examples remain under `archive/2026-09-30/nb/courses/`; use them as
-source material, not as the active course contract.
+Use an isolated Git worktree for new courses/multi-file revisions when possible.
+Preserve dirty primary changes. Preview it with `make preview PORT=4300` and report
+the exact URL. A separate port alone does not isolate source/build files.
 
 ## Scaffolding
 
-Before scaffolding or revising a course, use a dedicated Git worktree when the
-environment permits it. Run the preview from that worktree on a separate port,
-for example `make docs PORT=4300`, and report the resulting URL in
-agent updates. A separate port alone is insufficient when two agents share the
-same checkout because they still share the source files and `_site` output.
+1. `.venv/bin/wt new course <slug> "<Title>"` registers its planned home and contract.
+2. Set purpose/audience/planned prose through `wt data course/<slug>` or the CMS.
+3. `wt start course/<slug>` creates the editable draft home from that contract.
+4. `wt new section <slug> "<Section>"` adds an ordered section.
+5. Create chapters with title/TOC-title/section and nonempty planned content/lab:
 
-1. Run `wt new course <name> "<Title>"` to create the course YAML, home,
-   generated include, catalog entries, and first chapter stub.
-2. If the course needs a whole-system orientation before Chapter 01, run
-   `wt new chapter <course> 00-overview --title "<Overview title>"`, then move
-   its sidebar entry before Chapter 01 in `_quarto.yml`.
-3. Run
-   `wt new chapter <course> <name> --title "<Full title>" [--section "<Name>"]`
-   for later chapters.
-4. Run `wt new section <course> <name>` to add a sidebar grouping header.
+   ```sh
+   .venv/bin/wt new chapter example 01-introduction --title "Introduction" \
+     --toc-title "01. Introduction" --section main \
+     --planned-content "Explain the topic." --planned-lab-and-evidence "Check the result."
+   ```
 
-After scaffolding a chapter, set its final sidebar label explicitly. The
-notebook frontmatter title and sidebar text are independent surfaces; the
-scaffold initially derives placeholder text from the filename.
-Update `course.yaml` when the planned path changes, and update its actualized
-section only after completing and checking work. Run `wt validate` and
-`make knowledge` before rendering.
+6. For longer plans use `--plan-file .tmp/<name>.md` with “Planned content” and
+   “Planned lab and evidence” H2s. Creation saves the plan/catalog/TOC without a
+   notebook. `wt start <chapter-id>` materializes its H1 and plan as a draft.
+7. Optional `00-overview` is a chapter with its own plan; put it first in the
+   ordered TOC and set contract `overview` to its stable ID.
 
-## Sidebar naming
+Every registered chapter occurs exactly once in its parent's TOC, including
+unpublished chapters. Catalog/plan section membership agrees with its containing
+section. Moves through `wt update <id> --section <id>` update all representations
+atomically. Reorder sections/chapters through contract data/CMS lists. Use
+`wt batch` for coordinated metadata/contract repairs. Never infer actualized work.
 
-- Use `NN. <short label>` for numbered chapter entries and `00. <short label>`
-  for an overview.
-- Keep the sidebar label shorter than the notebook's frontmatter title. Put
-  qualifiers, subtitles, and hedging in the notebook title instead.
-- When a course has `00-overview.ipynb`, keep the course home and overview in
-  one unnamed section rooted at `index.ipynb`. The home is the section target,
-  and the overview is its only child:
+## Titles and publication
 
-  ```yaml
-  - section: ''
-    href: nb/courses/<name>/index.ipynb
-    contents:
-      - text: "00. Overview"
-        href: nb/courses/<name>/00-overview.ipynb
-  ```
+Source chapters contain exactly one full-title H1; generated templates suppress
+the duplicate automatic title block. TOC labels use `NN. <short label>` independently.
+Explicit `wt update <id> --title ...` changes both metadata and the existing H1.
 
-  Do not render the course home and `00-overview.ipynb` as sibling `text`
-  entries, and do not use a project-specific title such as `ProofLM overview`
-  for the numbered overview label.
-- Group chapters under thematic or phase-based section headers when the course
-  has a natural grouping. A section's `href` points to its first chapter.
-- Keep every `href` unique and resolve it to a real notebook.
-- Place `00-overview.ipynb` directly after the course home and before the first
-  numbered section.
-
-## Structural verification
-
-- Confirm every sidebar `href` resolves to a real file.
-- Confirm sidebar labels are shorter than frontmatter titles.
-- Render the affected pages so `_quarto.yml`, frontmatter, and navigation are
-  parsed together.
+`wt publish` requires authored content and public visibility; publish the parent
+course before chapters. Public planned placeholders can appear before authored
+publication. Production excludes private/draft entries; withdrawing a parent
+suppresses children without changing their states or sources. Preview shows all
+valid states. Validate with `wt validate`, then render/inspect affected pages.

@@ -1,0 +1,19 @@
+---
+title: Personal
+page-layout: full
+sidebar: false
+toc: false
+---
+
+::: {.photo-rows}
+{% for photo in photos %}
+::: {.photo-section}
+
+## {{ photo.heading }}
+
+![{{ photo.caption }}]({{ photo.src }})
+
+:::
+
+{% endfor %}
+:::

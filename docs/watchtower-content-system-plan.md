@@ -1,6 +1,6 @@
 # Watchtower notebook publishing system
 
-Status: draft for architecture and entity-model review. This document proposes the implementation; it does not change the current content contract.
+Status: implemented and verified locally on 2026-10-01. The current contract is documented in README.md and AGENTS.md; migration decisions and verification are recorded in docs/content-system-migration-review.md. GitHub Actions is configured, but external deployment has not been run during implementation.
 
 ## Goal and acceptance criterion
 
@@ -21,7 +21,7 @@ content/
     portfolio.yaml                  # Abstracts, figures, notebook paths, project names
     profile.yaml                    # Structured résumé and home-page data
     courses/<slug>.yaml              # Course contracts and ordered section/chapter TOCs
-    photos.yaml                     # Ordered photo paths and captions
+    photos.yaml                     # Ordered photo headings, paths, captions, lifecycles
   notebooks/
     posts/
     courses/<slug>/
@@ -81,7 +81,7 @@ The CMS parallels the reader site in navigation, page hierarchy, and visual styl
 | Portfolio | Use the same stacked project sections and project navigation; edit abstracts, figures/captions, project names, relations, and notebook plans. Show planned/draft entries for management with clear state labels. |
 | Posts | Retain the post listing and right-hand Tags sidebar; create/edit plans and metadata, manage tags, and filter entries by lifecycle or visibility. |
 | Courses | Show course homes and the same ordered section/chapter TOC; edit contracts, chapter plans/titles, section membership and ordering, and explicitly record actualized work. |
-| Personal | Manage the photo gallery's paths/captions and personal notebook entries, using their respective entity models. |
+| Personal | Manage ordered photo sections with headings, paths, captions, and individual draft/published states. Preserve personal notebook writing separately. |
 
 Use the same validated records, section order, stable IDs, and generated route mapping in CMS views and reader pages. The CMS can display every registered state so unfinished work can be managed; clearly identify what is eligible for the live site. Portfolio publication filtering, course-parent eligibility, and private/draft exclusions remain the shared service rules. Do not maintain a separate CMS copy of navigation or content data.
 
@@ -139,7 +139,7 @@ A planned entry may have no source notebook or an optional empty scaffold. If a 
 
 The verifier rejects planned entries with authored content and draft/published entries without it. The normal post, chapter, and portfolio workflow uses `wt start <id>` to create source content and change planned to draft together. If content was added manually to a planned source, explicitly update its lifecycle to draft through the metadata service before previewing, or use `wt publish <id>` when ready for public publication. These repair operations parse the current files without requiring their existing lifecycle/content agreement to pass; they validate the proposed final state, including all required content, references, and publication preconditions. `wt draft` returns published content to draft; it is not the operation for starting planned content. Neither rendering nor the verifier silently changes lifecycle or deletes content to make an entry valid. Returning an empty entry to planned uses the metadata update operation after its authored content has been removed deliberately.
 
-These content-presence rules apply to notebook-backed entries. A data-driven gallery uses its photo collection as authored content: planned has no photo records, and draft/published has a nonempty valid collection. The structured résumé remains a separately validated singleton, and a code project's completion is not inferred from its associated writeup lifecycle.
+These content-presence rules apply to notebook-backed entries. Each photo has its own draft/published state. The gallery page state is derived from the presence of published photos; authors do not manage a collection-level lifecycle. The structured résumé remains a separately validated singleton, and a code project's completion is not inferred from its associated writeup lifecycle.
 
 ### Artifact-specific records
 
@@ -151,7 +151,7 @@ These content-presence rules apply to notebook-backed entries. A data-driven gal
 | Portfolio entry | Shared catalog identity/publication fields plus a matching record in `portfolio.yaml`. Require `abstract`, `figure_path`, `figure_caption`, `notebook_path`, `project_name`, and `project_source` for draft/published content; archived code also requires `archive_date`. Planned detail records may omit not-yet-created assets/source references and render placeholders from metadata. Relations can link projects and other knowledge artifacts. |
 | Project | Shared fields; `path` locates the executable project. Related portfolio records provide reader-facing writeups. Registering or publishing a code project does not render arbitrary code files. |
 | Personal entry | Proposed artifact kind using the shared fields and a notebook source for personal writing. |
-| Gallery | Shared identity/publication fields with `path` pointing to a YAML photo collection. Render the photos and captions directly from data; no source notebook is needed. |
+| Gallery | Shared identity/publication fields with `path` pointing to a YAML photo collection. Render published photos as individual H2 sections with headings and captions directly from data; no source notebook is needed. |
 
 Use shared identity/publication fields with typed variants. Each variant supplies its own source references and required data. Portfolio `abstract` replaces the current `summary` as its canonical introductory text; its figure fields supply the rendered image and caption.
 
@@ -256,13 +256,17 @@ Keep the gallery's common metadata in the catalog and its ordered photo records 
 ```yaml
 version: 1
 photos:
-  - path: content/assets/photos/mountain.jpg
+  - heading: Mountain
+    lifecycle: published
+    path: content/assets/photos/mountain.jpg
     caption: "A morning in the mountains."
-  - path: content/assets/photos/coast.jpg
+  - heading: Coast
+    lifecycle: draft
+    path: content/assets/photos/coast.jpg
     caption: "The coast at sunset."
 ```
 
-Each photo needs only an image path and a caption string. List order determines display order. Generate the gallery page from this data and a frontend template. Individual photos inherit the gallery's publication eligibility; per-photo lifecycle fields are unnecessary in v1.
+Each photo has a required heading, image path, caption string, and `lifecycle: draft|published` (default draft). List order determines display order. Generate the gallery notebook from this data: each published photo is a section beginning with its H2 heading. Omit draft photos and their images from both working reader previews and production. The CMS lists every photo and manages these fields individually; remove the collection-level lifecycle control. Manual photo YAML saves also refresh the reader without requiring a catalog lifecycle edit.
 
 ### Chapter data and title validation
 
@@ -409,7 +413,7 @@ All adapters call the same Python services; the CLI can operate locally without 
 - Content operations: list/filter, inspect context, create planned posts/chapters/portfolio entries, start their editable notebooks, import/register, update metadata, relate artifacts, validate, publish, and return published content to draft through explicit `wt draft <id>`.
 - Course operations: create course/chapter/section, create or update a chapter plan including planned content and planned lab/evidence, start an editable notebook from that plan, update chapter full and TOC titles, update the contract, move or reorder chapters and sections, withdraw or restore the parent while preserving child states, and record actualized work explicitly. Planned chapter creation registers data without an authored notebook; starting it materializes its H1 and planning sections as a draft. Explicit full-title changes update metadata and any existing notebook heading through supported notebook operations.
 - Profile operations: read and update structured profile sections, validate them, and generate résumé outputs.
-- Portfolio/gallery operations: create or update portfolio records across their catalog/detail files, manage photo paths/captions and display order, and validate linked images, notebooks, and project directories. Expose these through the same API/CMS, CLI, and MCP service layer.
+- Portfolio/gallery operations: create or update portfolio records across their catalog/detail files, manage photo headings, paths, captions, individual lifecycle, and display order, and validate linked images, notebooks, and project directories. Expose these through the same API/CMS, CLI, and MCP service layer.
 - Build operations: preview the working site or a selected artifact in a separate preview workspace, build the production site, and inspect build status/logs.
 
 FastAPI exposes typed request/response models and generated OpenAPI documentation. Read/list/update routes expose entities; action routes expose validation, preview, build, publication, and return-to-draft transitions. MCP tools reuse those schemas and services once the first workflow is stable.
@@ -478,7 +482,7 @@ Retain authored per-cell visibility/folding options during migration. Move exist
 
 Existing notebooks containing prose about future lessons have authored content under the new lifecycle definition, even if their course's `actualized` account is empty. Keep them draft/published according to the reviewed publication choice. If the author chooses to replace such a page with a planned placeholder, preserve that prose in reviewed planning data or migration source material before clearing/retiring the actual notebook; never delete it automatically to make the planned check pass.
 
-The primary checkout contains existing uncommitted changes. Preserve those changes and establish an isolated migration workspace containing the required starting state before restructuring multiple files. Preview the migrated workspace on a separate port.
+Implementation used an isolated migration worktree and separate preview ports. Preserve any user changes when integrating the verified result into the primary checkout.
 
 ## Verification and completion
 
@@ -489,7 +493,7 @@ The primary checkout contains existing uncommitted changes. Preserve those chang
 - Generation leaves source notebooks unchanged and preserves outputs, attachments, figure references, relative images, and bibliography resolution.
 - Different cells retain their individual code visibility/folding choices in the rendered page; metadata updates and site generation do not overwrite those authored cell options.
 - After creation, data updates, preview, and publication, `content/` contains only tracked inputs: data, notebooks, and supporting assets. Runtime records and generated outputs stay outside it.
-- Gallery rendering needs only photo path/caption YAML and image files. Portfolio rendering joins catalog metadata with `portfolio.yaml`, including the abstract, figure path/caption, accompanying notebook, project name/source, and archive date when applicable, while preserving the authored display order. Resolve active and archived code directories through the typed reference; verify all three historical mappings with `projects/` empty, without restoring or registering archived code as active work.
+- Gallery rendering needs only photo heading/path/caption/lifecycle YAML and image files; draft photos and their assets are excluded, and published photos produce individual H2 sections. Portfolio rendering joins catalog metadata with `portfolio.yaml`, including the abstract, figure path/caption, accompanying notebook, project name/source, and archive date when applicable, while preserving the authored display order. Resolve active and archived code directories through the typed reference; verify all three historical mappings with `projects/` empty, without restoring or registering archived code as active work.
 - The public Portfolio page includes only public published portfolio notebooks. Verify that planned/draft entries have no abstract/figure/links in the listing and returning a published entry to draft removes its card. Published entries link to the correct rendered notebook and derive their GitHub source URL from shared repository settings and the resolved code directory, without a per-entry URL field. Check “Archived source” labels and exact archive links. Reject invalid project names/source values/archive dates, missing project directories, escaping symlinks, and invalid repository settings.
 - Visually compare the generated Portfolio page with the main-branch screenshot: stacked bordered project sections, labeled abstracts, prominent figures/captions, notebook/source links, and a desktop Projects/Explore sidebar. Check a narrow viewport and ensure sidebar anchors include only eligible entries and match their section order.
 - Valid manual YAML changes refresh preview and survive subsequent API updates. Malformed YAML, duplicate keys, wrong field types, missing images/notebooks/project directories, and unmatched portfolio IDs produce clear verifier errors before rendering and preserve the last successful output. CLI/API writes receive the same validation as manually edited files.
@@ -516,3 +520,12 @@ The primary checkout contains existing uncommitted changes. Preserve those chang
 - Run the repository's `make lint`, `make typecheck`, and `make test` for the implementation, along with a real Quarto render and visual checks of the affected site navigation/pages.
 
 The first completed milestone is the one-post workflow. The system migration is complete only when all existing active entity types use the new pipeline, everyday content work requires no manual publication YAML edits, and authors can optionally edit `content/data/` directly with render-time verification.
+
+## User clarifications applied during implementation
+
+- The black, gray, and violet palette applies only to the CMS. Preserve reader styling.
+- Personal contains photo rows. Preserve the former gallery prose privately; keep the photo collection planned until real photos and captions are supplied.
+- Use the existing archived portfolio diagrams with their original captions.
+- Use the post title “Understanding the repo CLI `wt`”.
+
+- Each photo has its own draft/published lifecycle and heading; draft photos stay off the reader and published photos become individual H2 sections.

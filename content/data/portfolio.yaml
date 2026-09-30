@@ -1,0 +1,33 @@
+version: 1
+entries:
+- id: portfolio/autocode
+  abstract: Archived coding agent app with browser sessions, event streaming,
+    and a durable session journal.
+  notebook_path: content/notebooks/portfolio/autocode.ipynb
+  project_name: autocode
+  project_source: archived
+  archive_date: '2026-09-30'
+  figure_path: content/assets/portfolio/autocode-flow.svg
+  figure_caption: A browser task passes through the application service to an
+    agent runner; events are written to a journal and SQLite projection.
+- id: portfolio/change-planner
+  abstract: Archived agent for investigating a proposed code change and
+    producing an evidence-backed review plan.
+  notebook_path: content/notebooks/portfolio/change-planner.ipynb
+  project_name: change-planner
+  project_source: archived
+  archive_date: '2026-09-30'
+  figure_path: content/assets/portfolio/change-planner-flow.svg
+  figure_caption: A repository snapshot is indexed and searched before a
+    LangGraph investigation produces a human-reviewable change plan.
+- id: portfolio/ml-platform
+  abstract: Archived platform project connecting training, model artifacts,
+    batch jobs, and online serving.
+  notebook_path: content/notebooks/portfolio/ml-platform.ipynb
+  project_name: ml-platform
+  project_source: archived
+  archive_date: '2026-09-30'
+  figure_path: content/assets/portfolio/ml-platform-flow.svg
+  figure_caption: Versioned training jobs register runs and artifacts in MLflow;
+    serving loads a model version, while a results database supports an
+    operations dashboard.

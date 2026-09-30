@@ -91,7 +91,8 @@ Use the [Diagrams](https://quarto.org/docs/authoring/diagrams.html) page when ch
 
 ### Citations
 
-Declare a bibliography in the notebook's YAML front matter:
+In Watchtower, declare bibliography defaults in frontend/site.yaml; document
+front matter appears only in generated copies. In standalone Quarto projects:
 
 ```yaml
 bibliography: references.bib
@@ -146,13 +147,13 @@ HTML, PDF, and Typst do not implement every layout feature identically. Prefer n
 
 ## Article workflow
 
-1. **Establish metadata.** Put the title and other document metadata in the notebook's YAML front matter. In Watchtower, preserve the existing `date` and `categories` conventions.
+1. **Establish metadata.** In Watchtower, use the content service/catalog for title, date, categories, and tags; source notebooks own their bodies. Generated copies receive front matter. Standalone Quarto projects may use authored front matter.
 2. **Build a readable argument.** Start with an introduction, define notation before using it, and organize the body with descriptive headings. Each section should advance the explanation rather than merely group code cells.
 3. **Use Markdown as the default authoring language.** Prefer Markdown, Pandoc Markdown, LaTeX math, Quarto divs, callouts, and spans. Keep raw HTML or format-specific markup for cases where the portable primitives are insufficient.
 4. **Pair prose with computation.** Precede each code cell with its purpose and follow it with interpretation. Split expensive computation from presentation-only plotting or table-formatting cells when that makes the rendered article easier to scan.
 5. **Make outputs referenceable.** Give figures and tables stable type-prefixed labels and captions in the cell that produces them. Refer to them in prose with `@fig-name` or `@tbl-name`. Use equation and section labels when readers need to navigate back to a result.
 6. **Make figures and tables legible.** Add informative captions and alternative text where appropriate, format numeric columns deliberately, and use layout or margin placement only when it improves the argument. Check the target output format because layout behavior can differ across HTML, PDF, and Typst.
-7. **Add citations deliberately.** If the article cites external work, add the bibliography in front matter and use Quarto citation syntax. Keep citations near the claims they support; do not replace a citation with a bare URL when a bibliographic reference is appropriate.
+7. **Add citations deliberately.** If the article cites external work, configure the frontend bibliography and use Quarto citation syntax. Keep citations near the claims they support; do not replace a citation with a bare URL when a bibliographic reference is appropriate.
 8. **Render from the canonical source.** In Watchtower, notebook outputs are stored inline and Quarto renders without re-execution. Run the relevant cells explicitly, inspect their outputs, then run `make docs` or the project render command.
 
 ## Compact patterns

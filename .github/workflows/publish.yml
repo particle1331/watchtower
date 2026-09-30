@@ -18,14 +18,14 @@ jobs:
         with:
           version: 1.10.18   # no "v" prefix: the action prepends it (v1.x would 404)
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.14"
 
-      - name: Install résumé build dependencies
+      - name: Install publishing dependencies
         run: |
-          python -m pip install jinja2 nbformat pyyaml
+          uv sync --frozen
           sudo apt-get update
           sudo apt-get install -y \
             texlive-latex-extra \
@@ -33,13 +33,14 @@ jobs:
             texlive-fonts-extra \
             texlive-xetex
 
-      - name: Generate site pages and résumé PDF
-        run: python scripts/resume.py
+      - name: Validate and build the production site
+        run: make build
 
       - name: Render and Publish
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: gh-pages
+          path: frontend/generated/production
+          render: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          QUARTO_PROFILE: publish

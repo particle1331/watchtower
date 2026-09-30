@@ -1,70 +1,135 @@
 # Watchtower
 
-A workspace for knowledge work and its supporting tools. Published pages are selected from the active catalog alongside the résumé and personal photo gallery. Earlier posts, courses, portfolio pieces, and code projects are preserved in [`archive/2026-09-30/`](archive/2026-09-30/README.md) as source material for new work.
+A notebook publishing workspace with a local FastAPI/Jinja/HTMX CMS, a
+revision-aware CLI and MCP server, and a generated Quarto website. The CMS uses
+black, gray, and violet; the public website retains its existing styling.
 
-## Knowledge content
+## Sources of truth
 
-The active registry is [`knowledge/catalog.yaml`](knowledge/catalog.yaml). Register logical works: a post, course, chapter, portfolio piece, or project. Each record has a stable ID, kind, title, path, visibility (`public` or `private`), lifecycle (`planned`, `draft`, or `published`), and relationship IDs. Images, tests, and individual code files belong to their parent work. Operational sources such as `scripts/`, `src/watchtower/`, and `assets/resume.yaml` are outside this catalog.
-
-A course has three distinct layers:
-
-| Source | Purpose |
+| Location | Contents |
 | --- | --- |
-| `nb/courses/<slug>/course.yaml` | Concise shared contract: purpose, audience, **planned** path, and separately recorded **actualized** work. |
-| `nb/courses/<slug>/index.ipynb` | Learner-facing course home or README: orientation, navigation, prerequisites, and practical guidance. |
-| `nb/courses/<slug>/00-overview.ipynb` (optional) | Deeper technical design and whole-course explanation. |
+| `content/data/catalog.yaml` | Stable IDs, metadata, publication states, relationships, and legacy routes. |
+| `content/data/courses/<slug>.yaml` | Purpose/audience, planned intent, explicit actualized facts, ordered section/chapter TOCs. |
+| `content/data/portfolio.yaml` | Ordered abstracts, figures/captions, accompanying notebooks, active/archived code references. |
+| `content/data/profile.yaml` | All homepage, résumé, and contact facts. |
+| `content/data/photos.yaml` | Ordered photo headings, paths, captions, and individual draft/published states. Personal displays only photo rows. |
+| `content/notebooks/`, `content/assets/` | Authored notebook bodies, stored outputs, attachments, cell options, and supporting assets. |
+| `frontend/templates/`, `frontend/assets/`, `frontend/site.yaml` | CMS/site templates, public theme assets, repository settings, presentation defaults. |
+| `backend/runtime/`, `frontend/generated/` | Ignored transaction journals, build records/logs, render snapshots, successful outputs. |
 
-The home embeds a short generated rendering of the YAML contract. `make knowledge`, `make docs`, and `make render` refresh that include. Quarto uses stored notebook outputs and does not execute cells while rendering. The planned section states intent; the actualized section must be updated from evidence, never inferred from file existence.
-Only catalog entries marked both `public` and `published` enter the site. Publishing a course renders its home and creates its grid card; chapters render independently when they are published under a published course. The course sidebar lists only its published chapters. Published portfolio entries create a generated `portfolio.qmd` home with their summaries and related published works. `knowledge/sidebar.yaml` stores the authored course outline; synchronization derives the published sidebar in `_quarto.yml` without discarding draft entries. `make knowledge` validates the catalog and synchronizes Quarto's render list and navigation; drafts and private works stay out of the public site.
+Executable projects stay under `projects/`. Historical implementations remain in
+`archive/2026-09-30/projects/`; portfolio references do not restore/register
+historical code as active work. The [migration review](docs/content-system-migration-review.md)
+records preservation rules and approved assets/titles. Retired inputs are under
+`archive/2026-10-01/content-system-inputs/`. The former gallery prose is retained
+privately; the structured gallery stays planned until real photos are supplied.
 
-## `wt` navigation
+## Everyday authoring
 
-Use `.venv/bin/wt` from the repository root. `wt map` is the starting point: it groups active courses by home, optional overview, and chapter. Discovery commands read the catalog, so an unregistered file is not silently treated as active.
+Run `make bootstrap`, then use `.venv/bin/wt` from the repository root. CLI,
+CMS, JSON API, and MCP call the same file-backed services. Manual YAML edits
+remain supported and are verified before rendering. Document front matter is
+injected into generated copies only; notebook bodies remain editable in VS Code
+or JupyterLab. Quarto renders saved outputs without executing cells.
+
+```sh
+.venv/bin/wt new post example --title "Example" --planned-content "Investigate a question." --tag experiments
+.venv/bin/wt start post/example
+# Edit notebook body, then explicitly execute its cells.
+.venv/bin/wt run post/example
+make preview PORT=4300
+.venv/bin/wt publish post/example
+```
+
+Longer plans use `--plan-file .tmp/<name>.md`. Posts accept arbitrary Markdown.
+Chapter files require exactly one nonempty “Planned content” section and
+“Planned lab and evidence” section. Portfolio files contain introductory prose,
+“What it contains,” and optional scope notes under “Explore the project.”
+Plans are persisted, so temporary files can be removed afterward.
+
+```sh
+.venv/bin/wt new course example "Example Course"
+.venv/bin/wt new chapter example 01-introduction --title "Introduction" \
+  --toc-title "01. Introduction" --section main \
+  --planned-content "Explain the topic." --planned-lab-and-evidence "Check a reproducible example."
+.venv/bin/wt start course/example/01-introduction
+.venv/bin/wt new portfolio example --project-name example --plan-file .tmp/example.md \
+  --abstract "Project purpose" --figure-path content/assets/portfolio/example.svg --figure-caption "System diagram"
+```
+
+Creation registers plans without creating notebooks. `start` creates a draft
+from its persisted plan and refuses existing files. Imports with authored
+content default to draft. Chapters require one full-title H1; `toc_title` controls
+navigation. A chapter title update coordinates metadata and its source heading.
+
+Planned entries have no authored content and render metadata-generated pages.
+Draft/published entries require authored content and render copied notebooks.
+Title-only scaffolds are empty. Preview shows all valid states, including private
+content. Production selects public published pages and public planned placeholders.
+A private/draft course suppresses all children while retaining their states;
+a planned course shows only planned children. Public Portfolio cards require
+published entries. Personal contains photo rows without prose/notebook listings.
+
+`publish` requires public visibility, content, and a public published parent for
+chapters. `draft` preserves the body/visibility while returning published content
+to draft. Neither commits nor pushes. Once changes reach `main`, GitHub Actions
+builds committed inputs and publishes successful output to the existing
+`gh-pages` target. Failed builds retain the previous successful site.
+
+## Commands and interfaces
 
 | Command | Result |
 | --- | --- |
-| `wt map` | Active artifact map as JSON. |
-| `wt ls posts\|courses\|portfolio\|projects` | Paths registered in one tier. |
-| `wt context <id-or-path>` | Catalog record, course YAML when applicable, and labeled reading paths. It does not load sibling chapters. |
-| `wt find <query>` | Search registered active sources; notebooks report cell indices, text files report line numbers. |
-| `wt validate` | Check catalog records, paths, course contracts, home includes, relations, and unregistered active content. |
-| `wt register <kind> <id> <path> <title>` | Register an existing work. Portfolio entries require `--summary`; repeat `--relation <catalog-id>` to link related work. |
-| `wt publish <course-or-chapter-id>` | Publish one public course or chapter and synchronize its card, render path, and course navigation. Publishing a course leaves its chapters unchanged. |
-| `wt render-context`, `wt sync-site` | Refresh course-home includes and Quarto publication paths from the catalog. |
-| `wt map --archive`, `wt ls <tier> --archive`, `wt find <query> --archive` | Explicitly inspect the repository-only archive. |
-| `wt cat <notebook>` | Read notebook cell sources as Markdown, without raw `.ipynb` JSON. An archived notebook can be read by its full path. |
+| `wt map`, `ls`, `find`, `context` | Catalog-backed discovery and course reading paths. |
+| `wt new post\|course\|chapter\|portfolio`, `new section` | Planned records and ordered course TOCs. |
+| `wt start`, `publish`, `draft` | Explicit notebook/publication transitions. |
+| `wt update <id>` | Metadata/tags/plans; `--patch-file` supports variant fields and relations. |
+| `wt data <name> [--file <yaml>]` | Profile, portfolio, photos, settings, or `course/<slug>`. |
+| `wt gallery --file <yaml>` | Save ordered photos and each photo’s lifecycle atomically. |
+| `wt batch --file <json>` | Related metadata/data repairs in one validated transaction. |
+| `wt import <file> posts\|personal [name]` | Supported normalization preserving outputs. |
+| `wt import <file> courses <course> [chapter]` | Import an authored chapter into its course TOC. |
+| `wt register project <id> <path> <title>` | Register existing code; `make project NAME=<slug>` scaffolds it. |
+| `wt validate` | Schemas, references, lifecycle/content agreement, H1s, TOCs, images, registration. |
+| `wt cat`, `edit-cell`, `append-cell`, `insert-cell`, `remove-cell`, `tag` | Supported notebook operations; never edit raw JSON. |
+| `wt run`, `output`, `diff` | Explicit execution, saved-output inspection, source review. Moved sources use `diff --base-source <old-path>`. |
+| `wt map\|ls\|find --archive` | Deliberate historical-source discovery. |
+| `wt migrate` | Dry-run inventory; `--apply` requires resolved review decisions. |
+| `make preview PORT=4300` | Watch saved files and serve successful working output. |
+| `make build` | Production output at `frontend/generated/production/_site/`. |
+| `make cms` | CMS at `http://127.0.0.1:8000/cms/`; API/OpenAPI at `/api/` and `/docs`. |
+| `make mcp` | Publishing tools over MCP stdio. |
+| `make resume`, `make render NOTEBOOK=<id-or-path>` | Generate résumé/notebook PDFs outside authored content. |
+| `make knowledge`, `wt sync-site`, `wt render-context` | Compatible regeneration of disposable Quarto projections. |
+| `make lint`, `make typecheck`, `make test` | Tooling and publishing/recovery acceptance checks. |
 
-`wt cat --context N` shows **neighboring cells in that one notebook**. For course-level context, use `wt context`, then read the course home, overview when present, and target chapter as needed. Read adjacent chapter openings only when handoffs matter; `wt` does not read every notebook in a course automatically.
+All `wt` examples use `.venv/bin/wt`. `cat --context N` shows adjacent cells,
+not sibling chapters. Read course context, home, optional overview, and target
+chapter in that order. Record actualized learning from checked evidence only.
 
-Notebook IDs such as `post/example` or `course/example/01-introduction` work with notebook read and edit commands. Existing notebook path forms still work.
+The CMS edits structured fields/plans. “Edit in VS Code” opens the canonical
+notebook; “Start and edit” first materializes it through the lifecycle service.
+The global refresh builds saved inputs and reports progress/errors without
+executing cells or changing publication. Notebook bodies remain in the editor.
 
-## Creating and editing
+## Revisions and recovery
 
-```text
-.venv/bin/wt new post example --title "Example"
-.venv/bin/wt new course example "Example Course"
-.venv/bin/wt new chapter example 02-next --title "Next Step"
-.venv/bin/wt new section example "Part II"
-.venv/bin/wt import external.ipynb posts example
-.venv/bin/wt import external.ipynb courses example 03-imported
-```
+Read responses expose SHA-256 revisions over exact workspace input bytes.
+API writes require `If-Match` (428 missing, 412 stale); CMS forms carry that token.
+CLI/MCP writes accept expected revisions and capture one when omitted. Stale
+operations are never automatically retried. Managed clients share a workspace
+lock and durable transaction journals. Recovery rolls forward from matching
+preimages/absence and blocks on external changes, retaining all versions.
+Conflicted journals prevent builds from replacing successful output.
 
-Scaffolding and import register the new work in the catalog. A new course also creates `course.yaml`, its home notebook and generated include, a first chapter, and sidebar entries. For project or portfolio works created outside these notebook commands, add a catalog entry and run `wt validate`.
-Use `wt register portfolio <id> <path> <title> --summary "..."` for a portfolio page; add `--relation post/...`, `--relation course/...`, or `--relation course/.../chapter` for related notes, courses, or chapters. Relations use stable catalog IDs and must reference registered entries. The summary and relations live in `knowledge/catalog.yaml`; `wt sync-site` uses them to build `portfolio.qmd`. `make project` registers its new project automatically.
-Use `.venv/bin/wt publish course/<slug>` to publish a course home and generate its Courses card. Publish a chapter separately with `.venv/bin/wt publish course/<slug>/<chapter>`; its parent course must already be published.
+An IDE can save between a final hash check and replacement: detection of
+uncoordinated saves remains best effort. Pause affected saves during managed
+changes when strict coordination is required. Keep scratch work in `.tmp/` and
+secrets in the OS keyring through `wt vault`. Shared skills live in `skills/`;
+`make setup-skills` maintains links. Archived code is excluded from active checks.
 
-For notebook changes, use `wt find`, `wt cat --index N --context K`, then `wt edit-cell`, `append-cell`, `insert-cell`, or `remove-cell`. Review with `wt diff`; run edited code with `wt run` and inspect stored output with `wt output`. `wt cat` defaults to a 4096-character source limit per cell; `--limit 0` removes it. Cell writes are capped at 20,000 source characters. `wt --help` and subcommand help give full syntax.
-
-## Repository tasks
-
-| Command | Purpose |
-| --- | --- |
-| `make bootstrap` | Set up shared skill links and sync the uv environment. |
-| `make knowledge` | Validate the catalog, regenerate course-home includes, and sync public published site pages. |
-| `make resume` | Regenerate home, résumé, and PDF from `assets/resume.yaml`. |
-| `make docs PORT=4300` | Refresh generated context and résumé artifacts, then preview the site. |
-| `make render NOTEBOOK=<path>` | Refresh context and render one notebook to PDF. |
-| `make project NAME=<slug>` | Create and register a uv workspace project. |
-| `make lint`, `make typecheck`, `make test` | Check active tooling. Archived code is excluded from lint and type checks. |
-
-Do not edit generated résumé pages or raw notebook JSON. Use the `.venv/bin/wt vault` commands for local secrets; never commit secret values. Shared skills live under `skills/`, with links set up by `make setup-skills`.
+Each photo has a required heading, path, caption, and `lifecycle: draft|published`.
+Published photos render as individual H2 sections in Personal; draft photos and
+their assets are excluded from reader generation, including working previews.
+The gallery page state is derived automatically; there is no collection-level
+publication control in the CMS.

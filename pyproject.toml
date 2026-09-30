@@ -5,6 +5,12 @@ description = "A central workspace for personal learning and portfolio projects.
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "python-multipart>=0.0.20",
+    "mcp>=2.2,<3",
+    "pydantic>=2.10,<3",
+    "markdown-it-py>=3.0",
     "typer>=0.15.0",
     "rich>=14.1.0",
     "keyring>=25.6.0",
@@ -32,6 +38,7 @@ members = ["projects/*"]
 [dependency-groups]
 dev = [
     "pre-commit>=4.6.2",
+    "httpx>=0.28",
     "pytest>=9.0.0",
     "pytest-cov>=6.0.0",
     "ruff>=0.8.0",

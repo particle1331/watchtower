@@ -192,6 +192,12 @@ def _run_xelatex(tex: Path, out_dir: Path, source_epoch: int) -> None:
 def build_resume() -> tuple[Path, Path]:
     """Render YAML into the site pages, contact script, and PDF."""
     root = ROOT_PATH
+    if (root / "content/data/catalog.yaml").exists():
+        from watchtower.services.build import BuildService
+        from watchtower.services.profile import build_resume_pdf
+        stage = BuildService(root).generate("preview")
+        pdf = build_resume_pdf(stage)
+        return pdf, stage / "index.qmd"
     tex_src = root / RESUME_TEX_J2
     qmd_src = root / INDEX_QMD_J2
     yaml_path = root / RESUME_YAML

@@ -7,7 +7,7 @@ read the pages themselves rather than reload this authoring guidance.
 
 ## Course YAML, home, and overview
 
-`course.yaml` is the compact, structured course context. Keep purpose and
+`content/data/courses/<slug>.yaml` is the compact, structured course context. Keep purpose and
 audience there, along with separate `planned.summary` and
 `actualized.summary` fields. The latter records completed work, not an
 inference from chapter files. The generated include places these shared facts
@@ -20,9 +20,9 @@ The `index.ipynb` is the learner-facing home page. It should be concise but
 substantive: a learner should understand the promise, scope, path,
 prerequisites, and expected outcome in one sitting.
 
-1. **Frontmatter:** `title`, `description`, `categories`, and optional `image`
-   such as `"./img/<course>-cover.png"`. Quarto renders the title as the page
-   H1, so the body must not repeat an H1.
+1. **Metadata:** manage title, description, categories, and optional cover
+   through the content service/catalog. Generated copies receive front matter;
+   the authored home body does not repeat the generated title.
 2. **Short introduction:** one or two paragraphs explaining what the course is
    and who it is for, ending with the governing idea stated once as a bolded
    label in the form `**Design rule:** ...`.

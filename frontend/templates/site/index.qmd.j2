@@ -1,0 +1,236 @@
+---
+title: ""
+pagetitle: "{{ name }} ∷ AI & ML"
+page-layout: full
+sidebar: false
+toc: false
+---
+
+::: {.resume-hero}
+
+<canvas class="resume-banner" id="resume-banner" aria-hidden="true"></canvas>
+
+::: {.resume-hero-layout}
+
+::: {.resume-hero-content}
+
+<div class="resume-hero-title" role="heading" aria-level="1">{{ name }}<span class="resume-name-dot">.</span></div>
+
+{% if employment %}
+::: {.lead}
+{{ employment[0].title if employment else '' }}
+:::
+{% endif %}
+
+::: {.resume-intro}
+
+{% for paragraph in homepage_intro %}
+{{ paragraph }}
+
+{% endfor %}
+
+[View my résumé →](resume.qmd)
+<br>
+:::
+
+:::
+
+:::
+
+::: {.resume-hero-links}
+<a href="assets/resume.pdf"><i class="bi bi-download" aria-hidden="true"></i> PDF résumé</a><span class="resume-link-separator" aria-hidden="true">·</span><a href="https://github.com/{{ contact.github }}"><i class="bi bi-github" aria-hidden="true"></i> GitHub</a><span class="resume-link-separator" aria-hidden="true">·</span><a href="https://{{ contact.linkedin }}"><i class="bi bi-linkedin" aria-hidden="true"></i> LinkedIn</a><span class="resume-link-separator" aria-hidden="true">·</span><span class="resume-home-contact"><i class="bi bi-envelope" aria-hidden="true"></i> <span class="contact-value" data-contact="email">Email</span> <button type="button" class="copy-contact" data-contact="email" aria-label="Copy email address" title="Copy email address"><i class="bi bi-clipboard" aria-hidden="true"></i></button></span><span class="resume-link-separator" aria-hidden="true">·</span><span class="resume-home-contact"><i class="bi bi-telephone" aria-hidden="true"></i> <span class="contact-value" data-contact="phone">Phone</span> <button type="button" class="copy-contact" data-contact="phone" aria-label="Copy phone number" title="Copy phone number"><i class="bi bi-clipboard" aria-hidden="true"></i></button></span>
+:::
+
+:::
+
+<script>
+(function() {
+  function initBanner() {
+    var hero = document.querySelector('.resume-hero');
+    var canvas = document.getElementById('resume-banner');
+    if (!hero || !canvas) return;
+
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    var motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var nodes = Array.from({ length: 90 }, function() {
+      return {
+        x: Math.random(), y: Math.random(),
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.08 + Math.random() * 0.12,
+        radius: 2.25 + Math.random() * 3.6
+      };
+    });
+    var w = 0, h = 0, frame = null;
+    var textBoxes = [];
+
+    function resize() {
+      w = hero.clientWidth;
+      h = hero.clientHeight;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var origin = hero.getBoundingClientRect();
+      textBoxes = Array.from(hero.querySelectorAll(
+        '.resume-hero-title, .resume-hero-content p, .resume-hero-links'
+      )).map(function(element) {
+        var box = element.getBoundingClientRect();
+        // Keep the role's quiet area within the name's width so the network
+        // remains visible to the right of the heading.
+        if (element.closest('.lead')) {
+          box = {
+            left: box.left,
+            right: Math.max(box.right, hero.querySelector('.resume-hero-title').getBoundingClientRect().right),
+            top: box.top,
+            bottom: box.bottom
+          };
+        }
+        return {
+          left: box.left - origin.left, right: box.right - origin.left,
+          top: box.top - origin.top, bottom: box.bottom - origin.top
+        };
+      });
+      if (motion.matches) draw();
+    }
+
+    function draw() {
+      frame = null;
+      var t = motion.matches ? 0 : performance.now() / 1000;
+      ctx.clearRect(0, 0, w, h);
+
+      var live = nodes.map(function(node) {
+        return {
+          x: node.x * w + Math.sin(t * node.speed + node.phase) * 18,
+          y: node.y * h + Math.cos(t * node.speed * 0.7 + node.phase) * 14,
+          radius: node.radius
+        };
+      });
+
+      var reach = Math.min(185, w * 0.32);
+      live.forEach(function(a, i) {
+        live.slice(i + 1).forEach(function(b) {
+          var distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (distance >= reach) return;
+          ctx.strokeStyle = 'rgba(100, 100, 100, ' + (0.46 * (1 - distance / reach)) + ')';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        });
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 100, 100, 0.62)';
+        ctx.fill();
+      });
+
+      // Fade the network toward the text side of the hero, leaving it faint
+      // at the column split and fully visible just to its right.
+      var horizontalFade = ctx.createLinearGradient(0, 0, w, 0);
+      horizontalFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      horizontalFade.addColorStop(0.38, 'rgba(0, 0, 0, 0)');
+      horizontalFade.addColorStop(0.425, 'rgba(0, 0, 0, 0.3)');
+      horizontalFade.addColorStop(0.49, 'rgba(0, 0, 0, 1)');
+      horizontalFade.addColorStop(1, 'rgba(0, 0, 0, 1)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.fillStyle = horizontalFade;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+
+      // Keep the network present across the page, but give every text block a
+      // softly cleared region so the reading surface stays quiet.
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.filter = 'blur(22px)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.98)';
+      textBoxes.forEach(function(box) {
+        ctx.fillRect(box.left - 18, box.top - 16,
+          box.right - box.left + 36, box.bottom - box.top + 32);
+      });
+      ctx.restore();
+      if (!motion.matches) frame = requestAnimationFrame(draw);
+    }
+
+    new ResizeObserver(resize).observe(hero);
+    motion.addEventListener('change', function() {
+      resize();
+      if (!motion.matches && !frame) draw();
+    });
+    resize();
+    if (!motion.matches) draw();
+    document.fonts.ready.then(resize);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBanner);
+  } else {
+    initBanner();
+  }
+
+  function initContactCopyButtons() {
+    var contactCodes = {
+      email: [{{ contact.email | char_codes }}],
+      phone: [{{ contact.phone | char_codes }}]
+    };
+
+    function getContact(name) {
+      return contactCodes[name].map(function(code) {
+        return String.fromCharCode(code);
+      }).join('');
+    }
+
+    document.querySelectorAll('.contact-value[data-contact]').forEach(function(contact) {
+      contact.textContent = getContact(contact.getAttribute('data-contact'));
+    });
+
+    document.querySelectorAll('.copy-contact').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var name = button.getAttribute('data-contact');
+        var value = getContact(name);
+        var contact = document.querySelector('.contact-value[data-contact="' + name + '"]');
+        var copiedLabel = button.getAttribute('aria-label').replace(/^Copy /, 'Copied ');
+
+        if (contact) contact.textContent = value;
+
+        function showCopied() {
+          var icon = button.querySelector('i');
+          button.setAttribute('aria-label', copiedLabel);
+          button.setAttribute('title', copiedLabel);
+          button.classList.add('copied');
+          if (icon) icon.className = 'bi bi-check2';
+          window.setTimeout(function() {
+            button.setAttribute('aria-label', copiedLabel.replace(/^Copied /, 'Copy '));
+            button.setAttribute('title', copiedLabel.replace(/^Copied /, 'Copy '));
+            button.classList.remove('copied');
+            if (icon) icon.className = 'bi bi-clipboard';
+          }, 1400);
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(value).then(showCopied);
+          return;
+        }
+
+        var input = document.createElement('textarea');
+        input.value = value;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+        showCopied();
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContactCopyButtons);
+  } else {
+    initContactCopyButtons();
+  }
+})();
+</script>

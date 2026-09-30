@@ -22,8 +22,8 @@ must change.
 
 ## Chapter anatomy
 
-- Cell 0 contains YAML frontmatter with a full descriptive `title` and
-  `categories`. Do not repeat an H1 in the body.
+- Source contains one full-title H1 matching catalog `title`; generated copies
+  receive document metadata. Manage categories through metadata operations.
 - Begin with a lead paragraph, without a heading, that states why the chapter
   exists and how it connects to adjacent chapters.
 - Use prose-first `##` sections. Every code cell must have descriptive
@@ -68,4 +68,4 @@ change. `edit-cell` does not shift indices.
 - The chapter still matches the handoff promised by the index and overview.
 - Equations, figures, tables, annotations, and internal links render correctly.
 - `wt diff` contains only intended notebook content changes.
-- Sidebar labels remain shorter than frontmatter titles.
+- TOC labels remain shorter than full catalog titles.

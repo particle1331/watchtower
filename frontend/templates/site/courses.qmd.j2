@@ -1,0 +1,20 @@
+---
+title: Courses
+page-layout: full
+sidebar: false
+toc: false
+---
+
+::: {.course-grid}
+{% for course in courses %}
+::: {.course-card}
+{% if course.cover_route %}
+[![]({{ course.cover_route }})]({{ course.route }})
+{% endif %}
+## [{{ course.title }}]({{ course.route }})
+{% if course.lifecycle != 'published' %}**{{ course.lifecycle | capitalize }}**{% endif %}
+
+{{ course.description or course.purpose }}
+:::
+{% endfor %}
+:::

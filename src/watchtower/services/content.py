@@ -1,0 +1,613 @@
+"""Validated file-backed content management, independent of HTTP or CLI."""
+from __future__ import annotations
+
+import copy
+import posixpath
+import re
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+from urllib.parse import quote, unquote, urlsplit
+from zoneinfo import ZoneInfo
+
+import nbformat
+import yaml
+from markdown_it import MarkdownIt
+from pydantic import ValidationError
+
+from watchtower.models import (
+    Artifact,
+    Catalog,
+    ChapterPlan,
+    CourseContract,
+    Photos,
+    Portfolio,
+    Profile,
+    SiteSettings,
+    Workspace,
+    displayed_text,
+    eligible,
+    h1s,
+    has_content,
+    markdown_h1s,
+    plan_body,
+    route_for,
+    source_path,
+)
+
+from .workspace import ServiceError, WorkspaceStore, load_yaml, revision
+
+CATALOG = "content/data/catalog.yaml"
+PORTFOLIO = "content/data/portfolio.yaml"
+PROFILE = "content/data/profile.yaml"
+PHOTOS = "content/data/photos.yaml"
+SETTINGS = "frontend/site.yaml"
+
+
+def yaml_bytes(data: Any) -> bytes:
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True).encode()
+
+
+@dataclass(frozen=True)
+class WorkspaceSnapshot:
+    state: Workspace
+    files: dict[str, bytes]
+    revision: str
+
+
+def parse_state(files: dict[str, bytes | None]) -> Workspace:
+    def record(name: str) -> dict[str, Any]:
+        value = files.get(name)
+        if value is None:
+            raise ServiceError(f"required data missing: {name}; run wt migrate before using the new system", paths=[name])
+        return load_yaml(value, name)
+    try:
+        catalog = Catalog.model_validate(record(CATALOG))
+        portfolio = Portfolio.model_validate(record(PORTFOLIO))
+        photos = Photos.model_validate(record(PHOTOS))
+        for artifact in catalog.artifacts:
+            if artifact.kind == "gallery":
+                artifact.lifecycle = "published" if any(photo.lifecycle == "published" for photo in photos.photos) else "planned"
+        profile = Profile.model_validate(record(PROFILE))
+        settings = SiteSettings.model_validate(record(SETTINGS))
+        courses = {}
+        for item in catalog.artifacts:
+            if item.kind == "course":
+                name = f"content/data/courses/{item.id.split('/')[-1]}.yaml"
+                courses[item.id] = CourseContract.model_validate(record(name))
+        return Workspace(artifacts=catalog.artifacts, portfolio=portfolio.entries, courses=courses, photos=photos.photos, profile=profile, settings=settings)
+    except (ValidationError, ValueError) as error:
+        if isinstance(error, ServiceError):
+            raise
+        raise ServiceError(str(error)) from error
+
+
+def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path) -> None:
+    errors: list[str] = []
+    paths: list[str] = []
+    def fail(message: str, path: str = CATALOG) -> None:
+        errors.append(message)
+        paths.append(path)
+    def exists(path: str | None, description: str) -> bool:
+        if not path or files.get(path) is None:
+            fail(f"{description}: missing {path}", path or CATALOG)
+            return False
+        return True
+    def check_assets(notebook: nbformat.NotebookNode, source: str) -> None:
+        def reference(value: str, attachments: dict[str, Any]) -> None:
+            parsed = urlsplit(value)
+            if parsed.scheme in {"https", "http", "data"} or value.startswith("//"):
+                return
+            if parsed.scheme == "attachment":
+                if parsed.path not in attachments:
+                    fail(f"{source}: missing attachment {parsed.path}", source)
+                return
+            if parsed.scheme:
+                fail(f"{source}: unsupported image scheme {parsed.scheme}", source)
+                return
+            path = unquote(parsed.path)
+            target = posixpath.normpath(path.lstrip("/") if path.startswith("/") else posixpath.join(posixpath.dirname(source), path))
+            if path and files.get(target) is None:
+                fail(f"{source}: missing image or media {value}", source)
+        def body(text: str, attachments: dict[str, Any]) -> None:
+            for token in MarkdownIt("commonmark", {"html": True}).parse(text):
+                for child in token.children or []:
+                    if child.type == "image":
+                        reference(str(child.attrGet("src") or ""), attachments)
+                    elif child.type == "html_inline":
+                        for match in re.finditer(r"\bsrc=[\"']([^\"']+)[\"']", child.content):
+                            reference(match[1], attachments)
+                if token.type == "html_block":
+                    for match in re.finditer(r"\bsrc=[\"']([^\"']+)[\"']", token.content):
+                        reference(match[1], attachments)
+        for cell in notebook.cells:
+            attachments = cell.get("attachments", {})
+            if cell.cell_type == "markdown":
+                body(cell.source, attachments)
+            for output in cell.get("outputs", []):
+                for mime in ("text/html", "text/markdown"):
+                    data = output.get("data", {}).get(mime)
+                    if isinstance(data, str):
+                        body(data, attachments)
+    artifacts = {a.id: a for a in state.artifacts}
+    if len(artifacts) != len(state.artifacts):
+        fail("duplicate artifact IDs")
+    details = {p.id: p for p in state.portfolio}
+    if len(details) != len(state.portfolio):
+        fail("duplicate portfolio IDs", PORTFOLIO)
+    portfolio_ids = {a.id for a in state.artifacts if a.kind == "portfolio"}
+    if portfolio_ids != set(details):
+        fail("portfolio detail IDs must exactly match catalog portfolio IDs", PORTFOLIO)
+    routes: set[str] = set()
+    sources: set[str] = set()
+    for artifact in state.artifacts:
+        for related in artifact.relations:
+            if related not in artifacts:
+                fail(f"{artifact.id}: unknown relation {related}")
+        if artifact.kind != "project":
+            route = route_for(artifact)
+            if route in routes:
+                fail(f"duplicate route {route}")
+            routes.add(route)
+        if artifact.cover:
+            exists(artifact.cover, f"{artifact.id} cover image")
+        if artifact.kind == "project":
+            key = f"@dir/{artifact.path}"
+            if key not in files:
+                fail(f"{artifact.id}: project directory missing", str(artifact.path))
+            continue
+        if artifact.kind == "gallery":
+            expected = "published" if any(photo.lifecycle == "published" for photo in state.photos) else "planned"
+            if artifact.lifecycle != expected:
+                fail(f"{artifact.id}: gallery lifecycle is derived from photo states; expected {expected}", PHOTOS)
+            continue
+        source = source_path(artifact, state)
+        if source:
+            if source in sources:
+                fail(f"duplicate authored source {source}", source)
+            sources.add(source)
+        value = files.get(source or "")
+        if value is None:
+            if artifact.lifecycle != "planned":
+                fail(f"{artifact.id}: {artifact.lifecycle} requires authored notebook", source or CATALOG)
+        else:
+            try:
+                notebook = nbformat.reads(value.decode(), as_version=4)
+                nbformat.validate(notebook)
+                check_assets(notebook, str(source))
+                if artifact.kind == "chapter" and h1s(notebook) != [artifact.title]:
+                    fail(f"{artifact.id}: expected exactly one H1 matching '{artifact.title}', found {h1s(notebook)}", str(source))
+                content = has_content(notebook, artifact.title)
+                if (artifact.lifecycle == "planned") == content:
+                    fail(f"{artifact.id}: planned must have no authored content; draft/published must have content", str(source))
+                for cell in notebook.cells:
+                    if cell.cell_type == "markdown":
+                        header = re.match(r"\A\s*---\s*\n(.*?)\n---(?:\s*\n|$)", cell.source, re.S)
+                        if header and isinstance(yaml.safe_load(header[1]), dict):
+                            fail(f"{artifact.id}: document front matter belongs in generated copies", str(source))
+            except (ValueError, nbformat.ValidationError, yaml.YAMLError) as error:
+                fail(f"{artifact.id}: invalid notebook: {error}", str(source))
+        if artifact.kind == "portfolio" and artifact.id in details:
+            detail = details[artifact.id]
+            if artifact.lifecycle != "planned":
+                for field in ("abstract", "figure_path", "figure_caption", "notebook_path", "project_name"):
+                    if not getattr(detail, field):
+                        fail(f"{artifact.id}: {field} required for {artifact.lifecycle}", PORTFOLIO)
+            if detail.figure_path:
+                exists(detail.figure_path, f"{artifact.id} figure")
+            if detail.project_path:
+                prefix = f"archive/{detail.archive_date}/projects" if detail.project_source == "archived" else "projects"
+                key = f"@dir/{detail.project_path}"
+                resolved = files.get(key)
+                if resolved is None:
+                    fail(f"{artifact.id}: missing project directory {detail.project_path}", PORTFOLIO)
+                elif not Path(resolved.decode()).is_relative_to(root / prefix):
+                    fail(f"{artifact.id}: project symlink escapes selected project root", PORTFOLIO)
+                for related in artifact.relations:
+                    target = artifacts.get(related)
+                    if target and target.kind == "project" and target.path != detail.project_path:
+                        fail(f"{artifact.id}: project relation points to different code directory", PORTFOLIO)
+        if artifact.kind == "chapter":
+            parent = artifacts.get(str(artifact.parent))
+            if parent is None or parent.kind != "course":
+                fail(f"{artifact.id}: parent must reference a course")
+    for course_id, course in state.courses.items():
+        name = f"content/data/courses/{course_id.split('/')[-1]}.yaml"
+        if course.id != course_id:
+            fail(f"{course_id}: contract ID mismatch", name)
+        section_ids = [section.id for section in course.toc]
+        if len(section_ids) != len(set(section_ids)):
+            fail(f"{course_id}: duplicate section IDs", name)
+        seen: list[str] = []
+        for section in course.toc:
+            for chapter_id in section.chapters:
+                seen.append(chapter_id)
+                chapter = artifacts.get(chapter_id)
+                if chapter is None or chapter.kind != "chapter" or chapter.parent != course_id or chapter.section != section.id:
+                    fail(f"{course_id}: invalid chapter membership {chapter_id} in {section.id}", name)
+        expected = {a.id for a in state.artifacts if a.kind == "chapter" and a.parent == course_id}
+        if len(seen) != len(set(seen)) or set(seen) != expected:
+            fail(f"{course_id}: every chapter must occur exactly once in TOC", name)
+        plans = course.planned.get("chapters", [])
+        planned_ids: set[str] = set()
+        if not isinstance(plans, list):
+            fail(f"{course_id}: planned.chapters must be a list", name)
+            plans = []
+        for raw in plans:
+            try:
+                plan = ChapterPlan.model_validate(raw)
+            except ValidationError as error:
+                fail(f"{course_id}: invalid chapter plan: {error}", name)
+                continue
+            chapter = artifacts.get(plan.chapter_id)
+            if plan.chapter_id in planned_ids or chapter is None or chapter.parent != course_id or chapter.section != plan.section:
+                fail(f"{course_id}: duplicate, foreign, or mismatched plan {plan.chapter_id}", name)
+            planned_ids.add(plan.chapter_id)
+            if markdown_h1s(plan.content) or markdown_h1s(plan.lab_and_evidence):
+                fail(f"{plan.chapter_id}: plan bodies must not contain H1 headings", name)
+            if chapter and chapter.lifecycle == "planned" and not (plan.content.strip() and plan.lab_and_evidence.strip()):
+                fail(f"{plan.chapter_id}: both plan sections required", name)
+        for chapter_id in expected:
+            if artifacts[chapter_id].lifecycle == "planned" and chapter_id not in planned_ids:
+                fail(f"{chapter_id}: missing chapter plan", name)
+        if course.overview and course.overview not in expected:
+            fail(f"{course_id}: overview must reference own chapter", name)
+    for photo in state.photos:
+        exists(photo.path, "gallery image")
+    for project in state.profile.projects:
+        if project.artifact_id and project.artifact_id not in artifacts:
+            fail(f"profile project: unknown artifact {project.artifact_id}", PROFILE)
+    for name in files:
+        if name.startswith("content/notebooks/") and name.endswith(".ipynb") and name not in sources:
+            fail(f"unregistered active notebook: {name}", name)
+    if errors:
+        raise ServiceError("\n".join(errors), paths=sorted(set(paths)))
+
+
+class ContentService:
+    def __init__(self, root: Path | None = None):
+        self.root = (root or Path.cwd()).resolve()
+        self.store = WorkspaceStore(self.root)
+
+    def _snapshot(self) -> WorkspaceSnapshot:
+        files = self.store.inputs()
+        state = parse_state(files)
+        validate_state(state, files, self.root)
+        after = self.store.inputs()
+        if revision(files) != revision(after):
+            raise ServiceError("inputs changed while capturing snapshot", code="conflict", status=412)
+        return WorkspaceSnapshot(state, {p: b for p, b in files.items() if b is not None and not p.startswith("@dir/")}, revision(files))
+
+    def snapshot(self) -> WorkspaceSnapshot:
+        with self.store.locked():
+            return self._snapshot()
+
+    def validate(self) -> dict[str, Any]:
+        snapshot = self.snapshot()
+        return {"valid": True, "revision": snapshot.revision, "artifacts": len(snapshot.state.artifacts)}
+
+    def list(self, kind: str | None = None) -> dict[str, Any]:
+        with self.store.locked():
+            files = self.store.inputs()
+            catalog = load_yaml(files[CATALOG] or b"", CATALOG)
+            return {"artifacts": [a for a in catalog["artifacts"] if kind is None or a.get("kind") == kind], "revision": revision(files)}
+
+    def inspect(self, artifact_id: str) -> dict[str, Any]:
+        with self.store.locked():
+            files = self.store.inputs()
+            state = parse_state(files)
+            artifact = next((a for a in state.artifacts if artifact_id in {a.id, a.path}), None)
+            if artifact is None:
+                raise ServiceError(f"unknown artifact: {artifact_id}", code="not_found", status=404)
+            path = source_path(artifact, state)
+            existing = bool(path and files.get(path) is not None)
+            result = {"artifact": artifact.model_dump(mode="json"), "revision": revision(files), "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / str(path)), safe="/") if existing else None, "eligible": eligible(artifact, state.artifacts), "plan": plan_body(artifact, state), "route": route_for(artifact)}
+            if artifact.kind == "portfolio":
+                result["detail"] = next(p.model_dump(mode="json") for p in state.portfolio if p.id == artifact.id)
+            if artifact.kind == "course":
+                result["contract"] = state.courses[artifact.id].model_dump(mode="json")
+            if artifact.kind == "chapter":
+                result["chapter_plan"] = next((p for p in state.courses[str(artifact.parent)].planned.get("chapters", []) if p.get("chapter_id") == artifact.id), None)
+            try:
+                validate_state(state, files, self.root)
+                result["errors"] = []
+            except ServiceError as error:
+                result["errors"] = [error.as_dict()]
+            return result
+
+    def _mutate(self, operation: str, callback: Any, expected_revision: str | None) -> dict[str, Any]:
+        with self.store.locked():
+            original = self.store.inputs()
+            token = revision(original)
+            if expected_revision is not None and expected_revision.strip('"') != token:
+                raise ServiceError(f"stale workspace revision; current revision {token}", code="conflict", status=412, paths=[CATALOG])
+            # Loading deliberately does not validate the old semantic state.
+            candidate = copy.deepcopy(original)
+            try:
+                result, writes = callback(candidate)
+                candidate.update(writes)
+                state = parse_state(candidate)
+                validate_state(state, candidate, self.root)
+            except (ValidationError, KeyError, TypeError) as error:
+                raise ServiceError(f"invalid candidate: {error}") from error
+            transaction = self.store.commit(writes, original, operation)
+            result.update(revision=revision(self.store.inputs()), transaction=transaction)
+            return result
+
+    @staticmethod
+    def _catalog(files: dict[str, bytes | None]) -> dict[str, Any]:
+        catalog = load_yaml(files.get(CATALOG) or b"", CATALOG)
+        if not isinstance(catalog.get("artifacts"), list):
+            raise ServiceError("catalog artifacts must be a list", paths=[CATALOG])
+        return catalog
+
+    @staticmethod
+    def _find(catalog: dict[str, Any], artifact_id: str) -> dict[str, Any]:
+        record = next((a for a in catalog["artifacts"] if artifact_id in {a.get("id"), a.get("path")}), None)
+        if record is None:
+            raise ServiceError(f"unknown artifact {artifact_id}", code="not_found", status=404)
+        return record
+
+    def create(self, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            payload = copy.deepcopy(data)
+            detail, contract = payload.pop("detail", None), payload.pop("contract", None)
+            plan_content, plan_lab = payload.pop("planned_content", None), payload.pop("planned_lab_and_evidence", None)
+            payload.setdefault("lifecycle", "planned")
+            if payload.get("kind") == "chapter":
+                payload["lifecycle"] = "planned"
+            settings = SiteSettings.model_validate(load_yaml(files[SETTINGS] or b"", SETTINGS))
+            if payload.get("kind") in {"post", "personal"}:
+                payload.setdefault("date", datetime.now(ZoneInfo(settings.timezone)).date().isoformat())
+            artifact = Artifact.model_validate(payload)
+            catalog = self._catalog(files)
+            if any(a.get("id") == artifact.id for a in catalog["artifacts"]):
+                raise ServiceError(f"ID already registered: {artifact.id}")
+            catalog["artifacts"].append(artifact.model_dump(mode="json", exclude_none=True))
+            writes = {CATALOG: yaml_bytes(catalog)}
+            if artifact.kind == "portfolio":
+                portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
+                portfolio["entries"].append({"id": artifact.id, **(detail or {})})
+                writes[PORTFOLIO] = yaml_bytes(portfolio)
+            if artifact.kind == "course":
+                name = f"content/data/courses/{artifact.id.split('/')[-1]}.yaml"
+                if files.get(name) is not None:
+                    raise ServiceError("course contract already exists", paths=[name])
+                writes[name] = yaml_bytes({"id": artifact.id, "purpose": "", "audience": "", "planned": {"summary": "", "chapters": []}, "actualized": {"summary": ""}, "toc": [{"id": "main", "title": "", "chapters": []}], **(contract or {})})
+            if artifact.kind == "chapter":
+                name = f"content/data/courses/{str(artifact.parent).split('/')[-1]}.yaml"
+                course = load_yaml(files.get(name) or b"", name)
+                section = next((s for s in course["toc"] if s["id"] == artifact.section), None)
+                if section is None:
+                    raise ServiceError("unknown course section", paths=[name])
+                section["chapters"].append(artifact.id)
+                course["planned"].setdefault("chapters", []).append({"chapter_id": artifact.id, "section": artifact.section, "content": plan_content or "", "lab_and_evidence": plan_lab or ""})
+                writes[name] = yaml_bytes(course)
+            return {"artifact": artifact.model_dump(mode="json")}, writes
+        return self._mutate("create", apply, expected_revision)
+
+    def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            catalog = self._catalog(files)
+            record = self._find(catalog, artifact_id)
+            before = copy.deepcopy(record)
+            updates = copy.deepcopy(patch)
+            if record["kind"] == "gallery" and "lifecycle" in updates:
+                raise ServiceError("Change each photo's lifecycle in Personal; gallery lifecycle is derived automatically", paths=[PHOTOS])
+            detail, plan = updates.pop("detail", None), updates.pop("plan", None)
+            if "id" in updates or "kind" in updates:
+                raise ServiceError("stable ID and artifact kind cannot be changed")
+            record.update(updates)
+            normalized = Artifact.model_validate(record)
+            record.clear()
+            record.update(normalized.model_dump(mode="json", exclude_none=True))
+            writes: dict[str, bytes] = {}
+            if detail is not None:
+                portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
+                target = next((p for p in portfolio["entries"] if p["id"] == record["id"]), None)
+                if target is None:
+                    raise ServiceError("no portfolio detail to update")
+                target.update(detail)
+                writes[PORTFOLIO] = yaml_bytes(portfolio)
+            if record["kind"] == "chapter":
+                if record.get("parent") != before.get("parent"):
+                    raise ServiceError("moving chapters between courses requires an explicit import")
+                name = f"content/data/courses/{record['parent'].split('/')[-1]}.yaml"
+                course = load_yaml(files[name] or b"", name)
+                section = next((s for s in course["toc"] if s["id"] == record["section"]), None)
+                if section is None:
+                    raise ServiceError("unknown course section", paths=[name])
+                if record["section"] != before["section"]:
+                    for item in course["toc"]:
+                        item["chapters"] = [c for c in item["chapters"] if c != record["id"]]
+                    section["chapters"].append(record["id"])
+                existing = next((p for p in course["planned"].get("chapters", []) if p["chapter_id"] == record["id"]), None)
+                if existing is not None:
+                    existing.update(plan or {})
+                    existing["section"] = record["section"]
+                elif plan is not None:
+                    course["planned"].setdefault("chapters", []).append({"chapter_id": record["id"], "section": record["section"], **plan})
+                writes[name] = yaml_bytes(course)
+                source = record["path"]
+                if record["title"] != before["title"] and files.get(source) is not None:
+                    notebook = nbformat.reads((files[source] or b"").decode(), as_version=4)
+                    if h1s(notebook) != [before["title"]]:
+                        raise ServiceError("existing H1 differs from old title; repair source first", paths=[source])
+                    from markdown_it import MarkdownIt
+                    for cell in notebook.cells:
+                        if cell.cell_type != "markdown":
+                            continue
+                        tokens = MarkdownIt().parse(cell.source)
+                        for index, token in enumerate(tokens):
+                            if token.type == "heading_open" and token.tag == "h1" and displayed_text(tokens[index + 1]) == before["title"] and token.map:
+                                lines = cell.source.splitlines()
+                                lines[token.map[0]:token.map[1]] = [f"# {record['title']}"]
+                                cell.source = "\n".join(lines)
+                    writes[source] = nbformat.writes(notebook).encode()
+            writes[CATALOG] = yaml_bytes(catalog)
+            candidate = dict(files)
+            candidate.update(writes)
+            state = parse_state(candidate)
+            affected = [{"id": a.id, "eligible": eligible(a, state.artifacts)} for a in state.artifacts if a.parent == record["id"]]
+            return {"artifact": record, "affected_children": affected}, writes
+        return self._mutate("update", apply, expected_revision)
+
+    def start(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            catalog = self._catalog(files)
+            record = self._find(catalog, artifact_id)
+            if record["lifecycle"] != "planned" or record["kind"] not in {"post", "chapter", "portfolio", "personal", "course"}:
+                raise ServiceError("start requires a planned notebook entry")
+            state = parse_state(files)
+            artifact = next(a for a in state.artifacts if a.id == record["id"])
+            if artifact.kind == "portfolio":
+                detail = next(p for p in state.portfolio if p.id == artifact.id)
+                if not all(detail.planned.get(field, "").strip() for field in ("introduction", "what_it_contains")):
+                    raise ServiceError("portfolio start requires planned.introduction and planned.what_it_contains", paths=[PORTFOLIO])
+            path = source_path(artifact, state)
+            if path is None:
+                raise ServiceError("configure notebook_path before starting")
+            if self.store.safe_path(path).exists() or files.get(path) is not None:
+                raise ServiceError("start refuses an existing source notebook", code="conflict", status=412, paths=[path])
+            body = plan_body(artifact, state)
+            if not body.strip():
+                raise ServiceError("supply planning content before starting")
+            if len(body) > 20_000:
+                raise ServiceError("starter body exceeds the 20,000-character cell limit; shorten the persisted plan before starting")
+            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body)], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
+            record["lifecycle"] = "draft"
+            return {"artifact": record, "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / path), safe="/")}, {CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()}
+        return self._mutate("start", apply, expected_revision)
+
+    def publish(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
+        with self.store.locked():
+            files = self.store.inputs()
+            if expected_revision is not None and expected_revision.strip('"') != revision(files):
+                raise ServiceError("stale workspace revision", code="conflict", status=412, paths=[CATALOG])
+            catalog = self._catalog(files)
+            record = self._find(catalog, artifact_id)
+            if record["visibility"] != "public":
+                raise ServiceError("publishing requires public visibility")
+            if record["kind"] == "chapter":
+                parent = self._find(catalog, record["parent"])
+                if parent["visibility"] != "public" or parent["lifecycle"] != "published":
+                    raise ServiceError("publish the public parent course first")
+            captured = revision(files)
+        return self.update(artifact_id, {"lifecycle": "published"}, expected_revision or captured)
+
+    def draft(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
+        with self.store.locked():
+            files = self.store.inputs()
+            if expected_revision is not None and expected_revision.strip('"') != revision(files):
+                raise ServiceError("stale workspace revision", code="conflict", status=412, paths=[CATALOG])
+            record = self._find(self._catalog(files), artifact_id)
+            if record["lifecycle"] != "published":
+                raise ServiceError("draft returns published entries to draft; use start for planned content")
+            captured = revision(files)
+        return self.update(artifact_id, {"lifecycle": "draft"}, expected_revision or captured)
+
+    def _data_path(self, name: str) -> str:
+        names = {"profile": PROFILE, "portfolio": PORTFOLIO, "photos": PHOTOS, "settings": SETTINGS}
+        if name.startswith("course/") and re.fullmatch(r"[\w-]+", name[7:]):
+            return f"content/data/courses/{name[7:]}.yaml"
+        if name not in names:
+            raise ServiceError("unknown structured record", code="not_found", status=404)
+        return names[name]
+
+    def read_data(self, name: str) -> dict[str, Any]:
+        with self.store.locked():
+            files = self.store.inputs()
+            path = self._data_path(name)
+            return {"data": load_yaml(files.get(path) or b"", path), "revision": revision(files)}
+
+    def update_data(self, name: str, payload: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+        if name == "photos":
+            return self.update_gallery(payload, expected_revision)
+        path = self._data_path(name)
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            return {"data": payload}, {path: yaml_bytes(payload)}
+        return self._mutate(f"update {name}", apply, expected_revision)
+
+    def plan_file(self, name: str) -> str:
+        path = self.store.safe_path(name)
+        if not path.resolve().is_relative_to(self.root / ".tmp") or not path.is_file():
+            raise ServiceError("plan files must be existing files under <repo>/.tmp/", paths=[name])
+        return path.read_text(encoding="utf-8")
+
+    def install_migration(self, writes: dict[str, bytes], expected_revision: str | None = None) -> dict[str, Any]:
+        return self._mutate("migrate", lambda files: ({"migrated": True}, writes), expected_revision)
+
+    def batch(self, updates: list[dict[str, Any]], data: dict[str, dict[str, Any]], expected_revision: str | None = None) -> dict[str, Any]:
+        """Repair several related records, validating the combined final state."""
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            catalog = self._catalog(files)
+            changed = []
+            for update in updates:
+                record = self._find(catalog, update["id"])
+                patch = update["patch"]
+                if "id" in patch or "kind" in patch:
+                    raise ServiceError("batch cannot change stable IDs or kinds")
+                record.update(patch)
+                normalized = Artifact.model_validate(record).model_dump(mode="json", exclude_none=True)
+                record.clear()
+                record.update(normalized)
+                changed.append(normalized)
+            writes = {self._data_path(name): yaml_bytes(payload) for name, payload in data.items()}
+            if "photos" in data:
+                photos = Photos.model_validate(data["photos"])
+                lifecycle = "published" if any(photo.lifecycle == "published" for photo in photos.photos) else "planned"
+                for record in catalog["artifacts"]:
+                    if record["kind"] == "gallery":
+                        record["lifecycle"] = lifecycle
+            writes[CATALOG] = yaml_bytes(catalog)
+            return {"artifacts": changed, "data": data}, writes
+        return self._mutate("batch", apply, expected_revision)
+
+    def update_gallery(self, payload: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+        with self.store.locked():
+            files = self.store.inputs()
+            galleries = [a for a in self._catalog(files)["artifacts"] if a["kind"] == "gallery"]
+            captured = revision(files)
+        if len(galleries) != 1:
+            raise ServiceError("gallery save requires exactly one registered gallery")
+        return self.batch([], {"photos": payload}, expected_revision or captured)
+
+    def import_notebook(self, source: Path, kind: str, name: str, *, course: str | None = None, section: str | None = None, title: str | None = None, expected_revision: str | None = None) -> dict[str, Any]:
+        """Import through the supported normalizer, preserving cells and outputs."""
+        from .migration import normalize_notebook, read_source_notebook
+        if kind not in {"post", "personal", "chapter"} or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
+            raise ServiceError("import requires a safe notebook name and post/personal/chapter kind")
+        notebook, header = normalize_notebook(read_source_notebook(source))
+        title = title or header.get("title") or name.replace("-", " ").title()
+        if kind == "chapter":
+            if not course or not re.fullmatch(r"[\w-]+", course.removeprefix("course/")):
+                raise ServiceError("chapter import requires a course slug")
+            course = course.removeprefix("course/")
+            notebook, _ = normalize_notebook(notebook, chapter_title=title)
+        lifecycle = "draft" if has_content(notebook, title) else "planned"
+        tier = f"courses/{course}" if kind == "chapter" else "posts" if kind == "post" else "personal"
+        path = f"content/notebooks/{tier}/{name}.ipynb"
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            if files.get(path) is not None or self.store.safe_path(path).exists():
+                raise ServiceError("import refuses existing destination", code="conflict", status=412, paths=[path])
+            catalog = self._catalog(files)
+            artifact_id = f"course/{course}/{name}" if kind == "chapter" else f"{kind}/{name}"
+            record: dict[str, Any] = {"id": artifact_id, "kind": kind, "title": title, "path": path, "lifecycle": lifecycle, "categories": header.get("categories", []), "description": header.get("description"), "date": str(header["date"]) if header.get("date") else None}
+            writes: dict[str, bytes] = {}
+            if kind == "chapter":
+                contract_path = f"content/data/courses/{course}.yaml"
+                contract = load_yaml(files.get(contract_path) or b"", contract_path)
+                selected = next((s for s in contract["toc"] if section is None or s["id"] == section), None)
+                if selected is None:
+                    raise ServiceError("unknown course section")
+                record.update(parent=f"course/{course}", section=selected["id"], toc_title=title)
+                selected["chapters"].append(artifact_id)
+                if lifecycle == "planned":
+                    raise ServiceError("empty chapter imports require a plan; use new chapter instead")
+                writes[contract_path] = yaml_bytes(contract)
+            artifact = Artifact.model_validate(record)
+            catalog["artifacts"].append(artifact.model_dump(mode="json", exclude_none=True))
+            writes.update({CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()})
+            return {"artifact": artifact.model_dump(mode="json")}, writes
+        return self._mutate("import", apply, expected_revision)

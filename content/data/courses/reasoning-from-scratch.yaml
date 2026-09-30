@@ -1,0 +1,69 @@
+id: course/reasoning-from-scratch
+purpose: 'Explain and reproduce the main stages used to add reasoning behavior to
+  a pretrained language model: inference-time scaling, reinforcement learning, and
+  distillation, with evaluation used to decide whether each change helps.'
+audience: Python programmers who understand basic neural networks and
+  language-model inference and want a practical, evidence-based introduction to
+  reasoning methods without training a foundation model from scratch.
+planned:
+  summary: Start from a pretrained Qwen3 base model, establish a task and
+    evaluation contract, then compare ordinary generation with test-time scaling
+    and self-refinement. Continue with reward-driven fine-tuning using RL and
+    GRPO, and finish by distilling reasoning behavior into a smaller, faster
+    model. The notebooks follow the main progression of Sebastian Raschka's
+    reasoning-from-scratch repository while making compute costs and limits
+    explicit.
+  source: https://github.com/rasbt/reasoning-from-scratch
+  chapters:
+  - chapter_id: course/reasoning-from-scratch/00-overview
+    section: orientation
+    summary: Map the model lineage, methods, execution paths, and evidence
+      required for defensible claims.
+  - chapter_id: course/reasoning-from-scratch/01-introduction
+    section: orientation
+    summary: Define reasoning behavior, the pretrained starting point, scope,
+      and limits of the phrase “from scratch.”
+  - chapter_id: course/reasoning-from-scratch/02-generation
+    section: orientation
+    summary: Load Qwen3, format prompts, generate answers, and understand
+      decoding controls.
+  - chapter_id: course/reasoning-from-scratch/03-evaluation
+    section: orientation
+    summary: Build a small reproducible reasoning evaluation with answer
+      parsing, exact-match checks, and error analysis.
+  - chapter_id: course/reasoning-from-scratch/04-inference-scaling
+    section: orientation
+    summary: Compare chain-of-thought prompting, multiple sampled candidates,
+      self-consistency, and best-of-N under a fixed compute budget.
+  - chapter_id: course/reasoning-from-scratch/05-self-refinement
+    section: orientation
+    summary: Implement draft, critique, and revision loops; measure whether
+      additional inference improves correctness and cost.
+  - chapter_id: course/reasoning-from-scratch/06-reinforcement-learning
+    section: orientation
+    summary: Connect verifiable rewards to policy updates and reproduce a small
+      RLVR/GRPO training path.
+  - chapter_id: course/reasoning-from-scratch/07-grpo
+    section: orientation
+    summary: Examine group-relative optimization, stabilizing improvements,
+      reward design, and training diagnostics.
+  - chapter_id: course/reasoning-from-scratch/08-distillation
+    section: orientation
+    summary: Generate teacher traces, fine-tune a smaller student, and compare
+      quality, latency, and token use.
+actualized:
+  summary: ''
+toc:
+- id: orientation
+  title: ''
+  chapters:
+  - course/reasoning-from-scratch/01-introduction
+  - course/reasoning-from-scratch/00-overview
+  - course/reasoning-from-scratch/02-generation
+  - course/reasoning-from-scratch/03-evaluation
+  - course/reasoning-from-scratch/04-inference-scaling
+  - course/reasoning-from-scratch/05-self-refinement
+  - course/reasoning-from-scratch/06-reinforcement-learning
+  - course/reasoning-from-scratch/07-grpo
+  - course/reasoning-from-scratch/08-distillation
+overview: course/reasoning-from-scratch/00-overview

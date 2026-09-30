@@ -385,7 +385,7 @@ def edit_cell(
     i = _resolve_unique_cell(nb, index=index, tag=tag, label=label)
     check_source_limit(source)
     nb["cells"][i]["source"] = source
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return path
 
 
@@ -404,7 +404,7 @@ def append_cell(
     nb = read_notebook(path)
     check_source_limit(source)
     nb["cells"].append(_new_cell(cell_type, source))
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return path
 
 
@@ -441,7 +441,7 @@ def insert_cell(
             f"(notebook has {len(nb['cells'])} cells)."
         )
     nb["cells"].insert(position, _new_cell(cell_type, source))
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return path
 
 
@@ -465,7 +465,7 @@ def remove_cell(
         )
     for i in sorted(idxs, reverse=True):
         del nb["cells"][i]
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return path
 
 
@@ -506,7 +506,7 @@ def clear_outputs(
         )
     for i in code_idxs:
         nb["cells"][i]["outputs"] = []
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return path
 
 
@@ -539,7 +539,7 @@ def tag_cell(
         s.add(t)
     new_tags = sorted(s)
     cell.setdefault("metadata", {})["tags"] = new_tags
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return path
 
 
@@ -559,7 +559,7 @@ def _git_root() -> Path:
     return Path(proc.stdout.strip())
 
 
-def diff_notebook(name: str, base: str = "HEAD") -> str | None:
+def diff_notebook(name: str, base: str = "HEAD", base_source: str | None = None) -> str | None:
     """Markdown diff of a notebook against a git ref (default HEAD).
 
     Both sides are rendered with the same JSON-stripped cell rendering used
@@ -571,14 +571,17 @@ def diff_notebook(name: str, base: str = "HEAD") -> str | None:
     path = resolve_ipynb(name)
     root = _git_root()
     rel = path.resolve().relative_to(root)
+    original = Path(base_source) if base_source else rel
+    if original.is_absolute() or ".." in original.parts:
+        raise ValueError("--base-source must be repository-relative")
     ls = subprocess.run(
-        ["git", "ls-files", "--error-unmatch", str(rel)],
+        ["git", "ls-files", "--error-unmatch", str(original)],
         capture_output=True, text=True,
     )
     if ls.returncode != 0:
         raise ValueError(f"{rel} is not tracked by git (new file — nothing to diff).")
     proc = subprocess.run(
-        ["git", "show", f"{base}:{rel}"],
+        ["git", "show", f"{base}:{original}"],
         capture_output=True, text=True,
     )
     if proc.returncode != 0:
@@ -599,7 +602,20 @@ def diff_notebook(name: str, base: str = "HEAD") -> str | None:
     new_lines = render(new_nb)
     diff = difflib.unified_diff(
         old_lines, new_lines,
-        fromfile=f"{base}:{rel}", tofile=str(rel), n=2, lineterm="",
+        fromfile=f"{base}:{original}", tofile=str(rel), n=2, lineterm="",
     )
     out = "\n".join(diff)
     return out or None
+
+
+from .services.notebooks import managed, write_notebook  # noqa: E402
+
+count_cells = managed(count_cells)
+cat_notebook = managed(cat_notebook)
+edit_cell = managed(edit_cell)
+append_cell = managed(append_cell)
+insert_cell = managed(insert_cell)
+remove_cell = managed(remove_cell)
+clear_outputs = managed(clear_outputs)
+tag_cell = managed(tag_cell)
+diff_notebook = managed(diff_notebook)

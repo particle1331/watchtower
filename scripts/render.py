@@ -24,6 +24,26 @@ def render_pdf() -> Path:
     if not name:
         raise ValueError("pass NOTEBOOK=nb/posts/<name>.ipynb to make render")
 
+    if (ROOT_PATH / "content/data/catalog.yaml").exists():
+        from watchtower.models import route_for
+        from watchtower.services.build import BuildService
+        from watchtower.services.content import ContentService
+        state = ContentService(ROOT_PATH).snapshot().state
+        target = next((a for a in state.artifacts if name in {a.id, a.path}), None)
+        if target is None:
+            raise ValueError("NOTEBOOK must identify a registered notebook path or artifact ID")
+        stage = BuildService(ROOT_PATH).generate("preview")
+        source = stage / route_for(target)
+        if source.suffix != ".ipynb":
+            raise ValueError("selected artifact is not notebook-backed")
+        subprocess.run(["quarto", "render", str(source), "--to", "pdf", "--no-execute"], cwd=stage, check=True, env=quarto_env())
+        result = stage / "_site" / Path(route_for(target)).with_suffix(".pdf")
+        if not result.exists():
+            result = source.with_suffix(".pdf")
+        if not result.exists():
+            raise FileNotFoundError("Quarto produced no notebook PDF")
+        return result
+
     source = Path(name)
     if source.suffix == "":
         source = source.with_suffix(".ipynb")

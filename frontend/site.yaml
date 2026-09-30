@@ -1,0 +1,21 @@
+repository_url: https://github.com/particle1331/watchtower
+source_ref: main
+timezone: Asia/Manila
+quarto:
+  bibliography: assets/references.bib
+  format:
+    html:
+      theme: united
+      lightbox: true
+      html-math-method: katex
+      highlight-annotations: true
+      toc: true
+      toc-location: right
+      css: assets/styles.css
+  website:
+    title: Ron Medina ∷ AI & ML
+    back-to-top-navigation: true
+    page-navigation: true
+    bread-crumbs: true
+    reader-mode: true
+    favicon: assets/favicon.jpg

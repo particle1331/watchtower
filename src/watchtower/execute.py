@@ -97,7 +97,7 @@ def run_notebook(
     if code_count == 0:
         return {"ran": 0, "errors": [], "path": path}
     _execute(nb, kernel=kernel_name, timeout=timeout)
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return {"ran": code_count, "errors": _collect_errors(nb), "path": path}
 
 
@@ -124,9 +124,14 @@ def _run_single_cell(
     executed = temp["cells"][index]
     cell["outputs"] = executed.get("outputs", [])
     cell["execution_count"] = executed.get("execution_count")
-    nbformat.write(nb, path)
+    write_notebook(nb, path)
     return {
         "ran": sum(1 for c in temp["cells"] if c.get("cell_type") == "code"),
         "errors": _collect_errors(temp),
         "path": path,
     }
+
+
+from .services.notebooks import managed, write_notebook  # noqa: E402
+
+run_notebook = managed(run_notebook)

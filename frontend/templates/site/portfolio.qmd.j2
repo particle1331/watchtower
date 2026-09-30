@@ -1,0 +1,41 @@
+---
+title: Portfolio
+page-layout: full
+sidebar: false
+toc: false
+---
+
+Selected projects and their accompanying notebooks.
+
+::: {.portfolio-layout}
+::: {.portfolio-main}
+{% for entry in entries %}
+::: {.portfolio-project #{{ entry.anchor }}}
+## {{ entry.title }}
+{% if entry.lifecycle != 'published' %}
+**{{ entry.lifecycle | capitalize }}**
+{% endif %}
+**Abstract**
+
+{{ entry.abstract }}
+
+{% if entry.figure %}
+![{{ entry.figure_caption }}]({{ entry.figure }})
+{% endif %}
+[View notebook →]({{ entry.route }}){% if entry.source_url %} · [{{ entry.source_label }}]({{ entry.source_url }}){% endif %}
+
+:::
+{% endfor %}
+:::
+::: {.portfolio-sidebar}
+### Projects
+{% for entry in entries %}
+- [{{ entry.title }}](#{{ entry.anchor }})
+{% endfor %}
+
+### Explore
+- [Posts](posts.qmd)
+- [Courses](courses.qmd)
+- [Résumé](resume.qmd)
+:::
+:::

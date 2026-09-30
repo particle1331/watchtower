@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-labelledby="title desc">
+  <title id="title">Change Planner investigation flow</title>
+  <desc id="desc">A repository snapshot is indexed and searched. A LangGraph investigation connects evidence to tests and history before producing a reviewable plan.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M1 1 L8 4.5 L1 8" fill="none" stroke="#e95420" stroke-width="1.7"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="898" height="298" rx="14" fill="#f8f8f8" stroke="#dedede"/>
+  <text x="36" y="43" fill="#343a40" font-family="system-ui, sans-serif" font-size="20" font-weight="650">Evidence before a code change</text>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect x="30" y="94" width="185" height="122" rx="10" fill="#ffffff" stroke="#c9c9c9"/>
+    <text x="122" y="141" fill="#343a40" font-size="17" font-weight="650">Repository snapshot</text>
+    <text x="122" y="168" fill="#626970" font-size="14">Code, tests, history</text>
+    <rect x="248" y="94" width="185" height="122" rx="10" fill="#ffffff" stroke="#c9c9c9"/>
+    <text x="340" y="141" fill="#343a40" font-size="17" font-weight="650">Index + retrieval</text>
+    <text x="340" y="168" fill="#626970" font-size="14">Candidate evidence</text>
+    <rect x="466" y="94" width="185" height="122" rx="10" fill="#ffffff" stroke="#e95420" stroke-width="2"/>
+    <text x="558" y="141" fill="#343a40" font-size="17" font-weight="650">Investigation</text>
+    <text x="558" y="168" fill="#626970" font-size="14">LangGraph workflow</text>
+    <rect x="684" y="94" width="185" height="122" rx="10" fill="#fff3ee" stroke="#e95420"/>
+    <text x="776" y="141" fill="#343a40" font-size="17" font-weight="650">Change plan</text>
+    <text x="776" y="168" fill="#626970" font-size="14">Human review</text>
+  </g>
+  <g fill="none" stroke="#e95420" stroke-width="2.5" marker-end="url(#arrow)">
+    <path d="M223 155 H237"/>
+    <path d="M441 155 H455"/>
+    <path d="M659 155 H673"/>
+  </g>
+  <text x="450" y="263" text-anchor="middle" fill="#626970" font-family="system-ui, sans-serif" font-size="14">Offline fixtures compare retrieval quality, workflow behavior, latency, and index cost.</text>
+</svg>

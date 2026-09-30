@@ -1,0 +1,41 @@
+/* Author interface only. This directory is excluded from public generation. */
+:root {
+  color-scheme: dark;
+  --wt-background: #111015;
+  --wt-surface: #1b1920;
+  --wt-surface-raised: #25222e;
+  --wt-text: #e9e7ee;
+  --wt-muted: #b6b0c2;
+  --wt-accent: #bd9bff;
+  --wt-accent-fill: #7452aa;
+  --wt-border: #45404f;
+}
+
+body { background: var(--wt-background); color: var(--wt-text); }
+header { background: var(--wt-surface); border-color: var(--wt-border); }
+.brand { color: var(--wt-text); }
+a, a:visited { color: var(--wt-accent); }
+nav a[aria-current] { text-decoration-color: var(--wt-accent); text-underline-offset: .4em; }
+.card { background: var(--wt-surface); border-color: var(--wt-border); }
+input, textarea, select {
+  background: var(--wt-surface);
+  color: var(--wt-text);
+  border-color: var(--wt-border);
+}
+button, .button {
+  background: var(--wt-surface-raised);
+  color: var(--wt-accent);
+  border-color: var(--wt-accent-fill);
+}
+button:hover, .button:hover { background: #30263f; border-color: var(--wt-accent); }
+button:disabled { opacity: .5; cursor: default; }
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--wt-accent);
+  outline-offset: 3px;
+}
+.badge, .tag { background: var(--wt-surface-raised); }
+details { margin: 1.2rem 0; padding: .8rem; border: 1px solid var(--wt-border); border-radius: 4px; }
+summary { cursor: pointer; color: var(--wt-accent); }
+.error, .success, #unsaved { background: var(--wt-surface-raised); }
+small, footer, .brand small { color: var(--wt-muted); }

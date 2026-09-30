@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">GPT language model pipeline</title>
+  <desc id="desc">Token blocks feed a causal attention matrix, which points to a next token.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop offset="0" stop-color="#11243a"/>
+      <stop offset="1" stop-color="#263c60"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity=".06"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="600" fill="url(#background)"/>
+  <rect width="1200" height="600" fill="url(#grid)"/>
+  <g fill="#e4eef7" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="3">
+    <text x="76" y="106">TOKENS</text>
+    <text x="425" y="106">CAUSAL ATTENTION</text>
+    <text x="930" y="106">NEXT</text>
+  </g>
+  <g fill="#6bc7d9">
+    <rect x="72" y="204" width="180" height="66" rx="12"/>
+    <rect x="72" y="292" width="180" height="66" rx="12"/>
+    <rect x="72" y="380" width="180" height="66" rx="12"/>
+  </g>
+  <g fill="#102c43" font-family="Arial, sans-serif" font-size="25" font-weight="700">
+    <text x="95" y="247">t₁</text>
+    <text x="95" y="335">t₂</text>
+    <text x="95" y="423">t₃</text>
+  </g>
+  <path d="M 280 325 H 365" stroke="#d8e8f1" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 353 302 L 384 325 L 353 348" fill="none" stroke="#d8e8f1" stroke-width="14" stroke-linejoin="round"/>
+  <g stroke="#203b59" stroke-width="8">
+    <rect x="440" y="185" width="82" height="82" rx="10" fill="#f2bf5e"/>
+    <rect x="440" y="277" width="82" height="82" rx="10" fill="#f2bf5e"/>
+    <rect x="532" y="277" width="82" height="82" rx="10" fill="#ef9953"/>
+    <rect x="440" y="369" width="82" height="82" rx="10" fill="#f2bf5e"/>
+    <rect x="532" y="369" width="82" height="82" rx="10" fill="#ef9953"/>
+    <rect x="624" y="369" width="82" height="82" rx="10" fill="#dc6e56"/>
+  </g>
+  <path d="M 735 325 H 840" stroke="#d8e8f1" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 828 302 L 859 325 L 828 348" fill="none" stroke="#d8e8f1" stroke-width="14" stroke-linejoin="round"/>
+  <rect x="925" y="245" width="194" height="160" rx="20" fill="#9bdece"/>
+  <text x="1022" y="342" fill="#123d46" font-family="Arial, sans-serif" font-size="64" font-weight="700" text-anchor="middle">t₄</text>
+</svg>

@@ -38,8 +38,18 @@ def new_post(
         "-t",
         help="display title (default: derived from name)",
     ),
+    planned_content: str | None = typer.Option(None, "--planned-content"),
+    plan_file: str | None = typer.Option(None, "--plan-file"),
+    tag: list[str] | None = typer.Option(None, "--tag"),
+    description: str | None = typer.Option(None, "--description"),
+    visibility: str = typer.Option("public", "--visibility"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision"),
 ) -> None:
-    """Create nb/posts/<name>.ipynb with a dated frontmatter stub."""
+    """Create a planned post; use start to materialize its notebook."""
+    from .content_cli import active, create_post
+    if active():
+        create_post(name, title, planned_content, plan_file, tag, description, visibility, expected_revision)
+        return
     from . import scaffold
 
     path = scaffold.new_post(name, title=title)
@@ -51,7 +61,13 @@ def new_course(
     name: str = typer.Argument(..., help="course folder name (e.g. llm)"),
     title: str = typer.Argument(..., help='display title (e.g. "Large Language Models")'),
 ) -> None:
-    """Create nb/courses/<name>/ with an index notebook and a first lesson stub."""
+    """Register a course contract and planned course home."""
+    from .content_cli import active, emit, slug
+    if active():
+        from .services.content import ContentService
+        slug(name)
+        emit(ContentService().create({"id": f"course/{name}", "kind": "course", "title": title, "path": f"content/notebooks/courses/{name}"}))
+        return
     from . import scaffold
 
     path = scaffold.new_course(name, title=title)
@@ -74,8 +90,17 @@ def new_chapter(
         "-s",
         help="section name to place this chapter under (default: last section)",
     ),
+    toc_title: str | None = typer.Option(None, "--toc-title"),
+    planned_content: str | None = typer.Option(None, "--planned-content"),
+    planned_lab_and_evidence: str | None = typer.Option(None, "--planned-lab-and-evidence"),
+    plan_file: str | None = typer.Option(None, "--plan-file"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision"),
 ) -> None:
-    """Scaffold a course chapter and register it in the authored outline."""
+    """Register a chapter plan and TOC entry without a source notebook."""
+    from .content_cli import active, create_chapter
+    if active():
+        create_chapter(course, name, title, toc_title, section, planned_content, planned_lab_and_evidence, plan_file, expected_revision)
+        return
     from . import scaffold
 
     path = scaffold.new_course_chapter(course, name, title=title, section=section)
@@ -88,6 +113,16 @@ def new_section(
     name: str = typer.Argument(..., help="section name (e.g. 'Local Stack')"),
 ) -> None:
     """Add a section header to a course's authored outline."""
+    from .content_cli import active, emit, slug
+    if active():
+        from .services.content import ContentService
+        service = ContentService()
+        key = f"course/{course.removeprefix('course/')}"
+        contract = service.read_data(key)
+        section_id = slug(name.lower().replace(" ", "-"))
+        contract["data"]["toc"].append({"id": section_id, "title": name, "chapters": []})
+        emit(service.update_data(key, contract["data"], contract["revision"]))
+        return
     from . import scaffold
 
     scaffold.new_course_section(course, name)
@@ -230,8 +265,13 @@ def sync_site_cmd() -> None:
 
 
 @app.command(name="publish")
-def publish_cmd(name: str = typer.Argument(..., help="public course or chapter ID/path")) -> None:
-    """Publish one course or chapter and update Quarto's site listing."""
+def publish_cmd(name: str = typer.Argument(..., help="public artifact ID/path"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+    """Make authored public content eligible for the next deployment."""
+    from .content_cli import active, emit
+    if active():
+        from .services.content import ContentService
+        emit(ContentService().publish(name, expected_revision))
+        return
     from . import knowledge
 
     try:
@@ -353,6 +393,7 @@ def output_cmd(
 def diff_cmd(
     name: str,
     base: str = typer.Option("HEAD", "--base", "-b", help="git ref to diff against (default: HEAD)"),
+    base_source: str | None = typer.Option(None, "--base-source", help="original repository path when reviewing a moved notebook"),
 ) -> None:
     """Show a notebook's changes as a markdown diff vs a git ref.
 
@@ -362,7 +403,7 @@ def diff_cmd(
     """
     from . import notebook
 
-    out = notebook.diff_notebook(name, base=base)
+    out = notebook.diff_notebook(name, base=base, base_source=base_source)
     if out is None:
         console.print("[green]no changes[/green]")
     else:
@@ -430,6 +471,21 @@ def import_cmd(
     For courses: writes to nb/courses/<course>/<chapter>.ipynb and registers
     in the course's authored sidebar outline.
     """
+    from .content_cli import active, emit
+    if active():
+        from pathlib import Path
+
+        from .services.content import ContentService
+        source = Path(ipynb)
+        if tier == "courses":
+            if name is None:
+                raise ValueError("course imports require a course slug")
+            emit(ContentService().import_notebook(source, "chapter", chapter or source.stem, course=name, section=section))
+        elif tier in {"posts", "personal"}:
+            emit(ContentService().import_notebook(source, "post" if tier == "posts" else "personal", name or source.stem))
+        else:
+            raise ValueError("tier must be posts, courses, or personal")
+        return
     from . import convert
 
     if tier == "courses":
@@ -645,10 +701,20 @@ def main() -> None:
     try:
         app()
     except (FileNotFoundError, FileExistsError, ValueError) as e:
+        from .services.workspace import ServiceError
+        if isinstance(e, ServiceError):
+            from .content_cli import emit
+            emit({"error": e.as_dict(), "status": e.status})
+            raise SystemExit(2 if e.status in {409, 412, 428} else 1) from e
         console.print(f"[red]{e}[/red]")
         # SystemExit, not typer.Exit: outside click's standalone mode,
         # typer.Exit would print a traceback.
         raise SystemExit(1) from e
+
+
+from .content_cli import install  # noqa: E402
+
+install(app, new_app)
 
 
 if __name__ == "__main__":  # pragma: no cover

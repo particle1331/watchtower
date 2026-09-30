@@ -18,8 +18,12 @@ __pycache__/
 htmlcov/
 .ruff_cache/
 .watchtower/
+/backend/runtime/
+/frontend/generated/
 **/_course-context.md
 archive/**/pdf/
+archive/2026-10-01/content-system-inputs/assets/contact.js
+archive/2026-10-01/content-system-inputs/assets/resume.pdf
 .venv/
 /.quarto/
 **/*.quarto_ipynb

@@ -25,6 +25,14 @@ INCLUDE_MARKER = "{{< include _course-context.md >}}"
 
 
 def load_catalog() -> list[dict[str, Any]]:
+    if Path("content/data/catalog.yaml").exists():
+        from .services.content import ContentService
+
+        service = ContentService()
+        with service.store.locked():
+            records = service.list()["artifacts"]
+            details = {p["id"]: p for p in service.read_data("portfolio")["data"]["entries"]}
+            return [dict(a, path=details[a["id"]].get("notebook_path")) if a["kind"] == "portfolio" else a for a in records]
     if not CATALOG_PATH.exists():
         raise FileNotFoundError(f"catalog missing: {CATALOG_PATH}")
     data = yaml.safe_load(CATALOG_PATH.read_text(encoding="utf-8"))
@@ -34,6 +42,8 @@ def load_catalog() -> list[dict[str, Any]]:
 
 
 def save_catalog(artifacts: list[dict[str, Any]]) -> None:
+    if Path("content/data/catalog.yaml").exists():
+        raise ValueError("use the revision-aware content service to change the catalog")
     CATALOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     CATALOG_PATH.write_text(
         yaml.safe_dump({"version": 1, "artifacts": artifacts}, sort_keys=False, allow_unicode=True),
@@ -53,6 +63,14 @@ def add_artifact(
     summary: str | None = None,
     relations: list[str] | None = None,
 ) -> None:
+    if Path("content/data/catalog.yaml").exists():
+        from .services.content import ContentService
+
+        data: dict[str, Any] = {"id": artifact_id, "kind": kind, "path": path.as_posix(), "title": title, "visibility": visibility, "lifecycle": lifecycle, "relations": relations or []}
+        if parent:
+            data["parent"] = parent
+        ContentService().create(data)
+        return
     if kind not in KINDS or visibility not in VISIBILITIES or lifecycle not in LIFECYCLES:
         raise ValueError("invalid artifact kind, visibility, or lifecycle")
     if not path.exists() or path.is_absolute() or ".." in path.parts:
@@ -115,6 +133,10 @@ def load_sidebar_source() -> Any:
 
 def publish_artifact(name: str) -> dict[str, Any]:
     """Publish one public course or chapter and synchronize the site."""
+    if Path("content/data/catalog.yaml").exists():
+        from .services.content import ContentService
+
+        return ContentService().publish(name)["artifact"]
     parser = YAML(typ="rt")
     parser.preserve_quotes = True
     with CATALOG_PATH.open(encoding="utf-8") as handle:
@@ -221,10 +243,16 @@ def _sync_published_course_sidebars(
 
 
 def course_file(course: dict[str, Any]) -> Path:
+    if Path("content/data/catalog.yaml").exists():
+        return Path("content/data/courses") / f"{str(course['id']).split('/')[-1]}.yaml"
     return Path(str(course["path"])) / "course.yaml"
 
 
 def load_course(course: dict[str, Any]) -> dict[str, Any]:
+    if Path("content/data/catalog.yaml").exists():
+        from .services.content import ContentService
+
+        return ContentService().read_data(f"course/{str(course['id']).split('/')[-1]}")["data"]
     path = course_file(course)
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -253,6 +281,11 @@ def course_include(data: dict[str, Any]) -> str:
 
 
 def render_course_includes() -> list[Path]:
+    if Path("content/data/catalog.yaml").exists():
+        from .services.build import BuildService
+
+        stage = BuildService(Path.cwd()).generate("preview")
+        return sorted(stage.rglob("_course-context.md"))
     written: list[Path] = []
     for artifact in load_catalog():
         if artifact.get("kind") != "course":
@@ -318,6 +351,11 @@ def portfolio_listing(entries: list[dict[str, Any]], published: dict[str, dict[s
 
 
 def sync_site() -> None:
+    if Path("content/data/catalog.yaml").exists():
+        from .services.build import BuildService
+
+        BuildService(Path.cwd()).generate("production")
+        return
     """Render only public, published knowledge pages in the Quarto site."""
     path = Path("_quarto.yml")
     parser = YAML(typ="rt")
@@ -392,6 +430,14 @@ def context_json(name: str) -> str:
 
 
 def validate() -> list[str]:
+    if Path("content/data/catalog.yaml").exists():
+        from .services.content import ContentService
+
+        try:
+            ContentService().validate()
+        except ValueError as error:
+            return str(error).splitlines()
+        return []
     errors: list[str] = []
     artifacts = load_catalog()
     ids: set[str] = set()

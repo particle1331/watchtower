@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import nbformat
+
 from . import knowledge
 
 TEXT_SUFFIXES = {".md", ".qmd", ".py", ".yaml", ".yml", ".toml"}
@@ -30,7 +32,7 @@ def list_projects() -> list[dict]:
 
 
 def list_tier(tier: str) -> list[str]:
-    kinds = {"posts": "post", "courses": "course", "projects": "project", "portfolio": "portfolio"}
+    kinds = {"posts": "post", "courses": "course", "projects": "project", "portfolio": "portfolio", "personal": "personal", "gallery": "gallery"}
     if tier not in kinds:
         raise ValueError(f"unknown tier: {tier}. try posts|courses|projects|portfolio")
     artifacts = knowledge.load_catalog()
@@ -61,12 +63,12 @@ def repo_map() -> dict:
             "chapters": [a["path"] for a in children if a["path"] != overview],
         })
     return {
-        "catalog": str(knowledge.CATALOG_PATH),
+        "catalog": "content/data/catalog.yaml" if Path("content/data/catalog.yaml").exists() else str(knowledge.CATALOG_PATH),
         "posts": [a for a in artifacts if a.get("kind") == "post"],
         "courses": courses,
         "portfolio": [a for a in artifacts if a.get("kind") == "portfolio"],
         "projects": [a for a in artifacts if a.get("kind") == "project"],
-        "personal": "nb/photos/photos.ipynb", "rules": "AGENTS.md",
+        "personal": [a for a in artifacts if a.get("kind") in {"personal", "gallery"}] if Path("content/data/catalog.yaml").exists() else "nb/photos/photos.ipynb", "rules": "AGENTS.md",
     }
 
 
@@ -88,7 +90,7 @@ def repo_map_json(*, archive: bool = False) -> str:
 def _sources_for(artifact: dict) -> list[Path]:
     path = Path(str(artifact["path"]))
     if artifact.get("kind") == "course":
-        return [p for p in (path / "course.yaml", path / "index.ipynb") if p.exists()]
+        return [p for p in (knowledge.course_file(artifact), path / "index.ipynb") if p.exists()]
     if path.is_file():
         return [path]
     if not path.is_dir():
@@ -103,9 +105,8 @@ def _sources_for(artifact: dict) -> list[Path]:
 def _matching_lines(path: Path, query: str) -> list[str]:
     if path.suffix == ".ipynb":
         try:
-            with path.open(encoding="utf-8") as handle:
-                notebook = json.load(handle)
-        except (OSError, json.JSONDecodeError):
+            notebook = nbformat.read(path, as_version=nbformat.NO_CONVERT)
+        except (OSError, ValueError):
             return []
         matches: list[str] = []
         for index, cell in enumerate(notebook.get("cells", [])):
@@ -151,8 +152,9 @@ def resolve_ipynb(name: str) -> Path:
         path = path.with_suffix(".ipynb")
     if path.exists():
         return path.resolve()
-    if Path(name).parts[:1] in {("posts",), ("courses",)}:
-        short = Path("nb") / path
+    active = Path("content/notebooks") if Path("content/data/catalog.yaml").exists() else Path("nb")
+    if Path(name).parts[:1] in {("posts",), ("courses",), ("personal",), ("portfolio",)}:
+        short = active / path
         if short.exists():
             return short.resolve()
     matches = [Path(str(a["path"])) for a in knowledge.load_catalog() if Path(str(a.get("path", ""))).stem == name]
@@ -160,8 +162,14 @@ def resolve_ipynb(name: str) -> Path:
         return matches[0].resolve()
     # A bare stem remains a convenient direct read for a notebook that has not
     # yet been registered; discovery commands still use only the catalog.
-    for base in (Path("nb/posts"), Path("nb/courses")):
+    for base in (active / "posts", active / "courses", active / "portfolio", active / "personal"):
         for candidate in sorted(base.rglob(f"{name}.ipynb")):
             if ".ipynb_checkpoints" not in candidate.parts:
                 return candidate.resolve()
     raise FileNotFoundError(f"no registered notebook named '{name}'. try `wt map`.")
+
+
+from .services.notebooks import managed  # noqa: E402
+
+for _operation in ("list_ipynb", "list_projects", "list_tier", "repo_map", "find_in_src", "resolve_ipynb"):
+    globals()[_operation] = managed(globals()[_operation])

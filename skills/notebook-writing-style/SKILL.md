@@ -1,16 +1,16 @@
 ---
 name: notebook-writing-style
-description: Prose and formatting conventions for watchtower posts and course chapters. Use when writing or editing any .ipynb content under nb/posts/ or nb/courses/ — voice, emphasis, math, code-cell prose, callouts, tables, footnotes, and Quarto spans. Defer Quarto/Jupyter cell-option syntax to the quarto-jupyter skill. Use ONLY when working on notebook content, not tooling code under src/ or projects/.
+description: Prose and formatting conventions for watchtower posts and course chapters. Use when writing or editing any .ipynb content under content/notebooks/posts/ or content/notebooks/courses/ — voice, emphasis, math, code-cell prose, callouts, tables, footnotes, and Quarto spans. Defer Quarto/Jupyter cell-option syntax to the quarto-jupyter skill. Use ONLY when working on notebook content, not tooling code under src/ or projects/.
 ---
 
 # Notebook writing style
 
-Conventions for the canonical content in `nb/posts/` and `nb/courses/`.
-The watchtower source walk-through (`nb/posts/005-wt-src-walkthrough`) and the
-Maximum Likelihood post (`nb/posts/006-maximum-likelihood-estimation`) are the
+Conventions for the canonical content in `content/notebooks/posts/` and `content/notebooks/courses/`.
+The watchtower source walk-through (`content/notebooks/posts/005-wt-src-walkthrough`) and the
+Maximum Likelihood post (`content/notebooks/posts/006-maximum-likelihood-estimation`) are the
 reference exemplars; consult them when the rules below need a concrete instance.
 For a larger example, see the Weak Supervision article
-(`nb/posts/003-weak-supervision`).
+(`content/notebooks/posts/003-weak-supervision`).
 
 ## Repository notation
 

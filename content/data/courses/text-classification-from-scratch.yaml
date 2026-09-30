@@ -1,0 +1,52 @@
+id: course/text-classification-from-scratch
+purpose: Teach end-to-end text classification through an AI-written-text
+  detection case study and the history of text-classification architectures,
+  then apply the ideas in a multi-task Jev-like decision model implemented with
+  a pretrained ModernBERT encoder.
+audience: Python practitioners who know basic supervised learning and want to
+  build, evaluate, and serve text classifiers; GPU training and external APIs
+  are optional extensions.
+planned:
+  summary: Define the task and label contract; audit provenance; construct
+    grouped splits; establish a TF-IDF baseline; trace the history from
+    bag-of-words through neural and transformer classifiers; compare
+    task-specific models, prompted LLMs, and structured general-purpose decision
+    APIs; evaluate calibration, errors, task transfer, efficiency, and
+    deployment; and finish by implementing and evaluating a Jev-like
+    Choice/Noul/Score model with a shared ModernBERT candidate-scoring head.
+actualized:
+  summary: Authored the course home, system overview, and ten chapters.
+    Augmented the model-family, evaluation, efficiency, deployment, and capstone
+    chapters with classifier history, structured decision APIs, calibration, and
+    cross-task generalization. The capstone now specifies a multi-task
+    ModernBERT implementation of a Jev-like decision interface, including
+    held-out task transfer and probability calibration. Added exercises and
+    rendered the affected notebooks to HTML for syntax checks.
+toc:
+- id: orientation
+  title: ''
+  chapters:
+  - course/text-classification-from-scratch/00-overview
+- id: foundations
+  title: Foundations
+  chapters:
+  - course/text-classification-from-scratch/01-introduction
+- id: data-and-baselines
+  title: Data and baselines
+  chapters:
+  - course/text-classification-from-scratch/02-data
+  - course/text-classification-from-scratch/03-splits
+  - course/text-classification-from-scratch/04-baseline
+- id: neural-classifiers
+  title: Neural classifiers
+  chapters:
+  - course/text-classification-from-scratch/05-transformers
+  - course/text-classification-from-scratch/06-finetuning
+- id: evaluation-and-delivery
+  title: Evaluation and delivery
+  chapters:
+  - course/text-classification-from-scratch/07-evaluation
+  - course/text-classification-from-scratch/08-efficiency
+  - course/text-classification-from-scratch/09-deployment
+  - course/text-classification-from-scratch/10-capstone
+overview: course/text-classification-from-scratch/00-overview

@@ -206,3 +206,10 @@ def save_output_images(
 def _output_directory(directory: str | Path | None) -> Path:
     """Resolve an optional destination, defaulting to ``ROOT_PATH / ".tmp"``."""
     return ROOT_PATH / ".tmp" if directory is None else Path(directory)
+
+
+from .services.notebooks import managed  # noqa: E402
+
+get_cell_outputs = managed(get_cell_outputs)
+get_cell_output = managed(get_cell_output)
+save_cell_images = managed(save_cell_images)

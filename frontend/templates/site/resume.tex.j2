@@ -1,0 +1,133 @@
+%% Generated from content/data/profile.yaml and the frontend résumé template.
+%% Original template: Copyright 2006-2013 Xavier Danaux (xdanaux@gmail.com),
+%% LPPL v1.3c.
+
+\documentclass[11pt,a4paper,sans]{moderncv}
+
+\moderncvcolor{black}
+\definecolor{color2}{rgb}{0.45,0.45,0.45}
+\moderncvstyle{banking}
+% Older moderncv uses color1 directly; newer releases copy it into these
+% named colors when loading the style. Set both explicitly on every build.
+\colorlet{color1}{black}
+\colorlet{sectioncolor}{black}
+\colorlet{subsectioncolor}{black}
+\colorlet{bodyrulecolor}{black}
+\nopagenumbers{}
+
+\usepackage{lmodern}
+\usepackage{fontspec}
+% Match the homepage wordmark, while keeping the résumé body in Latin Modern.
+\newfontface\homepagenamefont{Ubuntu-Bold.ttf}[Path=assets/fonts/,LetterSpace=-4.5]
+\definecolor{homepagename}{HTML}{343A40}
+\definecolor{homepagedot}{HTML}{E95420}
+{% raw %}
+\renewcommand*{\makeheaddetailssymbol}{{\hspace{1em}\textcolor{gray}{\rmfamily\textbullet}\hspace{1em}}}
+{% endraw %}
+\newcommand*{\homepagemarker}{\makebox[1em][c]{\tikz[baseline=-0.2ex]\fill[homepagedot] (0,0) circle (0.45ex);}}
+\renewcommand*{\labelitemi}{\homepagemarker}
+\renewcommand*{\namefont}{\Huge\homepagenamefont}
+{% raw %}
+% TeX Live 2023 uses \namestyle; newer moderncv splits the two name styles.
+\renewcommand*{\namestyle}[1]{{\namefont\textcolor{homepagename}{#1}\textcolor{homepagedot}{.}}}
+\providecommand*{\firstnamestyle}[1]{}
+\providecommand*{\lastnamestyle}[1]{}
+\renewcommand*{\firstnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}}}
+\renewcommand*{\lastnamestyle}[1]{{\namefont\textcolor{homepagename}{#1}\textcolor{homepagedot}{.}}}
+{% endraw %}
+\usepackage{pdfpages}
+\usepackage{multicol}
+\usepackage[scale=0.8,top=0.5cm, bottom=0.1cm]{geometry}
+\usepackage{xpatch}
+% Font Awesome includes non-scalable fonts; do not expand them.
+\microtypesetup{expansion=false}
+\xpatchcmd\cventry{,}{}{}{}
+
+\name{ {{- name.split()[0] -}} }{ {{- name.split()[1:] | join(' ') -}} }
+\vspace*{3mm}
+\phone[mobile]{ {{- contact.phone -}} }
+\email{ {{- contact.email -}} }
+\social[github]{ {{- contact.github -}} }
+\homepage{ {{- contact.linkedin -}} }
+
+\begin{document}
+\vspace*{-1.05mm}
+\makecvtitle
+\vspace*{-10mm}
+
+\vspace*{3mm}
+{{ summary }}
+
+\vspace{0.5em}
+\section{Employment History}
+\vspace{0.50em}
+{% for job in employment %}
+\cventry{}{}{ {{- job.title -}} \; | \; {{- job.company -}} }{ {{- job.dates -}} \vspace{-1.0em}}{}{
+\begin{itemize}
+{% for b in job.bullets %}
+\item {{ b }}
+{% endfor %}
+\end{itemize}
+}
+\vspace{0.8em}
+{% endfor %}
+
+\newpage
+\vspace*{1.50em}
+
+\section{Skills}
+{% for skill in skills %}
+\cventry{}{}{ {{- skill.name -}} }{\vspace{-1.0em}}{}{
+\begin{itemize}
+{% for it in skill.entries %}
+\item {{ it }}
+{% endfor %}
+\end{itemize}}
+\vspace{1.0em}
+{% endfor %}
+
+\vspace{0.5em}
+{% if projects %}
+\section{Projects}
+{% for proj in projects %}
+\cventry{}{}{ {{- proj.title -}} }{\vspace{-1.0em}}{}{
+\begin{itemize}
+{% for b in proj.bullets %}
+\item {{ b }}
+{% endfor %}
+\end{itemize}}
+\vspace{0.50em}
+{% endfor %}
+{% endif %}
+
+\section{Education}
+\vspace{0.5em}
+{% for edu in education %}
+{% if edu.major %}
+\cventry{}{}{ {{- edu.institution -}} }{ {{- edu.dates -}} }{\hspace*{-2.5 mm} {{- edu.degree -}} }{Major in {{ edu.major }}}
+{% if edu.awards %}\vspace*{1.5 mm} {}{\textbf{Awards}: {{ edu.awards }}}{% endif %}
+{% if edu.thesis %}\newline {}{\textbf{Thesis}: \textit{ {{- edu.thesis -}} }}{% endif %}
+{% if edu.courses %}\newline {}{\textbf{Relevant courses}: {{ edu.courses | join(', ') }}}{% endif %}
+{% else %}
+\cventry{}{}{ {{- edu.institution -}} }{ {{- edu.dates -}} }{\hspace*{-2.5 mm} {{- edu.degree -}} }{ {{- edu.description -}} }
+{% endif %}
+{% if not loop.last %}\par\vspace*{8 mm}{% endif %}
+{% endfor %}
+
+{% if early_employment %}
+\vspace*{1.0em}
+\section{Early Employment}
+\vspace{0.50em}
+{% for job in early_employment %}
+\cventry{}{}{ {{- job.title -}} \; | \; {{- job.company -}} }{ {{- job.dates -}} \vspace{-1.0em}}{}{
+\begin{itemize}
+{% for b in job.bullets %}
+\item {{ b }}
+{% endfor %}
+\end{itemize}
+}
+\vspace{0.8em}
+{% endfor %}
+{% endif %}
+
+\end{document}

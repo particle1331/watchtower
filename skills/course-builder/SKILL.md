@@ -1,6 +1,6 @@
 ---
 name: course-builder
-description: Build and revise Watchtower courses under nb/courses/, including course homes and technical overviews, scaffolding and sidebar structure, chapter notebooks, exercises and just-in-time assessment, and multi-chapter orchestration. Use for any course-level creation, extension, migration, or authoring task.
+description: Build and revise Watchtower courses under content/notebooks/courses/, including course homes and technical overviews, scaffolding and sidebar structure, chapter notebooks, exercises and just-in-time assessment, and multi-chapter orchestration. Use for any course-level creation, extension, migration, or authoring task.
 ---
 
 # Course builder

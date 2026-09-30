@@ -40,7 +40,8 @@ def test_make_docs_rebuilds_before_preview(tmp_path, resume_fails):
     )
 
 
-def test_preview_passes_port_and_virtualenv_python(monkeypatch, capsys):
+def test_preview_passes_port_and_virtualenv_python(monkeypatch, capsys, tmp_path):
+    monkeypatch.chdir(tmp_path)
     run = Mock()
     monkeypatch.setenv("PORT", "4300")
     monkeypatch.setattr(subprocess, "run", run)
@@ -50,6 +51,19 @@ def test_preview_passes_port_and_virtualenv_python(monkeypatch, capsys):
     assert kwargs["env"]["QUARTO_PYTHON"] == sys.executable
     assert kwargs["check"] is True
     assert "http://localhost:4300/" in capsys.readouterr().out
+
+
+def test_migrated_preview_uses_saved_working_build(monkeypatch, tmp_path):
+    from watchtower.services.build import BuildService
+    catalog = tmp_path / "content/data/catalog.yaml"
+    catalog.parent.mkdir(parents=True)
+    catalog.write_text("version: 1\nartifacts: []\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PORT", "4300")
+    preview = Mock()
+    monkeypatch.setattr(BuildService, "preview", preview)
+    preview_site()
+    preview.assert_called_once_with(4300)
 
 
 @pytest.mark.parametrize("port", ["0", "65536", "invalid"])
