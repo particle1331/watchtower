@@ -1,0 +1,9 @@
+---
+title: "Change Planner Agent"
+description: "An agent for investigating code changes and preparing an evidence-backed plan."
+page-layout: article
+---
+
+[← Portfolio](../../portfolio.qmd)
+
+This is a starting point for a new case study. The earlier writeup and implementation are preserved in the repository archive.

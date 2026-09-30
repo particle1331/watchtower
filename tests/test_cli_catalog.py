@@ -56,13 +56,15 @@ def test_cli_register_validate_and_site_visibility(repo):
     portfolio.mkdir(parents=True)
     (portfolio / "public.qmd").write_text("# Public\n", encoding="utf-8")
     (portfolio / "private.qmd").write_text("# Private\n", encoding="utf-8")
-    run("register", "portfolio", "portfolio/public", "nb/portfolio/public.qmd", "Public", "--lifecycle", "published")
-    run("register", "portfolio", "portfolio/private", "nb/portfolio/private.qmd", "Private", "--visibility", "private", "--lifecycle", "published")
+    run("register", "portfolio", "portfolio/public", "nb/portfolio/public.qmd", "Public", "--summary", "Public work", "--lifecycle", "published")
+    run("register", "portfolio", "portfolio/private", "nb/portfolio/private.qmd", "Private", "--summary", "Private work", "--visibility", "private", "--lifecycle", "published")
     run("validate")
     run("sync-site")
     config = yaml.safe_load(Path("_quarto.yml").read_text())
     assert "nb/portfolio/public.qmd" in config["project"]["render"]
     assert "nb/portfolio/private.qmd" not in config["project"]["render"]
+    assert "portfolio.qmd" in config["project"]["render"]
+    assert {"href": "portfolio.qmd", "text": "portfolio"} in config["website"]["navbar"]["left"]
     assert "nb/portfolio/public.qmd" in run("ls", "portfolio")
 
     (portfolio / "orphan.qmd").write_text("# Orphan\n", encoding="utf-8")

@@ -251,6 +251,8 @@ def register_cmd(
     parent: str | None = typer.Option(None, "--parent", help="registered course ID for a chapter"),
     visibility: str = typer.Option("public", "--visibility", help="public | private"),
     lifecycle: str = typer.Option("draft", "--lifecycle", help="planned | draft | published"),
+    summary: str | None = typer.Option(None, "--summary", help="required description for a portfolio entry"),
+    relation: list[str] | None = typer.Option(None, "--relation", help="related catalog ID; repeat for multiple links"),
 ) -> None:
     """Register an existing knowledge work, especially a project or portfolio piece."""
     from pathlib import Path
@@ -260,6 +262,7 @@ def register_cmd(
     knowledge.add_artifact(
         artifact_id, kind, Path(path), title,
         parent=parent, visibility=visibility, lifecycle=lifecycle,
+        summary=summary, relations=relation,
     )
     console.print(f"[green]registered {artifact_id}[/green]")
 

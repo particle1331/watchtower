@@ -1,0 +1,9 @@
+---
+title: "ML Platform"
+description: "A platform project connecting training, model artifacts, batch jobs, and serving."
+page-layout: article
+---
+
+[← Portfolio](../../portfolio.qmd)
+
+This is a starting point for a new case study. The earlier writeup and implementation are preserved in the repository archive.

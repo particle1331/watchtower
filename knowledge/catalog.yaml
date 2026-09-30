@@ -268,3 +268,30 @@ artifacts:
   lifecycle: published
   relations: []
   parent: course/text-classification-from-scratch
+- id: portfolio/autocode
+  kind: portfolio
+  title: Autocode
+  path: nb/portfolio/autocode.qmd
+  visibility: public
+  lifecycle: published
+  relations: []
+  summary: Archived coding agent app with browser sessions, event streaming, and a
+    durable session journal.
+- id: portfolio/change-planner
+  kind: portfolio
+  title: Change Planner Agent
+  path: nb/portfolio/change-planner.qmd
+  visibility: public
+  lifecycle: published
+  relations: []
+  summary: Archived agent for investigating a proposed code change and producing an
+    evidence-backed review plan.
+- id: portfolio/ml-platform
+  kind: portfolio
+  title: ML Platform
+  path: nb/portfolio/ml-platform.qmd
+  visibility: public
+  lifecycle: published
+  relations: []
+  summary: Archived platform project connecting training, model artifacts, batch jobs,
+    and online serving.

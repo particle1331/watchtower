@@ -1,0 +1,9 @@
+---
+title: "Autocode"
+description: "A coding agent application with browser sessions and durable event history."
+page-layout: article
+---
+
+[← Portfolio](../../portfolio.qmd)
+
+This is a starting point for a new case study. The earlier writeup and implementation are preserved in the repository archive.

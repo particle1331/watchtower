@@ -16,6 +16,7 @@ For a course, read context in this order:
 
 A plan in YAML is intent, not evidence of completion. Update `actualized` only when work has been completed and checked. Course YAML holds concise facts shared by agents and readers; detailed teaching and practical instructions belong in notebooks. The course home includes a generated Markdown rendering of those shared facts. Run `make knowledge` or the regular render tasks after YAML changes.
 Only artifacts with `visibility: public` and `lifecycle: published` are added to Quarto's render list by `wt sync-site`; `make knowledge` validates and runs that synchronization. Publishing a course renders its home, creates a grid card on the generated Courses page, and adds the shared navbar link. Chapters are published and rendered individually under a published course; synchronization filters unpublished chapters out of that course's sidebar. The authored course outline is stored in `knowledge/sidebar.yaml`; `_quarto.yml` contains its synchronized published view. Use `wt publish <course-or-chapter-id>` to publish one public catalog entry without changing its siblings.
+Portfolio entries are catalog records with a required `summary` and optional `relations` containing stable IDs of related posts, courses, chapters, or projects. Use `wt register portfolio <id> <path> <title> --summary "..."` and repeat `--relation <catalog-id>` as needed. Published portfolio entries generate `portfolio.qmd` with summaries and links to published related work; do not edit that generated page directly.
 
 ## Navigation and notebooks
 

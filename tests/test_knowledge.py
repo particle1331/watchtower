@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import nbformat
+import pytest
 import yaml
 
 from watchtower import inspect, knowledge, scaffold
@@ -62,6 +63,52 @@ def test_site_uses_only_public_published_catalog_entries(repo):
     assert "nb/posts/draft.ipynb" not in render
     assert "nb/posts/private.ipynb" not in render
     assert "!archive/**" in render
+
+
+def test_portfolio_summary_and_related_work_drive_home(repo):
+    Path("nb/portfolio").mkdir(parents=True)
+    Path("nb/portfolio/example.qmd").write_text("# Example\n")
+    Path("nb/posts").mkdir(parents=True)
+    nbformat.write(nbformat.v4.new_notebook(), "nb/posts/note.ipynb")
+    nbformat.write(nbformat.v4.new_notebook(), "nb/posts/private.ipynb")
+    knowledge.add_artifact("post/note", "post", Path("nb/posts/note.ipynb"), "A note", lifecycle="published")
+    knowledge.add_artifact(
+        "post/private", "post", Path("nb/posts/private.ipynb"), "Private note",
+        visibility="private", lifecycle="published",
+    )
+    scaffold.new_course("signals", "Signals")
+    artifacts = knowledge.load_catalog()
+    for item in artifacts:
+        if item["id"] in {"course/signals", "course/signals/01-introduction"}:
+            item["lifecycle"] = "published"
+    knowledge.save_catalog(artifacts)
+
+    with pytest.raises(ValueError, match="portfolio summary is required"):
+        knowledge.add_artifact("portfolio/example", "portfolio", Path("nb/portfolio/example.qmd"), "Example")
+    knowledge.add_artifact(
+        "portfolio/example", "portfolio", Path("nb/portfolio/example.qmd"), "Example",
+        summary="A short account of the project.",
+        relations=["post/note", "course/signals", "course/signals/01-introduction", "post/private"],
+        lifecycle="published",
+    )
+    assert knowledge.validate() == []
+    knowledge.sync_site()
+
+    home = Path("portfolio.qmd").read_text()
+    assert "A short account of the project." in home
+    assert "[A note](nb/posts/note.ipynb)" in home
+    assert "[Signals](nb/courses/signals/index.ipynb)" in home
+    assert "[Introduction](nb/courses/signals/01-introduction.ipynb)" in home
+    assert "Private note" not in home
+    site = yaml.safe_load(Path("_quarto.yml").read_text())
+    assert "portfolio.qmd" in site["project"]["render"]
+    assert "nb/portfolio/example.qmd" in site["project"]["render"]
+
+    artifacts = knowledge.load_catalog()
+    portfolio = next(item for item in artifacts if item["id"] == "portfolio/example")
+    portfolio["relations"].append("post/missing")
+    knowledge.save_catalog(artifacts)
+    assert "portfolio/example: unknown relation post/missing" in knowledge.validate()
 
 
 def test_published_course_gets_grid_card_and_courses_navbar(repo):

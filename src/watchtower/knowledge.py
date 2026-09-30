@@ -50,6 +50,8 @@ def add_artifact(
     parent: str | None = None,
     visibility: str = "public",
     lifecycle: str = "draft",
+    summary: str | None = None,
+    relations: list[str] | None = None,
 ) -> None:
     if kind not in KINDS or visibility not in VISIBILITIES or lifecycle not in LIFECYCLES:
         raise ValueError("invalid artifact kind, visibility, or lifecycle")
@@ -60,6 +62,12 @@ def add_artifact(
     artifacts = load_catalog()
     if any(a.get("id") == artifact_id or a.get("path") == path.as_posix() for a in artifacts):
         raise ValueError(f"artifact already registered: {artifact_id} or {path}")
+    if kind == "portfolio" and (not isinstance(summary, str) or not summary.strip()):
+        raise ValueError("portfolio summary is required")
+    related_ids = relations or []
+    known_ids = {str(a.get("id")) for a in artifacts}
+    if any(relation not in known_ids for relation in related_ids):
+        raise ValueError("relations must reference registered artifact IDs")
     item: dict[str, Any] = {
         "id": artifact_id,
         "kind": kind,
@@ -67,8 +75,10 @@ def add_artifact(
         "path": path.as_posix(),
         "visibility": visibility,
         "lifecycle": lifecycle,
-        "relations": [],
+        "relations": related_ids,
     }
+    if kind == "portfolio":
+        item["summary"] = summary.strip() if summary else ""
     if parent is not None:
         if not any(a.get("id") == parent and a.get("kind") == "course" for a in artifacts):
             raise ValueError(f"course parent is not registered: {parent}")
@@ -280,6 +290,33 @@ def course_listing(courses: list[dict[str, Any]]) -> str:
     ])
 
 
+def portfolio_listing(entries: list[dict[str, Any]], published: dict[str, dict[str, Any]]) -> str:
+    """Build the portfolio home from catalog summaries and published relations."""
+    lines = [
+        "---",
+        'title: "Portfolio"',
+        "page-layout: full",
+        "sidebar: false",
+        "toc: false",
+        "---",
+        "",
+        "Selected project work. Each entry is a short starting point; fuller writeups can grow here.",
+        "",
+    ]
+    for entry in entries:
+        lines.extend([f"## [{entry['title']}]({entry['path']})", "", str(entry["summary"]), ""])
+        related = [published[artifact_id] for artifact_id in entry.get("relations", []) if artifact_id in published]
+        if related:
+            links = []
+            for artifact in related:
+                path = Path(str(artifact["path"]))
+                if artifact["kind"] == "course":
+                    path /= "index.ipynb"
+                links.append(f"[{artifact['title']}]({path})")
+            lines.extend(["Related: " + " · ".join(links), ""])
+    return "\n".join(lines)
+
+
 def sync_site() -> None:
     """Render only public, published knowledge pages in the Quarto site."""
     path = Path("_quarto.yml")
@@ -297,8 +334,12 @@ def sync_site() -> None:
     render = ["index.qmd", "resume.qmd", "nb/photos/photos.ipynb"]
     navbar = [
         {"href": "resume.qmd", "text": "résumé"},
-        {"href": "nb/photos/photos.ipynb", "text": "personal"},
     ]
+    portfolio = [a for a in published.values() if a.get("kind") == "portfolio"]
+    if portfolio:
+        Path("portfolio.qmd").write_text(portfolio_listing(portfolio, published), encoding="utf-8")
+        render.append("portfolio.qmd")
+        navbar.append({"href": "portfolio.qmd", "text": "portfolio"})
     posts = [a for a in published.values() if a.get("kind") == "post"]
     if posts:
         render.append("posts.qmd")
@@ -309,16 +350,14 @@ def sync_site() -> None:
         Path("courses.qmd").write_text(course_listing(courses), encoding="utf-8")
         render.append("courses.qmd")
         navbar.append({"href": "courses.qmd", "text": "courses"})
+    navbar.append({"href": "nb/photos/photos.ipynb", "text": "personal"})
     for item in published.values():
         kind = item.get("kind")
         if kind == "course":
             home = str(Path(str(item["path"])) / "index.ipynb")
             render.append(home)
-        elif kind == "chapter" and item.get("parent") in published:
+        elif kind == "portfolio" or (kind == "chapter" and item.get("parent") in published):
             render.append(str(item["path"]))
-        elif kind == "portfolio":
-            render.append(str(item["path"]))
-            navbar.append({"href": str(item["path"]), "text": str(item["title"])})
     render.append("!archive/**")
     config.setdefault("project", {})["render"] = render
     config.setdefault("website", {}).setdefault("navbar", {})["left"] = navbar
@@ -388,6 +427,8 @@ def validate() -> list[str]:
             errors.append(f"{artifact_id}: title is required")
         if not isinstance(item.get("relations"), list):
             errors.append(f"{artifact_id}: relations must be a list")
+        if kind == "portfolio" and (not isinstance(item.get("summary"), str) or not item["summary"].strip()):
+            errors.append(f"{artifact_id}: portfolio summary is required")
     for item in artifacts:
         if not isinstance(item, dict) or not isinstance(item.get("id"), str):
             continue
@@ -396,7 +437,7 @@ def validate() -> list[str]:
         if item.get("kind") == "chapter" and not any(a.get("id") == parent and a.get("kind") == "course" for a in artifacts):
             errors.append(f"{artifact_id}: missing course parent {parent}")
         for relation in item.get("relations", []) if isinstance(item.get("relations"), list) else []:
-            if relation not in ids:
+            if not isinstance(relation, str) or relation not in ids:
                 errors.append(f"{artifact_id}: unknown relation {relation}")
         if item.get("kind") == "course":
             folder = Path(str(item.get("path")))
