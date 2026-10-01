@@ -38,7 +38,7 @@ def photo_editor_data(data: dict[str, Any]) -> dict[str, Any]:
     data = copy.deepcopy(data)
     for photo in data.get("photos", []):
         if isinstance(photo, dict):
-            for key, value in {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}.items():
+            for key, value in {"heading": "", "path": "", "caption": "", "lifecycle": "draft", "width": ""}.items():
                 photo.setdefault(key, value)
     return data
 
@@ -70,7 +70,7 @@ def collections(data: Any, prefix: tuple[str, ...] = ()) -> list[dict[str, Any]]
         defaults = {"photos": {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}, "toc": {"id": "", "title": "", "chapters": []}, "chapters": {"chapter_id": "", "section": "", "content": "", "lab_and_evidence": ""}, "entries": {"id": "", "project_source": "active", "planned": {}}, "projects": {"title": "", "bullets": []}, "employment": {"title": "", "company": "", "dates": "", "bullets": []}, "early_employment": {"title": "", "company": "", "dates": "", "bullets": []}, "education": {"institution": "", "degree": "", "dates": ""}, "skills": {"name": "", "entries": []}}
         prototype = blank_record(data[0]) if data else defaults.get(prefix[-1] if prefix else "", {})
         if prefix[-1] == "photos":
-            prototype = {**defaults["photos"], **prototype, "lifecycle": "draft"}
+            prototype = {**defaults["photos"], "width": "", **prototype, "lifecycle": "draft"}
         result.append({"path": prefix, "label": " / ".join(prefix), "rows": list(enumerate(data)), "prototype": prototype, "fields": form_fields(prototype, prefix)})
         for index, value in enumerate(data):
             result.extend(collections(value, (*prefix, str(index))))
@@ -92,7 +92,7 @@ def form_fields(data: Any, prefix: tuple[str, ...] = ()) -> list[dict[str, Any]]
             for index, value in enumerate(data):
                 fields.extend(form_fields(value, (*prefix, str(index))))
     else:
-        fields.append({"name": json.dumps(prefix), "label": " / ".join(prefix), "value": data if data is not None else "", "type": "photo_lifecycle" if prefix and prefix[-1] == "lifecycle" and "photos" in prefix else "bool" if isinstance(data, bool) else "int" if isinstance(data, int) else "float" if isinstance(data, float) else "text"})
+        fields.append({"name": json.dumps(prefix), "label": " / ".join(prefix), "value": data if data is not None else "", "type": "photo_width" if prefix and prefix[-1] == "width" and "photos" in prefix else "photo_lifecycle" if prefix and prefix[-1] == "lifecycle" and "photos" in prefix else "bool" if isinstance(data, bool) else "int" if isinstance(data, int) else "float" if isinstance(data, float) else "text"})
     return fields
 
 
@@ -186,7 +186,12 @@ def cms_router(root: Path) -> APIRouter:
         source = result.get("source_path")
         # Canonical path comes only from shared inspection; never from form input.
         editor_url = result.get("editor_url")
-        return {"artifact": artifact, "record": result, "revision": revision or result["revision"], "error": error, "source_path": str(root / source) if source else None, "editor_url": editor_url, "fields": form_fields(artifact), "section": "courses" if artifact.get("kind") in {"course", "chapter"} else "posts" if artifact.get("kind") == "post" else "portfolio" if artifact.get("kind") == "portfolio" else "personal"}
+        fields = form_fields(artifact)
+        if result.get("has_authored_content") is not None:
+            for field in fields:
+                if field["label"] == "lifecycle":
+                    field["options"] = ["draft", "published"] if result["has_authored_content"] else ["planned"]
+        return {"artifact": artifact, "record": result, "revision": revision or result["revision"], "error": error, "source_path": str(root / source) if source else None, "editor_url": editor_url, "fields": fields, "section": "courses" if artifact.get("kind") in {"course", "chapter"} else "posts" if artifact.get("kind") == "post" else "portfolio" if artifact.get("kind") == "portfolio" else "personal"}
 
     @router.get("/")
     def home() -> RedirectResponse:

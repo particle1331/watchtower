@@ -121,6 +121,25 @@ def test_planned_generation_uses_plan_and_never_copies_optional_scaffold(workspa
     assert len(notebook.cells) == 2
 
 
+@pytest.mark.parametrize("kind", ["post", "chapter", "course"])
+@pytest.mark.parametrize("lifecycle", ["draft", "published"])
+def test_native_draft_metadata_without_duplicate_callout(workspace, kind, lifecycle):
+    root, snapshot = workspace
+    entry = artifact("courses/example/index" if kind == "course" else f"{kind}/example", kind=kind, lifecycle=lifecycle)
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("An authored page.")])
+    if kind == "course":
+        snapshot.state.courses[entry.id] = Record(purpose="A course purpose.", audience="Readers", planned={}, actualized={}, toc=[])
+    stage = BuildService(root).generate("preview")
+    notebook = nbformat.read(stage / entry.path.replace("content/notebooks/", "nb/"), as_version=4)
+    header = yaml.safe_load(notebook.cells[0].source.split("---", 2)[1])
+    assert header["draft"] == (lifecycle == "draft")
+    assert "callout-note" not in notebook.cells[0].source
+    assert yaml.safe_load((stage / "_quarto.yml").read_text())["website"]["draft-mode"] == "visible"
+    production = BuildService(root).generate("production")
+    assert (production / entry.path.replace("content/notebooks/", "nb/")).exists() == (lifecycle == "published")
+    assert yaml.safe_load((production / "_quarto.yml").read_text())["website"]["draft-mode"] == "gone"
+
+
 def test_portfolio_order_eligibility_and_archived_source_link(workspace):
     root, snapshot = workspace
     for name, lifecycle in [("first", "published"), ("draft", "draft"), ("planned", "planned")]:
@@ -136,7 +155,7 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
     assert ".portfolio-layout" in page and ".portfolio-sidebar" in page
     assert "Abstract first" in page
     assert "Abstract draft" not in page and "Abstract planned" not in page
-    assert "Archived source" in page
+    assert "[Source </>](https://github.com/example/site/tree/main/archive/2026-09-30/projects/first)" in page
     assert "https://github.com/example/site/tree/main/archive/2026-09-30/projects/first" in page
     assert page.count("#portfolio-first") == 2
 
@@ -217,6 +236,8 @@ def test_course_withdrawal_suppresses_descendants_and_keeps_authored_toc(workspa
     snapshot.state.courses[course.id] = contract
     original_toc = copy.deepcopy(contract.toc)
     first = BuildService(root).generate("production")
+    listing = yaml.safe_load((first / "courses.qmd").read_text().split("---", 2)[1])["listing"]
+    assert listing == {"contents": ["nb/courses/example/index.ipynb"], "type": "grid", "sort": False, "fields": ["title", "description", "image"]}
     config = yaml.safe_load((first / "_quarto.yml").read_text())
     sidebar = json.dumps(config["website"]["sidebar"])
     assert "01. Short title" in sidebar and "02. Private title" not in sidebar
@@ -224,6 +245,7 @@ def test_course_withdrawal_suppresses_descendants_and_keeps_authored_toc(workspa
     assert (first / "nb/courses/example/child.svg").exists()
     course.lifecycle = "draft"
     withdrawn = BuildService(root).generate("production")
+    assert yaml.safe_load((withdrawn / "courses.qmd").read_text().split("---", 2)[1])["listing"]["contents"] == []
     assert not (withdrawn / "nb/courses/example/01-child.ipynb").exists()
     assert not (withdrawn / "nb/courses/example/child.svg").exists()
     assert yaml.safe_load((withdrawn / "_quarto.yml").read_text())["website"]["sidebar"] == []
@@ -332,21 +354,48 @@ def test_personal_navigation_and_alias_show_only_rows_of_photos(workspace):
         personal_nav = next(entry for entry in config["website"]["navbar"]["left"] if entry["text"] == "personal")
         assert personal_nav["href"] == "nb/photos/photos.ipynb"
         alias = (stage / "personal.qmd").read_text()
-        assert ".photo-rows" in alias
-        assert "![A real photo caption.]" in alias
+        assert "A real photo caption.\n\n![]" in alias
         assert "## First photo" in alias
-        assert "Unfinished photo" not in alias
-        assert not (stage / "assets/photos/draft.svg").exists()
+        assert ("Unfinished photo" in alias) == (mode == "preview")
+        assert ('title="Draft entry"' in alias) == (mode == "preview")
+        assert (stage / "assets/photos/draft.svg").exists() == (mode == "preview")
         assert "assets/photos/first%20photo.svg" in alias
         assert "Private prose notebook" not in alias
         assert "personal/notes" not in alias
         notebook = nbformat.read(stage / "nb/photos/photos.ipynb", as_version=4)
-        assert ".photo-rows" in notebook.cells[1].source
         assert "## First photo" in notebook.cells[1].source
-        assert "Unfinished photo" not in notebook.cells[1].source
+        assert "A real photo caption.\n\n![]" in notebook.cells[1].source
+        header = yaml.safe_load(notebook.cells[0].source.split("---", 2)[1])
+        assert header["toc"] is True
+        assert "page-layout" not in header
+        assert "{.lightbox fig-alt=" in notebook.cells[1].source
+        assert ("Unfinished photo" in notebook.cells[1].source) == (mode == "preview")
+        assert ('title="Draft entry"' in notebook.cells[1].source) == (mode == "preview")
         assert "Private prose notebook" not in notebook.cells[1].source
         assert "personal/notes" not in notebook.cells[1].source
         assert (stage / "nb/personal/notes.ipynb").exists() == (mode == "preview")
+
+
+@pytest.mark.parametrize("has_draft", [False, True])
+def test_planned_gallery_preview_label_and_production_exclusion(workspace, has_draft):
+    root, snapshot = workspace
+    gallery = artifact("gallery/photos", kind="gallery", lifecycle="planned", path="content/notebooks/photos/photos.ipynb", title="Personal")
+    snapshot.state.artifacts.append(gallery)
+    if has_draft:
+        snapshot.state.photos = [Record(heading="Draft afternoon", path="content/assets/photos/draft.svg", caption="A draft caption.", lifecycle="draft")]
+        snapshot.files["content/assets/photos/draft.svg"] = b"<svg/>"
+    for mode in ["preview", "production"]:
+        stage = BuildService(root).generate(mode)
+        notebook = nbformat.read(stage / "nb/photos/photos.ipynb", as_version=4)
+        show_draft = has_draft and mode == "preview"
+        assert "callout-note" not in notebook.cells[0].source
+        assert 'title="Draft entry"' not in notebook.cells[0].source
+        assert ('title="Draft entry"' in notebook.cells[1].source) == show_draft
+        assert ("Draft afternoon" in notebook.cells[1].source) == show_draft
+        assert (stage / "assets/photos/draft.svg").exists() == show_draft
+        assert gallery.lifecycle == "planned"
+        if has_draft:
+            assert snapshot.state.photos[0].lifecycle == "draft"
 
 
 def test_cms_palette_never_enters_reader_project(workspace):
@@ -359,3 +408,17 @@ def test_cms_palette_never_enters_reader_project(workspace):
     config = yaml.safe_load((stage / "_quarto.yml").read_text())
     assert config["format"]["html"]["theme"] == "united"
     assert config["format"]["html"]["css"] == "assets/styles.css"
+
+
+def test_resume_keeps_compact_lists_and_section_boundaries(workspace):
+    root, snapshot = workspace
+    snapshot.state.profile.employment[0]["bullets"] = ["First achievement.", "Second achievement."]
+    snapshot.state.profile.skills = [{"name": "Engineering", "entries": ["Python", "SQL"]}]
+    stage = BuildService(root).generate()
+    resume = (stage / "resume.qmd").read_text()
+    assert "- First achievement.\n- Second achievement.\n" in resume
+    assert "- Python\n- SQL\n" in resume
+    assert "- Second achievement.\n\n" in resume
+    assert "## Employment History" in resume
+    assert "## Skills" in resume
+    assert ".resume-overview" in resume

@@ -78,6 +78,8 @@ Planned notebooks have no authored content and render metadata-generated pages.
 Title-only scaffolds are empty. Draft/published entries require authored content
 and render actual copied notebooks. Repair manual lifecycle disagreements through
 metadata update or eligible publication, validating the proposed final state.
+CMS notebook lifecycle choices follow inspected canonical content: Planned for
+empty entries, Draft/Published for authored entries, including state repairs.
 Do not demand that the old semantic state already pass. Malformed YAML/duplicate
 keys require explicit repair and must not be silently overwritten.
 
@@ -133,7 +135,12 @@ and expected result, then ask whether an issue should be filed. Never manipulate
 raw JSON as a workaround.
 
 Each photo has a required heading, path, caption, and `lifecycle: draft|published`.
-Published photos render as individual H2 sections in Personal; draft photos and
-their assets are excluded from reader generation, including working previews.
+Photos support optional `width: "80%"` (greater than 0, at most 100%). Blank or
+omitted width preserves default image sizing; CMS edits and adds this field.
+Published photos render as individual H2 sections in Personal. Working previews
+also show draft photos with a per-photo caution titled "Draft entry"; production
+excludes draft photos and their assets. The gallery has no document-level status
+callout. Captions appear above images. Draft posts, chapters, and course homes use Quarto’s native draft metadata and
+banner, with drafts visible only in working previews.
 The gallery page state is derived automatically; there is no collection-level
 publication control in the CMS.

@@ -210,6 +210,17 @@ class Photo(Record):
     path: str
     caption: str
     lifecycle: Literal["draft", "published"] = "draft"
+    width: str | None = None
+
+    @field_validator("width")
+    @classmethod
+    def percentage_width(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        value = value.strip()
+        if not re.fullmatch(r"(?:\d+(?:\.\d+)?|\.\d+)%", value) or not 0 < float(value[:-1]) <= 100:
+            raise ValueError("photo width must be a percentage greater than 0 and at most 100%, e.g. 80%; leave blank for default size")
+        return value
 
     @field_validator("heading")
     @classmethod

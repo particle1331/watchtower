@@ -109,6 +109,9 @@ chapter in that order. Record actualized learning from checked evidence only.
 
 The CMS edits structured fields/plans. “Edit in VS Code” opens the canonical
 notebook; “Start and edit” first materializes it through the lifecycle service.
+Notebook lifecycle choices follow the canonical source: Planned before authored
+content exists, then Draft or Published. Metadata and plans can be saved while
+Planned; authored notebooks cannot be returned to Planned.
 The global refresh builds saved inputs and reports progress/errors without
 executing cells or changing publication. Notebook bodies remain in the editor.
 
@@ -129,7 +132,13 @@ secrets in the OS keyring through `wt vault`. Shared skills live in `skills/`;
 `make setup-skills` maintains links. Archived code is excluded from active checks.
 
 Each photo has a required heading, path, caption, and `lifecycle: draft|published`.
-Published photos render as individual H2 sections in Personal; draft photos and
-their assets are excluded from reader generation, including working previews.
+An optional `width: "80%"` sets image width relative to the content column;
+accept percentages above 0 and up to 100%, or leave blank for the default size.
+The CMS exposes width for existing photos and new rows.
+Published photos render as individual H2 sections in Personal. Working previews
+also show draft photos with a per-photo caution titled "Draft entry"; production
+excludes draft photos and their assets. The gallery has no document-level status
+callout. Captions appear above images. Draft posts, chapters, and course homes use Quarto’s native draft metadata and
+banner, with drafts visible only in working previews.
 The gallery page state is derived automatically; there is no collection-level
 publication control in the CMS.

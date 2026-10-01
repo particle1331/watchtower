@@ -303,6 +303,12 @@ class ContentService:
             path = source_path(artifact, state)
             existing = bool(path and files.get(path) is not None)
             result = {"artifact": artifact.model_dump(mode="json"), "revision": revision(files), "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / str(path)), safe="/") if existing else None, "eligible": eligible(artifact, state.artifacts), "plan": plan_body(artifact, state), "route": route_for(artifact)}
+            if path:
+                try:
+                    result["has_authored_content"] = existing and has_content(nbformat.reads((files[path] or b"").decode(), as_version=4), artifact.title)
+                except (ValueError, nbformat.ValidationError):
+                    # Inspection must still expose malformed sources for repair.
+                    result["has_authored_content"] = None
             if artifact.kind == "portfolio":
                 result["detail"] = next(p.model_dump(mode="json") for p in state.portfolio if p.id == artifact.id)
             if artifact.kind == "course":

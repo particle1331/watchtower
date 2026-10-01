@@ -50,6 +50,64 @@ def form_snapshot(response):
     return revision, html.unescape(source)
 
 
+def lifecycle_options(response):
+    select = re.search(r'<select name="field:\["lifecycle"\]">(.*?)</select>', html.unescape(response.text), re.S).group(1)
+    return [label for attrs, label in re.findall(r"<option([^>]*)>([^<]*)</option>", select) if "disabled" not in attrs]
+
+
+def test_cms_lifecycle_choices_follow_authored_content(client):
+    assert create_post(client).status_code == 201
+    page = client.get("/cms/artifact/post/a%20space")
+    assert lifecycle_options(page) == ["planned"]
+    revision, snapshot = form_snapshot(page)
+    saved = client.post("/cms/save/post/a%20space", data={"revision": revision, "snapshot": snapshot, 'field:["description"]': "Detailed planning metadata"})
+    assert saved.status_code == 200, saved.text
+    current = client.get("/api/artifacts/post/a%20space")
+    assert current.json()["has_authored_content"] is False
+    assert client.post("/api/actions/start/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
+    page = client.get("/cms/artifact/post/a%20space")
+    assert lifecycle_options(page) == ["draft", "published"]
+    current = client.get("/api/artifacts/post/a%20space")
+    assert current.json()["has_authored_content"] is True
+    assert client.post("/api/actions/publish/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
+    assert lifecycle_options(client.get("/cms/artifact/post/a%20space")) == ["draft", "published"]
+
+
+def test_cms_rejects_authored_post_as_planned_without_changing_files(client):
+    assert create_post(client).status_code == 201
+    current = client.get("/api/artifacts/post/a%20space")
+    assert client.post("/api/actions/start/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
+    source = client.app.state.root / "content/notebooks/posts/a space.ipynb"
+    catalog = client.app.state.root / "content/data/catalog.yaml"
+    original = source.read_bytes(), catalog.read_bytes()
+    revision, snapshot = form_snapshot(client.get("/cms/artifact/post/a%20space"))
+    response = client.post("/cms/save/post/a%20space", data={"revision": revision, "snapshot": snapshot, 'field:["lifecycle"]': "planned"})
+    assert response.status_code == 422, response.text
+    assert lifecycle_options(response) == ["draft", "published"]
+    assert "planned (requires repair)" in response.text
+    assert (source.read_bytes(), catalog.read_bytes()) == original
+
+
+def test_cms_can_repair_authored_post_with_mismatched_planned_metadata(client):
+    assert create_post(client).status_code == 201
+    current = client.get("/api/artifacts/post/a%20space")
+    assert client.post("/api/actions/start/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
+    catalog = client.app.state.root / "content/data/catalog.yaml"
+    data = yaml.safe_load(catalog.read_text())
+    data["artifacts"][0]["lifecycle"] = "planned"
+    catalog.write_text(yaml.safe_dump(data))
+    source = client.app.state.root / "content/notebooks/posts/a space.ipynb"
+    original = source.read_bytes()
+    page = client.get("/cms/artifact/post/a%20space")
+    assert lifecycle_options(page) == ["draft", "published"]
+    assert "planned (requires repair)" in page.text
+    revision, snapshot = form_snapshot(page)
+    saved = client.post("/cms/save/post/a%20space", data={"revision": revision, "snapshot": snapshot, 'field:["lifecycle"]': "draft"})
+    assert saved.status_code == 200, saved.text
+    assert client.get("/api/artifacts/post/a%20space").json()["artifact"]["lifecycle"] == "draft"
+    assert source.read_bytes() == original
+
+
 def test_required_precondition_stale_save_and_two_clients(client):
     missing = client.post("/api/artifacts", json={"id": "post/test", "kind": "post", "title": "Test", "path": "content/notebooks/posts/test.ipynb"})
     assert missing.status_code == 428
@@ -174,11 +232,24 @@ def test_gallery_photo_lifecycle_api_and_cms(client):
     assert "gallery_lifecycle" not in page.text
     assert "photos / 0 / heading" in page.text
     assert 'name="field:["photos", "0", "lifecycle"]"' in html.unescape(page.text)
+    assert 'name="field:["photos", "0", "width"]"' in html.unescape(page.text)
+    assert 'name="new:["photos", "width"]"' in html.unescape(page.text)
+    assert 'placeholder="80%"' in page.text
     revision, snapshot = form_snapshot(page)
-    published = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "lifecycle"]': "published"})
+    published = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "lifecycle"]': "published", 'field:["photos", "0", "width"]': "80%"})
     assert published.status_code == 200, published.text
     assert client.get("/api/gallery").json()["photos"][0]["lifecycle"] == "published"
+    assert client.get("/api/gallery").json()["photos"][0]["width"] == "80%"
     assert '<span class="badge">published</span>' in client.get("/cms/personal").text
+    page = client.get("/cms/data/photos")
+    revision, snapshot = form_snapshot(page)
+    invalid = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "width"]': "80"})
+    assert invalid.status_code == 422, invalid.text
+    assert 'value="80"' in invalid.text
+    assert client.get("/api/gallery").json()["photos"][0]["width"] == "80%"
+    cleared = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "width"]': ""})
+    assert cleared.status_code == 200, cleared.text
+    assert client.get("/api/gallery").json()["photos"][0]["width"] is None
     page = client.get("/cms/data/photos")
     revision, snapshot = form_snapshot(page)
     response = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, "collection_action": json.dumps({"path": ["photos"], "index": 0, "action": "remove"})})
@@ -250,8 +321,9 @@ def test_build_status_and_validated_log_ids(client, monkeypatch):
 def test_author_palette_is_scoped_to_cms_static(client):
     response = client.get("/cms/static/theme.css")
     assert response.status_code == 200
-    assert "--wt-background: #111015" in response.text
-    assert "--wt-accent: #bd9bff" in response.text
+    assert "color-scheme: light" in response.text
+    assert "--wt-background: #f5f5f5" in response.text
+    assert "--wt-accent: #222222" in response.text
     assert client.get("/cms/assets/theme.css").status_code == 404
     assert not (client.app.state.root / "frontend/assets/theme.css").exists()
 
@@ -265,5 +337,20 @@ def test_list_reorder_and_add_preserve_fields():
     assert [row["id"] for row in result["toc"]] == ["b", "a"]
     assert result["toc"][1]["title"] == "Edited A"
     assert original["toc"][0]["title"] == "A"
-    form = FormData({"collection_action": json.dumps({"path": ["photos"], "action": "add", "prototype": {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}}), 'new:["photos", "heading"]': "A new heading", 'new:["photos", "path"]': "content/assets/photo.jpg", 'new:["photos", "caption"]': "An entered caption", 'new:["photos", "lifecycle"]': "draft"})
-    assert apply_fields({"photos": []}, form)["photos"] == [{"heading": "A new heading", "path": "content/assets/photo.jpg", "caption": "An entered caption", "lifecycle": "draft"}]
+    form = FormData({"collection_action": json.dumps({"path": ["photos"], "action": "add", "prototype": {"heading": "", "path": "", "caption": "", "lifecycle": "draft", "width": ""}}), 'new:["photos", "heading"]': "A new heading", 'new:["photos", "path"]': "content/assets/photo.jpg", 'new:["photos", "caption"]': "An entered caption", 'new:["photos", "lifecycle"]': "draft", 'new:["photos", "width"]': "80%"})
+    assert apply_fields({"photos": []}, form)["photos"] == [{"heading": "A new heading", "path": "content/assets/photo.jpg", "caption": "An entered caption", "lifecycle": "draft", "width": "80%"}]
+
+
+@pytest.mark.parametrize("width", ["0%", "101%", "-10%", "80", "80px", '80%" onload="alert(1)'])
+def test_photo_width_rejects_invalid_percentages(width):
+    from watchtower.models import Photo
+
+    with pytest.raises(ValueError, match="photo width must be a percentage"):
+        Photo(heading="Photo", path="content/assets/photo.jpg", caption="Caption", width=width)
+
+
+@pytest.mark.parametrize(("width", "expected"), [(None, None), ("", None), ("  ", None), (" 80% ", "80%"), ("0.5%", "0.5%"), ("100%", "100%")])
+def test_photo_width_accepts_optional_percentage(width, expected):
+    from watchtower.models import Photo
+
+    assert Photo(heading="Photo", path="content/assets/photo.jpg", caption="Caption", width=width).width == expected

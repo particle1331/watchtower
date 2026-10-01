@@ -127,8 +127,9 @@ class _Generator:
 
     def template(self, template_name: str, **context: Any) -> str:
         env = self.env
-        if template_name.endswith(".tex.j2"):
-            env = env.overlay(trim_blocks=True, lstrip_blocks=True)
+        if template_name.endswith(".tex.j2") or template_name in {"site/index.qmd.j2", "site/resume.qmd.j2"}:
+            # Preserve the original profile renderer's compact Markdown lists.
+            env = env.overlay(trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True)
         return env.get_template(template_name).render(**context)
 
     def write(self, path: str, value: str | bytes, *, render: bool = False) -> None:
@@ -240,6 +241,8 @@ class _Generator:
 
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
         value: dict[str, Any] = {"title": artifact.title, "toc": True}
+        if artifact.kind in {"post", "chapter", "course"}:
+            value["draft"] = artifact.lifecycle == "draft"
         if artifact.description and artifact.kind != "gallery":
             value["description"] = artifact.description
         if artifact.date:
@@ -252,8 +255,9 @@ class _Generator:
             value["author"] = self.state.profile.name
         if artifact.kind == "course":
             value["sidebar"] = artifact.id.replace("/", "-")
+            value["description"] = artifact.description or self.state.courses[artifact.id].purpose
         if artifact.kind == "gallery":
-            value.update(toc=False, sidebar=False, **{"page-layout": "full"})
+            value.update(toc=True, sidebar=False)
         cover = getattr(artifact, "cover", None) or getattr(artifact, "image", None)
         if cover:
             value["image"] = "/" + _asset_path(cover)
@@ -267,12 +271,15 @@ class _Generator:
         if artifact.kind == "gallery":
             figures = []
             for photo in self.state.photos:
-                if photo.lifecycle == "draft":
+                if photo.lifecycle == "draft" and self.mode == "production":
                     continue
                 destination = _asset_path(photo.path)
                 self.write(destination, self.files[photo.path])
-                figures.append(f"::: {{.photo-section}}\n\n## {photo.heading}\n\n![{photo.caption}]({_relative(destination, route)})\n\n:::")
-            body = "::: {.photo-rows}\n\n" + "\n\n".join(figures) + "\n\n:::\n"
+                status = '::: {.callout-caution title="Draft entry"}\nSet this photo to **Published** in the CMS so it appears on the website.\n:::\n\n' if photo.lifecycle == "draft" else ""
+                width = f" width={json.dumps(photo.width)}" if getattr(photo, "width", None) else ""
+                image = f"![]({_relative(destination, route)}){{.lightbox fig-alt={json.dumps(photo.caption, ensure_ascii=False)}{width}}}"
+                figures.append(f"## {photo.heading}\n\n{status}{photo.caption}\n\n{image}")
+            body = "\n\n".join(figures) + "\n"
             notebook = nbformat.v4.new_notebook(cells=[_generated_cell(artifact.id, "photo-rows", body)])
         elif artifact.lifecycle == "planned":
             body = plan_body(artifact, self.state)
@@ -292,7 +299,8 @@ class _Generator:
                         if isinstance(body, str):
                             self.rewrite_body(body, source, route)
         header = _frontmatter(self.metadata(artifact, route))
-        if artifact.lifecycle != "published" or artifact.visibility != "public":
+        native_draft = artifact.kind in {"post", "chapter", "course"} and artifact.lifecycle == "draft"
+        if artifact.kind != "gallery" and ((artifact.lifecycle != "published" and not native_draft) or artifact.visibility != "public"):
             header += f"\n::: {{.callout-note}}\n**{artifact.lifecycle.capitalize()}**"
             if artifact.visibility != "public":
                 header += " · Private working preview"
@@ -351,6 +359,7 @@ class _Generator:
             "resources": ["assets/**", *sorted(p for p in self.asset_paths if not p.startswith("assets/")), "!assets/resume.tex", "!assets/preview-reload.html"],
         }
         website = config.setdefault("website", {})
+        website["draft-mode"] = "visible" if self.mode == "preview" else "gone"
         gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
         website["navbar"] = yaml.safe_load(self.template(
             "shared/navigation.yaml.j2", **self.state.settings.model_dump(mode="json"),
@@ -427,8 +436,8 @@ class _Generator:
         self.write("courses.qmd", self.template("site/courses.qmd.j2", courses=courses), render=True)
         gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
         photos = [
-            {"src": quote(_asset_path(photo.path), safe="/._-~"), "caption": photo.caption, "heading": photo.heading}
-            for photo in self.state.photos if photo.lifecycle == "published"
+            {"src": quote(_asset_path(photo.path), safe="/._-~"), "caption": photo.caption, "heading": photo.heading, "lifecycle": photo.lifecycle, "width": getattr(photo, "width", None)}
+            for photo in self.state.photos if photo.lifecycle == "published" or self.mode == "preview"
         ] if gallery else []
         self.write("personal.qmd", self.template("site/personal.qmd.j2", photos=photos), render=True)
         self.write("assets/preview-reload.html", '''<script>

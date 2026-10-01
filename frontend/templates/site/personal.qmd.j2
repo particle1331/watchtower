@@ -1,19 +1,19 @@
 ---
 title: Personal
-page-layout: full
 sidebar: false
-toc: false
+toc: true
 ---
 
-::: {.photo-rows}
 {% for photo in photos %}
-::: {.photo-section}
-
 ## {{ photo.heading }}
 
-![{{ photo.caption }}]({{ photo.src }})
-
+{% if photo.lifecycle == 'draft' %}::: {.callout-caution title="Draft entry"}
+Set this photo to **Published** in the CMS so it appears on the website.
 :::
+
+{% endif %}
+{{ photo.caption }}
+
+![]({{ photo.src }}){.lightbox fig-alt={{ photo.caption | tojson }}{% if photo.width %} width={{ photo.width | tojson }}{% endif %}}
 
 {% endfor %}
-:::

@@ -15,14 +15,12 @@ Selected projects and their accompanying notebooks.
 {% if entry.lifecycle != 'published' %}
 **{{ entry.lifecycle | capitalize }}**
 {% endif %}
-**Abstract**
-
-{{ entry.abstract }}
+**Abstract.** {{ entry.abstract }}
 
 {% if entry.figure %}
 ![{{ entry.figure_caption }}]({{ entry.figure }})
 {% endif %}
-[View notebook →]({{ entry.route }}){% if entry.source_url %} · [{{ entry.source_label }}]({{ entry.source_url }}){% endif %}
+[View notebook →]({{ entry.route }}){% if entry.source_url %} ⠀|⠀ [Source </>]({{ entry.source_url }}){% endif %}
 
 :::
 {% endfor %}
@@ -33,9 +31,12 @@ Selected projects and their accompanying notebooks.
 - [{{ entry.title }}](#{{ entry.anchor }})
 {% endfor %}
 
-### Explore
-- [Posts](posts.qmd)
-- [Courses](courses.qmd)
-- [Résumé](resume.qmd)
+{% set source_entries = entries | selectattr('source_url') | list %}
+{% if source_entries %}
+### Source code
+{% for entry in source_entries %}
+- [`{{ entry.project_name }}/`]({{ entry.source_url }})
+{% endfor %}
+{% endif %}
 :::
 :::
