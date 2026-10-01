@@ -182,15 +182,17 @@ artifacts:
   title: Build a Reasoning Model from Scratch
   path: content/notebooks/courses/reasoning-from-scratch
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
-  route: nb/courses/reasoning-from-scratch/index.ipynb
   description: A planned, hands-on path from pretrained language-model generation
     to inference-time reasoning, reinforcement learning, and distillation.
   categories:
   - large-language-models
   - reasoning
   - pytorch
+  tags: []
+  planned: {}
+  route: nb/courses/reasoning-from-scratch/index.ipynb
 - id: course/reasoning-from-scratch/00-overview
   kind: chapter
   title: Reasoning Model Pipeline and Evidence Contract
@@ -332,15 +334,17 @@ artifacts:
   title: Build Text Classifiers from Scratch
   path: content/notebooks/courses/text-classification-from-scratch
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
-  route: nb/courses/text-classification-from-scratch/index.ipynb
   description: An end-to-end text classification course using AI-written-text detection
     as a case study.
   categories:
   - machine-learning
   - text-classification
   - course
+  tags: []
+  planned: {}
+  route: nb/courses/text-classification-from-scratch/index.ipynb
 - id: course/text-classification-from-scratch/01-introduction
   kind: chapter
   title: Define the Classification Problem
@@ -538,7 +542,7 @@ artifacts:
   title: Personal
   path: content/data/photos.yaml
   visibility: public
-  lifecycle: planned
+  lifecycle: published
   relations: []
   categories: []
   tags: []

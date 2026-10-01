@@ -75,7 +75,7 @@ employment:
   company: Afni
   dates: Jan 2025 -- Present
   tech: Python, Azure AI Services, Azure ML, LangChain, Docker, CI/CD
-  title: Sr. Machine Learning Engineered
+  title: Sr. Machine Learning Engineer
 - bullets:
   - Reduced cost by 6X and increased accuracy of speech recognition system by +10%
   - Developed and deployed a transcription service which transcribed 1.2M+ production
