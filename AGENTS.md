@@ -63,6 +63,16 @@ without creating source notebooks. `wt start <id>` creates a draft from persiste
 planning data, retains the plan, and refuses existing source files. Post plans
 accept arbitrary Markdown; chapters require planned content and lab/evidence;
 portfolio plans have introduction, what it contains, optional scope notes.
+Starting an active portfolio also initializes and registers `projects/<name>`
+using the same package scaffold as `make project`. Use its configured project
+name, or the final stable-ID segment when omitted. Reuse existing code without
+overwriting it. Notebook, scaffold, and registrations share one recoverable save.
+Draft portfolio entries may omit abstract/figure metadata; publication requires
+the abstract, featured figure, and caption.
+Planned portfolio pages include reserved active source URLs before code exists.
+Their planned callout includes `wt start <actual-stable-id>`.
+Active code directories are required for Draft/Published portfolio entries;
+archived source references must always resolve to existing archived code.
 Plan files must be under `<repo>/.tmp/`; persist their bodies before removing them.
 
 `wt import` uses supported normalization and defaults authored content to draft.
@@ -111,7 +121,7 @@ coordination is required.
 
 `frontend/generated/` and `backend/runtime/` are ignored build/runtime state.
 Templates/site assets/settings live under `frontend/`; CMS templates/styles never
-enter public generation. The black/gray/violet motif is CMS-only: retain existing
+enter public generation. The black/gray/blue motif is CMS-only: retain existing
 public-site styling. Never edit generated headers/listings/configuration, résumé
 artifacts, or context includes. `make knowledge`, `wt sync-site`, and
 `wt render-context` regenerate compatible projections. `make resume` generates
@@ -135,6 +145,11 @@ and expected result, then ask whether an issue should be filed. Never manipulate
 raw JSON as a workaround.
 
 Each photo has a required heading, path, caption, and `lifecycle: draft|published`.
+CMS course card uploads save to `content/assets/courses/` and update catalog
+`cover`; Personal uploads save to `content/assets/photos/` and update photo
+`path`. Both accept PNG, JPEG, WebP, or GIF up to 20 MB and save images with
+metadata atomically. Empty uploads keep existing images; row moves keep uploads
+with their photos.
 Photos support optional `width: "80%"` (greater than 0, at most 100%). Blank or
 omitted width preserves default image sizing; CMS edits and adds this field.
 Published photos render as individual H2 sections in Personal. Working previews

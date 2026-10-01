@@ -1,1 +1,15 @@
-<section id="build-status" role="status" {% if build and build.status in ['queued','running'] %}hx-get="/cms/build/{{ build.id }}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>{% if error %}<div class="error"><pre>{{ error }}</pre></div>{% elif build %}<p>Preview: <strong>{{ build.status }}</strong>{% if build.finished_at %} · {{ build.finished_at }}{% endif %}{% if build.preview_url %} · <a href="{{ build.preview_url }}" target="_blank" rel="noopener">Open preview ↗</a>{% endif %}</p>{% if build.error %}<pre class="error">{{ build.error }}</pre><p>The previous successful preview remains available.</p>{% endif %}{% if build.logs %}<details><summary>Build logs</summary><pre>{{ build.logs }}</pre></details>{% endif %}{% endif %}</section>
+<section id="build-status" data-build-status="{{ build.status if build else 'failed' if error else 'idle' }}" role="status" {% if build and build.status in ['queued','running'] %}hx-get="/cms/build/{{ build.id }}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+  {% if build %}
+  <p>Preview: <strong>{{ build.status }}</strong>{% if build.finished_at %} · {{ build.finished_at }}{% endif %}{% if build.preview_url %} · <a href="{{ build.preview_url }}" target="_blank" rel="noopener">Open preview ↗</a>{% endif %}</p>
+  {% endif %}
+  {% if error or (build and (build.error or build.logs)) %}
+  <details class="build-logs" data-build-id="{{ build.id if build else 'request-error' }}" open>
+    <summary><span>Refresh logs</span><span class="logs-show">Show output</span><span class="logs-hide">Hide output</span></summary>
+    <div class="build-output" role="region" aria-label="Refresh output" tabindex="0">
+      {% if error %}<pre class="error">{{ error }}</pre>{% elif build.error %}<pre class="error">{{ build.error }}</pre>{% endif %}
+      {% if build and build.logs %}<pre class="build-log-text">{{ build.logs }}</pre>{% endif %}
+    </div>
+  </details>
+  {% endif %}
+  {% if build and build.error %}<p>The previous successful preview remains available.</p>{% endif %}
+</section>

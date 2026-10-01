@@ -2,7 +2,7 @@
 
 A notebook publishing workspace with a local FastAPI/Jinja/HTMX CMS, a
 revision-aware CLI and MCP server, and a generated Quarto website. The CMS uses
-black, gray, and violet; the public website retains its existing styling.
+black, gray, and blue; the public website retains its existing styling.
 
 ## Sources of truth
 
@@ -82,7 +82,7 @@ builds committed inputs and publishes successful output to the existing
 | --- | --- |
 | `wt map`, `ls`, `find`, `context` | Catalog-backed discovery and course reading paths. |
 | `wt new post\|course\|chapter\|portfolio`, `new section` | Planned records and ordered course TOCs. |
-| `wt start`, `publish`, `draft` | Explicit notebook/publication transitions. |
+| `wt start`, `publish`, `draft` | Explicit notebook/publication transitions; active portfolio start also scaffolds/registers its project. |
 | `wt update <id>` | Metadata/tags/plans; `--patch-file` supports variant fields and relations. |
 | `wt data <name> [--file <yaml>]` | Profile, portfolio, photos, settings, or `course/<slug>`. |
 | `wt gallery --file <yaml>` | Save ordered photos and each photo’s lifecycle atomically. |
@@ -112,6 +112,26 @@ notebook; “Start and edit” first materializes it through the lifecycle servi
 Notebook lifecycle choices follow the canonical source: Planned before authored
 content exists, then Draft or Published. Metadata and plans can be saved while
 Planned; authored notebooks cannot be returned to Planned.
+Portfolio editors accept a featured image (PNG, JPEG, WebP, or GIF, up to 20 MB)
+and figure caption. Saving stores the image under `content/assets/portfolio/`
+with the metadata in one transaction. Portfolio cards show it below the abstract;
+planned project cards and pages use a “Planned entry” caution callout.
+The callout includes the entry’s actual stable ID in `wt start <id>`.
+Course editors accept a card image in the same formats and size limit, stored
+under `content/assets/courses/` through the catalog's `cover` field. It appears
+in the Courses card grid. Personal photo editors support uploading new photos
+and replacing existing ones under `content/assets/photos/`. Images and metadata
+save in one transaction; leaving an upload empty keeps the saved image.
+Starting an active portfolio creates its notebook and `projects/<name>` with
+the same package scaffold as `make project NAME=<name>`, and registers both
+in one recoverable save. The name comes from the configured project name or
+the final segment of the stable ID. Existing project code is reused untouched.
+Drafts may start before the abstract and featured figure are complete;
+publication still requires the abstract, image, and caption.
+Planned project pages group source and related-page links under “Related content:”
+as bullets. They include the reserved active code URL before the directory exists;
+draft/published entries require the code directory, and archived references must
+always resolve to existing archived code.
 The global refresh builds saved inputs and reports progress/errors without
 executing cells or changing publication. Notebook bodies remain in the editor.
 

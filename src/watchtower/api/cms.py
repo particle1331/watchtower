@@ -9,7 +9,9 @@ from urllib.parse import quote
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from starlette.datastructures import UploadFile
 
+from watchtower.services.images import MAX_FIGURE_BYTES
 from watchtower.services.workspace import ServiceError
 
 NAVIGATION = [("home", "Home"), ("resume", "Résumé"), ("portfolio", "Portfolio"), ("posts", "Posts"), ("courses", "Courses"), ("personal", "Personal")]
@@ -93,7 +95,39 @@ def form_fields(data: Any, prefix: tuple[str, ...] = ()) -> list[dict[str, Any]]
                 fields.extend(form_fields(value, (*prefix, str(index))))
     else:
         fields.append({"name": json.dumps(prefix), "label": " / ".join(prefix), "value": data if data is not None else "", "type": "photo_width" if prefix and prefix[-1] == "width" and "photos" in prefix else "photo_lifecycle" if prefix and prefix[-1] == "lifecycle" and "photos" in prefix else "bool" if isinstance(data, bool) else "int" if isinstance(data, int) else "float" if isinstance(data, float) else "text"})
+        if prefix and prefix[0] == "photos" and prefix[-1] == "path":
+            fields[-1].update(type="photo_image", photo_index=prefix[1] if len(prefix) == 3 else None)
     return fields
+
+
+def field_groups(fields: list[dict[str, Any]], data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Keep fields with their owning record and expose human-readable row names."""
+    groups: dict[tuple[str, ...], dict[str, Any]] = {}
+    collection_paths = {tuple(item["path"]) for item in collections(data)}
+    for field in fields:
+        path = tuple(json.loads(field["name"]))
+        if field["label"] in {"id", "kind", "version"}:
+            continue
+        parent = path[:-1]
+        if parent not in groups:
+            node: Any = data
+            labels: list[str] = []
+            row_action = None
+            for key in parent:
+                if isinstance(node, list):
+                    index = int(key)
+                    count = len(node)
+                    node = node[index]
+                    title = next((node.get(key) for key in ("heading", "title", "name", "company", "institution", "id", "chapter_id") if node.get(key)), "Untitled") if isinstance(node, dict) else str(node)
+                    labels.append(f"{index + 1}. {title}")
+                    if key == parent[-1] and parent[:-1] in collection_paths:
+                        row_action = {"path": parent[:-1], "index": index, "count": count}
+                else:
+                    node = node[key]
+                    labels.append(key.replace("_", " ").capitalize())
+            groups[parent] = {"title": labels[-1] if labels else "General", "context": " / ".join(labels[:-1]), "fields": [], "row_action": row_action}
+        groups[parent]["fields"].append({**field, "caption": path[-1].replace("_", " ").capitalize()})
+    return list(groups.values())
 
 
 def apply_fields(data: dict[str, Any], form: Any) -> dict[str, Any]:
@@ -101,7 +135,11 @@ def apply_fields(data: dict[str, Any], form: Any) -> dict[str, Any]:
     for name, value in form.multi_items():
         if not name.startswith("field:"):
             continue
-        path = json.loads(name[6:])
+        try:
+            path = json.loads(name[6:])
+        except json.JSONDecodeError:
+            # Multipart field names escape quotes in Content-Disposition.
+            path = json.loads(name[6:].replace("%22", '"'))
         if not isinstance(path, list) or not path:
             raise ValueError("Invalid field path")
         node: Any = result
@@ -148,12 +186,49 @@ def apply_fields(data: dict[str, Any], form: Any) -> dict[str, Any]:
             new_values = []
             for name, value in form.multi_items():
                 if name.startswith("new:"):
-                    path = json.loads(name[4:])
+                    path = json.loads(name[4:].replace("%22", '"'))
                     if path[:len(operation["path"])] == operation["path"]:
                         new_values.append(("field:" + json.dumps(["new", *path[len(operation["path"]):]]), value))
             from starlette.datastructures import FormData
             node.append(apply_fields(wrapper, FormData(new_values))["new"])
     return result
+
+
+async def photo_uploads(form: Any, row_count: int) -> dict[int, bytes]:
+    """Keep selected files with their rows when a submission reorders the list."""
+    action = json.loads(str(form.get("collection_action", "{}")))
+    images = {}
+    for name, upload in form.multi_items():
+        if not isinstance(upload, UploadFile) or not upload.filename:
+            continue
+        index = None
+        if name.startswith("photo_image:"):
+            index = int(name.split(":", 1)[1])
+            if not 0 <= index < row_count:
+                raise ServiceError("Unknown photo for image upload.")
+            if action.get("path") == ["photos"]:
+                selected = action.get("index", 0)
+                operation = action.get("action")
+                if operation == "remove":
+                    if index == selected:
+                        await upload.close()
+                        continue
+                    index -= int(index > selected)
+                elif operation in {"up", "down"}:
+                    destination = selected + (-1 if operation == "up" else 1)
+                    if 0 <= destination < row_count:
+                        if index == selected:
+                            index = destination
+                        elif index == destination:
+                            index = selected
+        elif name == "new_photo_image" and action.get("path") == ["photos"] and action.get("action") == "add":
+            index = row_count
+        try:
+            if index is not None:
+                images[index] = await upload.read(MAX_FIGURE_BYTES + 1)
+        finally:
+            await upload.close()
+    return images
 
 
 def cms_router(root: Path) -> APIRouter:
@@ -163,6 +238,8 @@ def cms_router(root: Path) -> APIRouter:
 
     def render(request: Request, template: str, context: dict[str, Any], status: int = 200) -> HTMLResponse:
         context.update({"navigation": NAVIGATION, "root": str(root)})
+        if "fields" in context:
+            context["groups"] = field_groups(context["fields"], context.get("artifact", context.get("data", {})))
         context.setdefault("last_build", request.app.state.builds.last_successful(mode="preview"))
         context["preview_url"] = (context.get("last_build") or {}).get("preview_url") or "http://127.0.0.1:4300"
         return templates.TemplateResponse(request=request, name=template, context=context, status_code=status)
@@ -209,10 +286,18 @@ def cms_router(root: Path) -> APIRouter:
         data: dict[str, Any] = {key: str(value) for key, value in form.items() if key not in {"revision", "tags", "relations"} and value != ""}
         data["tags"] = [tag.strip() for tag in str(form.get("tags", "")).split(",") if tag.strip()]
         data["relations"] = [item.strip() for item in str(form.get("relations", "")).split(",") if item.strip()]
+        portfolio_plan = {key: data.pop(key, "") for key in ("introduction", "what_it_contains", "scope_notes")}
         if data.get("kind") != "chapter":
             content = data.pop("planned_content", "")
             data.pop("planned_lab_and_evidence", None)
-            data["planned"] = {"content": content}
+            for key in ("parent", "toc_title", "section"):
+                data.pop(key, None)
+            if data.get("kind") == "portfolio":
+                data.pop("path", None)
+                slug = str(data.get("id", "")).split("/")[-1]
+                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", "planned": portfolio_plan}
+            else:
+                data["planned"] = {"content": content}
         try:
             result = request.app.state.content.create(data, expected_revision=form_revision(form.get("revision")))
         except ServiceError as error:
@@ -233,12 +318,21 @@ def cms_router(root: Path) -> APIRouter:
         baseline = form_baseline(form.get("snapshot", "{}"))
         values = baseline
         revision = str(form.get("revision", ""))
+        upload = form.get("featured_image")
+        uploading = isinstance(upload, UploadFile) and bool(upload.filename)
         try:
             values = apply_fields(baseline, form)
             patch = {key: value for key, value in values.items() if baseline.get(key) != value}
-            request.app.state.content.update(artifact_id, patch, expected_revision=form_revision(revision))
+            image = None
+            if isinstance(upload, UploadFile) and uploading:
+                try:
+                    image = await upload.read(MAX_FIGURE_BYTES + 1)
+                finally:
+                    await upload.close()
+            request.app.state.content.update(artifact_id, patch, expected_revision=form_revision(revision), figure_image=image)
         except ServiceError as error:
             context = detail_context(request, artifact_id, values, revision, error.as_dict())
+            context["upload_retry"] = uploading
             return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context, error.status)
         except (ValueError, KeyError, TypeError) as error:
             context = detail_context(request, artifact_id, values, revision, str(error))
@@ -275,10 +369,13 @@ def cms_router(root: Path) -> APIRouter:
         revision = str(form.get("revision", ""))
         error: Any = None
         status = 200
+        uploading = any(isinstance(value, UploadFile) and bool(value.filename) for value in form.values())
         try:
             values = apply_fields(baseline, form)
             if name == "photos":
-                result = request.app.state.content.update_gallery(values, expected_revision=form_revision(revision))
+                images = await photo_uploads(form, len(baseline.get("photos", [])))
+                result = request.app.state.content.update_gallery(values, expected_revision=form_revision(revision), photo_images=images)
+                values = photo_editor_data(result["data"]["photos"])
             else:
                 result = request.app.state.content.update_data(name, values, expected_revision=form_revision(revision))
             revision = result["revision"]
@@ -286,7 +383,7 @@ def cms_router(root: Path) -> APIRouter:
             error, status = exc.as_dict(), exc.status
         except (ValueError, KeyError, TypeError) as exc:
             error, status = str(exc), 422
-        return render(request, "data_fragment.html" if request.headers.get("HX-Request") else "data.html", {"section": "resume" if name == "profile" else "courses" if name.startswith("course/") else "personal" if name == "photos" else "portfolio", "name": name, "data": values, "fields": form_fields(values), "collections": collections(values), "revision": revision, "error": error, "saved": not error}, status)
+        return render(request, "data_fragment.html" if request.headers.get("HX-Request") else "data.html", {"section": "resume" if name == "profile" else "courses" if name.startswith("course/") else "personal" if name == "photos" else "portfolio", "name": name, "data": values, "fields": form_fields(values), "collections": collections(values), "revision": revision, "error": error, "upload_retry": uploading, "saved": not error}, status)
 
     @router.post("/refresh")
     def refresh(request: Request) -> HTMLResponse:
@@ -304,7 +401,7 @@ def cms_router(root: Path) -> APIRouter:
     @router.get("/figure/{artifact_id:path}")
     def portfolio_figure(request: Request, artifact_id: str) -> Response:
         record = request.app.state.content.inspect(artifact_id)
-        figure = record.get("detail", {}).get("figure_path")
+        figure = record.get("detail", {}).get("figure_path") if record["artifact"]["kind"] == "portfolio" else record["artifact"].get("cover")
         if not figure:
             return HTMLResponse("No figure configured", status_code=404)
         path = (root / figure).resolve()

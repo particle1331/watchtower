@@ -71,17 +71,18 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     assert service.inspect(payload["id"])["detail"]["planned"] == payload["detail"]["planned"]
 
 
-@pytest.mark.parametrize("missing", ["abstract", "figure_path", "figure_caption", "notebook_path", "project_name"])
-def test_portfolio_start_missing_required_detail_is_atomic(content_service, missing):
+@pytest.mark.parametrize("missing", ["abstract", "figure_path", "figure_caption"])
+def test_portfolio_publish_missing_required_detail_is_atomic(content_service, missing):
     service = content_service
     payload = portfolio_payload(service)
     payload["detail"].pop(missing)
     service.create(payload)
+    service.start(payload["id"])
     before = file_state(service)
     with pytest.raises(ServiceError):
-        service.start(payload["id"])
+        service.publish(payload["id"])
     assert file_state(service) == before
-    assert not (service.root / "content/notebooks/portfolio/example.ipynb").exists()
+    assert (service.root / "content/notebooks/portfolio/example.ipynb").exists()
     assert (service.root / "projects/example/code.py").exists()
 
 
@@ -131,6 +132,36 @@ def test_portfolio_project_relation_must_identify_same_directory(content_service
     with pytest.raises(ServiceError, match="different code directory"):
         service.create(payload)
     assert file_state(service) == before
+
+
+@pytest.mark.parametrize("project_name", [None, "future-code"])
+def test_planned_portfolio_related_content_includes_reserved_source_before_code_exists(content_service, project_name):
+    service = content_service
+    related_id = course(service, "related")
+    private_id = post(service, visibility="private")["artifact"]["id"]
+    service.create({"id": "portfolio/future", "kind": "portfolio", "title": "Future project",
+        "relations": [related_id, private_id], "detail": {
+            "project_name": project_name, "notebook_path": "content/notebooks/portfolio/future.ipynb",
+            "planned": {"introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope notes"},
+        }})
+    record = service.inspect("portfolio/future")
+    source_name = project_name or "future"
+    assert f"Related content:\n\n- [Reserved source code](https://github.com/particle1331/watchtower/tree/main/projects/{source_name})\n- [related course]" in record["plan"]
+    assert "[Example]" not in record["plan"]
+    assert "nb/posts/example" not in record["plan"]
+    assert record["plan"].endswith("\n\nScope notes")
+    assert not (service.root / f"projects/{source_name}").exists()
+    assert not (service.root / "content/notebooks/portfolio/future.ipynb").exists()
+    service.validate()
+
+
+def test_planned_archived_source_still_requires_existing_archive_directory(content_service):
+    service = content_service
+    original = file_state(service)
+    with pytest.raises(ServiceError, match="missing project directory"):
+        service.create({"id": "portfolio/missing", "kind": "portfolio", "title": "Missing archived source",
+            "detail": {"project_name": "missing", "project_source": "archived", "archive_date": "2026-09-30"}})
+    assert file_state(service) == original
 
 
 def test_photo_lifecycle_updates_gallery_automatically_and_preserves_images(content_service):

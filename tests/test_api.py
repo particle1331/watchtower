@@ -11,7 +11,7 @@ import yaml
 from fastapi.testclient import TestClient
 
 from watchtower.api import create_app
-from watchtower.api.cms import apply_fields, form_fields
+from watchtower.api.cms import apply_fields, field_groups, form_fields
 from watchtower.services.content import ContentService
 
 
@@ -176,7 +176,7 @@ def test_native_pages_schema_and_local_origin(client):
     for section in ["home", "resume", "portfolio", "posts", "courses", "personal"]:
         response = client.get(f"/cms/{section}")
         assert response.status_code == 200, response.text
-        assert "Refresh site preview" in response.text
+        assert "Rebuild" in response.text
         assert "/cms/static/theme.css" in response.text
     assert client.get("/cms/static/theme.css").status_code == 200
     schema = client.get("/openapi.json").json()
@@ -195,6 +195,8 @@ def test_inline_chapter_plan_and_nested_ids_are_derived(client):
     page = client.get("/cms/artifact/course/demo/first")
     revision, snapshot = form_snapshot(page)
     assert "Explain a concept" in page.text
+    for key in ("parent", "toc_title", "section"):
+        assert f'name="field:["{key}"]"' in html.unescape(page.text)
     saved = client.post("/cms/save/course/demo/first", data={"revision": revision, "snapshot": snapshot, 'field:["plan", "content"]': "A revised teaching plan"})
     assert saved.status_code == 200, saved.text
     assert client.get("/api/artifacts/course/demo/first").json()["chapter_plan"]["content"] == "A revised teaching plan"
@@ -354,3 +356,474 @@ def test_photo_width_accepts_optional_percentage(width, expected):
     from watchtower.models import Photo
 
     assert Photo(heading="Photo", path="content/assets/photo.jpg", caption="Caption", width=width).width == expected
+
+
+def test_editor_groups_keep_nested_fields_with_their_entity():
+    data = {"version": 1, "entries": [
+        {"id": "portfolio/first", "title": "First", "planned": {"content": "First plan"}},
+        {"id": "portfolio/second", "title": "Second", "planned": {"content": "Second plan"}},
+    ]}
+    groups = field_groups(form_fields(data), data)
+    assert [(group["context"], group["title"]) for group in groups] == [
+        ("Entries", "1. First"), ("Entries / 1. First", "Planned"),
+        ("Entries", "2. Second"), ("Entries / 2. Second", "Planned"),
+    ]
+    fields = [field for group in groups for field in group["fields"]]
+    assert {field["name"] for field in fields} == {field["name"] for field in form_fields(data) if field["label"] != "version"}
+    assert groups[0]["row_action"] == {"path": ("entries",), "index": 0, "count": 2}
+    assert groups[1]["row_action"] is None
+    assert groups[3]["fields"][0]["caption"] == "Content"
+    assert groups[3]["fields"][0]["value"] == "Second plan"
+
+
+def test_editor_cancel_after_failed_save_reloads_saved_values(client):
+    page = client.get("/cms/data/profile")
+    revision, snapshot = form_snapshot(page)
+    service = ContentService(client.app.state.root)
+    data = service.read_data("profile")["data"]
+    data["summary"] = "Newer saved summary"
+    service.update_data("profile", data, expected_revision=revision)
+    failed = client.post("/cms/data/profile", headers={"HX-Request": "true"}, data={
+        "revision": revision, "snapshot": snapshot, 'field:["summary"]': "Unsaved draft summary",
+    })
+    assert failed.status_code == 412
+    assert 'data-editing="true"' in failed.text
+    assert "Unsaved draft summary" in failed.text
+    cancel = re.search(r'data-cancel href="([^"]+)"', failed.text).group(1)
+    restored = client.get(cancel)
+    assert "Newer saved summary" in restored.text
+    assert "Unsaved draft summary" not in restored.text
+    assert 'data-editing="false"' in restored.text
+    assert form_snapshot(restored)[0] != revision
+
+
+def test_native_editor_actions_have_form_and_cancel_destinations(client):
+    assert create_post(client).status_code == 201
+    for route, cancel in [
+        ("/cms/data/profile", "/cms/data/profile"),
+        ("/cms/artifact/post/a%20space", "/cms/artifact/post/a%20space"),
+        ("/cms/new?kind=chapter", "/cms/courses"),
+    ]:
+        page = client.get(route)
+        assert page.status_code == 200
+        assert f'data-cancel href="{cancel}"' in page.text
+        assert 'type="submit" data-save' in page.text
+        assert 'class="action-bar"' in page.text
+        # Fields remain usable if JavaScript is unavailable; enhanced viewing
+        # mode disables their fieldset only after the script initializes.
+        assert 'data-editor-fields disabled' not in page.text
+
+
+@pytest.mark.parametrize("kind", ["portfolio", "chapter", "post"])
+def test_new_plan_fields_follow_entry_kind(client, kind):
+    page = client.get(f"/cms/new?kind={kind}")
+    assert page.status_code == 200
+    controls = re.findall(r"<(?:input|textarea)\b([^>]*)>", page.text)
+    enabled = {re.search(r'name="([^"]+)"', attrs).group(1) for attrs in controls if "disabled" not in attrs}
+    chapter_fields = {"parent", "toc_title", "section", "planned_lab_and_evidence"}
+    portfolio_fields = {"introduction", "what_it_contains", "scope_notes"}
+    assert enabled & chapter_fields == (chapter_fields if kind == "chapter" else set())
+    assert enabled & portfolio_fields == (portfolio_fields if kind == "portfolio" else set())
+    assert ("planned_content" in enabled) == (kind != "portfolio")
+    assert ("path" in enabled) == (kind != "portfolio")
+    assert {"tags", "relations"} <= enabled
+
+
+@pytest.mark.parametrize("identifier,path", [
+    ("portfolio/demo", None), ("test-portfolio-2", "test-portfolio-2"),
+    ("portfolio/demo", "nb/portfolio/demo.html"), ("portfolio/demo", "content/notebooks/portfolio/demo.ipynb"),
+])
+def test_cms_portfolio_plan_generates_page_before_starting_notebook(client, monkeypatch, identifier, path):
+    import nbformat
+
+    from watchtower.services.build import BuildService
+
+    page = client.get("/cms/new?kind=portfolio")
+    revision = re.search(r'name="revision" value="([^"]+)"', page.text).group(1)
+    plan = {"introduction": "A browser interface for the agent.", "what_it_contains": "A durable journal and queryable sessions.", "scope_notes": "The local implementation is the demonstrated path."}
+    response = client.post("/cms/new", follow_redirects=False, data={
+        "revision": revision, "kind": "portfolio", "id": identifier, "title": "Demo",
+        **({"path": path} if path is not None else {}), "visibility": "public", **plan,
+        # Ignore stale chapter values if the selected kind has changed.
+        "parent": "course/stale", "toc_title": "Stale", "section": "stale",
+        "planned_content": "Stale generic content", "planned_lab_and_evidence": "Stale lab",
+    })
+    assert response.status_code == 303, response.text
+    root = client.app.state.root
+    slug = identifier.split("/")[-1]
+    source = root / f"content/notebooks/portfolio/{slug}.ipynb"
+    service = ContentService(root)
+    record = service.inspect(identifier)
+    assert record["artifact"]["lifecycle"] == "planned"
+    assert record["artifact"]["planned"] == {}
+    assert record["artifact"]["path"] is None
+    assert all(record["artifact"][key] is None for key in ("parent", "toc_title", "section"))
+    assert record["detail"]["planned"] == plan
+    assert record["detail"]["notebook_path"] == str(source.relative_to(root))
+    assert not source.exists()
+
+    monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
+    generated = BuildService(root).generate("production")
+    notebook = nbformat.read(generated / f"nb/portfolio/{slug}.ipynb", as_version=4)
+    body = "\n".join(cell.source for cell in notebook.cells)
+    for text in ["[← Portfolio]", "## What it contains", "## Explore the project", *plan.values()]:
+        assert text in body
+    assert "Stale" not in body
+    assert not source.exists()
+
+    # Complete the existing card/source requirements before starting the plan.
+    (root / "projects/demo").mkdir(parents=True)
+    figure = root / "content/assets/demo.svg"
+    figure.parent.mkdir(parents=True)
+    figure.write_text('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    revision = service.inspect(identifier)["revision"]
+    ready = service.update(identifier, {"detail": {
+        "abstract": "A browser interface for the agent.", "figure_path": "content/assets/demo.svg",
+        "figure_caption": "The session flow.", "project_name": "demo",
+    }}, expected_revision=revision)
+    assert not source.exists()
+    started = service.start(identifier, expected_revision=ready["revision"])
+    assert started["artifact"]["lifecycle"] == "draft"
+    assert source.exists()
+    authored = nbformat.read(source, as_version=4)
+    assert all(text in authored.cells[0].source for text in plan.values())
+
+
+def test_portfolio_editor_omits_chapter_fields_and_preserves_routing_on_save(client):
+    service = ContentService(client.app.state.root)
+    service.create({
+        "id": "portfolio/demo", "kind": "portfolio", "title": "Demo",
+        "path": "content/notebooks/portfolio/legacy.ipynb", "route": "nb/portfolio/custom.ipynb",
+        "detail": {"notebook_path": "content/notebooks/portfolio/demo.ipynb", "planned": {
+            "introduction": "Project introduction", "what_it_contains": "Project contents", "scope_notes": "Project scope",
+        }},
+    })
+    page = client.get("/cms/artifact/portfolio/demo")
+    assert page.status_code == 200
+    for key in ("parent", "toc_title", "section", "path", "route"):
+        assert f'name="field:["{key}"]"' not in html.unescape(page.text)
+    for key in ("abstract", "figure_path", "notebook_path", "project_name"):
+        assert f'name="field:["detail", "{key}"]"' in html.unescape(page.text)
+    revision, snapshot = form_snapshot(page)
+    saved = client.post("/cms/save/portfolio/demo", data={
+        "revision": revision, "snapshot": snapshot, 'field:["title"]': "Revised project title",
+    })
+    assert saved.status_code == 200, saved.text
+    artifact = service.inspect("portfolio/demo")["artifact"]
+    assert artifact["title"] == "Revised project title"
+    assert artifact["path"] == "content/notebooks/portfolio/legacy.ipynb"
+    assert artifact["route"] == "nb/portfolio/custom.ipynb"
+    assert not (client.app.state.root / "content/notebooks/portfolio/demo.ipynb").exists()
+
+
+def portfolio_image_bytes(format="PNG", color="blue"):
+    from io import BytesIO
+
+    from PIL import Image
+
+    buffer = BytesIO()
+    Image.new("RGB", (16, 16), color=color).save(buffer, format=format)
+    return buffer.getvalue()
+
+
+def create_portfolio(client):
+    return ContentService(client.app.state.root).create({
+        "id": "portfolio/image", "kind": "portfolio", "title": "Image project",
+        "detail": {"notebook_path": "content/notebooks/portfolio/image.ipynb", "planned": {
+            "introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope",
+        }},
+    })
+
+
+@pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
+def test_portfolio_image_upload_saves_caption_and_renders_below_abstract(client, monkeypatch, format, extension):
+    import nbformat
+
+    from watchtower.services.build import BuildService
+
+    create_portfolio(client)
+    page = client.get("/cms/artifact/portfolio/image")
+    assert 'type="file" name="featured_image"' in page.text
+    assert 'hx-encoding="multipart/form-data"' in page.text
+    revision, snapshot = form_snapshot(page)
+    image = portfolio_image_bytes(format)
+    saved = client.post("/cms/save/portfolio/image", data={
+        "revision": revision, "snapshot": snapshot,
+        'field:["detail", "abstract"]': "The project abstract.",
+        'field:["detail", "figure_caption"]': "The featured figure caption.",
+    }, files={"featured_image": ("../../untrusted.html", image, "application/octet-stream")})
+    assert saved.status_code == 200, saved.text
+    service = ContentService(client.app.state.root)
+    record = service.inspect("portfolio/image")
+    detail = record["detail"]
+    path = detail["figure_path"]
+    assert path.startswith("content/assets/portfolio/image-") and path.endswith(f".{extension}")
+    assert (client.app.state.root / path).read_bytes() == image
+    assert detail["figure_caption"] == "The featured figure caption."
+    assert 'class="featured-figure-preview"' in saved.text
+    assert client.get("/cms/figure/portfolio/image").content == image
+    assert record["artifact"]["lifecycle"] == "planned"
+    assert not (client.app.state.root / detail["notebook_path"]).exists()
+    monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
+    generated = BuildService(client.app.state.root).generate("preview")
+    listing = (generated / "portfolio.qmd").read_text()
+    relative = path.removeprefix("content/")
+    assert listing.index("The project abstract.") < listing.index(f"![The featured figure caption.]({relative})")
+    assert '{.callout-caution title="Planned entry"}' in listing
+    assert 'Run `wt start portfolio/image` to initialize content.' in listing
+    generated_page = nbformat.read(generated / "nb/portfolio/image.ipynb", as_version=4)
+    assert any("Planned entry" in cell.source and "Run `wt start portfolio/image` to initialize content." in cell.source for cell in generated_page.cells)
+    assert (generated / relative).read_bytes() == image
+
+
+@pytest.mark.parametrize("failure", ["stale", "invalid", "invalid_metadata", "too_large"])
+def test_failed_portfolio_image_upload_writes_no_image_or_metadata(client, failure):
+    from watchtower.services.images import MAX_FIGURE_BYTES
+
+    create_portfolio(client)
+    service = ContentService(client.app.state.root)
+    page = client.get("/cms/artifact/portfolio/image")
+    revision, snapshot = form_snapshot(page)
+    if failure == "stale":
+        service.update("portfolio/image", {"description": "A concurrent edit"}, expected_revision=revision)
+    original = service.snapshot().files
+    image = b"not an image" if failure == "invalid" else b"x" * (MAX_FIGURE_BYTES + 1) if failure == "too_large" else portfolio_image_bytes()
+    response = client.post("/cms/save/portfolio/image", headers={"HX-Request": "true"}, data={
+        "revision": revision, "snapshot": snapshot,
+        'field:["detail", "abstract"]': "Unsaved abstract",
+        'field:["detail", "figure_caption"]': "Unsaved caption",
+        **({'field:["visibility"]': "invalid"} if failure == "invalid_metadata" else {}),
+    }, files={"featured_image": ("figure.png", image, "image/png")})
+    assert response.status_code == (412 if failure == "stale" else 422), response.text
+    assert "Unsaved caption" in response.text
+    assert "Unsaved abstract" in response.text
+    assert "Choose the image again before saving" in response.text
+    assert service.snapshot().files == original
+
+
+def test_portfolio_image_replacement_preserves_previous_asset_and_empty_upload_keeps_figure(client):
+    create_portfolio(client)
+    service = ContentService(client.app.state.root)
+    image = portfolio_image_bytes()
+    service.update("portfolio/image", {"detail": {"figure_caption": "Original caption"}}, figure_image=image)
+    original_path = service.inspect("portfolio/image")["detail"]["figure_path"]
+    revision, snapshot = form_snapshot(client.get("/cms/artifact/portfolio/image"))
+    saved = client.post("/cms/save/portfolio/image", data={
+        "revision": revision, "snapshot": snapshot, 'field:["detail", "figure_caption"]': "Revised caption",
+    }, files={"featured_image": ("", b"", "application/octet-stream")})
+    assert saved.status_code == 200, saved.text
+    assert service.inspect("portfolio/image")["detail"]["figure_path"] == original_path
+    revised_image = portfolio_image_bytes(color="red")
+    revision, snapshot = form_snapshot(saved)
+    replaced = client.post("/cms/save/portfolio/image", data={"revision": revision, "snapshot": snapshot},
+        files={"featured_image": ("replacement.png", revised_image, "image/png")})
+    assert replaced.status_code == 200, replaced.text
+    revised_path = service.inspect("portfolio/image")["detail"]["figure_path"]
+    assert revised_path != original_path
+    assert (client.app.state.root / original_path).read_bytes() == image
+    assert (client.app.state.root / revised_path).read_bytes() == revised_image
+
+
+def create_image_course(client):
+    return ContentService(client.app.state.root).create({
+        "id": "course/image", "kind": "course", "title": "Image course",
+        "path": "content/notebooks/courses/image", "contract": {
+            "purpose": "Learn with images", "audience": "Readers",
+            "planned": {"summary": "Course plan", "chapters": []}, "actualized": {}, "toc": [],
+        },
+    })
+
+
+def create_image_gallery(client):
+    return ContentService(client.app.state.root).create({
+        "id": "gallery/photos", "kind": "gallery", "title": "Personal", "path": "content/data/photos.yaml",
+    })
+
+
+def add_uploaded_photo(client, heading="Uploaded photo", format="PNG"):
+    revision, snapshot = form_snapshot(client.get("/cms/data/photos"))
+    return client.post("/cms/data/photos", data={
+        "revision": revision, "snapshot": snapshot,
+        "collection_action": json.dumps({"path": ["photos"], "action": "add", "prototype": {
+            "heading": "", "path": "", "caption": "", "lifecycle": "draft", "width": "",
+        }}),
+        'new:["photos", "heading"]': heading,
+        'new:["photos", "caption"]': "Photo caption",
+        'new:["photos", "width"]': "80%",
+    }, files={"new_photo_image": ("../../untrusted.html", portfolio_image_bytes(format), "application/octet-stream")})
+
+
+@pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
+def test_course_upload_is_used_by_card_grid(client, monkeypatch, format, extension):
+    import nbformat
+
+    from watchtower.services.build import BuildService
+
+    create_image_course(client)
+    page = client.get("/cms/artifact/course/image")
+    assert 'type="file" name="featured_image"' in page.text
+    assert "Card image" in page.text
+    revision, snapshot = form_snapshot(page)
+    image = portfolio_image_bytes(format)
+    saved = client.post("/cms/save/course/image", data={"revision": revision, "snapshot": snapshot},
+                        files={"featured_image": ("../../untrusted.html", image, "application/octet-stream")})
+    assert saved.status_code == 200, saved.text
+    service = ContentService(client.app.state.root)
+    cover = service.inspect("course/image")["artifact"]["cover"]
+    assert cover.startswith("content/assets/courses/image-") and cover.endswith(f".{extension}")
+    assert client.get("/cms/figure/course/image").content == image
+    assert 'class="featured-figure-preview"' in saved.text
+    monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
+    generated = BuildService(client.app.state.root).generate("production")
+    page = nbformat.read(generated / "nb/courses/image/index.ipynb", as_version=4)
+    assert yaml.safe_load(page.cells[0].source.split("---")[1])["image"] == "/" + cover.removeprefix("content/")
+    assert (generated / cover.removeprefix("content/")).read_bytes() == image
+    assert "nb/courses/image/index.ipynb" in (generated / "courses.qmd").read_text()
+    # Withdrawing the parent also withdraws its cover from the public build.
+    service.update("course/image", {"visibility": "private"})
+    generated = BuildService(client.app.state.root).generate("production")
+    assert not (generated / cover.removeprefix("content/")).exists()
+
+
+@pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
+def test_new_photo_upload_and_publication(client, monkeypatch, format, extension):
+    from watchtower.services.build import BuildService
+
+    create_image_gallery(client)
+    page = client.get("/cms/data/photos")
+    assert 'type="file" name="new_photo_image"' in page.text
+    assert 'hx-encoding="multipart/form-data"' in page.text
+    saved = add_uploaded_photo(client, format=format)
+    assert saved.status_code == 200, saved.text
+    service = ContentService(client.app.state.root)
+    photo = service.read_data("photos")["data"]["photos"][0]
+    path = photo["path"]
+    assert path.startswith("content/assets/photos/Uploaded-photo-") and path.endswith(f".{extension}")
+    assert photo["heading"] == "Uploaded photo" and photo["caption"] == "Photo caption"
+    assert photo["lifecycle"] == "draft" and photo["width"] == "80%"
+    assert 'type="file" name="photo_image:0"' in saved.text
+    assert client.get("/cms/photo/0").content == portfolio_image_bytes(format)
+    monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
+    build = BuildService(client.app.state.root)
+    production = build.generate("production")
+    assert not (production / path.removeprefix("content/")).exists()
+    preview = build.generate("preview")
+    assert (preview / path.removeprefix("content/")).exists()
+    assert "Uploaded photo" in (preview / "personal.qmd").read_text()
+    revision, snapshot = form_snapshot(saved)
+    published = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot,
+                            'field:["photos", "0", "lifecycle"]': "published"},
+                            files={"photo_image:0": ("", b"", "application/octet-stream")})
+    assert published.status_code == 200, published.text
+    production = build.generate("production")
+    assert (production / path.removeprefix("content/")).exists()
+    assert "Photo caption" in (production / "personal.qmd").read_text()
+
+
+@pytest.mark.parametrize("kind", ["course", "photo"])
+@pytest.mark.parametrize("failure", ["stale", "invalid", "too_large", "invalid_metadata", "missing_revision"])
+def test_course_and_photo_failed_uploads_are_atomic(client, kind, failure):
+    from watchtower.services.images import MAX_FIGURE_BYTES
+
+    service = ContentService(client.app.state.root)
+    if kind == "course":
+        create_image_course(client)
+        editor, target, upload = "/cms/artifact/course/image", "/cms/save/course/image", "featured_image"
+        fields = {'field:["description"]': "Unsaved description"}
+        invalid = {'field:["visibility"]': "invalid"}
+    else:
+        create_image_gallery(client)
+        assert add_uploaded_photo(client).status_code == 200
+        editor = target = "/cms/data/photos"
+        upload = "photo_image:0"
+        fields = {'field:["photos", "0", "caption"]': "Unsaved description"}
+        invalid = {'field:["photos", "0", "width"]': "101%"}
+    revision, snapshot = form_snapshot(client.get(editor))
+    if failure == "stale":
+        if kind == "course":
+            service.update("course/image", {"description": "Concurrent edit"})
+        else:
+            data = service.read_data("photos")["data"]
+            data["photos"][0]["caption"] = "Concurrent edit"
+            service.update_gallery(data)
+    original = service.snapshot().files
+    image = b"bad image" if failure == "invalid" else b"x" * (MAX_FIGURE_BYTES + 1) if failure == "too_large" else portfolio_image_bytes(color="red")
+    response = client.post(target, headers={"HX-Request": "true"}, data={
+        "revision": "" if failure == "missing_revision" else revision, "snapshot": snapshot, **fields,
+        **(invalid if failure == "invalid_metadata" else {}),
+    }, files={upload: ("image.png", image, "image/png")})
+    assert response.status_code == (412 if failure == "stale" else 428 if failure == "missing_revision" else 422), response.text
+    assert "Unsaved description" in response.text
+    assert "again before saving" in response.text
+    assert service.snapshot().files == original
+
+
+@pytest.mark.parametrize("action,index,uploaded_index,expected_index", [
+    ("up", 1, 1, 0), ("down", 0, 0, 1), ("remove", 0, 1, 0), ("remove", 1, 0, 0),
+])
+def test_photo_replacement_follows_reordered_rows(client, action, index, uploaded_index, expected_index):
+    create_image_gallery(client)
+    assert add_uploaded_photo(client, "First").status_code == 200
+    assert add_uploaded_photo(client, "Second").status_code == 200
+    service = ContentService(client.app.state.root)
+    old = service.read_data("photos")["data"]["photos"]
+    revision, snapshot = form_snapshot(client.get("/cms/data/photos"))
+    image = portfolio_image_bytes(color="red")
+    saved = client.post("/cms/data/photos", data={
+        "revision": revision, "snapshot": snapshot,
+        "collection_action": json.dumps({"path": ["photos"], "action": action, "index": index}),
+    }, files={f"photo_image:{uploaded_index}": ("replacement.png", image, "image/png")})
+    assert saved.status_code == 200, saved.text
+    rows = service.read_data("photos")["data"]["photos"]
+    assert rows[expected_index]["heading"] == old[uploaded_index]["heading"]
+    assert client.get(f"/cms/photo/{expected_index}").content == image
+    assert (client.app.state.root / old[uploaded_index]["path"]).exists()
+
+
+def test_photo_add_and_replacement_save_multiple_images_atomically(client):
+    create_image_gallery(client)
+    assert add_uploaded_photo(client, "First").status_code == 200
+    service = ContentService(client.app.state.root)
+    revision, snapshot = form_snapshot(client.get("/cms/data/photos"))
+    original = service.snapshot().files
+    form = {
+        "revision": revision, "snapshot": snapshot,
+        "collection_action": json.dumps({"path": ["photos"], "action": "add", "prototype": {
+            "heading": "", "path": "", "caption": "", "lifecycle": "draft", "width": "",
+        }}),
+        'new:["photos", "heading"]': "Second", 'new:["photos", "caption"]': "Second caption",
+    }
+    replacement = portfolio_image_bytes(color="red")
+    files = {"photo_image:0": ("replacement.png", replacement, "image/png"),
+             "new_photo_image": ("bad.png", b"not an image", "image/png")}
+    failed = client.post("/cms/data/photos", data=form, files=files)
+    assert failed.status_code == 422
+    assert service.snapshot().files == original
+    assert "Second caption" in failed.text
+    files["new_photo_image"] = ("new.png", portfolio_image_bytes(), "image/png")
+    saved = client.post("/cms/data/photos", data=form, files=files)
+    assert saved.status_code == 200, saved.text
+    rows = service.read_data("photos")["data"]["photos"]
+    assert [row["heading"] for row in rows] == ["First", "Second"]
+    assert client.get("/cms/photo/0").content == replacement
+    assert client.get("/cms/photo/1").content == portfolio_image_bytes()
+
+
+def test_course_replacement_and_empty_upload_keep_saved_assets(client):
+    create_image_course(client)
+    service = ContentService(client.app.state.root)
+    original = portfolio_image_bytes()
+    service.update("course/image", {}, figure_image=original)
+    old_path = service.inspect("course/image")["artifact"]["cover"]
+    revision, snapshot = form_snapshot(client.get("/cms/artifact/course/image"))
+    empty = client.post("/cms/save/course/image", data={"revision": revision, "snapshot": snapshot},
+                        files={"featured_image": ("", b"", "application/octet-stream")})
+    assert empty.status_code == 200, empty.text
+    assert service.inspect("course/image")["artifact"]["cover"] == old_path
+    revision, snapshot = form_snapshot(empty)
+    replacement = portfolio_image_bytes(color="red")
+    saved = client.post("/cms/save/course/image", data={"revision": revision, "snapshot": snapshot},
+                        files={"featured_image": ("replacement.png", replacement, "image/png")})
+    assert saved.status_code == 200, saved.text
+    assert client.get("/cms/figure/course/image").content == replacement
+    assert (client.app.state.root / old_path).read_bytes() == original

@@ -5,7 +5,7 @@ sidebar: false
 toc: false
 ---
 
-Selected projects and their accompanying notebooks.
+Selected projects and their full project pages.
 
 ::: {.portfolio-layout}
 ::: {.portfolio-main}
@@ -13,14 +13,16 @@ Selected projects and their accompanying notebooks.
 ::: {.portfolio-project #{{ entry.anchor }}}
 ## {{ entry.title }}
 {% if entry.lifecycle != 'published' %}
-**{{ entry.lifecycle | capitalize }}**
+::: {.callout-caution title="{{ entry.lifecycle | capitalize }} entry"}
+{% if entry.lifecycle == 'planned' %}The full project page describes the intended scope. Run `wt start {{ entry.id }}` to initialize content.{% else %}This project page is a draft.{% endif %}
+:::
 {% endif %}
 **Abstract.** {{ entry.abstract }}
 
 {% if entry.figure %}
 ![{{ entry.figure_caption }}]({{ entry.figure }})
 {% endif %}
-[View notebook →]({{ entry.route }}){% if entry.source_url %} ⠀|⠀ [Source </>]({{ entry.source_url }}){% endif %}
+[Read the full project page →]({{ entry.route }}){% if entry.source_url %} ⠀|⠀ [Source </>]({{ entry.source_url }}){% endif %}
 
 :::
 {% endfor %}

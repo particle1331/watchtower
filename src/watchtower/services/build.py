@@ -301,7 +301,10 @@ class _Generator:
         header = _frontmatter(self.metadata(artifact, route))
         native_draft = artifact.kind in {"post", "chapter", "course"} and artifact.lifecycle == "draft"
         if artifact.kind != "gallery" and ((artifact.lifecycle != "published" and not native_draft) or artifact.visibility != "public"):
-            header += f"\n::: {{.callout-note}}\n**{artifact.lifecycle.capitalize()}**"
+            if artifact.kind == "portfolio" and artifact.lifecycle == "planned":
+                header += f'\n::: {{.callout-caution title="Planned entry"}}\nThe full project page describes the intended scope. Run `wt start {artifact.id}` to initialize content.'
+            else:
+                header += f"\n::: {{.callout-note}}\n**{artifact.lifecycle.capitalize()}**"
             if artifact.visibility != "public":
                 header += " · Private working preview"
             header += "\n:::\n"

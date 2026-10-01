@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import quote, unquote, urlsplit
 from zoneinfo import ZoneInfo
 
@@ -36,6 +36,8 @@ from watchtower.models import (
     source_path,
 )
 
+from .images import portfolio_figure, uploaded_image
+from .projects import project_name, scaffold_project
 from .workspace import ServiceError, WorkspaceStore, load_yaml, revision
 
 CATALOG = "content/data/catalog.yaml"
@@ -191,7 +193,8 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
         if artifact.kind == "portfolio" and artifact.id in details:
             detail = details[artifact.id]
             if artifact.lifecycle != "planned":
-                for field in ("abstract", "figure_path", "figure_caption", "notebook_path", "project_name"):
+                required = ("abstract", "figure_path", "figure_caption", "notebook_path", "project_name") if artifact.lifecycle == "published" else ("notebook_path", "project_name")
+                for field in required:
                     if not getattr(detail, field):
                         fail(f"{artifact.id}: {field} required for {artifact.lifecycle}", PORTFOLIO)
             if detail.figure_path:
@@ -201,7 +204,8 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
                 key = f"@dir/{detail.project_path}"
                 resolved = files.get(key)
                 if resolved is None:
-                    fail(f"{artifact.id}: missing project directory {detail.project_path}", PORTFOLIO)
+                    if artifact.lifecycle != "planned" or detail.project_source != "active":
+                        fail(f"{artifact.id}: missing project directory {detail.project_path}", PORTFOLIO)
                 elif not Path(resolved.decode()).is_relative_to(root / prefix):
                     fail(f"{artifact.id}: project symlink escapes selected project root", PORTFOLIO)
                 for related in artifact.relations:
@@ -333,6 +337,7 @@ class ContentService:
             try:
                 result, writes = callback(candidate)
                 candidate.update(writes)
+                candidate.update(self.store.project_directories(writes))
                 state = parse_state(candidate)
                 validate_state(state, candidate, self.root)
             except (ValidationError, KeyError, TypeError) as error:
@@ -393,7 +398,7 @@ class ContentService:
             return {"artifact": artifact.model_dump(mode="json")}, writes
         return self._mutate("create", apply, expected_revision)
 
-    def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+    def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None, *, figure_image: bytes | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
             catalog = self._catalog(files)
             record = self._find(catalog, artifact_id)
@@ -409,6 +414,16 @@ class ContentService:
             record.clear()
             record.update(normalized.model_dump(mode="json", exclude_none=True))
             writes: dict[str, bytes] = {}
+            if figure_image is not None:
+                if record["kind"] == "portfolio":
+                    image_path = portfolio_figure(record["id"], figure_image)
+                    detail = {**(detail or {}), "figure_path": image_path}
+                elif record["kind"] == "course":
+                    image_path = uploaded_image("courses", record["id"], figure_image)
+                    record["cover"] = image_path
+                else:
+                    raise ServiceError("Featured images can only be uploaded for portfolio entries or courses.")
+                writes[image_path] = figure_image
             if detail is not None:
                 portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
                 target = next((p for p in portfolio["entries"] if p["id"] == record["id"]), None)
@@ -467,10 +482,22 @@ class ContentService:
                 raise ServiceError("start requires a planned notebook entry")
             state = parse_state(files)
             artifact = next(a for a in state.artifacts if a.id == record["id"])
+            writes: dict[str, bytes] = {}
+            project_path = None
             if artifact.kind == "portfolio":
                 detail = next(p for p in state.portfolio if p.id == artifact.id)
                 if not all(detail.planned.get(field, "").strip() for field in ("introduction", "what_it_contains")):
                     raise ServiceError("portfolio start requires planned.introduction and planned.what_it_contains", paths=[PORTFOLIO])
+                detail.notebook_path = detail.notebook_path or f"content/notebooks/portfolio/{artifact.id.split('/')[-1]}.ipynb"
+                if detail.project_source == "active":
+                    name = project_name(detail.project_name or artifact.id.split("/")[-1])
+                    detail.project_name = name
+                    project_path, project_writes = self._initialize_project(catalog, name, artifact.visibility)
+                    writes.update(project_writes)
+                portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
+                target = next(p for p in portfolio["entries"] if p["id"] == artifact.id)
+                target.update(notebook_path=detail.notebook_path, project_name=detail.project_name)
+                writes[PORTFOLIO] = yaml_bytes(portfolio)
             path = source_path(artifact, state)
             if path is None:
                 raise ServiceError("configure notebook_path before starting")
@@ -483,8 +510,42 @@ class ContentService:
                 raise ServiceError("starter body exceeds the 20,000-character cell limit; shorten the persisted plan before starting")
             notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body)], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
             record["lifecycle"] = "draft"
-            return {"artifact": record, "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / path), safe="/")}, {CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()}
+            writes.update({CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()})
+            result = {"artifact": record, "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / path), safe="/")}
+            if project_path:
+                result["project_path"] = project_path
+            return result, writes
         return self._mutate("start", apply, expected_revision)
+
+    def _initialize_project(self, catalog: dict[str, Any], name: str, visibility: Literal["public", "private"]) -> tuple[str, dict[str, bytes]]:
+        name = project_name(name)
+        path = f"projects/{name}"
+        destination = self.store.safe_path(path)
+        if destination.is_symlink() and not destination.exists():
+            raise ServiceError("Project destination is a broken symlink.", code="conflict", status=412, paths=[path])
+        matching = next((item for item in catalog["artifacts"] if item["kind"] == "project" and item.get("path") == path), None)
+        identifier = f"project/{name}"
+        if matching is None:
+            if any(item["id"] == identifier for item in catalog["artifacts"]):
+                raise ServiceError(f"ID already registered: {identifier}")
+            catalog["artifacts"].append(Artifact(id=identifier, kind="project", title=name.replace("-", " ").title(), path=path, lifecycle="draft", visibility=visibility).model_dump(mode="json", exclude_none=True))
+        if destination.exists():
+            if not destination.is_dir():
+                raise ServiceError("Project destination must be a directory.", paths=[path])
+            return path, {}
+        return path, scaffold_project(self.root, name)
+
+    def create_project(self, name: str, expected_revision: str | None = None) -> dict[str, Any]:
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            project_name(name)
+            path = f"projects/{name}"
+            if self.store.safe_path(path).exists() or self.store.safe_path(path).is_symlink():
+                raise ServiceError("make project refuses an existing project directory.", code="conflict", status=412, paths=[path])
+            catalog = self._catalog(files)
+            path, writes = self._initialize_project(catalog, name, "public")
+            writes[CATALOG] = yaml_bytes(catalog)
+            return {"project_path": path}, writes
+        return self._mutate("create_project", apply, expected_revision)
 
     def publish(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
         with self.store.locked():
@@ -570,14 +631,26 @@ class ContentService:
             return {"artifacts": changed, "data": data}, writes
         return self._mutate("batch", apply, expected_revision)
 
-    def update_gallery(self, payload: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
-        with self.store.locked():
-            files = self.store.inputs()
-            galleries = [a for a in self._catalog(files)["artifacts"] if a["kind"] == "gallery"]
-            captured = revision(files)
-        if len(galleries) != 1:
-            raise ServiceError("gallery save requires exactly one registered gallery")
-        return self.batch([], {"photos": payload}, expected_revision or captured)
+    def update_gallery(self, payload: dict[str, Any], expected_revision: str | None = None, *, photo_images: dict[int, bytes] | None = None) -> dict[str, Any]:
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            catalog = self._catalog(files)
+            galleries = [a for a in catalog["artifacts"] if a["kind"] == "gallery"]
+            if len(galleries) != 1:
+                raise ServiceError("gallery save requires exactly one registered gallery")
+            data = copy.deepcopy(payload)
+            rows = data.get("photos", [])
+            writes: dict[str, bytes] = {}
+            for index, image in (photo_images or {}).items():
+                if not 0 <= index < len(rows):
+                    raise ServiceError("Unknown photo for image upload.")
+                path = uploaded_image("photos", str(rows[index].get("heading", "photo")), image)
+                rows[index]["path"] = path
+                writes[path] = image
+            photos = Photos.model_validate(data)
+            galleries[0]["lifecycle"] = "published" if any(photo.lifecycle == "published" for photo in photos.photos) else "planned"
+            writes.update({CATALOG: yaml_bytes(catalog), PHOTOS: yaml_bytes(data)})
+            return {"artifacts": [], "data": {"photos": data}}, writes
+        return self._mutate("update gallery", apply, expected_revision)
 
     def import_notebook(self, source: Path, kind: str, name: str, *, course: str | None = None, section: str | None = None, title: str | None = None, expected_revision: str | None = None) -> dict[str, Any]:
         """Import through the supported normalizer, preserving cells and outputs."""

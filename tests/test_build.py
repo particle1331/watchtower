@@ -158,6 +158,8 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
     assert "[Source </>](https://github.com/example/site/tree/main/archive/2026-09-30/projects/first)" in page
     assert "https://github.com/example/site/tree/main/archive/2026-09-30/projects/first" in page
     assert page.count("#portfolio-first") == 2
+    assert "[Read the full project page →](nb/portfolio/first.ipynb)" in page
+    assert "View notebook" not in page
 
 
 def fake_quarto(command, cwd, **kwargs):

@@ -1,0 +1,7 @@
+<div class="action-bar" aria-label="Editor actions">
+<div class="action-context"><strong>{{ editor_label }}</strong><span data-edit-status role="status">{{ 'Unsaved changes' if error else 'New plan' if creating else 'Saved values' }}</span></div>
+<div class="action-buttons">
+{% if not creating %}<button type="button" data-begin-edit hidden>Edit</button>{% endif %}
+<a class="button" data-cancel href="{{ cancel_url }}">Cancel</a>
+<button class="primary" type="submit" data-save>{{ 'Create plan' if creating else 'Save changes' }}</button>
+</div></div>

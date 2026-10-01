@@ -174,8 +174,11 @@ class WorkspaceStore:
     def _dependencies(self, manifest: dict[str, Any]) -> None:
         current = {name: digest(value) for name, value in self.inputs().items()}
         written = {item["path"] for item in manifest["writes"]}
+        created = manifest.get("created_directories", {}) if manifest["status"] == "committing" else {}
+        written.update(created)
         expected = manifest["inputs"]
         changed = sorted(name for name in set(current) | set(expected) if name not in written and current.get(name, ABSENT) != expected.get(name, ABSENT))
+        changed.extend(name for name, identity in created.items() if current.get(name, ABSENT) not in {ABSENT, identity})
         if changed:
             raise ServiceError("transaction recovery blocked by external changes; journal versions retained", code="recovery_conflict", status=409, paths=changed)
 
@@ -226,7 +229,8 @@ class WorkspaceStore:
         directory = self.runtime / "transactions" / transaction
         directory.mkdir(parents=True)
         sync_dir(directory.parent)
-        manifest: dict[str, Any] = {"id": transaction, "operation": operation, "status": "prepared", "progress": 0, "inputs": {p: digest(b) for p, b in expected.items()}, "writes": []}
+        created = {name: digest(identity) for name, identity in self.project_directories(writes).items() if expected.get(name) is None}
+        manifest: dict[str, Any] = {"id": transaction, "operation": operation, "status": "prepared", "progress": 0, "inputs": {p: digest(b) for p, b in expected.items()}, "writes": [], "created_directories": created}
         for index, (name, value) in enumerate(writes.items()):
             original = expected.get(name)
             if original is not None:
@@ -260,3 +264,13 @@ class WorkspaceStore:
         except Exception as error:
             raise ServiceError(f"transaction {transaction} pending recovery: {error}", code="pending_transaction", status=409, paths=[str(directory.relative_to(self.root))]) from error
         return transaction
+
+    def project_directories(self, writes: dict[str, bytes]) -> dict[str, bytes]:
+        """Project code stays out of snapshots; project identity remains a dependency."""
+        result = {}
+        for name in writes:
+            parts = Path(name).parts
+            if len(parts) > 2 and parts[0] == "projects":
+                directory = f"projects/{parts[1]}"
+                result[f"@dir/{directory}"] = str(self.safe_path(directory).resolve()).encode()
+        return result

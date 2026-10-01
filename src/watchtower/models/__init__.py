@@ -316,10 +316,13 @@ def route_for(artifact: Artifact) -> str:
     return f"{path}/index.ipynb" if artifact.kind == "course" else path
 
 
-def source_url(detail: PortfolioEntry, settings: SiteSettings) -> str | None:
-    if detail.project_path is None:
+def source_url(detail: PortfolioEntry, settings: SiteSettings, *, reserved_name: str | None = None) -> str | None:
+    project_path = detail.project_path
+    if project_path is None and reserved_name and detail.project_source == "active":
+        project_path = f"projects/{reserved_name}"
+    if project_path is None:
         return None
-    path = "/".join(quote(part, safe="") for part in detail.project_path.split("/"))
+    path = "/".join(quote(part, safe="") for part in project_path.split("/"))
     return f"{settings.repository_url}/tree/{quote(settings.source_ref, safe='')}/{path}"
 
 
@@ -362,12 +365,17 @@ def plan_body(artifact: Artifact, state: Workspace) -> str:
         detail = next(p for p in state.portfolio if p.id == artifact.id)
         plan = detail.planned
         body = f"[← Portfolio](/portfolio.html)\n\n{plan.get('introduction', '')}\n\n## What it contains\n\n{plan.get('what_it_contains', '')}\n\n## Explore the project\n\n"
-        url = source_url(detail, state.settings)
+        links = []
+        reserved = artifact.lifecycle == "planned" and detail.project_source == "active"
+        url = source_url(detail, state.settings, reserved_name=artifact.id.split("/")[-1] if reserved else None)
         if url:
-            body += f"[{'Archived source' if detail.project_source == 'archived' else 'Source'}]({url})\n\n"
+            source_label = "Reserved source code" if reserved else "Archived source" if detail.project_source == "archived" else "Source"
+            links.append(f"- [{source_label}]({url})")
         for related in state.artifacts:
             if related.id in artifact.relations and eligible(related, state.artifacts):
-                body += f"[{related.title}](/{Path(route_for(related)).with_suffix('.html').as_posix()})\n\n"
+                links.append(f"- [{related.title}](/{Path(route_for(related)).with_suffix('.html').as_posix()})")
+        if links:
+            body += "Related content:\n\n" + "\n".join(links) + "\n\n"
         return body + plan.get("scope_notes", "")
     if artifact.kind == "course":
         course = state.courses[artifact.id]
