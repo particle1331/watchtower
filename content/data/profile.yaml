@@ -64,7 +64,7 @@ employment:
     failure tracking, retries, and sufficient throughput; documents are attributed
     to the organizational hierarchy (employee, coach, manager) supporting RBAC, tagged
     using NLP and LLM tools, with a monitoring and analytics dashboard that only surfaces
-    results users have access to based on their org hierarchy
+    results users have access to based on their role
   - Implemented a RecSys-style solution for determining ideal program placement of
     candidate hires, by combining LOB description, contractual obligations, headcount
     requirements, candidate history, and interview/assessment scores
