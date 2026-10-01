@@ -1,33 +1,14 @@
 version: 1
 entries:
-- id: portfolio/autocode
-  abstract: Archived coding agent app with browser sessions, event streaming,
-    and a durable session journal.
-  notebook_path: content/notebooks/portfolio/autocode.ipynb
-  project_name: autocode
-  project_source: archived
-  archive_date: '2026-09-30'
-  figure_path: content/assets/portfolio/autocode-flow.svg
-  figure_caption: A browser task passes through the application service to an
-    agent runner; events are written to a journal and SQLite projection.
-- id: portfolio/change-planner
-  abstract: Archived agent for investigating a proposed code change and
-    producing an evidence-backed review plan.
-  notebook_path: content/notebooks/portfolio/change-planner.ipynb
-  project_name: change-planner
-  project_source: archived
-  archive_date: '2026-09-30'
-  figure_path: content/assets/portfolio/change-planner-flow.svg
-  figure_caption: A repository snapshot is indexed and searched before a
-    LangGraph investigation produces a human-reviewable change plan.
-- id: portfolio/ml-platform
-  abstract: Archived platform project connecting training, model artifacts,
-    batch jobs, and online serving.
-  notebook_path: content/notebooks/portfolio/ml-platform.ipynb
-  project_name: ml-platform
-  project_source: archived
-  archive_date: '2026-09-30'
-  figure_path: content/assets/portfolio/ml-platform-flow.svg
-  figure_caption: Versioned training jobs register runs and artifacts in MLflow;
-    serving loads a model version, while a results database supports an
-    operations dashboard.
+- id: test-portfolio
+  notebook_path: content/notebooks/portfolio/test-portfolio.ipynb
+  planned:
+    introduction: plan intro
+    scope_notes: scope
+    what_it_contains: contains
+  abstract: 'test abstract '
+  archive_date: null
+  figure_caption: test figure caption
+  figure_path: content/assets/portfolio/test-portfolio-314c0c6f23ca-ee70832a57c33e98029bd9ba32e4676049396356c5dd21ba198e87b740c0e10d.png
+  project_name: null
+  project_source: active

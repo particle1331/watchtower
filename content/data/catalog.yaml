@@ -19,13 +19,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  route: nb/courses/llms-from-scratch/index.ipynb
   description: A planned path from text data to a small GPT and two fine-tuning tasks.
-  cover: content/notebooks/courses/llms-from-scratch/img/course-cover.svg
   categories:
   - large-language-models
   - pytorch
   - courses
+  tags: []
+  cover: content/notebooks/courses/llms-from-scratch/img/course-cover.svg
+  planned: {}
+  route: nb/courses/llms-from-scratch/index.ipynb
 - id: course/llms-from-scratch/00-overview
   kind: chapter
   title: The GPT Build and Evidence Plan
@@ -193,6 +195,7 @@ artifacts:
   tags: []
   planned: {}
   route: nb/courses/reasoning-from-scratch/index.ipynb
+  cover: content/assets/courses/reasoning-from-scratch-94ba70e54d44-e55bd00ad6b5544c8aad6c7902be3fbfdb6f31816b1403318b1a0472bdec6b9b.png
 - id: course/reasoning-from-scratch/00-overview
   kind: chapter
   title: Reasoning Model Pipeline and Evidence Contract
@@ -499,44 +502,6 @@ artifacts:
   categories:
   - machine-learning
   - text-classification
-- id: portfolio/autocode
-  kind: portfolio
-  title: Autocode
-  visibility: public
-  lifecycle: published
-  relations: []
-  route: nb/portfolio/autocode.ipynb
-  description: A coding agent application with browser sessions and durable event
-    history.
-- id: portfolio/change-planner
-  kind: portfolio
-  title: Change Planner Agent
-  visibility: public
-  lifecycle: published
-  relations: []
-  route: nb/portfolio/change-planner.ipynb
-  description: An agent for investigating code changes and preparing an evidence-backed
-    plan.
-- id: portfolio/ml-platform
-  kind: portfolio
-  title: ML Platform
-  visibility: public
-  lifecycle: published
-  relations: []
-  route: nb/portfolio/ml-platform.ipynb
-  description: A platform project connecting training, model artifacts, batch jobs,
-    and serving.
-- id: personal/photos-notes
-  kind: personal
-  title: Personal
-  path: content/notebooks/personal/photos-notes.ipynb
-  visibility: private
-  lifecycle: published
-  relations: []
-  categories: []
-  tags: []
-  planned: {}
-  route: nb/personal/photos-notes.ipynb
 - id: gallery/photos
   kind: gallery
   title: Personal
@@ -548,3 +513,14 @@ artifacts:
   tags: []
   planned: {}
   route: nb/photos/photos.ipynb
+- id: test-portfolio
+  kind: portfolio
+  title: Test Portfolio
+  visibility: public
+  lifecycle: planned
+  relations:
+  - course/llms-from-scratch
+  description: desc
+  categories: []
+  tags: []
+  planned: {}
