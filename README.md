@@ -243,9 +243,10 @@ posts with a different ID but the same filename. Catalog `retired_ids` and
 not cleared by removing archival files. CLI/API creation obeys the same
 retired-name rules.
 
-All catalog entities use **tags** as their single taxonomy. Existing or imported
-categories merge into tags, retaining their labels and deduplicating them without
-regard to case. CMS editors have no separate category or editable route field;
+All catalog entities use **tags** as their single taxonomy. Legacy notebook
+front matter may still contain `categories`; imports merge those values into tags
+and discard the old field, deduplicating without regard to case. CMS editors have
+no separate category or editable route field;
 legacy routes remain managed site metadata. Only courses expose the catalog image
 as **Card image**; posts have no Cover control. Portfolio figures and photo uploads
 use their dedicated controls.

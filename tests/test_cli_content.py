@@ -72,7 +72,7 @@ def test_cli_import_preserves_outputs_and_frontmatter_becomes_metadata(content_s
     assert result["artifact"]["lifecycle"] == "draft"
     assert result["artifact"]["title"] == "Imported"
     assert result["artifact"]["tags"] == ["Existing", "ORIGINAL"]
-    assert result["artifact"]["categories"] == []
+    assert "categories" not in result["artifact"]
     notebook = nbformat.read(service.root / result["artifact"]["path"], as_version=4)
     assert notebook.cells[1] == code
     assert notebook.cells[0].source == "\nBody"

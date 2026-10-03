@@ -46,7 +46,7 @@ def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = ""
     lines = ["---", f'title: "{title}"']
     if date:
         lines.append(f'date: "{date}"')
-    lines += ["categories: []", "---"]
+    lines += ["tags: []", "---"]
     nb.cells = [nbformat.v4.new_markdown_cell("\n".join(lines) + body)]
     nbformat.write(nb, path)
 

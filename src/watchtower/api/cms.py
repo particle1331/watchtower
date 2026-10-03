@@ -143,7 +143,7 @@ def field_groups(fields: list[dict[str, Any]], data: dict[str, Any]) -> list[dic
     collection_paths = {tuple(item["path"]) for item in collections(data)}
     for field in fields:
         path = tuple(json.loads(field["name"]))
-        if field["label"] in {"id", "kind", "version", "route", "categories"} or field["label"] == "cover" and data.get("kind") != "course":
+        if field["label"] in {"id", "kind", "version", "route"} or field["label"] == "cover" and data.get("kind") != "course":
             continue
         parent = path[:-1]
         if parent not in groups:

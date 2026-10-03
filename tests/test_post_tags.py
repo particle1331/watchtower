@@ -23,16 +23,17 @@ from watchtower.services.content import ContentService
     ('personal', 'content/notebooks/personal/example.ipynb'),
     ('gallery', 'content/data/photos.yaml'),
 ])
-def test_entity_categories_merge_into_tags_and_managed_fields_are_hidden(kind, path):
+def test_legacy_categories_merge_into_tags_and_are_removed_from_the_model(kind, path):
     values = {'id': f'{kind}/example', 'kind': kind, 'title': 'Example', 'path': path, 'tags': [' NLP ', 'meta'], 'categories': ['Meta', 'dev'], 'route': 'legacy/example.ipynb'}
     if kind == 'chapter':
         values.update(parent='course/example', toc_title='Example', section='main')
     artifact = Artifact.model_validate(values)
     assert artifact.tags == ['NLP', 'meta', 'dev']
-    assert artifact.categories == []
+    assert not hasattr(artifact, 'categories')
     assert artifact.route == 'legacy/example.ipynb'
     assert values['categories'] == ['Meta', 'dev']
     data = artifact.model_dump(mode='json')
+    assert 'categories' not in data
     labels = {field['label'] for group in field_groups(form_fields(data), data) for field in group['fields']}
     assert 'tags' in labels
     assert not {'route', 'categories'} & labels
@@ -61,9 +62,9 @@ def test_legacy_post_labels_are_visible_and_can_be_removed_in_cms(tmp_path):
         saved = client.post('/cms/save/post/example', data={'revision': revision, 'snapshot': snapshot, 'field:["tags"]': 'NLP'})
         assert saved.status_code == 200, saved.text
         assert content.inspect('post/example')['artifact']['tags'] == ['NLP']
-        assert content.inspect('post/example')['artifact']['categories'] == []
+        assert 'categories' not in content.inspect('post/example')['artifact']
         persisted = yaml.safe_load(catalog_path.read_text())['artifacts'][0]
-        assert persisted['tags'] == ['NLP'] and persisted['categories'] == []
+        assert persisted['tags'] == ['NLP'] and 'categories' not in persisted
         assert json.loads(snapshot)['tags'] == ['NLP', 'meta', 'dev']
 
 
@@ -82,7 +83,7 @@ def test_course_legacy_labels_can_be_removed_without_changing_route(tmp_path):
         saved = client.post('/cms/save/course/example', data={'revision': revision, 'snapshot': snapshot, 'field:["tags"]': 'NLP'})
         assert saved.status_code == 200, saved.text
         record = content.inspect('course/example')['artifact']
-        assert record['tags'] == ['NLP'] and record['categories'] == []
+        assert record['tags'] == ['NLP'] and 'categories' not in record
         assert record['route'] == 'legacy/course/index.ipynb'
 
 

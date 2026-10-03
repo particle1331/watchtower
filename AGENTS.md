@@ -233,9 +233,10 @@ Deletion permanently reserves removed IDs and notebook sources in catalog
 `retired_ids` and `retired_sources`, including planned entries without files.
 Do not reuse retired names or clear these reservations when deleting archives.
 Creation rejects case variants and active filenames owned by legacy post IDs.
-All catalog entity kinds use tags as their single taxonomy. Legacy/imported
-categories merge into tags with case-insensitive deduplication. CMS fields show
-only tags; routes are managed site metadata and CMS writes cannot change them.
+All catalog entity kinds use tags as their single taxonomy. Legacy notebook
+front matter may still contain categories; imports merge them into tags with
+case-insensitive deduplication and discard the old field. CMS fields show only
+tags; routes are managed site metadata and CMS writes cannot change them.
 Preserve existing legacy routes. Catalog cover controls appear only for courses,
 as Card image; portfolio figures and photo uploads use their dedicated fields.
 

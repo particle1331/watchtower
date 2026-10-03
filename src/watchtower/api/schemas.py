@@ -44,7 +44,6 @@ class ArtifactMetadataPatch(BaseModel):
     visibility: Literal["public", "private"] | None = None
     lifecycle: Literal["planned", "draft", "published"] | None = None
     tags: list[str] | None = None
-    categories: list[str] | None = None
     relations: list[str] | None = None
     path: str | None = None
     date: str | None = None

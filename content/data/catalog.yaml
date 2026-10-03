@@ -8,7 +8,6 @@ artifacts:
   lifecycle: published
   relations: []
   date: '2026-09-30'
-  categories: []
   tags:
   - meta
   - dev
@@ -22,7 +21,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: A planned path from text data to a small GPT and two fine-tuning tasks.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -38,7 +36,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: The model and experiment lineage for the complete course.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -56,7 +53,6 @@ artifacts:
   relations: []
   description: Define next-token prediction and the evidence needed for the course
     build.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -73,7 +69,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Prepare text for next-token training and verify the target shift.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -90,7 +85,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Derive attention and test the causal boundary.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -107,7 +101,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Combine embeddings, decoder blocks, and a language-model head.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -124,7 +117,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Optimize next-token loss and inspect a checkpoint.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -141,7 +133,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Adapt a pretrained representation to a labeled task.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -158,7 +149,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Teach GPT to respond to formatted requests and inspect its answers.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -175,7 +165,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Compare low-rank adapters with full-parameter updates.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -192,7 +181,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Assemble run records, evaluations, and limitations.
-  categories: []
   tags:
   - large-language-models
   - pytorch
@@ -210,7 +198,6 @@ artifacts:
   relations: []
   description: A planned, hands-on path from pretrained language-model generation
     to inference-time reasoning, reinforcement learning, and distillation.
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -227,7 +214,6 @@ artifacts:
   relations: []
   description: A conceptual map of the pretrained model, reasoning methods, and comparisons
     planned for this course.
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -244,7 +230,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -260,7 +245,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -277,7 +261,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -294,7 +277,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -311,7 +293,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -328,7 +309,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -345,7 +325,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -362,7 +341,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags:
   - large-language-models
   - reasoning
@@ -381,7 +359,6 @@ artifacts:
   relations: []
   description: An end-to-end text classification course using AI-written-text detection
     as a case study.
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -395,7 +372,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -411,7 +387,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -427,7 +402,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -443,7 +417,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -459,7 +432,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -475,7 +447,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -491,7 +462,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -507,7 +477,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -523,7 +492,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -539,7 +507,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -555,7 +522,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags:
   - machine-learning
   - text-classification
@@ -571,7 +537,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  categories: []
   tags: []
   planned: {}
   route: nb/photos/photos.ipynb
@@ -583,7 +548,6 @@ artifacts:
   relations:
   - course/llms-from-scratch
   description: desc
-  categories: []
   tags: []
   planned: {}
 - id: htmx-todo
@@ -595,7 +559,6 @@ artifacts:
   relations: []
   date: '2026-10-02'
   description: todo
-  categories: []
   tags: []
   planned:
     content: Creating a Todo App in HTMX
@@ -606,6 +569,5 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  categories: []
   tags: []
   planned: {}

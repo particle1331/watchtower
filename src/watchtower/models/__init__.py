@@ -34,7 +34,6 @@ class Artifact(Record):
     relations: list[str] = Field(default_factory=list)
     date: Date | None = None
     description: str | None = None
-    categories: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     cover: str | None = None
     planned: dict[str, Any] = Field(default_factory=dict)
@@ -45,11 +44,13 @@ class Artifact(Record):
 
     @staticmethod
     def normalize_labels(value: Any) -> Any:
-        """Accept legacy categories as tags without keeping two taxonomies."""
+        """Import legacy categories into tags, then remove the obsolete field."""
         if isinstance(value, dict):
             tags, categories = value.get("tags", []), value.get("categories", [])
             if isinstance(tags, list) and isinstance(categories, list) and all(isinstance(label, str) for label in tags + categories):
-                return {**value, "tags": Artifact.clean_tags(tags + categories), "categories": []}
+                normalized = {**value, "tags": Artifact.clean_tags(tags + categories)}
+                normalized.pop("categories", None)
+                return normalized
         return value
 
     @model_validator(mode="before")
