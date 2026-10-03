@@ -7,11 +7,13 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  route: nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
   date: '2026-09-30'
-  categories:
+  categories: []
+  tags:
   - meta
   - dev
+  planned: {}
+  route: nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
 - id: course/llms-from-scratch
   kind: course
   title: Build a GPT Language Model from Scratch
@@ -20,11 +22,11 @@ artifacts:
   lifecycle: published
   relations: []
   description: A planned path from text data to a small GPT and two fine-tuning tasks.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
   - courses
-  tags: []
   cover: content/notebooks/courses/llms-from-scratch/img/course-cover.svg
   planned: {}
   route: nb/courses/llms-from-scratch/index.ipynb
@@ -35,14 +37,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: orientation
-  toc_title: 00. Overview
-  route: nb/courses/llms-from-scratch/00-overview.ipynb
   description: The model and experiment lineage for the complete course.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 00. Overview
+  section: orientation
+  route: nb/courses/llms-from-scratch/00-overview.ipynb
 - id: course/llms-from-scratch/01-introduction
   kind: chapter
   title: Language Models, Scope, and the Experiment Contract
@@ -50,15 +54,17 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: foundations
-  toc_title: 01. Language models
-  route: nb/courses/llms-from-scratch/01-introduction.ipynb
   description: Define next-token prediction and the evidence needed for the course
     build.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 01. Language models
+  section: foundations
+  route: nb/courses/llms-from-scratch/01-introduction.ipynb
 - id: course/llms-from-scratch/02-text-data
   kind: chapter
   title: Tokenization, Context Windows, and Batches
@@ -66,14 +72,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: foundations
-  toc_title: 02. Text data
-  route: nb/courses/llms-from-scratch/02-text-data.ipynb
   description: Prepare text for next-token training and verify the target shift.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 02. Text data
+  section: foundations
+  route: nb/courses/llms-from-scratch/02-text-data.ipynb
 - id: course/llms-from-scratch/03-attention
   kind: chapter
   title: Causal Self-Attention and Multi-Head Attention
@@ -81,14 +89,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: gpt-build-and-pretraining
-  toc_title: 03. Attention
-  route: nb/courses/llms-from-scratch/03-attention.ipynb
   description: Derive attention and test the causal boundary.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 03. Attention
+  section: gpt-build-and-pretraining
+  route: nb/courses/llms-from-scratch/03-attention.ipynb
 - id: course/llms-from-scratch/04-gpt-model
   kind: chapter
   title: Assembling a Decoder-Only GPT
@@ -96,14 +106,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: gpt-build-and-pretraining
-  toc_title: 04. GPT
-  route: nb/courses/llms-from-scratch/04-gpt-model.ipynb
   description: Combine embeddings, decoder blocks, and a language-model head.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 04. GPT
+  section: gpt-build-and-pretraining
+  route: nb/courses/llms-from-scratch/04-gpt-model.ipynb
 - id: course/llms-from-scratch/05-pretraining
   kind: chapter
   title: Pretraining, Validation, and Generation
@@ -111,14 +123,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: gpt-build-and-pretraining
-  toc_title: 05. Pretraining
-  route: nb/courses/llms-from-scratch/05-pretraining.ipynb
   description: Optimize next-token loss and inspect a checkpoint.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 05. Pretraining
+  section: gpt-build-and-pretraining
+  route: nb/courses/llms-from-scratch/05-pretraining.ipynb
 - id: course/llms-from-scratch/06-classification
   kind: chapter
   title: Fine-Tuning GPT for Text Classification
@@ -126,14 +140,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: adaptation-and-synthesis
-  toc_title: 06. Classification
-  route: nb/courses/llms-from-scratch/06-classification.ipynb
   description: Adapt a pretrained representation to a labeled task.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 06. Classification
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/06-classification.ipynb
 - id: course/llms-from-scratch/07-instructions
   kind: chapter
   title: Instruction Fine-Tuning and Response Evaluation
@@ -141,14 +157,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: adaptation-and-synthesis
-  toc_title: 07. Instructions
-  route: nb/courses/llms-from-scratch/07-instructions.ipynb
   description: Teach GPT to respond to formatted requests and inspect its answers.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 07. Instructions
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/07-instructions.ipynb
 - id: course/llms-from-scratch/08-lora
   kind: chapter
   title: 'Optional: Parameter-Efficient Fine-Tuning with LoRA'
@@ -156,14 +174,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: adaptation-and-synthesis
-  toc_title: 08. LoRA (optional)
-  route: nb/courses/llms-from-scratch/08-lora.ipynb
   description: Compare low-rank adapters with full-parameter updates.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 08. LoRA (optional)
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/08-lora.ipynb
 - id: course/llms-from-scratch/09-capstone
   kind: chapter
   title: 'Capstone: Reproduce and Compare the GPT Pipeline'
@@ -171,14 +191,16 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/llms-from-scratch
-  section: adaptation-and-synthesis
-  toc_title: 09. Capstone
-  route: nb/courses/llms-from-scratch/09-capstone.ipynb
   description: Assemble run records, evaluations, and limitations.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - pytorch
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 09. Capstone
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/09-capstone.ipynb
 - id: course/reasoning-from-scratch
   kind: course
   title: Build a Reasoning Model from Scratch
@@ -188,14 +210,14 @@ artifacts:
   relations: []
   description: A planned, hands-on path from pretrained language-model generation
     to inference-time reasoning, reinforcement learning, and distillation.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - pytorch
-  tags: []
+  cover: content/assets/courses/reasoning-from-scratch-94ba70e54d44-e55bd00ad6b5544c8aad6c7902be3fbfdb6f31816b1403318b1a0472bdec6b9b.png
   planned: {}
   route: nb/courses/reasoning-from-scratch/index.ipynb
-  cover: content/assets/courses/reasoning-from-scratch-94ba70e54d44-e55bd00ad6b5544c8aad6c7902be3fbfdb6f31816b1403318b1a0472bdec6b9b.png
 - id: course/reasoning-from-scratch/00-overview
   kind: chapter
   title: Reasoning Model Pipeline and Evidence Contract
@@ -203,16 +225,18 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Reasoning Model Pipeline and Evidence Contract
-  route: nb/courses/reasoning-from-scratch/00-overview.ipynb
   description: A conceptual map of the pretrained model, reasoning methods, and comparisons
     planned for this course.
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - pytorch
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Reasoning Model Pipeline and Evidence Contract
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/00-overview.ipynb
 - id: course/reasoning-from-scratch/01-introduction
   kind: chapter
   title: Understanding Reasoning Models
@@ -220,13 +244,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: 01. Introduction
-  route: nb/courses/reasoning-from-scratch/01-introduction.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: 01. Introduction
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/01-introduction.ipynb
 - id: course/reasoning-from-scratch/02-generation
   kind: chapter
   title: Generate Text with a Pretrained Reasoning Base Model
@@ -234,14 +260,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Generate Text with a Pretrained Reasoning Base Model
-  route: nb/courses/reasoning-from-scratch/02-generation.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - pytorch
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Generate Text with a Pretrained Reasoning Base Model
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/02-generation.ipynb
 - id: course/reasoning-from-scratch/03-evaluation
   kind: chapter
   title: Evaluate Reasoning Models
@@ -249,14 +277,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Evaluate Reasoning Models
-  route: nb/courses/reasoning-from-scratch/03-evaluation.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - evaluation
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Evaluate Reasoning Models
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/03-evaluation.ipynb
 - id: course/reasoning-from-scratch/04-inference-scaling
   kind: chapter
   title: Improve Reasoning with Inference-Time Scaling
@@ -264,14 +294,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Improve Reasoning with Inference-Time Scaling
-  route: nb/courses/reasoning-from-scratch/04-inference-scaling.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - evaluation
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Improve Reasoning with Inference-Time Scaling
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/04-inference-scaling.ipynb
 - id: course/reasoning-from-scratch/05-self-refinement
   kind: chapter
   title: Inference-Time Scaling through Self-Refinement
@@ -279,14 +311,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Inference-Time Scaling through Self-Refinement
-  route: nb/courses/reasoning-from-scratch/05-self-refinement.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - evaluation
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Inference-Time Scaling through Self-Refinement
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/05-self-refinement.ipynb
 - id: course/reasoning-from-scratch/06-reinforcement-learning
   kind: chapter
   title: Train Reasoning Models with Reinforcement Learning
@@ -294,14 +328,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Train Reasoning Models with Reinforcement Learning
-  route: nb/courses/reasoning-from-scratch/06-reinforcement-learning.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - reinforcement-learning
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Train Reasoning Models with Reinforcement Learning
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/06-reinforcement-learning.ipynb
 - id: course/reasoning-from-scratch/07-grpo
   kind: chapter
   title: Improving GRPO for Reasoning Reinforcement Learning
@@ -309,14 +345,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Improve GRPO for Reasoning Reinforcement Learning
-  route: nb/courses/reasoning-from-scratch/07-grpo.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - reinforcement-learning
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Improve GRPO for Reasoning Reinforcement Learning
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/07-grpo.ipynb
 - id: course/reasoning-from-scratch/08-distillation
   kind: chapter
   title: Distill Reasoning Models for Efficient Inference
@@ -324,14 +362,16 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  parent: course/reasoning-from-scratch
-  section: orientation
-  toc_title: Distill Reasoning Models for Efficient Inference
-  route: nb/courses/reasoning-from-scratch/08-distillation.ipynb
-  categories:
+  categories: []
+  tags:
   - large-language-models
   - reasoning
   - distillation
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Distill Reasoning Models for Efficient Inference
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/08-distillation.ipynb
 - id: course/text-classification-from-scratch
   kind: course
   title: Build Text Classifiers from Scratch
@@ -341,11 +381,11 @@ artifacts:
   relations: []
   description: An end-to-end text classification course using AI-written-text detection
     as a case study.
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
   - course
-  tags: []
   planned: {}
   route: nb/courses/text-classification-from-scratch/index.ipynb
 - id: course/text-classification-from-scratch/01-introduction
@@ -355,13 +395,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: foundations
-  toc_title: 01. Classification
-  route: nb/courses/text-classification-from-scratch/01-introduction.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 01. Classification
+  section: foundations
+  route: nb/courses/text-classification-from-scratch/01-introduction.ipynb
 - id: course/text-classification-from-scratch/00-overview
   kind: chapter
   title: Text Classification Pipeline and Evidence Contract
@@ -369,13 +411,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: orientation
-  toc_title: 00. Overview
-  route: nb/courses/text-classification-from-scratch/00-overview.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 00. Overview
+  section: orientation
+  route: nb/courses/text-classification-from-scratch/00-overview.ipynb
 - id: course/text-classification-from-scratch/02-data
   kind: chapter
   title: Build a Dataset with Reliable Labels
@@ -383,13 +427,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: data-and-baselines
-  toc_title: 02. Dataset
-  route: nb/courses/text-classification-from-scratch/02-data.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 02. Dataset
+  section: data-and-baselines
+  route: nb/courses/text-classification-from-scratch/02-data.ipynb
 - id: course/text-classification-from-scratch/03-splits
   kind: chapter
   title: Prevent Leakage with Grouped Splits
@@ -397,13 +443,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: data-and-baselines
-  toc_title: 03. Splits
-  route: nb/courses/text-classification-from-scratch/03-splits.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 03. Splits
+  section: data-and-baselines
+  route: nb/courses/text-classification-from-scratch/03-splits.ipynb
 - id: course/text-classification-from-scratch/04-baseline
   kind: chapter
   title: Train a TF-IDF Logistic Regression Baseline
@@ -411,13 +459,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: data-and-baselines
-  toc_title: 04. Logistic regression
-  route: nb/courses/text-classification-from-scratch/04-baseline.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 04. Logistic regression
+  section: data-and-baselines
+  route: nb/courses/text-classification-from-scratch/04-baseline.ipynb
 - id: course/text-classification-from-scratch/05-transformers
   kind: chapter
   title: From Classical Models to General-Purpose Classifiers
@@ -425,13 +475,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: neural-classifiers
-  toc_title: 05. Model families
-  route: nb/courses/text-classification-from-scratch/05-transformers.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 05. Model families
+  section: neural-classifiers
+  route: nb/courses/text-classification-from-scratch/05-transformers.ipynb
 - id: course/text-classification-from-scratch/06-finetuning
   kind: chapter
   title: Fine-Tune Encoder and Decoder Models
@@ -439,13 +491,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: neural-classifiers
-  toc_title: 06. Fine-tuning
-  route: nb/courses/text-classification-from-scratch/06-finetuning.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 06. Fine-tuning
+  section: neural-classifiers
+  route: nb/courses/text-classification-from-scratch/06-finetuning.ipynb
 - id: course/text-classification-from-scratch/07-evaluation
   kind: chapter
   title: Evaluate Calibration and Failure Modes
@@ -453,13 +507,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: evaluation-and-delivery
-  toc_title: 07. Evaluation
-  route: nb/courses/text-classification-from-scratch/07-evaluation.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 07. Evaluation
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/07-evaluation.ipynb
 - id: course/text-classification-from-scratch/08-efficiency
   kind: chapter
   title: Measure Data Efficiency and Inference Cost
@@ -467,13 +523,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: evaluation-and-delivery
-  toc_title: 08. Efficiency
-  route: nb/courses/text-classification-from-scratch/08-efficiency.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 08. Efficiency
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/08-efficiency.ipynb
 - id: course/text-classification-from-scratch/09-deployment
   kind: chapter
   title: Package and Serve a Text Classifier
@@ -481,13 +539,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: evaluation-and-delivery
-  toc_title: 09. Deployment
-  route: nb/courses/text-classification-from-scratch/09-deployment.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 09. Deployment
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/09-deployment.ipynb
 - id: course/text-classification-from-scratch/10-capstone
   kind: chapter
   title: 'Final Project: Implement a Jev-Like Classifier with ModernBERT'
@@ -495,13 +555,15 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  parent: course/text-classification-from-scratch
-  section: evaluation-and-delivery
-  toc_title: 10. Capstone
-  route: nb/courses/text-classification-from-scratch/10-capstone.ipynb
-  categories:
+  categories: []
+  tags:
   - machine-learning
   - text-classification
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 10. Capstone
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/10-capstone.ipynb
 - id: gallery/photos
   kind: gallery
   title: Personal
@@ -517,10 +579,33 @@ artifacts:
   kind: portfolio
   title: Test Portfolio
   visibility: public
-  lifecycle: planned
+  lifecycle: draft
   relations:
   - course/llms-from-scratch
   description: desc
+  categories: []
+  tags: []
+  planned: {}
+- id: htmx-todo
+  kind: post
+  title: Creating a Todo App in HTMX
+  path: content/notebooks/posts/htmx-todo.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  date: '2026-10-02'
+  description: todo
+  categories: []
+  tags: []
+  planned:
+    content: Creating a Todo App in HTMX
+- id: project/test-portfolio
+  kind: project
+  title: Test Portfolio
+  path: projects/test-portfolio
+  visibility: public
+  lifecycle: draft
+  relations: []
   categories: []
   tags: []
   planned: {}

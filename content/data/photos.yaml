@@ -4,4 +4,9 @@ photos:
   lifecycle: published
   path: content/assets/photos/tanay.jpg
   width: ''
+- caption: test captiong
+  heading: test
+  lifecycle: draft
+  path: ''
+  width: ''
 version: 1

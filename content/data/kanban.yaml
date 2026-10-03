@@ -1,0 +1,9 @@
+version: 1
+cards:
+- id: d5a6b0b075fc4c5686f68781f858bb7b
+  ref: card#1
+  title: test
+  description: desc
+  column: todo
+  artifact_ids: []
+next_number: 2
