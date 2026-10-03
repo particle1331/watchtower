@@ -10,9 +10,9 @@ Posts from across the knowledge base, newest first.
 
 ::: {.posts-layout}
 ::: {.posts-main}
-<table class="table posts-table"><thead><tr><th aria-sort="descending"><button class="post-sort" data-sort="date">Date</button></th><th><button class="post-sort" data-sort="title">Title</button></th><th>Categories</th><th>Tags</th><th><button class="post-sort" data-sort="readingMinutes">Reading time</button></th></tr></thead><tbody>
+<table class="table posts-table"><thead><tr><th aria-sort="descending"><button class="post-sort" data-sort="date">Date</button></th><th><button class="post-sort" data-sort="title">Title</button></th><th>Tags</th><th><button class="post-sort" data-sort="readingMinutes">Reading time</button></th></tr></thead><tbody>
 {% for post in posts %}
-<tr data-post-tags="{{ post.tags | tojson | forceescape }}" data-date="{{ post.date or '' }}" data-title="{{ post.title | e }}" data-reading-minutes="{{ post.reading_minutes }}"><td>{{ post.date or '' }}</td><td><a href="{{ post.href | e }}">{{ post.title | e }}</a>{% if post.lifecycle != 'published' %} <span class="content-status">{{ post.lifecycle | e }}</span>{% endif %}{% if post.description %}<p>{{ post.description | e }}</p>{% endif %}</td><td>{{ post.categories | join(', ') | e }}</td><td>{% for tag in post.tags %}<a class="post-tag" href="?tag={{ tag | urlencode }}">{{ tag | e }}</a> {% endfor %}</td><td>{{ post.reading_minutes }} min</td></tr>
+<tr data-post-tags="{{ post.tags | tojson | forceescape }}" data-date="{{ post.date or '' }}" data-title="{{ post.title | e }}" data-reading-minutes="{{ post.reading_minutes }}"><td>{{ post.date or '' }}</td><td><a href="{{ post.href | e }}">{{ post.title | e }}</a>{% if post.lifecycle != 'published' %} <span class="content-status{% if post.lifecycle == 'draft' %} draft-badge{% endif %}">{{ post.lifecycle | e }}</span>{% endif %}{% if post.description %}<p>{{ post.description | e }}</p>{% endif %}</td><td>{% for tag in post.tags %}<a class="post-tag" href="?tag={{ tag | urlencode }}">{{ tag | e }}</a> {% endfor %}</td><td>{{ post.reading_minutes }} min</td></tr>
 {% endfor %}
 </tbody></table>
 <p id="posts-empty" hidden>No posts match this tag.</p>

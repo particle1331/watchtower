@@ -1,13 +1,20 @@
-{% extends 'base.html' %}{% block content %}<article id="new-editor"><h1>Create a plan</h1>{% if error %}<div class="error" role="alert"><pre>{{ error }}</pre>Your submitted values are preserved. <a href="/cms/new?kind={{ values.kind }}">Reload</a> to obtain the current revision before reconciling a conflict.</div>{% endif %}
-<form data-editor data-editing="true" data-creating="true" method="post" action="/cms/new" hx-post="/cms/new" hx-target="#new-editor" hx-select="#new-editor" hx-swap="outerHTML">
+{% extends 'base.html' %}{% block content %}<article id="new-editor"><h1>Create a {{ values.kind }} plan</h1>{% if error %}<div class="error" role="alert"><p>{{ error.message or error }}</p>Your submitted values are preserved. <a href="/cms/new?kind={{ values.kind }}">Reload</a> to obtain the current revision before reconciling a conflict.</div>{% endif %}
+<form data-editor data-editing="true" data-creating="true" method="post" action="/cms/new?kind={{ values.kind }}" hx-post="/cms/new?kind={{ values.kind }}" hx-target="#new-editor" hx-select="#new-editor" hx-swap="outerHTML">
 <input type="hidden" name="revision" value="{{ revision }}">
+{% set creating = true %}{% set editor_label = 'New ' + values.kind + ' plan' %}{% set cancel_url = '/cms/' + ('courses' if values.kind in ['course','chapter'] else 'portfolio' if values.kind in ['portfolio','project'] else 'personal' if values.kind in ['personal','gallery'] else 'posts') %}{% include 'editor_actions.html' %}
 <fieldset class="editor-fields" data-editor-fields>
 <fieldset class="entity-group"><legend>Entry details</legend>
-<label>Kind<select name="kind">{% for kind in ['post','course','chapter','portfolio','personal','project','gallery'] %}<option {% if values.kind == kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}</select></label>
-{% for key,label in [('id','Stable ID'),('title','Title'),('path','Reserved source path'),('parent','Parent course ID'),('toc_title','Short TOC title'),('section','Section ID'),('tags','Tags (comma separated)'),('relations','Related stable IDs (comma separated)')] %}
-{% set chapter_only = key in ['parent','toc_title','section'] %}
-{% set inactive = (chapter_only and values.kind != 'chapter') or (key == 'path' and values.kind == 'portfolio') %}
-<label {% if chapter_only %}data-kinds="chapter"{% elif key == 'path' %}data-kinds="post course chapter personal project gallery"{% endif %} {% if inactive %}hidden{% endif %}>{{ label }}<input name="{{ key }}" value="{{ values.get(key,'') }}" {% if key in ['id','title'] %}required{% endif %} {% if inactive %}disabled{% endif %}></label>
+<input type="hidden" name="kind" value="{{ values.kind }}">
+<label>Name<input name="name" value="{{ values.get('name','') }}" required autofocus autocomplete="off" placeholder="{{ 'e.g. htmx-todo' if values.kind == 'post' else 'e.g. test' }}"><small>Spaces and punctuation become hyphens. The stable ID and source path are generated from this name; IDs already in use or previously deleted stay reserved.</small></label>
+<p class="generated-id" data-generated-id data-kind="{{ values.kind }}" aria-live="polite">Generated stable ID: <code></code></p>
+<label>Title<input name="title" value="{{ values.get('title','') }}" required></label>
+{% if values.kind == 'chapter' %}
+<label>Course<select name="parent" required data-course-select><option value="">Choose a course</option>{% for course in courses %}<option value="{{ course.id }}" {% if values.get('parent') == course.id %}selected{% endif %}>{{ course.title }}</option>{% endfor %}</select></label>
+<label>Course section<select name="section" required data-section-select><option value="">Choose a section</option>{% for course in courses %}{% for section in course.sections %}<option value="{{ section.id }}" data-course-id="{{ course.id }}" {% if values.get('parent') == course.id and values.get('section') == section.id %}selected{% endif %}>{{ course.title }} · {{ section.title or section.id }}</option>{% endfor %}{% endfor %}</select></label>
+<label>Short TOC title<input name="toc_title" value="{{ values.get('toc_title','') }}"><small>Defaults to the name if left blank.</small></label>
+{% endif %}
+{% for key,label in [('tags','Tags (comma separated)'),('relations','Related stable IDs (comma separated)')] %}
+<label>{{ label }}<input name="{{ key }}" value="{{ values.get(key,'') }}"></label>
 {% endfor %}
 <label>Visibility<select name="visibility"><option {% if values.visibility == 'public' %}selected{% endif %}>public</option><option {% if values.visibility == 'private' %}selected{% endif %}>private</option></select></label>
 <label>Description<textarea name="description">{{ values.description or '' }}</textarea></label>
@@ -18,7 +25,6 @@
 {% for key,label in [('introduction','Introduction'),('what_it_contains','What it contains'),('scope_notes','Scope notes (optional)')] %}
 <label data-kinds="portfolio" {% if values.kind != 'portfolio' %}hidden{% endif %}>{{ label }}<textarea rows="5" name="{{ key }}" {% if values.kind != 'portfolio' %}disabled{% endif %}>{{ values.get(key,'') }}</textarea>{% if key == 'scope_notes' %}<small>Appears under “Explore the project,” after source and related page links.</small>{% endif %}</label>
 {% endfor %}
-<p data-kinds="portfolio" {% if values.kind != 'portfolio' %}hidden{% endif %}>Saving creates a planned page from these sections. The future notebook path is reserved automatically from the stable ID. Start and edit creates the notebook as a draft.</p>
+<p data-kinds="portfolio" {% if values.kind != 'portfolio' %}hidden{% endif %}>Saving creates a planned page from these sections. The future notebook path is generated automatically from the name. Start and edit creates the notebook as a draft.</p>
 </fieldset></fieldset>
-{% set creating = true %}{% set editor_label = 'New ' + values.kind + ' plan' %}{% set cancel_url = '/cms/' + ('courses' if values.kind in ['course','chapter'] else 'portfolio' if values.kind in ['portfolio','project'] else 'personal' if values.kind in ['personal','gallery'] else 'posts') %}{% include 'editor_actions.html' %}
 </form></article>{% endblock %}

@@ -1,0 +1,11 @@
+<div class="publication-meta" role="note" aria-label="Publication status">
+<div class="publication-meta-heading">Publication status</div>
+<pre class="publication-meta-code"><code>state:   {{ entry.lifecycle | e }}
+{% if photo_status | default(false) %}image:   {{ 'uploaded' if image_ready else 'not uploaded' }}
+next:    {{ 'Set Published in CMS' if image_ready else 'Upload photo, then set Published in CMS' }}{% else %}{% if entry.visibility != 'public' %}access:  private working preview
+{% endif %}{% if entry.lifecycle == 'planned' %}content: not started
+start:   wt start {{ entry.id | e }}{% else %}content: working draft
+next:    Review content, then publish in CMS{% if entry.kind == 'chapter' %}
+requires: Published course{% endif %}{% if entry.visibility != 'public' %}
+requires: Public visibility{% endif %}{% endif %}{% endif %}</code></pre>
+</div>

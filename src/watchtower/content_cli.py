@@ -72,6 +72,15 @@ def create_chapter(course: str, name: str, title: str | None, toc_title: str | N
 
 
 def install(app: typer.Typer, new_app: typer.Typer) -> None:
+    from .kanban_cli import install as install_kanban
+    install_kanban(app)
+
+    @app.command("delete")
+    def delete(name: str, dry_run: bool = typer.Option(False, "--dry-run"), cascade: bool = typer.Option(False, "--cascade"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+        """Remove an entry, retaining files; use --cascade to include course chapters."""
+        service = ContentService()
+        emit(service.deletion_plan(name) if dry_run else service.delete(name, expected_revision, cascade=cascade))
+
     @app.command("start")
     def start(name: str, expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
         """Materialize a planned notebook as a draft without executing cells."""
@@ -163,12 +172,6 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
 
         from .api import create_app
         uvicorn.run(create_app(Path.cwd()), host="127.0.0.1", port=port)
-
-    @app.command("mcp")
-    def mcp() -> None:
-        """Serve publishing tools over MCP stdio."""
-        from .mcp import create_mcp
-        create_mcp(Path.cwd()).run()
 
     @app.command("migrate")
     def migrate(apply: bool = False, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:

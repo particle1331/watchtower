@@ -1,10 +1,10 @@
-"""Transport schemas shared by the HTTP and MCP adapters."""
+"""Typed request and response schemas for the HTTP adapter."""
 
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from watchtower.models import Artifact, CourseContract, Photo, PortfolioEntry
+from watchtower.models import Artifact, CourseContract, KanbanColumn, Photo, PortfolioEntry
 
 Kind = Literal["post", "course", "chapter", "portfolio", "project", "personal", "gallery"]
 
@@ -63,6 +63,23 @@ class ArtifactPatch(ArtifactMetadataPatch):
 
 class StructuredUpdate(BaseModel):
     data: dict[str, Any]
+
+
+class KanbanCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str | None = None
+    title: str = Field(min_length=1)
+    description: str = ""
+    column: KanbanColumn = "todo"
+    artifact_ids: list[str] = Field(default_factory=list)
+
+
+class KanbanPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str | None = None
+    description: str | None = None
+    column: KanbanColumn | None = None
+    artifact_ids: list[str] | None = None
 
 
 class GalleryUpdate(BaseModel):

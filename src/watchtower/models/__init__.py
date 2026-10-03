@@ -43,6 +43,20 @@ class Artifact(Record):
     section: str | None = None
     route: str | None = None
 
+    @staticmethod
+    def normalize_labels(value: Any) -> Any:
+        """Accept legacy categories as tags without keeping two taxonomies."""
+        if isinstance(value, dict):
+            tags, categories = value.get("tags", []), value.get("categories", [])
+            if isinstance(tags, list) and isinstance(categories, list) and all(isinstance(label, str) for label in tags + categories):
+                return {**value, "tags": Artifact.clean_tags(tags + categories), "categories": []}
+        return value
+
+    @model_validator(mode="before")
+    @classmethod
+    def categories_are_tags(cls, value: Any) -> Any:
+        return cls.normalize_labels(value)
+
     @field_validator("path", "cover", "route")
     @classmethod
     def safe_paths(cls, value: str | None) -> str | None:
@@ -82,6 +96,19 @@ class Artifact(Record):
 class Catalog(Record):
     version: Literal[1] = 1
     artifacts: list[Artifact]
+    retired_ids: list[str] = Field(default_factory=list)
+    retired_sources: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def reserved_names(self) -> Catalog:
+        retired = {value.casefold() for value in self.retired_ids}
+        sources = {relative_path(value).casefold() for value in self.retired_sources}
+        for artifact in self.artifacts:
+            if artifact.id.casefold() in retired:
+                raise ValueError(f"ID was previously deleted and remains reserved: {artifact.id}")
+            if artifact.path and artifact.path.casefold() in sources:
+                raise ValueError(f"source was previously deleted and remains reserved: {artifact.path}")
+        return self
 
 
 class PortfolioEntry(Record):
@@ -207,7 +234,7 @@ class Profile(Record):
 
 class Photo(Record):
     heading: str = Field(min_length=1)
-    path: str
+    path: str = ""
     caption: str
     lifecycle: Literal["draft", "published"] = "draft"
     width: str | None = None
@@ -232,7 +259,14 @@ class Photo(Record):
     @field_validator("path")
     @classmethod
     def safe_path(cls, value: str) -> str:
-        return relative_path(value)
+        value = value.strip()
+        return relative_path(value) if value else ""
+
+    @model_validator(mode="after")
+    def published_image(self) -> Photo:
+        if self.lifecycle == "published" and not self.path:
+            raise ValueError("Published photos need an image. Upload a photo before publishing.")
+        return self
 
 
 class Photos(Record):
@@ -269,6 +303,48 @@ class SiteSettings(Record):
         return value
 
 
+KanbanColumn = Literal["todo", "in-progress", "review", "done"]
+KANBAN_COLUMNS = [("todo", "To do"), ("in-progress", "In progress"), ("review", "Review"), ("done", "Done")]
+
+
+class KanbanCard(Record):
+    id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$", max_length=100)
+    ref: str | None = Field(default=None, pattern=r"^card#[1-9][0-9]*$")
+    title: str = Field(min_length=1)
+    description: str = ""
+    column: KanbanColumn = "todo"
+    artifact_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("title")
+    @classmethod
+    def nonempty_title(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("card title must not be blank")
+        return value.strip()
+
+    @field_validator("artifact_ids")
+    @classmethod
+    def linked_ids(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("linked stable IDs must not be blank")
+        return list(dict.fromkeys(value.strip() for value in values))
+
+
+class Kanban(Record):
+    version: Literal[1] = 1
+    cards: list[KanbanCard] = Field(default_factory=list)
+    next_number: int = Field(default=1, ge=1)
+
+    @model_validator(mode="after")
+    def unique_cards(self) -> Kanban:
+        if len({card.id for card in self.cards}) != len(self.cards):
+            raise ValueError("duplicate Kanban card IDs")
+        refs = [card.ref for card in self.cards if card.ref is not None]
+        if len(set(refs)) != len(refs):
+            raise ValueError("duplicate Kanban card references")
+        return self
+
+
 class Workspace(Record):
     artifacts: list[Artifact]
     portfolio: list[PortfolioEntry]
@@ -276,6 +352,7 @@ class Workspace(Record):
     profile: Profile
     photos: list[Photo]
     settings: SiteSettings
+    kanban: list[KanbanCard] = Field(default_factory=list)
 
 
 def eligible(artifact: Artifact, artifacts: list[Artifact], mode: str = "production") -> bool:

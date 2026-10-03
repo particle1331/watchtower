@@ -223,7 +223,8 @@ def test_gallery_photo_lifecycle_api_and_cms(client):
     personal = client.get("/cms/personal")
     assert "/cms/photo/0" in personal.text
     assert "A caption" in personal.text
-    assert "<h2>A photo heading</h2>" in personal.text
+    assert "<h3>A photo heading" in personal.text
+    assert 'href="/cms/photos/0/edit"' in personal.text
     assert '<span class="badge">draft</span>' in personal.text
     assert "Create personal plan" not in personal.text
     assert client.get("/cms/photo/0").status_code == 200
@@ -236,7 +237,7 @@ def test_gallery_photo_lifecycle_api_and_cms(client):
     assert 'name="field:["photos", "0", "lifecycle"]"' in html.unescape(page.text)
     assert 'name="field:["photos", "0", "width"]"' in html.unescape(page.text)
     assert 'name="new:["photos", "width"]"' in html.unescape(page.text)
-    assert 'placeholder="80%"' in page.text
+    assert 'placeholder="100%"' in page.text
     revision, snapshot = form_snapshot(page)
     published = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "lifecycle"]': "published", 'field:["photos", "0", "width"]': "80%"})
     assert published.status_code == 200, published.text
@@ -393,14 +394,15 @@ def test_editor_cancel_after_failed_save_reloads_saved_values(client):
     restored = client.get(cancel)
     assert "Newer saved summary" in restored.text
     assert "Unsaved draft summary" not in restored.text
-    assert 'data-editing="false"' in restored.text
-    assert form_snapshot(restored)[0] != revision
+    assert 'href="/cms/resume?edit=profile"' in restored.text
+    assert 'data-editor-fields' not in restored.text
+    assert service.read_data('profile')['revision'] != revision
 
 
 def test_native_editor_actions_have_form_and_cancel_destinations(client):
     assert create_post(client).status_code == 201
     for route, cancel in [
-        ("/cms/data/profile", "/cms/data/profile"),
+        ("/cms/data/profile", "/cms/resume"),
         ("/cms/artifact/post/a%20space", "/cms/artifact/post/a%20space"),
         ("/cms/new?kind=chapter", "/cms/courses"),
     ]:
@@ -408,7 +410,7 @@ def test_native_editor_actions_have_form_and_cancel_destinations(client):
         assert page.status_code == 200
         assert f'data-cancel href="{cancel}"' in page.text
         assert 'type="submit" data-save' in page.text
-        assert 'class="action-bar"' in page.text
+        assert re.search(r'class="action-bar(?: |")', page.text)
         # Fields remain usable if JavaScript is unavailable; enhanced viewing
         # mode disables their fieldset only after the script initializes.
         assert 'data-editor-fields disabled' not in page.text
@@ -418,22 +420,25 @@ def test_native_editor_actions_have_form_and_cancel_destinations(client):
 def test_new_plan_fields_follow_entry_kind(client, kind):
     page = client.get(f"/cms/new?kind={kind}")
     assert page.status_code == 200
-    controls = re.findall(r"<(?:input|textarea)\b([^>]*)>", page.text)
+    controls = re.findall(r"<(?:input|textarea|select)\b([^>]*)>", page.text)
     enabled = {re.search(r'name="([^"]+)"', attrs).group(1) for attrs in controls if "disabled" not in attrs}
     chapter_fields = {"parent", "toc_title", "section", "planned_lab_and_evidence"}
     portfolio_fields = {"introduction", "what_it_contains", "scope_notes"}
     assert enabled & chapter_fields == (chapter_fields if kind == "chapter" else set())
     assert enabled & portfolio_fields == (portfolio_fields if kind == "portfolio" else set())
     assert ("planned_content" in enabled) == (kind != "portfolio")
-    assert ("path" in enabled) == (kind != "portfolio")
+    assert "name" in enabled
+    assert "id" not in enabled and "path" not in enabled and "filename" not in enabled
+    if kind == "post":
+        assert '<select name="kind">' not in page.text
     assert {"tags", "relations"} <= enabled
 
 
 @pytest.mark.parametrize("identifier,path", [
-    ("portfolio/demo", None), ("test-portfolio-2", "test-portfolio-2"),
+    ("portfolio/demo", None), ("portfolio/wrong", "projects/wrong"),
     ("portfolio/demo", "nb/portfolio/demo.html"), ("portfolio/demo", "content/notebooks/portfolio/demo.ipynb"),
 ])
-def test_cms_portfolio_plan_generates_page_before_starting_notebook(client, monkeypatch, identifier, path):
+def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(client, monkeypatch, identifier, path):
     import nbformat
 
     from watchtower.services.build import BuildService
@@ -442,7 +447,7 @@ def test_cms_portfolio_plan_generates_page_before_starting_notebook(client, monk
     revision = re.search(r'name="revision" value="([^"]+)"', page.text).group(1)
     plan = {"introduction": "A browser interface for the agent.", "what_it_contains": "A durable journal and queryable sessions.", "scope_notes": "The local implementation is the demonstrated path."}
     response = client.post("/cms/new", follow_redirects=False, data={
-        "revision": revision, "kind": "portfolio", "id": identifier, "title": "Demo",
+        "revision": revision, "kind": "portfolio", "name": "Demo", "title": "Demo", "id": identifier,
         **({"path": path} if path is not None else {}), "visibility": "public", **plan,
         # Ignore stale chapter values if the selected kind has changed.
         "parent": "course/stale", "toc_title": "Stale", "section": "stale",
@@ -450,7 +455,8 @@ def test_cms_portfolio_plan_generates_page_before_starting_notebook(client, monk
     })
     assert response.status_code == 303, response.text
     root = client.app.state.root
-    slug = identifier.split("/")[-1]
+    identifier = "portfolio/demo"
+    slug = "demo"
     source = root / f"content/notebooks/portfolio/{slug}.ipynb"
     service = ContentService(root)
     record = service.inspect(identifier)
@@ -569,10 +575,11 @@ def test_portfolio_image_upload_saves_caption_and_renders_below_abstract(client,
     listing = (generated / "portfolio.qmd").read_text()
     relative = path.removeprefix("content/")
     assert listing.index("The project abstract.") < listing.index(f"![The featured figure caption.]({relative})")
-    assert '{.callout-caution title="Planned entry"}' in listing
-    assert 'Run `wt start portfolio/image` to initialize content.' in listing
+    assert 'aria-label="Publication status"' in listing
+    assert 'callout-caution' not in listing
+    assert 'start:   wt start portfolio/image' in listing
     generated_page = nbformat.read(generated / "nb/portfolio/image.ipynb", as_version=4)
-    assert any("Planned entry" in cell.source and "Run `wt start portfolio/image` to initialize content." in cell.source for cell in generated_page.cells)
+    assert any('aria-label="Publication status"' in cell.source and 'start:   wt start portfolio/image' in cell.source for cell in generated_page.cells)
     assert (generated / relative).read_bytes() == image
 
 
@@ -614,7 +621,7 @@ def test_portfolio_image_replacement_preserves_previous_asset_and_empty_upload_k
     assert saved.status_code == 200, saved.text
     assert service.inspect("portfolio/image")["detail"]["figure_path"] == original_path
     revised_image = portfolio_image_bytes(color="red")
-    revision, snapshot = form_snapshot(saved)
+    revision, snapshot = form_snapshot(client.get("/cms/artifact/portfolio/image"))
     replaced = client.post("/cms/save/portfolio/image", data={"revision": revision, "snapshot": snapshot},
         files={"featured_image": ("replacement.png", revised_image, "image/png")})
     assert replaced.status_code == 200, replaced.text
@@ -653,6 +660,70 @@ def add_uploaded_photo(client, heading="Uploaded photo", format="PNG"):
     }, files={"new_photo_image": ("../../untrusted.html", portfolio_image_bytes(format), "application/octet-stream")})
 
 
+@pytest.mark.parametrize("path", [None, "", "   "])
+def test_photo_draft_without_image_saves_then_requires_upload_to_publish(client, path):
+    from watchtower.services.build import BuildService
+
+    create_image_gallery(client)
+    revision, snapshot = form_snapshot(client.get("/cms/data/photos"))
+    fields = {
+        "revision": revision, "snapshot": snapshot,
+        "collection_action": json.dumps({"path": ["photos"], "action": "add", "prototype": {
+            "heading": "", "path": "", "caption": "", "lifecycle": "draft", "width": "",
+        }}),
+        'new:["photos", "heading"]': "Unfinished photo",
+        'new:["photos", "caption"]': "A saved draft caption",
+    }
+    if path is not None:
+        fields['new:["photos", "path"]'] = path
+    saved = client.post("/cms/data/photos", data=fields)
+    assert saved.status_code == 200, saved.text
+    service = ContentService(client.app.state.root)
+    photo = service.read_data("photos")["data"]["photos"][0]
+    assert photo["path"] == "" and photo["lifecycle"] == "draft"
+    assert 'aria-label="No Photo"' in saved.text
+    personal = client.get("/cms/personal").text
+    assert 'aria-label="No Photo"' in personal
+    assert 'src="/cms/photo/0"' not in personal
+    assert client.get("/cms/photo/0").status_code == 404
+    preview = BuildService(client.app.state.root).generate("preview")
+    assert 'aria-label="No Photo"' in (preview / "personal.qmd").read_text()
+    assert 'aria-label="No Photo"' in (preview / "gallery.qmd").read_text()
+    production = BuildService(client.app.state.root).generate("production")
+    assert "Unfinished photo" not in (production / "personal.qmd").read_text()
+    assert "No Photo" not in (production / "personal.qmd").read_text()
+    revision, snapshot = form_snapshot(saved)
+    original = service.snapshot().files
+    publishing = {"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "lifecycle"]': "published"}
+    rejected = client.post("/cms/data/photos", data=publishing)
+    assert rejected.status_code == 422
+    assert "Published photos need an image" in rejected.text
+    assert 'role="alert"' in rejected.text
+    assert service.snapshot().files == original
+    uploaded = client.post("/cms/data/photos", data=publishing,
+                           files={"photo_image:0": ("photo.png", portfolio_image_bytes(), "image/png")})
+    assert uploaded.status_code == 200, uploaded.text
+    photo = service.read_data("photos")["data"]["photos"][0]
+    assert photo["lifecycle"] == "published" and photo["path"]
+    assert client.get("/cms/photo/0").content == portfolio_image_bytes()
+    production = BuildService(client.app.state.root).generate("production")
+    assert "Unfinished photo" in (production / "personal.qmd").read_text()
+    assert 'aria-label="No Photo"' not in (production / "personal.qmd").read_text()
+
+
+def test_gallery_api_accepts_draft_with_omitted_path_but_rejects_invalid_paths(client):
+    create_image_gallery(client)
+    revision = client.get("/api/gallery").headers["etag"]
+    photo = {"heading": "Draft stub", "caption": "Draft caption"}
+    saved = client.put("/api/gallery", headers={"If-Match": revision}, json={"photos": [photo]})
+    assert saved.status_code == 200, saved.text
+    revision = client.get("/api/gallery").headers["etag"]
+    for path in ("../escape.png", "/absolute.png", "https://example.org/photo.png", "content/assets/missing.png"):
+        invalid = client.put("/api/gallery", headers={"If-Match": revision}, json={"photos": [{**photo, "path": path}]})
+        assert invalid.status_code == 422
+        assert client.get("/api/gallery").headers["etag"] == revision
+
+
 @pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
 def test_course_upload_is_used_by_card_grid(client, monkeypatch, format, extension):
     import nbformat
@@ -678,7 +749,9 @@ def test_course_upload_is_used_by_card_grid(client, monkeypatch, format, extensi
     page = nbformat.read(generated / "nb/courses/image/index.ipynb", as_version=4)
     assert yaml.safe_load(page.cells[0].source.split("---")[1])["image"] == "/" + cover.removeprefix("content/")
     assert (generated / cover.removeprefix("content/")).read_bytes() == image
-    assert "nb/courses/image/index.ipynb" in (generated / "courses.qmd").read_text()
+    listing = yaml.safe_load((generated / "courses.qmd").read_text().split("---")[1])["listing"]
+    assert listing["contents"][0]["path"] == "nb/courses/image/index.html"
+    assert listing["contents"][0]["image"] == cover.removeprefix("content/")
     # Withdrawing the parent also withdraws its cover from the public build.
     service.update("course/image", {"visibility": "private"})
     generated = BuildService(client.app.state.root).generate("production")
@@ -827,3 +900,41 @@ def test_course_replacement_and_empty_upload_keep_saved_assets(client):
     assert saved.status_code == 200, saved.text
     assert client.get("/cms/figure/course/image").content == replacement
     assert (client.app.state.root / old_path).read_bytes() == original
+
+
+def test_posts_title_search_pagination_preserves_filters(client):
+    service = ContentService(client.app.state.root)
+    for index in range(23):
+        service.create({"id": f"post/item-{index}", "kind": "post", "title": f"A very long article title about attention mechanisms and evaluation {index:02}", "path": f"content/notebooks/posts/item-{index}.ipynb", "planned": {"content": "Planned body"}, "tags": ["Models"]})
+    second = client.get("/cms/posts", params={"q": "long article title about attention", "tag": "Models", "lifecycle": "planned", "visibility": "public", "page": 2})
+    assert second.status_code == 200
+    assert "11–20 of 23" in second.text
+    assert 'id="post-item-0"' not in second.text and 'id="post-item-10"' in second.text
+    next_link = html.unescape(re.search(r'rel="next" href="([^"]+)"', second.text).group(1))
+    assert "page=3" in next_link and "tag=Models" in next_link and "visibility=public" in next_link and "q=" in next_link
+    last = client.get(next_link)
+    assert "21–23 of 23" in last.text
+    found = client.get("/cms/posts", params={"q": "VERY LONG ARTICLE TITLE ABOUT ATTENTION MECHANISMS AND EVALUATION 22"})
+    assert 'id="post-item-22"' in found.text and 'id="post-item-21"' not in found.text
+    assert not re.search(r'<details class="card data-group"[^>]*\bopen\b', found.text)
+    assert "No matching entries." in client.get("/cms/posts?q=nonexistent").text
+
+
+def test_personal_add_photo_and_pagination_keep_source_indices(client):
+    service = ContentService(client.app.state.root)
+    service.create({"id": "gallery/photos", "kind": "gallery", "title": "Photos", "path": "content/data/photos.yaml"})
+    service.update_gallery({"version": 1, "photos": [{"heading": f"Photo {index}", "caption": "Saved caption", "path": "", "lifecycle": "draft"} for index in range(12)]})
+    page = client.get("/cms/personal?page=2")
+    assert "11–12 of 12" in page.text and "Photo 10" in page.text and "Photo 0 " not in page.text
+    assert 'href="/cms/data/photos?add=photo#add-photo"' in page.text
+    assert '>Edit photos</a>' not in page.text
+    assert 'href="/cms/personal?reorder=1">Reorder photos</a>' in page.text
+    editor = client.get("/cms/data/photos?add=photo")
+    assert 'id="add-photo" open' in editor.text
+    assert 'data-editing="true"' in editor.text
+    assert not re.search(r'<details class="entity-group"[^>]*\bopen\b', editor.text)
+    revision, snapshot = form_snapshot(editor)
+    saved = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "caption"]': "First edit", 'field:["photos", "11", "caption"]': "Last edit"})
+    assert saved.status_code == 200
+    photos = service.read_data("photos")["data"]["photos"]
+    assert photos[0]["caption"] == "First edit" and photos[11]["caption"] == "Last edit"

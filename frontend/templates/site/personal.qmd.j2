@@ -4,16 +4,18 @@ sidebar: false
 toc: true
 ---
 
+A few snapshots from life beyond the desk.
+
 {% for photo in photos %}
 ## {{ photo.heading }}
 
-{% if photo.lifecycle == 'draft' %}::: {.callout-caution title="Draft entry"}
-Set this photo to **Published** in the CMS so it appears on the website.
-:::
-
+{% if photo.lifecycle == 'draft' %}
+{% with entry=photo, photo_status=true, image_ready=photo.src %}{% include 'site/publication-meta.html.j2' %}{% endwith %}
 {% endif %}
 {{ photo.caption }}
 
-![]({{ photo.src }}){.lightbox fig-alt={{ photo.caption | tojson }}{% if photo.width %} width={{ photo.width | tojson }}{% endif %}}
+{% if photo.src %}![]({{ photo.src }}){.lightbox fig-alt={{ photo.caption | tojson }}{% if photo.width %} width={{ photo.width | tojson }}{% endif %}}
+{% else %}{% include 'site/photo-placeholder.html.j2' %}
+{% endif %}
 
 {% endfor %}

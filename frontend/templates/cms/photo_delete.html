@@ -1,0 +1,15 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Delete photo</h1>
+<section class="delete-review">
+{% if error %}<div class="error" role="alert"><strong>Photo was not deleted.</strong><p>{{ error.message }}</p><a href="/cms/photos/{{ index }}/delete">Reload deletion review</a></div>{% endif %}
+{% if photo %}
+<h2>{{ photo.heading }}</h2><p>{{ photo.caption }}</p>
+<p>This removes the photo entry from Personal and the next site build. The image file stays in place.</p>
+<form method="post" action="/cms/photos/{{ index }}/delete">
+<input type="hidden" name="revision" value="{{ revision }}">
+<label><input type="checkbox" name="confirm" value="yes" required> <span>Delete <strong>{{ photo.heading }}</strong> and retain its image file</span></label>
+<div class="actions"><button class="danger" {% if error and error.code == 'conflict' %}disabled{% endif %}>Delete photo</button><a class="button" href="/cms/personal">Cancel</a></div>
+</form>
+{% else %}<p>This photo is no longer available.</p><a class="button" href="/cms/personal">Back to Personal</a>{% endif %}
+</section>
+{% endblock %}

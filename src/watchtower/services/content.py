@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import posixpath
 import re
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote, unquote, urlsplit
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import nbformat
@@ -21,6 +23,7 @@ from watchtower.models import (
     Catalog,
     ChapterPlan,
     CourseContract,
+    Kanban,
     Photos,
     Portfolio,
     Profile,
@@ -44,6 +47,7 @@ CATALOG = "content/data/catalog.yaml"
 PORTFOLIO = "content/data/portfolio.yaml"
 PROFILE = "content/data/profile.yaml"
 PHOTOS = "content/data/photos.yaml"
+KANBAN = "content/data/kanban.yaml"
 SETTINGS = "frontend/site.yaml"
 
 
@@ -73,12 +77,13 @@ def parse_state(files: dict[str, bytes | None]) -> Workspace:
                 artifact.lifecycle = "published" if any(photo.lifecycle == "published" for photo in photos.photos) else "planned"
         profile = Profile.model_validate(record(PROFILE))
         settings = SiteSettings.model_validate(record(SETTINGS))
+        kanban = Kanban.model_validate(record(KANBAN)) if files.get(KANBAN) is not None else Kanban()
         courses = {}
         for item in catalog.artifacts:
             if item.kind == "course":
                 name = f"content/data/courses/{item.id.split('/')[-1]}.yaml"
                 courses[item.id] = CourseContract.model_validate(record(name))
-        return Workspace(artifacts=catalog.artifacts, portfolio=portfolio.entries, courses=courses, photos=photos.photos, profile=profile, settings=settings)
+        return Workspace(artifacts=catalog.artifacts, portfolio=portfolio.entries, courses=courses, photos=photos.photos, profile=profile, settings=settings, kanban=kanban.cards)
     except (ValidationError, ValueError) as error:
         if isinstance(error, ServiceError):
             raise
@@ -258,12 +263,17 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
         if course.overview and course.overview not in expected:
             fail(f"{course_id}: overview must reference own chapter", name)
     for photo in state.photos:
-        exists(photo.path, "gallery image")
+        if photo.path:
+            exists(photo.path, "gallery image")
+    for card in state.kanban:
+        for artifact_id in card.artifact_ids:
+            if artifact_id not in artifacts:
+                fail(f"Kanban card {card.id}: unknown stable ID {artifact_id}", KANBAN)
     for project in state.profile.projects:
         if project.artifact_id and project.artifact_id not in artifacts:
             fail(f"profile project: unknown artifact {project.artifact_id}", PROFILE)
-    for name in files:
-        if name.startswith("content/notebooks/") and name.endswith(".ipynb") and name not in sources:
+    for name, value in files.items():
+        if value is not None and name.startswith("content/notebooks/") and name.endswith(".ipynb") and name not in sources:
             fail(f"unregistered active notebook: {name}", name)
     if errors:
         raise ServiceError("\n".join(errors), paths=sorted(set(paths)))
@@ -294,7 +304,7 @@ class ContentService:
     def list(self, kind: str | None = None) -> dict[str, Any]:
         with self.store.locked():
             files = self.store.inputs()
-            catalog = load_yaml(files[CATALOG] or b"", CATALOG)
+            catalog = self._catalog(files)
             return {"artifacts": [a for a in catalog["artifacts"] if kind is None or a.get("kind") == kind], "revision": revision(files)}
 
     def inspect(self, artifact_id: str) -> dict[str, Any]:
@@ -351,6 +361,7 @@ class ContentService:
         catalog = load_yaml(files.get(CATALOG) or b"", CATALOG)
         if not isinstance(catalog.get("artifacts"), list):
             raise ServiceError("catalog artifacts must be a list", paths=[CATALOG])
+        catalog["artifacts"] = [Artifact.normalize_labels(record) for record in catalog["artifacts"]]
         return catalog
 
     @staticmethod
@@ -359,6 +370,14 @@ class ContentService:
         if record is None:
             raise ServiceError(f"unknown artifact {artifact_id}", code="not_found", status=404)
         return record
+
+    def create_post(self, name: str, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+        """Create a post plan from a single extension-free name."""
+        name = name.strip()
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name):
+            raise ServiceError("Name must have no extension or folders; use letters, numbers, hyphens or underscores.")
+        payload = {**data, "kind": "post", "id": f"post/{name}", "path": f"content/notebooks/posts/{name}.ipynb"}
+        return self.create(payload, expected_revision)
 
     def create(self, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -373,8 +392,16 @@ class ContentService:
                 payload.setdefault("date", datetime.now(ZoneInfo(settings.timezone)).date().isoformat())
             artifact = Artifact.model_validate(payload)
             catalog = self._catalog(files)
-            if any(a.get("id") == artifact.id for a in catalog["artifacts"]):
-                raise ServiceError(f"ID already registered: {artifact.id}")
+            if any(a.get("id", "").casefold() == artifact.id.casefold() for a in catalog["artifacts"]):
+                raise ServiceError(f"Name is already used: {artifact.id.split('/')[-1]}" if artifact.kind == "post" else f"ID already registered: {artifact.id}")
+            if artifact.id.casefold() in {value.casefold() for value in catalog.get("retired_ids", [])}:
+                raise ServiceError(f"Name was previously used and remains reserved: {artifact.id.split('/')[-1]}" if artifact.kind == "post" else f"ID was previously deleted and remains reserved: {artifact.id}")
+            reserved_sources = {value.casefold() for value in catalog.get("retired_sources", [])}
+            source = (detail or {}).get("notebook_path") if artifact.kind == "portfolio" else artifact.path
+            if source and source.casefold() in reserved_sources:
+                raise ServiceError(f"Name / source was previously deleted and remains reserved: {source}")
+            if artifact.kind == "post" and any(a.get("path", "").casefold() == (artifact.path or "").casefold() for a in catalog["artifacts"] if a.get("path")):
+                raise ServiceError("Name is already used by another post.")
             catalog["artifacts"].append(artifact.model_dump(mode="json", exclude_none=True))
             writes = {CATALOG: yaml_bytes(catalog)}
             if artifact.kind == "portfolio":
@@ -397,6 +424,84 @@ class ContentService:
                 writes[name] = yaml_bytes(course)
             return {"artifact": artifact.model_dump(mode="json")}, writes
         return self._mutate("create", apply, expected_revision)
+
+    def _deletion_plan(self, files: dict[str, bytes | None], artifact_id: str) -> dict[str, Any]:
+        catalog = self._catalog(files)
+        record = self._find(catalog, artifact_id)
+        if record["kind"] == "gallery":
+            raise ServiceError("Remove individual photos in Personal; the gallery is a built-in surface.")
+        state = parse_state(files)
+        removed = [a for a in state.artifacts if a.id == record["id"] or (record["kind"] == "course" and a.parent == record["id"])]
+        ids = {a.id for a in removed}
+        sources = [path for a in removed if (path := source_path(a, state)) and files.get(path) is not None and a.kind != "project"]
+        if record["kind"] == "course":
+            sources.append(f"content/data/courses/{record['id'].split('/')[-1]}.yaml")
+        links = [{"kind": "relation", "id": a.id, "title": a.title, "artifact_ids": [link for link in a.relations if link in ids]} for a in state.artifacts if a.id not in ids and any(link in ids for link in a.relations)]
+        links.extend({"kind": "kanban", "id": card.id, "title": card.title, "artifact_ids": [link for link in card.artifact_ids if link in ids]} for card in state.kanban if any(link in ids for link in card.artifact_ids))
+        links.extend({"kind": "profile", "id": project.title, "artifact_ids": [project.artifact_id]} for project in state.profile.projects if project.artifact_id in ids)
+        return {"artifact": record, "removed": [a.model_dump(mode="json") for a in removed], "archive_files": sorted(set(sources)), "detached_links": links}
+
+    def deletion_plan(self, artifact_id: str) -> dict[str, Any]:
+        """Review removal, including course children and incoming managed links."""
+        with self.store.locked():
+            files = self.store.inputs()
+            return {**self._deletion_plan(files, artifact_id), "revision": revision(files)}
+
+    def delete(self, artifact_id: str, expected_revision: str | None = None, *, cascade: bool = False) -> dict[str, Any]:
+        """Remove registrations, archive authored files, and detach managed links."""
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes | None]]:
+            plan = self._deletion_plan(files, artifact_id)
+            if len(plan["removed"]) > 1 and not cascade:
+                raise ServiceError("Course has chapters; review deletion and explicitly include them with cascade.", code="has_children", status=409)
+            ids = {record["id"] for record in plan["removed"]}
+            catalog = self._catalog(files)
+            catalog["artifacts"] = [a for a in catalog["artifacts"] if a["id"] not in ids]
+            for record in catalog["artifacts"]:
+                record["relations"] = [link for link in record.get("relations", []) if link not in ids]
+            catalog["retired_ids"] = sorted(set(catalog.get("retired_ids", [])) | ids)
+            state = parse_state(files)
+            reserved_sources = {source_path(a, state) for a in state.artifacts if a.id in ids}
+            catalog["retired_sources"] = sorted(set(catalog.get("retired_sources", [])) | {name for name in reserved_sources if name})
+            writes: dict[str, bytes | None] = {CATALOG: yaml_bytes(catalog)}
+            portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
+            entries = [entry for entry in portfolio["entries"] if entry["id"] not in ids]
+            if entries != portfolio["entries"]:
+                portfolio["entries"] = entries
+                writes[PORTFOLIO] = yaml_bytes(portfolio)
+            state = parse_state(files)
+            for course_id in state.courses:
+                if course_id in ids:
+                    continue
+                name = f"content/data/courses/{course_id.split('/')[-1]}.yaml"
+                contract = load_yaml(files[name] or b"", name)
+                before = copy.deepcopy(contract)
+                for section in contract["toc"]:
+                    section["chapters"] = [chapter for chapter in section["chapters"] if chapter not in ids]
+                contract["planned"]["chapters"] = [p for p in contract["planned"].get("chapters", []) if p["chapter_id"] not in ids]
+                if contract.get("overview") in ids:
+                    contract["overview"] = None
+                if contract != before:
+                    writes[name] = yaml_bytes(contract)
+            if any(link["kind"] == "kanban" for link in plan["detached_links"]):
+                board = load_yaml(files[KANBAN] or b"", KANBAN)
+                for card in board["cards"]:
+                    card["artifact_ids"] = [link for link in card.get("artifact_ids", []) if link not in ids]
+                writes[KANBAN] = yaml_bytes(board)
+            if any(link["kind"] == "profile" for link in plan["detached_links"]):
+                profile = load_yaml(files[PROFILE] or b"", PROFILE)
+                for project in profile.get("projects", []):
+                    if project.get("artifact_id") in ids:
+                        project["artifact_id"] = None
+                writes[PROFILE] = yaml_bytes(profile)
+            archive = f"archive/deleted/{uuid4().hex}"
+            # Preserve exact authored bytes before removing their active locations.
+            for source in plan["archive_files"]:
+                writes[f"{archive}/{source}"] = files[source]
+            writes[f"{archive}/record.json"] = json.dumps({**plan, "saved_data": {name: (files[name] or b"").decode() for name in writes if name.startswith("content/data/")}}, ensure_ascii=False, indent=2).encode()
+            for source in plan["archive_files"]:
+                writes[source] = None
+            return {"deleted": sorted(ids), "archive_path": archive, "detached_links": plan["detached_links"]}, writes
+        return self._mutate("delete artifact", apply, expected_revision)
 
     def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None, *, figure_image: bytes | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -575,7 +680,7 @@ class ContentService:
         return self.update(artifact_id, {"lifecycle": "draft"}, expected_revision or captured)
 
     def _data_path(self, name: str) -> str:
-        names = {"profile": PROFILE, "portfolio": PORTFOLIO, "photos": PHOTOS, "settings": SETTINGS}
+        names = {"profile": PROFILE, "portfolio": PORTFOLIO, "photos": PHOTOS, "settings": SETTINGS, "kanban": KANBAN}
         if name.startswith("course/") and re.fullmatch(r"[\w-]+", name[7:]):
             return f"content/data/courses/{name[7:]}.yaml"
         if name not in names:
@@ -586,6 +691,8 @@ class ContentService:
         with self.store.locked():
             files = self.store.inputs()
             path = self._data_path(name)
+            if name == "kanban" and files.get(path) is None:
+                return {"data": Kanban().model_dump(mode="json"), "revision": revision(files)}
             return {"data": load_yaml(files.get(path) or b"", path), "revision": revision(files)}
 
     def update_data(self, name: str, payload: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
@@ -647,6 +754,8 @@ class ContentService:
                 rows[index]["path"] = path
                 writes[path] = image
             photos = Photos.model_validate(data)
+            for row, photo in zip(rows, photos.photos, strict=True):
+                row["path"] = photo.path
             galleries[0]["lifecycle"] = "published" if any(photo.lifecycle == "published" for photo in photos.photos) else "planned"
             writes.update({CATALOG: yaml_bytes(catalog), PHOTOS: yaml_bytes(data)})
             return {"artifacts": [], "data": {"photos": data}}, writes
@@ -672,7 +781,7 @@ class ContentService:
                 raise ServiceError("import refuses existing destination", code="conflict", status=412, paths=[path])
             catalog = self._catalog(files)
             artifact_id = f"course/{course}/{name}" if kind == "chapter" else f"{kind}/{name}"
-            record: dict[str, Any] = {"id": artifact_id, "kind": kind, "title": title, "path": path, "lifecycle": lifecycle, "categories": header.get("categories", []), "description": header.get("description"), "date": str(header["date"]) if header.get("date") else None}
+            record: dict[str, Any] = {"id": artifact_id, "kind": kind, "title": title, "path": path, "lifecycle": lifecycle, "categories": header.get("categories", []), "tags": header.get("tags", []), "description": header.get("description"), "date": str(header["date"]) if header.get("date") else None}
             writes: dict[str, bytes] = {}
             if kind == "chapter":
                 contract_path = f"content/data/courses/{course}.yaml"

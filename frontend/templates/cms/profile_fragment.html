@@ -1,0 +1,24 @@
+<article id="data-editor">
+<form data-editor data-editing="true" method="post" action="/cms/data/profile" hx-post="/cms/data/profile" hx-target="#data-editor" hx-swap="outerHTML">
+<input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="snapshot" value='{{ data | tojson }}'><input type="hidden" name="profile_view" value="{{ profile_view }}">
+<div class="action-bar section-actions" aria-label="Editor actions">
+<div class="action-context"><h1>{{ title }}</h1><span data-edit-status role="status">{{ 'Unsaved changes' if error else 'Editing profile and contacts' }}</span></div>
+<div class="action-buttons"><a class="button" data-cancel href="/cms/{{ profile_view }}">Cancel</a><button class="primary" type="submit" data-save>Save changes</button></div>
+</div>
+<p><a href="/cms/{{ profile_view }}">← Back to {{ title }}</a></p>
+{% if error %}<div class="error" role="alert"><strong>Changes were not saved.</strong><p>{{ error.message or error }}</p><a href="/cms/{{ profile_view }}?edit=profile">Reload saved values</a>. Your submitted values remain below.</div>{% endif %}
+<fieldset class="editor-fields" data-editor-fields>
+<section class="data-group profile-group profile-editor" aria-label="Profile">
+<p class="group-label">Profile</p>
+{% for item in profile_sections %}
+{% if item.key %}<section class="data-group profile-editor-section"><h2>{{ item.title }}</h2>{% endif %}
+{% if item.key not in [none, 'contact'] %}<div class="collection-scroll" data-client-list data-list-label="{{ item.title }}" tabindex="0" role="region" aria-label="{{ item.title }} entries">{% endif %}
+{% set groups = item.groups %}{% set hide_group_title = not item.key or item.key == 'contact' %}
+{% include 'fields.html' %}
+{% if item.key not in [none, 'contact'] %}</div>{% endif %}
+{% set collections = item.collections %}{% include 'collections.html' %}
+{% if item.key %}</section>{% endif %}
+{% endfor %}
+</section>
+</fieldset>
+</form></article>

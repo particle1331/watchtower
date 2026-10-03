@@ -4,7 +4,7 @@ page-layout: full
 sidebar: false
 toc: false
 listing:
-  contents: {{ courses | map(attribute='route') | list | tojson }}
+  contents: {{ courses | tojson }}
   type: grid
   sort: false
   fields:

@@ -18,12 +18,15 @@ from watchtower.api.schemas import (
     DataResult,
     GalleryState,
     GalleryUpdate,
+    KanbanCreate,
+    KanbanPatch,
     Kind,
     ServiceResult,
     StructuredUpdate,
 )
 from watchtower.services.build import BuildService
 from watchtower.services.content import ContentService
+from watchtower.services.kanban import KanbanService
 from watchtower.services.workspace import ServiceError
 
 
@@ -47,10 +50,12 @@ def create_app(root: Path | None = None) -> FastAPI:
     root = (root or Path.cwd()).resolve()
     content = ContentService(root)
     builds = BuildService(root)
+    kanban = KanbanService(root)
     app = FastAPI(title="Watchtower author API", version="1.0.0")
     app.state.root = root
     app.state.content = content
     app.state.builds = builds
+    app.state.kanban = kanban
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]", "testserver"])
 
     @app.middleware("http")
@@ -90,6 +95,14 @@ def create_app(root: Path | None = None) -> FastAPI:
         result = getattr(content, action)(artifact_id, expected_revision=require_revision(if_match))
         return set_etag(response, result)
 
+    @app.get("/api/deletions/{artifact_id:path}", response_model=ServiceResult)
+    def deletion_plan(artifact_id: str, response: Response) -> dict[str, Any]:
+        return set_etag(response, content.deletion_plan(artifact_id))
+
+    @app.delete("/api/artifacts/{artifact_id:path}", response_model=ServiceResult)
+    def delete(artifact_id: str, response: Response, cascade: bool = False, if_match: str | None = Header(None)) -> dict[str, Any]:
+        return set_etag(response, content.delete(artifact_id, require_revision(if_match), cascade=cascade))
+
     @app.get("/api/artifacts/{artifact_id:path}", response_model=ArtifactResult)
     def inspect(artifact_id: str, response: Response) -> dict[str, Any]:
         return set_etag(response, content.inspect(artifact_id))
@@ -101,6 +114,22 @@ def create_app(root: Path | None = None) -> FastAPI:
     @app.get("/api/data/{name:path}", response_model=DataResult)
     def read_data(name: str, response: Response) -> dict[str, Any]:
         return set_etag(response, content.read_data(name))
+
+    @app.get("/api/kanban", response_model=ServiceResult)
+    def read_kanban(response: Response, column: str | None = None, q: str = "") -> dict[str, Any]:
+        return set_etag(response, kanban.read(column=column, query=q))
+
+    @app.post("/api/kanban", response_model=ServiceResult, status_code=201)
+    def create_card(payload: KanbanCreate, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:
+        return set_etag(response, kanban.create(payload.model_dump(exclude_none=True), require_revision(if_match)))
+
+    @app.patch("/api/kanban/{card_id}", response_model=ServiceResult)
+    def update_card(card_id: str, payload: KanbanPatch, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:
+        return set_etag(response, kanban.update(card_id, payload.model_dump(exclude_unset=True), require_revision(if_match)))
+
+    @app.delete("/api/kanban/{card_id}", response_model=ServiceResult)
+    def remove_card(card_id: str, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:
+        return set_etag(response, kanban.remove(card_id, require_revision(if_match)))
 
     @app.put("/api/data/{name:path}", response_model=DataResult)
     def update_data(name: str, payload: StructuredUpdate, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:

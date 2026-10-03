@@ -2,6 +2,7 @@
 
 import copy
 import json
+import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -11,12 +12,48 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Resp
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import UploadFile
 
+from watchtower.models import KANBAN_COLUMNS
 from watchtower.services.images import MAX_FIGURE_BYTES
 from watchtower.services.workspace import ServiceError
 
-NAVIGATION = [("home", "Home"), ("resume", "Résumé"), ("portfolio", "Portfolio"), ("posts", "Posts"), ("courses", "Courses"), ("personal", "Personal")]
+NAVIGATION = [("home", "Home"), ("resume", "Résumé"), ("portfolio", "Portfolio"), ("posts", "Posts"), ("courses", "Courses"), ("personal", "Personal"), ("kanban", "Kanban")]
 KINDS = {"posts": "post", "courses": "course", "portfolio": "portfolio", "personal": "personal"}
+CREATE_SECTIONS = {"post": "posts", "course": "courses", "chapter": "courses", "portfolio": "portfolio", "project": "portfolio", "personal": "personal"}
 DATA_NAMES = {"home": "profile", "resume": "profile", "portfolio": "portfolio", "personal": "photos"}
+PROFILE_FIELD_ORDER = {"contact": ["phone", "email", "github", "linkedin"], "employment": ["title", "company", "dates", "bullets", "tech"], "early_employment": ["title", "company", "dates", "bullets", "tech"], "skills": ["name", "entries"], "education": ["degree", "institution", "dates", "major", "awards", "thesis", "courses", "description"], "projects": ["title", "bullets", "artifact_id"]}
+
+
+def paginate(request: Request, items: list[Any], page: int, page_size: int) -> tuple[list[Any], dict[str, Any]]:
+    page_size = page_size if page_size in {10, 25, 50} else 10
+    total = len(items)
+    pages = max(1, (total + page_size - 1) // page_size)
+    page = min(max(1, page), pages)
+    start = (page - 1) * page_size
+    return items[start:start + page_size], {
+        "page": page, "pages": pages, "page_size": page_size, "total": total,
+        "start": start + 1 if total else 0, "end": min(start + page_size, total),
+        "previous": str(request.url.include_query_params(page=page - 1, page_size=page_size)) if page > 1 else None,
+        "next": str(request.url.include_query_params(page=page + 1, page_size=page_size)) if page < pages else None,
+    }
+
+
+def contact_links(contact: dict[str, Any]) -> list[dict[str, str]]:
+    links = []
+    for key, label in [("github", "GitHub"), ("linkedin", "LinkedIn")]:
+        value = str(contact.get(key) or "").strip()
+        if not value:
+            continue
+        url = value if value.startswith(("https://", "http://")) else "https://" + ("github.com/" + value if key == "github" else value)
+        links.append({"label": label, "url": url})
+    return links
+
+
+def creation_slug(name: str) -> str:
+    """Turn a user-facing name into a safe, predictable source-name segment."""
+    slug = re.sub(r"[^A-Za-z0-9_-]+", "-", name.strip()).strip("-_").lower()
+    if not slug:
+        raise ServiceError("Enter a name containing at least one letter or number.")
+    return slug
 
 
 def form_revision(value: Any) -> str:
@@ -106,7 +143,7 @@ def field_groups(fields: list[dict[str, Any]], data: dict[str, Any]) -> list[dic
     collection_paths = {tuple(item["path"]) for item in collections(data)}
     for field in fields:
         path = tuple(json.loads(field["name"]))
-        if field["label"] in {"id", "kind", "version"}:
+        if field["label"] in {"id", "kind", "version", "route", "categories"} or field["label"] == "cover" and data.get("kind") != "course":
             continue
         parent = path[:-1]
         if parent not in groups:
@@ -119,6 +156,10 @@ def field_groups(fields: list[dict[str, Any]], data: dict[str, Any]) -> list[dic
                     count = len(node)
                     node = node[index]
                     title = next((node.get(key) for key in ("heading", "title", "name", "company", "institution", "id", "chapter_id") if node.get(key)), "Untitled") if isinstance(node, dict) else str(node)
+                    if isinstance(node, dict) and parent[0] in {"employment", "early_employment"} and node.get("title") and node.get("company"):
+                        title = node["title"] + " · " + node["company"]
+                    elif isinstance(node, dict) and parent[0] == "education" and node.get("degree") and node.get("institution"):
+                        title = node["degree"] + " · " + node["institution"]
                     labels.append(f"{index + 1}. {title}")
                     if key == parent[-1] and parent[:-1] in collection_paths:
                         row_action = {"path": parent[:-1], "index": index, "count": count}
@@ -127,7 +168,19 @@ def field_groups(fields: list[dict[str, Any]], data: dict[str, Any]) -> list[dic
                     labels.append(key.replace("_", " ").capitalize())
             groups[parent] = {"title": labels[-1] if labels else "General", "context": " / ".join(labels[:-1]), "fields": [], "row_action": row_action}
         groups[parent]["fields"].append({**field, "caption": path[-1].replace("_", " ").capitalize()})
-    return list(groups.values())
+    priority: list[tuple[str, ...]] = [(), ("contact",), ("employment",), ("early_employment",), ("skills",), ("education",), ("projects",)] if "contact" in data and "name" in data else [()]
+    ordered = sorted(groups, key=lambda path: priority.index(path[:1]) if path[:1] in priority else len(priority))
+    for path in ordered:
+        field_order = ["name", "summary", "homepage_intro"] if not path else PROFILE_FIELD_ORDER.get(path[0], []) if "contact" in data and "name" in data else []
+        if field_order:
+            groups[path]["fields"].sort(key=lambda field: field_order.index(json.loads(field["name"])[-1]) if json.loads(field["name"])[-1] in field_order else len(field_order))
+    for path in ordered:
+        group = groups[path]
+        if path and path[0] in {"employment", "early_employment", "skills", "education"}:
+            group["fold"] = True
+        else:
+            group["fold"] = bool(path and path != ("contact",) and path[0] != "photos" and (sum(bool(field["value"]) for field in group["fields"]) > 5 or any(len(str(field["value"])) > 240 for field in group["fields"])))
+    return [groups[path] for path in ordered]
 
 
 def apply_fields(data: dict[str, Any], form: Any) -> dict[str, Any]:
@@ -240,6 +293,17 @@ def cms_router(root: Path) -> APIRouter:
         context.update({"navigation": NAVIGATION, "root": str(root)})
         if "fields" in context:
             context["groups"] = field_groups(context["fields"], context.get("artifact", context.get("data", {})))
+        if context.get("name") == "profile":
+            sections = []
+            for key, label in [(None, "General"), ("contact", "Contact"), ("employment", "Employment"), ("early_employment", "Early employment"), ("skills", "Skills"), ("education", "Education"), ("projects", "Projects")]:
+                groups = [{**group, "context": ""} for group in context["groups"] if (json.loads(group["fields"][0]["name"])[:-1] or [None])[0] == key]
+                section_collections = [collection for collection in context.get("collections", []) if collection["path"][0] == key]
+                field_order = PROFILE_FIELD_ORDER.get(key or "", [])
+                for collection in section_collections:
+                    collection["fields"].sort(key=lambda field: field_order.index(json.loads(field["name"])[-1]) if json.loads(field["name"])[-1] in field_order else len(field_order))
+                if groups or section_collections:
+                    sections.append({"key": key, "title": label, "groups": groups, "collections": section_collections})
+            context["profile_sections"] = sections
         context.setdefault("last_build", request.app.state.builds.last_successful(mode="preview"))
         context["preview_url"] = (context.get("last_build") or {}).get("preview_url") or "http://127.0.0.1:4300"
         return templates.TemplateResponse(request=request, name=template, context=context, status_code=status)
@@ -274,16 +338,32 @@ def cms_router(root: Path) -> APIRouter:
     def home() -> RedirectResponse:
         return RedirectResponse("/cms/home")
 
+    def creation_context(request: Request, kind: str, values: dict[str, Any], revision: str | None, error: Any = None) -> dict[str, Any]:
+        listing = request.app.state.content.list()
+        courses = []
+        if kind == "chapter":
+            for course in request.app.state.content.list("course")["artifacts"]:
+                record = request.app.state.content.inspect(course["id"])
+                courses.append({"id": course["id"], "title": course["title"], "sections": record["contract"].get("toc", [])})
+        return {"section": CREATE_SECTIONS.get(kind, "posts"), "values": values, "revision": revision or listing["revision"], "courses": courses, "error": error}
+
     @router.get("/new")
     def new(request: Request, kind: str = "post") -> HTMLResponse:
+        if kind not in CREATE_SECTIONS:
+            return HTMLResponse("Unknown entry kind", status_code=404)
         listing = request.app.state.content.list()
-        return render(request, "new.html", {"section": KINDS.get(kind, "posts"), "values": {"kind": kind, "visibility": "public"}, "revision": listing["revision"]})
+        return render(request, "new.html", creation_context(request, kind, {"kind": kind, "visibility": "public"}, listing["revision"]))
 
     @router.post("/new")
-    async def create(request: Request) -> Response:
+    async def create(request: Request, kind: str | None = None) -> Response:
         form = await request.form()
         values = dict(form)
-        data: dict[str, Any] = {key: str(value) for key, value in form.items() if key not in {"revision", "tags", "relations"} and value != ""}
+        selected_kind = kind or str(form.get("kind", "post"))
+        if selected_kind not in CREATE_SECTIONS:
+            return HTMLResponse("Unknown entry kind", status_code=404)
+        values["kind"] = selected_kind
+        data: dict[str, Any] = {key: str(value) for key, value in form.items() if key not in {"revision", "tags", "relations", "filename", "name", "kind"} and value != ""}
+        data["kind"] = selected_kind
         data["tags"] = [tag.strip() for tag in str(form.get("tags", "")).split(",") if tag.strip()]
         data["relations"] = [item.strip() for item in str(form.get("relations", "")).split(",") if item.strip()]
         portfolio_plan = {key: data.pop(key, "") for key in ("introduction", "what_it_contains", "scope_notes")}
@@ -294,14 +374,45 @@ def cms_router(root: Path) -> APIRouter:
                 data.pop(key, None)
             if data.get("kind") == "portfolio":
                 data.pop("path", None)
-                slug = str(data.get("id", "")).split("/")[-1]
-                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", "planned": portfolio_plan}
             else:
                 data["planned"] = {"content": content}
         try:
-            result = request.app.state.content.create(data, expected_revision=form_revision(form.get("revision")))
+            slug = creation_slug(str(form.get("name", "")))
+            if selected_kind == "post":
+                data["id"] = f"post/{slug}"
+                data["path"] = f"content/notebooks/posts/{slug}.ipynb"
+            elif selected_kind == "course":
+                data["id"] = f"course/{slug}"
+                data["path"] = f"content/notebooks/courses/{slug}"
+            elif selected_kind == "chapter":
+                parent = str(data.get("parent", ""))
+                if not parent.startswith("course/") or len(parent.split("/")) != 2:
+                    raise ServiceError("Choose the parent course.")
+                course_slug = parent.split("/", 1)[1]
+                data["id"] = f"{parent}/{slug}"
+                data["path"] = f"content/notebooks/courses/{course_slug}/{slug}.ipynb"
+                if not data.get("toc_title"):
+                    data["toc_title"] = str(form.get("name", "")).strip()
+            elif selected_kind == "portfolio":
+                data["id"] = f"portfolio/{slug}"
+                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", "planned": portfolio_plan}
+            elif selected_kind == "project":
+                data["id"] = f"project/{slug}"
+                data["path"] = f"projects/{slug}"
+            elif selected_kind == "personal":
+                data["id"] = f"personal/{slug}"
+                data["path"] = f"content/notebooks/personal/{slug}.ipynb"
+            if data.get("route"):
+                raise ServiceError("Route is managed by the site and cannot be set in the CMS.")
+            if data.get("cover") and selected_kind != "course":
+                raise ServiceError("Only course card images can be set here.")
+            token = form_revision(form.get("revision"))
+            if selected_kind == "post":
+                result = request.app.state.content.create_post(slug, data, token)
+            else:
+                result = request.app.state.content.create(data, expected_revision=token)
         except ServiceError as error:
-            return render(request, "new.html", {"section": "posts", "values": values, "revision": form.get("revision"), "error": error.as_dict()}, error.status)
+            return render(request, "new.html", creation_context(request, selected_kind, values, str(form.get("revision") or ""), error.as_dict()), error.status)
         target = "/cms/artifact/" + quote(result["artifact"]["id"], safe="/")
         if request.headers.get("HX-Request"):
             return HTMLResponse("", headers={"HX-Redirect": target})
@@ -311,8 +422,36 @@ def cms_router(root: Path) -> APIRouter:
     def detail(request: Request, artifact_id: str) -> HTMLResponse:
         return render(request, "artifact.html", detail_context(request, artifact_id))
 
+    def deletion_context(request: Request, artifact_id: str, error: Any = None, submitted: dict[str, str] | None = None) -> dict[str, Any]:
+        plan = request.app.state.content.deletion_plan(artifact_id)
+        artifact = plan["artifact"]
+        section = "courses" if artifact["kind"] in {"course", "chapter"} else "portfolio" if artifact["kind"] == "portfolio" else "posts" if artifact["kind"] == "post" else "personal"
+        return {"title": "Delete " + artifact["title"], "section": section, "plan": plan, "error": error, "submitted": submitted}
+
+    @router.get("/delete/{artifact_id:path}")
+    def review_delete(request: Request, artifact_id: str) -> HTMLResponse:
+        return render(request, "delete.html", deletion_context(request, artifact_id))
+
+    @router.post("/delete/{artifact_id:path}")
+    async def delete(request: Request, artifact_id: str) -> Response:
+        form = await request.form()
+        submitted = {key: str(form.get(key, "")) for key in ["revision", "confirm", "cascade"]}
+        try:
+            if submitted["confirm"] != artifact_id:
+                raise ServiceError("Confirm the stable ID of the entry you want to delete.")
+            context = deletion_context(request, artifact_id)
+            request.app.state.content.delete(artifact_id, form_revision(submitted["revision"]), cascade=submitted["cascade"] == "yes")
+        except ServiceError as error:
+            # A stale review keeps its original revision and requires an explicit reload.
+            try:
+                context = deletion_context(request, artifact_id, error.as_dict(), submitted)
+            except ServiceError:
+                return HTMLResponse("This entry is no longer available. Reload its section.", status_code=error.status)
+            return render(request, "delete.html", context, error.status)
+        return RedirectResponse("/cms/" + context["section"] + "?deleted=1", status_code=303)
+
     @router.post("/save/{artifact_id:path}")
-    async def save(request: Request, artifact_id: str) -> HTMLResponse:
+    async def save(request: Request, artifact_id: str) -> Response:
         form = await request.form()
         # The browser carries a read snapshot so conflicts preserve *all* submitted values.
         baseline = form_baseline(form.get("snapshot", "{}"))
@@ -323,6 +462,10 @@ def cms_router(root: Path) -> APIRouter:
         try:
             values = apply_fields(baseline, form)
             patch = {key: value for key, value in values.items() if baseline.get(key) != value}
+            if "route" in patch:
+                raise ServiceError("Route is managed by the site and cannot be edited in the CMS.")
+            if "cover" in patch and request.app.state.content.inspect(artifact_id)["artifact"]["kind"] != "course":
+                raise ServiceError("Only course card images can be changed here.")
             image = None
             if isinstance(upload, UploadFile) and uploading:
                 try:
@@ -338,6 +481,11 @@ def cms_router(root: Path) -> APIRouter:
             context = detail_context(request, artifact_id, values, revision, str(error))
             return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context, 422)
         context = detail_context(request, artifact_id)
+        if context["artifact"]["kind"] == "portfolio":
+            target = "/cms/portfolio?saved=portfolio"
+            if request.headers.get("HX-Request"):
+                return HTMLResponse("", headers={"HX-Redirect": target})
+            return RedirectResponse(target, status_code=303)
         context["saved"] = True
         return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context)
 
@@ -355,14 +503,20 @@ def cms_router(root: Path) -> APIRouter:
         context["action_result"] = result
         return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context)
 
+    def profile_edit_context(values: dict[str, Any], revision: str, view: str = "resume", error: Any = None) -> dict[str, Any]:
+        view = view if view in {"home", "resume"} else "resume"
+        return {"title": dict(NAVIGATION)[view], "section": view, "name": "profile", "data": values, "revision": revision, "fields": form_fields(values), "collections": collections(values), "profile_view": view, "error": error}
+
     @router.get("/data/{name:path}")
     def data(request: Request, name: str) -> HTMLResponse:
         result = request.app.state.content.read_data(name)
+        if name == "profile":
+            return render(request, "profile.html", profile_edit_context(result["data"], result["revision"], request.query_params.get("view", "resume")))
         values = photo_editor_data(result["data"]) if name == "photos" else result["data"]
         return render(request, "data.html", {"section": "resume" if name == "profile" else "courses" if name.startswith("course/") else "personal" if name == "photos" else "portfolio", "name": name, "data": values, "revision": result["revision"], "fields": form_fields(values), "collections": collections(values)})
 
     @router.post("/data/{name:path}")
-    async def save_data(request: Request, name: str) -> HTMLResponse:
+    async def save_data(request: Request, name: str) -> Response:
         form = await request.form()
         baseline = form_baseline(form.get("snapshot", "{}"))
         values = baseline
@@ -383,6 +537,27 @@ def cms_router(root: Path) -> APIRouter:
             error, status = exc.as_dict(), exc.status
         except (ValueError, KeyError, TypeError) as exc:
             error, status = str(exc), 422
+        if name == "profile":
+            view = str(form.get("profile_view", "resume"))
+            view = view if view in {"home", "resume"} else "resume"
+            if not error:
+                target = f"/cms/{view}?saved=profile"
+                if request.headers.get("HX-Request"):
+                    return HTMLResponse("", headers={"HX-Redirect": target})
+                return RedirectResponse(target, status_code=303)
+            return render(request, "profile_fragment.html" if request.headers.get("HX-Request") else "profile.html", profile_edit_context(values, revision, view, error), status)
+        if name == "photos" and request.query_params.get("reorder") == "1":
+            try:
+                page = max(1, int(str(form.get("page", "1"))))
+                page_size = int(str(form.get("page_size", "10")))
+            except (TypeError, ValueError):
+                page, page_size = 1, 10
+            if page_size not in {10, 25, 50}:
+                page_size = 10
+            if not error:
+                return RedirectResponse(f"/cms/personal?reorder=1&page={page}&page_size={page_size}&saved=order", status_code=303)
+            result = "conflict" if status == 412 else "failed"
+            return RedirectResponse(f"/cms/personal?reorder=1&page={page}&page_size={page_size}&save_error={result}", status_code=303)
         return render(request, "data_fragment.html" if request.headers.get("HX-Request") else "data.html", {"section": "resume" if name == "profile" else "courses" if name.startswith("course/") else "personal" if name == "photos" else "portfolio", "name": name, "data": values, "fields": form_fields(values), "collections": collections(values), "revision": revision, "error": error, "upload_retry": uploading, "saved": not error}, status)
 
     @router.post("/refresh")
@@ -409,28 +584,151 @@ def cms_router(root: Path) -> APIRouter:
             return HTMLResponse("Figure is outside authored content or missing", status_code=404)
         return FileResponse(path)
 
+    def photo_context(index: int, data: dict[str, Any], revision: str, error: Any = None, uploading: bool = False) -> dict[str, Any]:
+        values = photo_editor_data(data)
+        if not 0 <= index < len(values.get("photos", [])):
+            raise ServiceError("Unknown photo", code="not_found", status=404)
+        fields = [field for field in form_fields(values) if tuple(json.loads(field["name"]))[:2] == ("photos", str(index))]
+        return {"title": "Edit photo", "section": "personal", "index": index, "photo": values["photos"][index], "data": values, "fields": fields, "revision": revision, "error": error, "upload_retry": uploading}
+
+    @router.get("/photos/{index}/edit")
+    def edit_photo(request: Request, index: int) -> HTMLResponse:
+        result = request.app.state.content.read_data("photos")
+        return render(request, "photo.html", photo_context(index, result["data"], result["revision"]))
+
+    @router.get("/photos/{index}/delete")
+    def review_photo_delete(request: Request, index: int) -> HTMLResponse:
+        result = request.app.state.content.read_data("photos")
+        context = photo_context(index, result["data"], result["revision"])
+        context["title"] = "Delete photo"
+        return render(request, "photo_delete.html", context)
+
+    @router.post("/photos/{index}/delete")
+    async def delete_photo(request: Request, index: int) -> Response:
+        form = await request.form()
+        token = str(form.get("revision", ""))
+        result = request.app.state.content.read_data("photos")
+        rows = result["data"].get("photos", [])
+        photo = rows[index] if 0 <= index < len(rows) else None
+        try:
+            revision = form_revision(token)
+            if revision != result["revision"]:
+                raise ServiceError("Photos changed since this deletion review. Reload before deleting.", code="conflict", status=412)
+            if photo is None:
+                raise ServiceError("Unknown photo", code="not_found", status=404)
+            if form.get("confirm") != "yes":
+                raise ServiceError("Confirm the photo you want to delete.")
+            values = copy.deepcopy(result["data"])
+            values["photos"].pop(index)
+            request.app.state.content.update_gallery(values, expected_revision=revision)
+        except ServiceError as error:
+            return render(request, "photo_delete.html", {"title": "Delete photo", "section": "personal", "index": index, "photo": photo, "revision": token, "error": error.as_dict()}, error.status)
+        return RedirectResponse("/cms/personal?deleted=1", status_code=303)
+
+    @router.post("/photos/{index}/edit")
+    async def save_photo(request: Request, index: int) -> Response:
+        form = await request.form()
+        baseline = form_baseline(form.get("snapshot", "{}"))
+        values = copy.deepcopy(baseline)
+        token = str(form.get("revision", ""))
+        uploading = any(isinstance(value, UploadFile) and bool(value.filename) for value in form.values())
+        try:
+            if not 0 <= index < len(baseline.get("photos", [])):
+                raise ServiceError("Unknown photo", code="not_found", status=404)
+            if form.get("collection_action"):
+                raise ServiceError("Use the gallery editor to reorder or remove photos.")
+            candidate = apply_fields(baseline, form)
+            values["photos"][index] = candidate["photos"][index]
+            images = await photo_uploads(form, len(baseline["photos"]))
+            selected_images = {index: images[index]} if index in images else {}
+            request.app.state.content.update_gallery(values, expected_revision=form_revision(token), photo_images=selected_images)
+        except ServiceError as error:
+            return render(request, "photo_fragment.html" if request.headers.get("HX-Request") else "photo.html", photo_context(index, values, token, error.as_dict(), uploading), error.status)
+        except (ValueError, KeyError, TypeError) as error:
+            return render(request, "photo_fragment.html" if request.headers.get("HX-Request") else "photo.html", photo_context(index, values, token, str(error), uploading), 422)
+        if request.headers.get("HX-Request"):
+            return HTMLResponse("", headers={"HX-Redirect": "/cms/personal?saved=photo"})
+        return RedirectResponse("/cms/personal?saved=photo", status_code=303)
+
     @router.get("/photo/{index}")
     def gallery_photo(request: Request, index: int) -> Response:
         photos = request.app.state.content.read_data("photos")["data"].get("photos", [])
         if not 0 <= index < len(photos):
             return HTMLResponse("Unknown photo", status_code=404)
-        path = (root / photos[index]["path"]).resolve()
+        source = photos[index].get("path")
+        if not source:
+            return HTMLResponse("No Photo", status_code=404)
+        path = (root / source).resolve()
         if not path.is_relative_to(root / "content") or not path.is_file():
             return HTMLResponse("Photo is outside authored content or missing", status_code=404)
         return FileResponse(path)
 
+    def kanban_context(request: Request, query: str = "", error: Any = None, submitted: dict[str, Any] | None = None) -> dict[str, Any]:
+        try:
+            board = request.app.state.kanban.read(query=query)
+        except ServiceError as exc:
+            board = {"cards": [], "columns": [{"id": key, "title": title} for key, title in KANBAN_COLUMNS], "revision": (submitted or {}).get("revision", "")}
+            error = error or exc.as_dict()
+        try:
+            artifacts = request.app.state.content.list()["artifacts"]
+        except ServiceError:
+            artifacts = []
+        return {"title": "Kanban", "section": "kanban", "board": board, "q": query, "error": error, "submitted": submitted, "all_artifacts": artifacts}
+
+    @router.get("/kanban")
+    def kanban_page(request: Request, q: str = "", edit: str | None = None, remove: str | None = None, add: bool = False) -> HTMLResponse:
+        context = kanban_context(request, "" if edit or remove else q)
+        target = edit or remove
+        if target and not any(card["id"] == target for card in context["board"]["cards"]):
+            return HTMLResponse("Unknown card", status_code=404)
+        context["active_dialog"] = "edit-" + edit if edit else "remove-" + remove if remove else "new-card" if add else None
+        return render(request, "kanban.html", context)
+
+    @router.post("/kanban/{action}")
+    async def kanban_save(request: Request, action: str) -> Response:
+        form = await request.form()
+        values = {key: str(form.get(key, "")) for key in ["revision", "card_id", "title", "description", "column", "artifact_ids"]}
+        values["action"] = action
+        payload = {"title": values["title"], "description": values["description"], "column": values["column"], "artifact_ids": [line.strip() for line in values["artifact_ids"].splitlines() if line.strip()]}
+        try:
+            token = form_revision(values["revision"])
+            if action == "create":
+                request.app.state.kanban.create(payload, token)
+            elif action == "update":
+                request.app.state.kanban.update(values["card_id"], payload, token)
+            elif action == "move":
+                request.app.state.kanban.update(values["card_id"], {"column": values["column"]}, token)
+            elif action == "remove":
+                request.app.state.kanban.remove(values["card_id"], token)
+            else:
+                return HTMLResponse("Unknown Kanban action", status_code=404)
+        except ServiceError as exc:
+            return render(request, "kanban.html", kanban_context(request, error=exc.as_dict(), submitted=values), exc.status)
+        return RedirectResponse("/cms/kanban", status_code=303)
+
     @router.get("/{section}")
-    def section(request: Request, section: str, tag: str | None = None, lifecycle: str | None = None, visibility: str | None = None) -> HTMLResponse:
+    def section(request: Request, section: str, tag: str | None = None, lifecycle: str | None = None, visibility: str | None = None, q: str = "", page: int = 1, page_size: int = 10, edit: str | None = None, reorder: bool = False) -> HTMLResponse:
         if section not in dict(NAVIGATION):
             return HTMLResponse("Unknown author section", status_code=404)
+        if section in {"home", "resume"} and edit == "profile":
+            result = request.app.state.content.read_data("profile")
+            return render(request, "profile.html", profile_edit_context(result["data"], result["revision"], section))
         listing = request.app.state.content.list()
         all_items = listing["artifacts"]
         items = [item for item in all_items if item["kind"] == KINDS.get(section) or section == "personal" and item["kind"] == "gallery"]
         tags = sorted({tag for item in items for tag in item.get("tags", [])}, key=str.casefold)
         items = [item for item in items if (not tag or tag in item.get("tags", [])) and (not lifecycle or item["lifecycle"] == lifecycle) and (not visibility or item["visibility"] == visibility)]
+        if q:
+            search = " ".join(q.split()).casefold()
+            items = [item for item in items if search in " ".join(item["title"].split()).casefold()]
+        items, pagination = paginate(request, items, page, page_size)
         records = {item["id"]: request.app.state.content.inspect(item["id"]) for item in items} if section in {"courses", "portfolio"} else {}
         profile = request.app.state.content.read_data("profile")["data"] if section in {"home", "resume"} else None
-        photos = request.app.state.content.read_data("photos")["data"].get("photos", []) if section == "personal" else None
-        return render(request, "section.html", {"section": section, "title": dict(NAVIGATION)[section], "artifacts": items, "all_artifacts": all_items, "records": records, "profile": profile, "photos": photos, "tags": tags, "tag": tag, "lifecycle": lifecycle, "visibility": visibility, "data_name": DATA_NAMES.get(section), "kind": KINDS.get(section) if section != "personal" else None, "last_build": request.app.state.builds.last_successful(mode="preview")})
+        photo_data = request.app.state.content.read_data("photos") if section == "personal" else None
+        photos = photo_data["data"].get("photos", []) if photo_data else None
+        photo_rows = None
+        if photos is not None:
+            photo_rows, pagination = paginate(request, list(enumerate(photos)), page, page_size)
+        return render(request, "section.html", {"section": section, "title": dict(NAVIGATION)[section], "artifacts": items, "all_artifacts": all_items, "records": records, "profile": profile, "profile_links": contact_links(profile["contact"]) if profile else [], "photo_rows": photo_rows, "photo_revision": photo_data["revision"] if photo_data else None, "photo_snapshot": photo_data["data"] if photo_data else None, "reorder": section == "personal" and reorder, "pagination": pagination, "tags": tags, "q": q, "tag": tag, "lifecycle": lifecycle, "visibility": visibility, "data_name": DATA_NAMES.get(section), "kind": KINDS.get(section) if section != "personal" else None, "last_build": request.app.state.builds.last_successful(mode="preview")})
 
     return router

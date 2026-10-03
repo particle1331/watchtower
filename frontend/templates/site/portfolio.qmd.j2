@@ -13,9 +13,7 @@ Selected projects and their full project pages.
 ::: {.portfolio-project #{{ entry.anchor }}}
 ## {{ entry.title }}
 {% if entry.lifecycle != 'published' %}
-::: {.callout-caution title="{{ entry.lifecycle | capitalize }} entry"}
-{% if entry.lifecycle == 'planned' %}The full project page describes the intended scope. Run `wt start {{ entry.id }}` to initialize content.{% else %}This project page is a draft.{% endif %}
-:::
+{% include 'site/publication-meta.html.j2' %}
 {% endif %}
 **Abstract.** {{ entry.abstract }}
 

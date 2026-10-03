@@ -1,46 +1,28 @@
+{% macro record_body(key, row) %}
+  {% if row.dates %}<p class="record-dates">{{ row.dates }}</p>{% endif %}
+  {% if key == 'education' %}{% for field in ['major', 'awards', 'thesis', 'description'] %}{% if row[field] %}<p>{{ row[field] }}</p>{% endif %}{% endfor %}{% endif %}
+  {% set bullets = row.entries if key == 'skills' else row.bullets %}
+  {% if bullets %}<ul>{% for bullet in bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>{% endif %}
+{% endmacro %}
+{% macro records(key, label) %}
+<section class="data-group profile-collection">
+  <h2>{{ label }} <span class="badge">{{ profile[key] | length }}</span></h2>
+  <div class="collection-scroll" data-client-list data-list-label="{{ label }}" tabindex="0" role="region" aria-label="{{ label }} entries">
+  {% for row in profile[key] %}
+    {% set title = (row.title + ' · ' + row.company) if key in ['employment', 'early_employment'] else row.name if key == 'skills' else (row.degree + ' · ' + row.institution) if key == 'education' else row.title %}
+    {% if key in ['employment', 'early_employment', 'skills', 'education'] %}<details class="data-record" data-list-item><summary>{{ title }}</summary>{{ record_body(key, row) }}</details>
+    {% else %}<article class="data-record" data-list-item><h3>{{ title }}</h3>{{ record_body(key, row) }}</article>{% endif %}
+  {% else %}<p class="empty-group">No entries yet.</p>{% endfor %}
+  </div>
+</section>
+{% endmacro %}
 <section class="data-group profile-group" aria-label="Profile">
-  <p class="group-label">Profile</p>
-  <h2>{{ profile.name }}</h2>
-  <p>{{ profile.summary }}</p>
-  {% if section == 'home' %}
-  <section class="data-group" aria-labelledby="intro-heading">
-    <h3 id="intro-heading">Homepage introduction</h3>
-    {% for paragraph in profile.homepage_intro %}<p>{{ paragraph }}</p>{% endfor %}
-  </section>
-  <section class="data-group" aria-labelledby="contact-heading">
-    <h3 id="contact-heading">Contact</h3>
-    <p>{{ profile.contact.phone }} · <a href="mailto:{{ profile.contact.email }}">{{ profile.contact.email }}</a></p>
-  </section>
-  {% else %}
-  {% for key, label in [('employment', 'Employment'), ('early_employment', 'Early employment')] %}
-  <section class="data-group" aria-labelledby="{{ key }}-heading">
-    <h3 id="{{ key }}-heading">{{ label }}</h3>
-    {% for job in profile[key] %}
-    <article class="data-record">
-      <h4>{{ job.title }} · {{ job.company }}</h4>
-      <p>{{ job.dates }}</p>
-      <ul>{% for bullet in job.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
-    </article>
-    {% else %}<p class="empty-group">No entries yet.</p>{% endfor %}
-  </section>
-  {% endfor %}
-  <section class="data-group" aria-labelledby="skills-heading">
-    <h3 id="skills-heading">Skills</h3>
-    {% for group in profile.skills %}
-    <article class="data-record">
-      <h4>{{ group.name }}</h4>
-      <ul>{% for entry in group.entries %}<li>{{ entry }}</li>{% endfor %}</ul>
-    </article>
-    {% else %}<p class="empty-group">No entries yet.</p>{% endfor %}
-  </section>
-  <section class="data-group" aria-labelledby="education-heading">
-    <h3 id="education-heading">Education</h3>
-    {% for school in profile.education %}
-    <article class="data-record">
-      <h4>{{ school.degree }} · {{ school.institution }}</h4>
-      <p>{{ school.dates }}</p>
-    </article>
-    {% else %}<p class="empty-group">No entries yet.</p>{% endfor %}
-  </section>
-  {% endif %}
+  <p class="group-label">Profile</p><h2>{{ profile.name }}</h2><p>{{ profile.summary }}</p>
+  {% if section == 'home' %}<section class="data-group"><h2>Homepage introduction</h2>{% for paragraph in profile.homepage_intro %}<p>{{ paragraph }}</p>{% endfor %}</section>{% endif %}
+  <section class="data-group profile-contact"><h2>Contact</h2><div class="contact-links">
+    {% if profile.contact.phone %}<span>{{ profile.contact.phone }}</span>{% endif %}
+    {% if profile.contact.email %}<a href="mailto:{{ profile.contact.email }}">{{ profile.contact.email }}</a>{% endif %}
+    {% for link in profile_links %}<a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }} ↗</a>{% endfor %}
+  </div></section>
+  {% if section == 'resume' %}{% for key, label in [('employment', 'Employment'), ('early_employment', 'Early employment'), ('skills', 'Skills'), ('education', 'Education')] %}{{ records(key, label) }}{% endfor %}{% if profile.projects %}{{ records('projects', 'Projects') }}{% endif %}{% endif %}
 </section>

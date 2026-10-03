@@ -1,7 +1,12 @@
 <div class="action-bar" aria-label="Editor actions">
 <div class="action-context"><strong>{{ editor_label }}</strong><span data-edit-status role="status">{{ 'Unsaved changes' if error else 'New plan' if creating else 'Saved values' }}</span></div>
 <div class="action-buttons">
-{% if not creating %}<button type="button" data-begin-edit hidden>Edit</button>{% endif %}
+{% if not creating and not direct_edit | default(false) %}<button type="button" data-begin-edit hidden>Edit</button>{% endif %}
 <a class="button" data-cancel href="{{ cancel_url }}">Cancel</a>
-<button class="primary" type="submit" data-save>{{ 'Create plan' if creating else 'Save changes' }}</button>
+{% if name is defined and name == 'photos' and request.query_params.get('add') == 'photo' %}
+{% set photo_collection = collections | selectattr('path', 'equalto', ('photos',)) | first %}
+<button class="primary" type="submit" data-save name="collection_action" value='{{ {"path": photo_collection.path, "action": "add", "prototype": photo_collection.prototype} | tojson }}'>Add photo</button>
+{% else %}<button class="primary" type="submit" data-save>{{ 'Create plan' if creating else 'Save' }}</button>{% endif %}
+{% for action, label in publication_actions | default([]) %}<button type="submit" form="artifact-{{ action }}-action" data-publication-action>{{ label }}</button>{% endfor %}
+{% if artifact is defined and not creating and artifact.kind != 'gallery' %}<a class="button danger" data-delete-link href="/cms/delete/{{ artifact.id | urlpath }}">Delete</a>{% endif %}
 </div></div>

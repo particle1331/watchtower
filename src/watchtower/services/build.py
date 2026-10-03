@@ -20,6 +20,7 @@ import uuid
 from collections import Counter
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from html import escape
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -30,7 +31,7 @@ import yaml
 from jinja2 import DictLoader, Environment
 
 from watchtower.models import eligible, plan_body, route_for, source_path
-from watchtower.services.content import ContentService
+from watchtower.services.content import KANBAN, ContentService
 from watchtower.services.profile import build_resume_pdf, latex_profile
 from watchtower.services.workspace import ServiceError
 
@@ -239,16 +240,20 @@ class _Generator:
                 value.append(f"- [{child.toc_title}]({_relative(self.routes[child.id], self.routes[artifact.id])})")
         return "\n".join(value) + "\n"
 
+    @staticmethod
+    def navigation_title(artifact: Any, title: str) -> str:
+        if artifact.lifecycle == "draft":
+            return escape(title) + ' <span class="draft-badge">draft</span>'
+        return title
+
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
-        value: dict[str, Any] = {"title": artifact.title, "toc": True}
-        if artifact.kind in {"post", "chapter", "course"}:
-            value["draft"] = artifact.lifecycle == "draft"
+        value: dict[str, Any] = {"title": artifact.title, "toc": True, "lifecycle": artifact.lifecycle}
         if artifact.description and artifact.kind != "gallery":
             value["description"] = artifact.description
         if artifact.date:
             value["date"] = str(artifact.date)
-        if artifact.categories:
-            value["categories"] = artifact.categories
+        if artifact.tags:
+            value["tags"] = artifact.tags
         if artifact.kind == "chapter":
             value["format"] = {"html": {"template-partials": ["/templates/title-block.html"]}}
         if artifact.kind in {"post", "personal"}:
@@ -273,11 +278,14 @@ class _Generator:
             for photo in self.state.photos:
                 if photo.lifecycle == "draft" and self.mode == "production":
                     continue
-                destination = _asset_path(photo.path)
-                self.write(destination, self.files[photo.path])
-                status = '::: {.callout-caution title="Draft entry"}\nSet this photo to **Published** in the CMS so it appears on the website.\n:::\n\n' if photo.lifecycle == "draft" else ""
-                width = f" width={json.dumps(photo.width)}" if getattr(photo, "width", None) else ""
-                image = f"![]({_relative(destination, route)}){{.lightbox fig-alt={json.dumps(photo.caption, ensure_ascii=False)}{width}}}"
+                status = self.template("site/publication-meta.html.j2", entry=photo, photo_status=True, image_ready=bool(photo.path)) + "\n\n" if photo.lifecycle == "draft" else ""
+                if photo.path:
+                    destination = _asset_path(photo.path)
+                    self.write(destination, self.files[photo.path])
+                    width = f" width={json.dumps(photo.width)}" if getattr(photo, "width", None) else ""
+                    image = f"![]({_relative(destination, route)}){{.lightbox fig-alt={json.dumps(photo.caption, ensure_ascii=False)}{width}}}"
+                else:
+                    image = self.template("site/photo-placeholder.html.j2", photo=photo)
                 figures.append(f"## {photo.heading}\n\n{status}{photo.caption}\n\n{image}")
             body = "\n\n".join(figures) + "\n"
             notebook = nbformat.v4.new_notebook(cells=[_generated_cell(artifact.id, "photo-rows", body)])
@@ -299,15 +307,14 @@ class _Generator:
                         if isinstance(body, str):
                             self.rewrite_body(body, source, route)
         header = _frontmatter(self.metadata(artifact, route))
-        native_draft = artifact.kind in {"post", "chapter", "course"} and artifact.lifecycle == "draft"
-        if artifact.kind != "gallery" and ((artifact.lifecycle != "published" and not native_draft) or artifact.visibility != "public"):
-            if artifact.kind == "portfolio" and artifact.lifecycle == "planned":
-                header += f'\n::: {{.callout-caution title="Planned entry"}}\nThe full project page describes the intended scope. Run `wt start {artifact.id}` to initialize content.'
+        if artifact.kind != "gallery" and (artifact.lifecycle != "published" or artifact.visibility != "public"):
+            if artifact.kind == "portfolio" or artifact.lifecycle == "draft":
+                header += "\n" + self.template("site/publication-meta.html.j2", entry=artifact) + "\n"
             else:
                 header += f"\n::: {{.callout-note}}\n**{artifact.lifecycle.capitalize()}**"
-            if artifact.visibility != "public":
-                header += " · Private working preview"
-            header += "\n:::\n"
+                if artifact.visibility != "public":
+                    header += " · Private working preview"
+                header += "\n:::\n"
         if artifact.kind in {"post", "portfolio", "personal"}:
             listing = {"post": "posts.qmd", "portfolio": "portfolio.qmd", "personal": "personal.qmd"}[artifact.kind]
             if not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells):
@@ -356,6 +363,13 @@ class _Generator:
 
     def config(self) -> None:
         config = copy.deepcopy(self.state.settings.quarto)
+        html = config.setdefault("format", {}).setdefault("html", {})
+        css = html.get("css")
+        styles = self.files.get("frontend/assets/styles.css")
+        if styles is not None and (css == "assets/styles.css" or isinstance(css, list) and "assets/styles.css" in css):
+            versioned = f"assets/styles-{hashlib.sha256(styles).hexdigest()[:16]}.css"
+            self.write(versioned, styles)
+            html["css"] = [versioned if item == "assets/styles.css" else item for item in css] if isinstance(css, list) else versioned
         config["execute"] = {"enabled": False}
         config["project"] = {
             "type": "website", "output-dir": "_site", "render": self.render_paths,
@@ -372,10 +386,10 @@ class _Generator:
         for artifact in self.entries:
             if artifact.kind != "course":
                 continue
-            contents: list[dict[str, Any]] = [{"href": self.routes[artifact.id], "text": artifact.title}]
+            contents: list[dict[str, Any]] = [{"href": self.routes[artifact.id], "text": self.navigation_title(artifact, artifact.title)}]
             for section in self.state.courses[artifact.id].toc:
                 children = [
-                    {"href": self.routes[c], "text": self.by_id[c].toc_title}
+                    {"href": self.routes[c], "text": self.navigation_title(self.by_id[c], self.by_id[c].toc_title)}
                     for c in section.chapters if c in self.by_id
                 ]
                 if not children:
@@ -432,14 +446,16 @@ class _Generator:
         self.write("posts.qmd", self.template("site/posts.qmd.j2", posts=posts, tags=tags), render=True)
         self.portfolio()
         courses = [
-            {**a.model_dump(mode="json"), "route": self.routes[a.id], "purpose": self.state.courses[a.id].purpose,
-             "cover_route": _asset_path(a.cover) if getattr(a, "cover", None) else None}
+            {"path": _href(self.routes[a.id]), "outputHref": _href(self.routes[a.id]),
+             "title": self.navigation_title(a, a.title),
+             "description": a.description or self.state.courses[a.id].purpose,
+             **({"image": _asset_path(a.cover)} if getattr(a, "cover", None) else {})}
             for a in self.entries if a.kind == "course"
         ]
         self.write("courses.qmd", self.template("site/courses.qmd.j2", courses=courses), render=True)
         gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
         photos = [
-            {"src": quote(_asset_path(photo.path), safe="/._-~"), "caption": photo.caption, "heading": photo.heading, "lifecycle": photo.lifecycle, "width": getattr(photo, "width", None)}
+            {"src": quote(_asset_path(photo.path), safe="/._-~") if photo.path else "", "caption": photo.caption, "heading": photo.heading, "lifecycle": photo.lifecycle, "width": getattr(photo, "width", None)}
             for photo in self.state.photos if photo.lifecycle == "published" or self.mode == "preview"
         ] if gallery else []
         self.write("personal.qmd", self.template("site/personal.qmd.j2", photos=photos), render=True)
@@ -579,6 +595,18 @@ class BuildService:
                 _atomic_json(self.runtime / f"{record['id']}.json", record)
         return record
 
+    def _preview_signature(self) -> str:
+        digest = hashlib.sha256()
+        for folder in (self.root / "content", self.root / "frontend/templates", self.root / "frontend/assets"):
+            for path in sorted(folder.rglob("*")):
+                if path.is_file() and path.relative_to(self.root).as_posix() != KANBAN:
+                    stat = path.stat()
+                    digest.update(f"{path}:{stat.st_mtime_ns}:{stat.st_size}".encode())
+        settings = self.root / "frontend/site.yaml"
+        if settings.exists():
+            digest.update(settings.read_bytes())
+        return digest.hexdigest()
+
     def preview(self, port: int = 4300) -> None:
         _atomic_json(self.runtime.parent / "preview.json", {"url": f"http://127.0.0.1:{port}"})
         result = self.build("preview")
@@ -587,27 +615,16 @@ class BuildService:
         service = self
         stopped = threading.Event()
 
-        def signature() -> str:
-            digest = hashlib.sha256()
-            for folder in (self.root / "content", self.root / "frontend/templates", self.root / "frontend/assets"):
-                for path in sorted(folder.rglob("*")):
-                    if path.is_file():
-                        stat = path.stat()
-                        digest.update(f"{path}:{stat.st_mtime_ns}:{stat.st_size}".encode())
-            settings = self.root / "frontend/site.yaml"
-            if settings.exists():
-                digest.update(settings.read_bytes())
-            return digest.hexdigest()
 
         def watch() -> None:
-            previous = signature()
+            previous = self._preview_signature()
             while not stopped.wait(0.5):
-                current = signature()
+                current = self._preview_signature()
                 if current != previous:
                     # Let IDE atomic saves settle before snapshotting the workspace.
                     if stopped.wait(0.25):
                         break
-                    previous = signature()
+                    previous = self._preview_signature()
                     service.build("preview")
 
         class Handler(SimpleHTTPRequestHandler):

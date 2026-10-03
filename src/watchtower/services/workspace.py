@@ -98,7 +98,7 @@ class WorkspaceStore:
                     self.safe_path(name)
                     if path.is_file():
                         files[name] = path.read_bytes()
-        for name in ("content/data/catalog.yaml", "content/data/portfolio.yaml", "content/data/photos.yaml", "content/data/profile.yaml", "frontend/site.yaml"):
+        for name in ("content/data/catalog.yaml", "content/data/portfolio.yaml", "content/data/photos.yaml", "content/data/profile.yaml", "content/data/kanban.yaml", "frontend/site.yaml"):
             path = self.safe_path(name)
             files[name] = path.read_bytes() if path.exists() else None
         # Directory identity is a dependency, but project code never enters a build snapshot.
@@ -150,10 +150,14 @@ class WorkspaceStore:
         path = self.safe_path(name)
         return digest(path.read_bytes() if path.exists() else None)
 
-    def _install(self, name: str, value: bytes, expected: str, transaction: str) -> None:
+    def _install(self, name: str, value: bytes | None, expected: str, transaction: str) -> None:
         path = self.safe_path(name)
         if self._hash_at(name) != expected:
             raise ServiceError("destination changed during transaction", code="conflict", status=412, paths=[name])
+        if value is None:
+            path.unlink(missing_ok=True)
+            sync_dir(path.parent)
+            return
         path.parent.mkdir(parents=True, exist_ok=True)
         staged = path.parent / f".wt-{transaction}-{uuid.uuid4().hex}"
         durable_write(staged, value)
@@ -203,7 +207,7 @@ class WorkspaceStore:
                 if actual != item["candidate"]:
                     if actual != item["preimage"]:
                         raise ServiceError(f"transaction {directory.name} blocked: external edit; current, preimage, and candidate retained", code="recovery_conflict", status=409, paths=[item["path"]])
-                    value = (directory / f"candidate-{index}").read_bytes()
+                    value = None if item["candidate"] == ABSENT else (directory / f"candidate-{index}").read_bytes()
                     if digest(value) != item["candidate"]:
                         raise ServiceError("damaged transaction candidate", code="recovery_conflict", status=409, paths=[str(directory)])
                     self._install(item["path"], value, item["preimage"], directory.name)
@@ -215,7 +219,7 @@ class WorkspaceStore:
             manifest["status"] = "committed"
             self._manifest(directory, manifest)
 
-    def commit(self, writes: dict[str, bytes], expected: dict[str, bytes | None], operation: str) -> str:
+    def commit(self, writes: dict[str, bytes | None], expected: dict[str, bytes | None], operation: str) -> str:
         """Called under locked(), after the entire candidate has been validated."""
         current = self.inputs()
         changed = sorted(name for name in set(current) | set(expected) if digest(current.get(name)) != digest(expected.get(name)))
@@ -235,7 +239,8 @@ class WorkspaceStore:
             original = expected.get(name)
             if original is not None:
                 durable_write(directory / f"preimage-{index}", original)
-            durable_write(directory / f"candidate-{index}", value)
+            if value is not None:
+                durable_write(directory / f"candidate-{index}", value)
             manifest["writes"].append({"path": name, "exists": original is not None, "preimage": digest(original), "candidate": digest(value)})
         self._manifest(directory, manifest)
         if self.fault:
@@ -265,7 +270,7 @@ class WorkspaceStore:
             raise ServiceError(f"transaction {transaction} pending recovery: {error}", code="pending_transaction", status=409, paths=[str(directory.relative_to(self.root))]) from error
         return transaction
 
-    def project_directories(self, writes: dict[str, bytes]) -> dict[str, bytes]:
+    def project_directories(self, writes: dict[str, bytes | None]) -> dict[str, bytes]:
         """Project code stays out of snapshots; project identity remains a dependency."""
         result = {}
         for name in writes:

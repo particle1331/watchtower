@@ -3,6 +3,17 @@
 ## Sources and orientation
 
 Run `.venv/bin/wt map` first. The venv is required; never use bare `wt`.
+Use the CLI for agent work; Watchtower has no MCP server. Every `wt` command
+below is shorthand for `.venv/bin/wt`, run from the repository root. Discover
+commands with `.venv/bin/wt --help` and inspect arguments with
+`.venv/bin/wt <command> --help` (nested commands have their own help).
+Use `wt context <id>` for artifact metadata, `wt data <name>`
+for structured records, `wt gallery` for photos, and `wt kanban ls` for tasks.
+Use their supported mutation commands. Data/gallery/Kanban reads expose the
+workspace revision; pass it with `--expected-revision` where available.
+CLI mutations capture a revision when omitted. Use `.tmp/` files for larger payloads:
+`wt update <id> --patch-file .tmp/patch.json`, `wt data <name> --file .tmp/data.yaml`,
+or `wt batch --file .tmp/batch.json`. Check command help for the payload format.
 Active artifacts are registered in `content/data/catalog.yaml`: posts, courses,
 chapters, portfolio entries, executable projects, personal notebooks, galleries.
 Canonical authored notebooks live under `content/notebooks/`; supporting assets
@@ -70,7 +81,8 @@ overwriting it. Notebook, scaffold, and registrations share one recoverable save
 Draft portfolio entries may omit abstract/figure metadata; publication requires
 the abstract, featured figure, and caption.
 Planned portfolio pages include reserved active source URLs before code exists.
-Their planned callout includes `wt start <actual-stable-id>`.
+Portfolio cards and pages show planned/draft state as yellow diagnostic panels with monospace publication metadata.
+Planned entries include the setup command with `wt start <actual-stable-id>`.
 Active code directories are required for Draft/Published portfolio entries;
 archived source references must always resolve to existing archived code.
 Plan files must be under `<repo>/.tmp/`; persist their bodies before removing them.
@@ -104,7 +116,7 @@ planned courses show only planned children.
 `make preview PORT=4300` watches saved inputs, showing all valid states locally.
 `make build` validates/renders production. Only successful output is promoted.
 GitHub Actions rebuilds committed inputs on `main` and deploys to existing
-`gh-pages`. CMS `/cms/`, API `/api/`, CLI, and MCP call the same services. Notebook
+`gh-pages`. CMS `/cms/`, API `/api/`, and CLI call the same services. Notebook
 body editing/execution remains in VS Code/Jupyter. CMS refresh uses saved files,
 reports async progress/failures, and never executes cells or changes publication.
 
@@ -112,7 +124,7 @@ reports async progress/failures, and never executes cells or changes publication
 
 Managed reads/writes, notebook operations, and build snapshots share the ignored
 `backend/runtime/` lock/recovery gate. API requires `If-Match`; CMS carries revisions;
-CLI/MCP accepts expected revisions. Never retry stale writes automatically. Resolve
+CLI mutations accept `--expected-revision`. Never retry stale writes automatically. Resolve
 pending journals before new work. Recovery rolls forward only from matching
 preimages/absence; external edits block it while all versions are retained.
 Never blindly roll back or overwrite divergent bytes. Uncoordinated IDE saves
@@ -144,7 +156,9 @@ If a supported notebook operation is missing/fails, explain the command, gap,
 and expected result, then ask whether an issue should be filed. Never manipulate
 raw JSON as a workaround.
 
-Each photo has a required heading, path, caption, and `lifecycle: draft|published`.
+Each photo has a required heading, caption, and `lifecycle: draft|published`.
+Draft photos may omit the path and show a "No Photo" placeholder in the CMS and
+working preview. Published photos require a safe path to an existing image.
 CMS course card uploads save to `content/assets/courses/` and update catalog
 `cover`; Personal uploads save to `content/assets/photos/` and update photo
 `path`. Both accept PNG, JPEG, WebP, or GIF up to 20 MB and save images with
@@ -153,9 +167,94 @@ with their photos.
 Photos support optional `width: "80%"` (greater than 0, at most 100%). Blank or
 omitted width preserves default image sizing; CMS edits and adds this field.
 Published photos render as individual H2 sections in Personal. Working previews
-also show draft photos with a per-photo caution titled "Draft entry"; production
+also show draft photos with the same yellow publication panel used by Portfolio,
+including image readiness and the next CMS action; production
 excludes draft photos and their assets. The gallery has no document-level status
-callout. Captions appear above images. Draft posts, chapters, and course homes use Quarto’s native draft metadata and
-banner, with drafts visible only in working previews.
+callout. Captions appear above images. All draft pages and photos use the shared
+yellow publication-status panel with instructions, visible only in working previews. Draft course cards, course sidebar
+links, and post listings show matching yellow `draft` badges. Production excludes
+draft pages, links, cards, and assets.
 The gallery page state is derived automatically; there is no collection-level
 publication control in the CMS.
+
+## Author Kanban and CMS collections
+
+Kanban is the final CMS tab, with To do / In progress / Review / Done columns.
+Task cards live in `content/data/kanban.yaml` (version 1, `cards`); absence means
+an empty board, while malformed existing YAML requires explicit repair. Cards
+have permanent human references (`card#1`, `card#2`, ...) alongside immutable
+internal IDs; references appear in the CMS and `wt kanban ls`, and can be used
+with update, move, and remove. Numbers are never reused. `artifact_ids` link only exact registered stable IDs; reject unknown
+IDs without saving. Task movement does not change artifact lifecycle or visibility.
+Kanban stays off public pages. Frontend links point at the working preview; VS Code
+links require an existing canonical notebook, gallery data file or project directory.
+Use `.venv/bin/wt kanban ls`, `add --title ... [--link <stable-id>]`,
+`update <card-id>`, `move <card-id> <column>`, or `rm <card-id>`; columns are
+`todo`, `in-progress`, `review`, `done`. Mutations accept `--expected-revision`.
+Read `wt kanban ls` first and pass its revision for a coordinated write.
+`wt data kanban` and the structured-data API support whole-board reads/repairs.
+
+CMS short information and row actions stay visible. Every employment, early
+employment, skill and education entry starts folded in résumé views and editors,
+regardless of content length. General appears first in résumé
+editing, followed by Contact, Employment, Early employment, Skills and Education.
+Profile editing uses Home/Résumé `?edit=profile`, starts in editing mode, and
+preserves the originating section for Save, Cancel and Back navigation. Category
+and record field order match the résumé view; stale saves preserve submitted
+values and the original revision.
+Posts support title search with pagination preserving active filters. Long lists
+scroll; client pagination retains all form controls and selected uploads in the DOM.
+Personal provides Add photo (opens its composer) and Edit photos actions.
+
+## Entity deletion
+
+Use `wt delete <id> --dry-run` to review removal
+and its revision. `wt delete <id> --expected-revision <revision>`
+removes registrations while retaining files; `--cascade` is
+required to include a course's chapters. CMS Delete links open the same review
+and require explicit confirmation. API `GET /api/deletions/<id>` reviews;
+`DELETE /api/artifacts/<id>` requires `If-Match` and optional `cascade=true`.
+Incoming catalog relations, Kanban artifact links and résumé artifact links are
+detached, preserving their containing records. Chapter deletion repairs the
+parent contract TOC, plans and overview. Portfolio deletion retains its project
+registration; project deletion retains the code directory.
+Authored notebooks and removed course contracts are archived byte-for-byte under
+`archive/deleted/<operation-id>/`, with removed metadata and affected preimages
+in `record.json`. Images and project code stay in place. Archival copies and
+active-file removals share the revision/recovery transaction. Never purge these
+files or edit archived notebook JSON. Individual photos, résumé rows and Kanban
+cards have existing removal controls; the built-in gallery is not deletable.
+
+CMS creation asks for a Name and generates a kind-specific stable ID and source
+path; e.g. `test` becomes `portfolio/test`, and post `gliner` becomes `post/gliner`
+at `content/notebooks/posts/gliner.ipynb`. Chapters choose course and section by
+title. Spaces and punctuation in names become hyphens.
+Deletion permanently reserves removed IDs and notebook sources in catalog
+`retired_ids` and `retired_sources`, including planned entries without files.
+Do not reuse retired names or clear these reservations when deleting archives.
+Creation rejects case variants and active filenames owned by legacy post IDs.
+All catalog entity kinds use tags as their single taxonomy. Legacy/imported
+categories merge into tags with case-insensitive deduplication. CMS fields show
+only tags; routes are managed site metadata and CMS writes cannot change them.
+Preserve existing legacy routes. Catalog cover controls appear only for courses,
+as Card image; portfolio figures and photo uploads use their dedicated fields.
+
+Use disclosure for each résumé employment, early employment, skill and education
+entry, plus course chapters and project content. Keep contacts, short action rows
+and basic editor groups visible. Photo overviews use
+120×120 thumbnails with direct `/cms/photos/<index>/edit` links; editing starts
+immediately and saves only that photo, using the shared revision/upload service.
+Personal has no page-wide Edit photos action. Reorder photos below the list opens
+the compact photo list with per-photo up and down actions; it does not expose the
+full gallery metadata editor.
+Portfolio row Edit links open the combined artifact/detail editor with editing
+enabled immediately. Save and Cancel return to Portfolio; do not add a separate
+bulk-detail editor link to this flow.
+Artifact publication and deletion controls belong in the editor toolbar beside
+Cancel and Save, without a separate Publication actions section. Keep lifecycle
+forms separate from metadata saves, carrying the same revision. Disable
+publication while metadata is dirty or saving.
+Blank photo width fields show a `100%` hint. Kanban card actions are visible;
+Add/Edit/Remove use native dialogs with keyboard dismissal, focus restoration,
+unsaved-change handling and server-rendered fallback links. Preserve revisions,
+submitted values and uploads through these interactions.

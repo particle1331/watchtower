@@ -1,4 +1,4 @@
-.PHONY: help bootstrap setup-skills test lint typecheck review resume knowledge docs render project preview build cms mcp
+.PHONY: help bootstrap setup-skills test lint typecheck review resume knowledge docs render project preview build cms
 
 .DEFAULT_GOAL := help
 PYTHON := .venv/bin/python
@@ -15,7 +15,7 @@ help:
 
 bootstrap: setup-skills
 	uv sync
-	@echo "Ready. Try: wt --help"
+	@echo "Ready. Try: .venv/bin/wt --help"
 
 setup-skills:
 	./scripts/setup-skills
@@ -62,6 +62,3 @@ build:
 
 cms:
 	@$(PYTHON) -m watchtower.cli serve --port 8000
-
-mcp:
-	@$(PYTHON) -m watchtower.cli mcp

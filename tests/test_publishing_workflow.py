@@ -44,9 +44,10 @@ def test_real_create_execute_preview_publish_workflow(content_service, monkeypat
     gallery = (Path(preview["output_location"]) / "gallery.html").read_text()
     assert 'id="published-photo"' in gallery and "<h2" in gallery
     assert 'id="draft-photo"' in gallery
-    assert "Draft entry" in gallery
-    assert "callout-caution" in gallery
-    assert "in the CMS so it appears on the website." in gallery
+    assert "state:   draft" in gallery
+    assert 'aria-label="Publication status"' in gallery
+    assert "callout-caution" not in gallery
+    assert "next:    Set Published in CMS" in gallery
     assert "callout-note" not in gallery
     for route in ["gallery.html", "personal.html"]:
         photo_page = (Path(preview["output_location"]) / route).read_text()
@@ -60,8 +61,17 @@ def test_real_create_execute_preview_publish_workflow(content_service, monkeypat
         assert re.search(r'width:\s*50(?:\.0+)?%', image), image
     for route in ["nb/posts/figure.html", "nb/courses/example/index.html", "nb/courses/example/01.html"]:
         draft_page = (Path(preview["output_location"]) / route).read_text()
-        assert 'id="quarto-draft-alert"' in draft_page
+        assert 'id="quarto-draft-alert"' not in draft_page
+        assert draft_page.count('aria-label="Publication status"') == 1
+        assert "Review content, then publish in CMS" in draft_page
         assert "callout-note" not in draft_page
+    course_page = (Path(preview["output_location"]) / "nb/courses/example/index.html").read_text()
+    sidebar = course_page.split('<nav id="quarto-sidebar"', 1)[1].split('</nav>', 1)[0]
+    assert sidebar.count('class="draft-badge"') == 2
+    cards = (Path(preview["output_location"]) / "courses.html").read_text()
+    assert 'class="draft-badge"' in cards
+    assert 'quarto-grid-item card h-100 card-left' in cards
+    assert 'nb/courses/example/index.html' in cards
     assert (Path(preview["output_location"]) / "assets/photos/draft.svg").exists()
     service.publish("post/figure")
     production = builds.build("production")

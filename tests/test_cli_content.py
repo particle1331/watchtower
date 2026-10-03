@@ -1,4 +1,4 @@
-"""CLI plan creation/import and the same services exercised by HTTP/MCP."""
+"""CLI plan creation/import and the same services exercised by HTTP."""
 import json
 
 import nbformat
@@ -67,10 +67,12 @@ def test_cli_import_preserves_outputs_and_frontmatter_becomes_metadata(content_s
     source = service.root / ".tmp/external.ipynb"
     source.parent.mkdir()
     code = nbformat.v4.new_code_cell("#| echo: false\nprint(2)", outputs=[nbformat.v4.new_output("stream", name="stdout", text="2\n")], execution_count=2)
-    nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell('---\ntitle: Imported\ncategories: [original]\n---\n\nBody'), code]), source)
+    nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell('---\ntitle: Imported\ncategories: [original]\ntags: [Existing, ORIGINAL]\n---\n\nBody'), code]), source)
     result = invoke(monkeypatch, service, ["import", str(source), "posts", "imported"])
     assert result["artifact"]["lifecycle"] == "draft"
     assert result["artifact"]["title"] == "Imported"
+    assert result["artifact"]["tags"] == ["Existing", "ORIGINAL"]
+    assert result["artifact"]["categories"] == []
     notebook = nbformat.read(service.root / result["artifact"]["path"], as_version=4)
     assert notebook.cells[1] == code
     assert notebook.cells[0].source == "\nBody"
