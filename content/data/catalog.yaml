@@ -540,28 +540,6 @@ artifacts:
   tags: []
   planned: {}
   route: nb/photos/photos.ipynb
-- id: test-portfolio
-  kind: portfolio
-  title: Test Portfolio
-  visibility: public
-  lifecycle: draft
-  relations:
-  - course/llms-from-scratch
-  description: desc
-  tags: []
-  planned: {}
-- id: htmx-todo
-  kind: post
-  title: Creating a Todo App in HTMX
-  path: content/notebooks/posts/htmx-todo.ipynb
-  visibility: public
-  lifecycle: draft
-  relations: []
-  date: '2026-10-02'
-  description: todo
-  tags: []
-  planned:
-    content: Creating a Todo App in HTMX
 - id: project/test-portfolio
   kind: project
   title: Test Portfolio
@@ -571,3 +549,13 @@ artifacts:
   relations: []
   tags: []
   planned: {}
+retired_ids:
+- course/test
+- htmx-todo
+- portfolio/test1
+- test-portfolio
+retired_sources:
+- content/notebooks/courses/test/index.ipynb
+- content/notebooks/portfolio/test-portfolio.ipynb
+- content/notebooks/portfolio/test1.ipynb
+- content/notebooks/posts/htmx-todo.ipynb

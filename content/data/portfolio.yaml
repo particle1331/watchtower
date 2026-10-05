@@ -1,14 +1,2 @@
 version: 1
-entries:
-- id: test-portfolio
-  notebook_path: content/notebooks/portfolio/test-portfolio.ipynb
-  planned:
-    introduction: plan intro
-    scope_notes: scope
-    what_it_contains: contains
-  abstract: 'test abstract '
-  archive_date: null
-  figure_caption: test figure caption
-  figure_path: content/assets/portfolio/test-portfolio-314c0c6f23ca-ee70832a57c33e98029bd9ba32e4676049396356c5dd21ba198e87b740c0e10d.png
-  project_name: test-portfolio
-  project_source: active
+entries: []
