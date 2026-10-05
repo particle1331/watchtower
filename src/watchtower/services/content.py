@@ -29,6 +29,7 @@ from watchtower.models import (
     Profile,
     SiteSettings,
     Workspace,
+    course_rows,
     displayed_text,
     eligible,
     h1s,
@@ -38,6 +39,7 @@ from watchtower.models import (
     route_for,
     source_path,
 )
+from watchtower.planning import extra_plan_body, missing_fields, starter_chunks
 
 from .images import portfolio_figure, uploaded_image
 from .projects import project_name, scaffold_project
@@ -255,8 +257,6 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
             planned_ids.add(plan.chapter_id)
             if markdown_h1s(plan.content) or markdown_h1s(plan.lab_and_evidence):
                 fail(f"{plan.chapter_id}: plan bodies must not contain H1 headings", name)
-            if chapter and chapter.lifecycle == "planned" and not (plan.content.strip() and plan.lab_and_evidence.strip()):
-                fail(f"{plan.chapter_id}: both plan sections required", name)
         for chapter_id in expected:
             if artifacts[chapter_id].lifecycle == "planned" and chapter_id not in planned_ids:
                 fail(f"{chapter_id}: missing chapter plan", name)
@@ -307,6 +307,117 @@ class ContentService:
             catalog = self._catalog(files)
             return {"artifacts": [a for a in catalog["artifacts"] if kind is None or a.get("kind") == kind], "revision": revision(files)}
 
+    @staticmethod
+    def _planning(artifact: Artifact, state: Workspace) -> dict[str, Any]:
+        if artifact.kind == "course":
+            contract = state.courses[artifact.id]
+            return {**contract.planned, "purpose": contract.purpose, "audience": contract.audience,
+                    "summary": contract.planned.get("summary") or artifact.planned.get("content", "")}
+        if artifact.kind == "chapter":
+            return next((p for p in state.courses[str(artifact.parent)].planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
+        if artifact.kind == "portfolio":
+            return next(p.planned for p in state.portfolio if p.id == artifact.id)
+        return artifact.planned
+
+    @classmethod
+    def _build_brief(cls, artifact: Artifact, state: Workspace) -> str:
+        plan = cls._planning(artifact, state)
+        lines = [f"# {artifact.title}", "", f"Stable ID: {artifact.id}", f"Kind: {artifact.kind}",
+                 f"State: {artifact.lifecycle} / {artifact.visibility}"]
+        path = source_path(artifact, state)
+        if path:
+            lines.append(f"Notebook: {path}")
+        if artifact.kind == "portfolio":
+            detail = next(p for p in state.portfolio if p.id == artifact.id)
+            lines.append(f"Project: {detail.project_path or 'projects/' + artifact.id.split('/')[-1]}")
+        if artifact.description:
+            lines.extend(["", "Description: " + artifact.description])
+        if artifact.tags:
+            lines.append("Tags: " + ", ".join(artifact.tags))
+        if artifact.relations:
+            lines.append("Related stable IDs: " + ", ".join(artifact.relations))
+        lines.extend(["", extra_plan_body(artifact.kind, plan, {"chapters", "chapter_id", "section"})])
+        if artifact.planned and artifact.kind in {"course", "portfolio", "chapter"}:
+            lines.extend(["", "## Legacy catalog plan", "", extra_plan_body(artifact.kind, artifact.planned, set())])
+        missing = missing_fields(artifact.kind, plan)
+        lines.extend(["", "Core plan missing: " + (", ".join(missing) if missing else "None")])
+        if artifact.kind == "course":
+            for row in course_rows(state.courses[artifact.id], state.artifacts):
+                child = next(a for a in state.artifacts if a.id == row["chapter"]["id"])
+                lines.extend(["", f"## {row['section']} / {child.title}", "", cls._build_brief(child, state)])
+        elif artifact.kind == "chapter":
+            parent = next(a for a in state.artifacts if a.id == artifact.parent)
+            context = cls._planning(parent, state)
+            lines.extend(["", f"## Course context: {parent.title}", "", f"Course ID: {parent.id}",
+                          f"Section: {artifact.section}", "", extra_plan_body("course", context, {"chapters"})])
+        return "\n".join(lines)
+
+    def organize_course(self, artifact_id: str, action: str, values: dict[str, str], expected_revision: str) -> dict[str, Any]:
+        """Apply one scoped outline action while validating all linked records."""
+        def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            catalog = self._catalog(files)
+            record = self._find(catalog, artifact_id)
+            if record["kind"] != "course":
+                raise ServiceError("Choose a course.")
+            name = f"content/data/courses/{artifact_id.split('/')[-1]}.yaml"
+            contract = load_yaml(files[name] or b"", name)
+            sections = contract["toc"]
+            selected = next((s for s in sections if s["id"] == values.get("section")), None)
+            if action == "add-section":
+                title = values.get("title", "").strip()
+                section_id = re.sub(r"[^a-z0-9_-]+", "-", title.casefold()).strip("-_")
+                if not section_id:
+                    raise ServiceError("Enter a section title containing letters or numbers.")
+                if any(s["id"].casefold() == section_id for s in sections):
+                    raise ServiceError("A section with this name already exists.")
+                sections.append({"id": section_id, "title": title, "chapters": []})
+            elif action in {"rename-section", "remove-section", "section-up", "section-down"}:
+                if selected is None:
+                    raise ServiceError("Choose an existing section.")
+                if action == "rename-section":
+                    title = values.get("title", "").strip()
+                    if not title:
+                        raise ServiceError("Enter a section title.")
+                    selected["title"] = title
+                elif action == "remove-section":
+                    if selected["chapters"]:
+                        raise ServiceError("Move or delete the chapters before removing this section.")
+                    if len(sections) == 1:
+                        raise ServiceError("Keep at least one section for new chapters.")
+                    sections.remove(selected)
+                else:
+                    index = sections.index(selected)
+                    target = index + (-1 if action == "section-up" else 1)
+                    if not 0 <= target < len(sections):
+                        raise ServiceError("Section is already at the edge of the outline.")
+                    sections[index], sections[target] = sections[target], sections[index]
+            elif action in {"chapter-up", "chapter-down", "move-chapter"}:
+                chapter = self._find(catalog, values.get("chapter", ""))
+                if chapter.get("parent") != artifact_id or chapter["kind"] != "chapter":
+                    raise ServiceError("Choose a chapter belonging to this course.")
+                origin = next(s for s in sections if chapter["id"] in s["chapters"])
+                if action == "move-chapter":
+                    if selected is None:
+                        raise ServiceError("Choose a destination section.")
+                    if selected != origin:
+                        origin["chapters"].remove(chapter["id"])
+                        selected["chapters"].append(chapter["id"])
+                        chapter["section"] = selected["id"]
+                        for plan in contract["planned"].get("chapters", []):
+                            if plan["chapter_id"] == chapter["id"]:
+                                plan["section"] = selected["id"]
+                else:
+                    chapters = origin["chapters"]
+                    index = chapters.index(chapter["id"])
+                    target = index + (-1 if action == "chapter-up" else 1)
+                    if not 0 <= target < len(chapters):
+                        raise ServiceError("Chapter is already at the edge of this section.")
+                    chapters[index], chapters[target] = chapters[target], chapters[index]
+            else:
+                raise ServiceError("Unknown course outline action.")
+            return {"course_id": artifact_id}, {CATALOG: yaml_bytes(catalog), name: yaml_bytes(contract)}
+        return self._mutate("organize course", apply, expected_revision)
+
     def inspect(self, artifact_id: str) -> dict[str, Any]:
         with self.store.locked():
             files = self.store.inputs()
@@ -329,6 +440,11 @@ class ContentService:
                 result["contract"] = state.courses[artifact.id].model_dump(mode="json")
             if artifact.kind == "chapter":
                 result["chapter_plan"] = next((p for p in state.courses[str(artifact.parent)].planned.get("chapters", []) if p.get("chapter_id") == artifact.id), None)
+            planning = self._planning(artifact, state)
+            result["missing_plan_fields"] = missing_fields(artifact.kind, planning)
+            result["build_brief"] = self._build_brief(artifact, state)
+            if artifact.kind == "course":
+                result["chapter_rows"] = course_rows(state.courses[artifact.id], state.artifacts)
             try:
                 validate_state(state, files, self.root)
                 result["errors"] = []
@@ -383,6 +499,7 @@ class ContentService:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
             payload = copy.deepcopy(data)
             detail, contract = payload.pop("detail", None), payload.pop("contract", None)
+            chapter_plan = payload.pop("plan", None) or {}
             plan_content, plan_lab = payload.pop("planned_content", None), payload.pop("planned_lab_and_evidence", None)
             payload.setdefault("lifecycle", "planned")
             if payload.get("kind") == "chapter":
@@ -420,7 +537,7 @@ class ContentService:
                 if section is None:
                     raise ServiceError("unknown course section", paths=[name])
                 section["chapters"].append(artifact.id)
-                course["planned"].setdefault("chapters", []).append({"chapter_id": artifact.id, "section": artifact.section, "content": plan_content or "", "lab_and_evidence": plan_lab or ""})
+                course["planned"].setdefault("chapters", []).append({**chapter_plan, "chapter_id": artifact.id, "section": artifact.section, "content": plan_content if plan_content is not None else chapter_plan.get("content", ""), "lab_and_evidence": plan_lab if plan_lab is not None else chapter_plan.get("lab_and_evidence", "")})
                 writes[name] = yaml_bytes(course)
             return {"artifact": artifact.model_dump(mode="json")}, writes
         return self._mutate("create", apply, expected_revision)
@@ -512,13 +629,28 @@ class ContentService:
             if record["kind"] == "gallery" and "lifecycle" in updates:
                 raise ServiceError("Change each photo's lifecycle in Personal; gallery lifecycle is derived automatically", paths=[PHOTOS])
             detail, plan = updates.pop("detail", None), updates.pop("plan", None)
+            contract = updates.pop("contract", None)
             if "id" in updates or "kind" in updates:
                 raise ServiceError("stable ID and artifact kind cannot be changed")
+            if isinstance(updates.get("planned"), dict):
+                updates["planned"] = {**record.get("planned", {}), **updates["planned"]}
             record.update(updates)
             normalized = Artifact.model_validate(record)
             record.clear()
             record.update(normalized.model_dump(mode="json", exclude_none=True))
             writes: dict[str, bytes] = {}
+            if contract is not None:
+                if record["kind"] != "course":
+                    raise ServiceError("Only courses have a course contract.")
+                name = f"content/data/courses/{record['id'].split('/')[-1]}.yaml"
+                current = load_yaml(files[name] or b"", name)
+                if contract.get("id", record["id"]) != record["id"]:
+                    raise ServiceError("Course contract ID cannot be changed.")
+                for key in ("planned", "actualized"):
+                    if isinstance(contract.get(key), dict):
+                        contract[key] = {**current.get(key, {}), **contract[key]}
+                current.update(contract)
+                writes[name] = yaml_bytes(current)
             if figure_image is not None:
                 if record["kind"] == "portfolio":
                     image_path = portfolio_figure(record["id"], figure_image)
@@ -534,6 +666,8 @@ class ContentService:
                 target = next((p for p in portfolio["entries"] if p["id"] == record["id"]), None)
                 if target is None:
                     raise ServiceError("no portfolio detail to update")
+                if isinstance(detail.get("planned"), dict):
+                    detail["planned"] = {**target.get("planned", {}), **detail["planned"]}
                 target.update(detail)
                 writes[PORTFOLIO] = yaml_bytes(portfolio)
             if record["kind"] == "chapter":
@@ -587,6 +721,9 @@ class ContentService:
                 raise ServiceError("start requires a planned notebook entry")
             state = parse_state(files)
             artifact = next(a for a in state.artifacts if a.id == record["id"])
+            missing = missing_fields(artifact.kind, self._planning(artifact, state))
+            if missing:
+                raise ServiceError("Complete the core plan before starting: " + ", ".join(missing))
             writes: dict[str, bytes] = {}
             project_path = None
             if artifact.kind == "portfolio":
@@ -611,9 +748,7 @@ class ContentService:
             body = plan_body(artifact, state)
             if not body.strip():
                 raise ServiceError("supply planning content before starting")
-            if len(body) > 20_000:
-                raise ServiceError("starter body exceeds the 20,000-character cell limit; shorten the persisted plan before starting")
-            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body)], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
+            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(chunk) for chunk in starter_chunks(body)], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
             record["lifecycle"] = "draft"
             writes.update({CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()})
             result = {"artifact": record, "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / path), safe="/")}

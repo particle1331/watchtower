@@ -121,10 +121,41 @@ not sibling chapters. Read course context, home, optional overview, and target
 chapter in that order. Record actualized learning from checked evidence only.
 
 The CMS edits structured fields/plans. “Edit in VS Code” opens the canonical
-notebook; “Start and edit” first materializes it through the lifecycle service.
+notebook; “Start draft” first materializes it through the lifecycle service.
 Notebook lifecycle choices follow the canonical source: Planned before authored
 content exists, then Draft or Published. Metadata and plans can be saved while
 Planned; authored notebooks cannot be returned to Planned.
+
+CMS creation and editing use guided Markdown briefs for posts, portfolio entries,
+courses and chapters. New CMS plans are private by default: **Not on the live
+site**. Save an incomplete idea and return to it later. **Copy build brief**
+exports the saved planning fields and context as Markdown, with selectable text
+as a clipboard fallback. **Start draft** requires a post outline, portfolio
+introduction and contents, course purpose/audience/summary, or chapter content
+and lab/evidence. Missing fields appear beside the action. Long briefs are split
+into starter cells within the cell-size limit. CLI/API use the same readiness
+rules; saving a partial chapter plan is allowed.
+
+Course workspaces at `/cms/courses/<slug>` provide the brief, ordered sections,
+and contextual chapter creation. Rename and reorder sections, reorder chapters,
+or move them to another section of the same course. Remove only empty sections,
+keeping at least one; chapter deletion uses the existing review. These changes
+keep the catalog, contract TOC and plans synchronized. The advanced contract
+editor remains available. Course homes automatically generate a **Section /
+Chapter title / Summary** table from the TOC and each chapter's short summary.
+Saving changes updates the table on the next preview/build without editing the
+course notebook. Production retains the existing visibility/lifecycle filtering.
+
+Related-content controls throughout the CMS search titles and stable IDs while
+typing. Suggestions show title, kind, ID and lifecycle; select a result to link it,
+and remove selections to unlink. Multiple selections preserve order without
+duplicates. Keyboard selection uses arrows/Enter, and Escape dismisses results.
+Native select controls work without JavaScript. The read-only `/cms/lookup`
+endpoint supports `q`, `kind` and `parent`; saves still validate registered IDs.
+Course API patches accept `contract` alongside metadata for an atomic brief save.
+Legacy course planning text is offered for recovery when the contract summary is
+empty, and only persisted on an explicit save. Existing unknown planning fields
+and actualized facts are preserved.
 Portfolio editors accept a featured image (PNG, JPEG, WebP, or GIF, up to 20 MB)
 and figure caption. Saving stores the image under `content/assets/portfolio/`
 with the metadata in one transaction. Portfolio cards show it below the abstract;
@@ -141,8 +172,9 @@ in one recoverable save. The name comes from the configured project name or
 the final segment of the stable ID. Existing project code is reused untouched.
 Drafts may start before the abstract and featured figure are complete;
 publication still requires the abstract, image, and caption.
-Planned project pages group source and related-page links under “Related content:”
-as bullets. They include the reserved active code URL before the directory exists;
+Planned project pages and new notebook drafts give scope notes their own section.
+References, source code, and related-page links appear together under
+“References and related content.” They include the reserved active code URL before the directory exists;
 draft/published entries require the code directory, and archived references must
 always resolve to existing archived code.
 The global refresh builds saved inputs and reports progress/errors without
@@ -174,7 +206,9 @@ Published photos render as individual H2 sections in Personal. Working previews
 also show draft photos with the same yellow publication panel used by Portfolio,
 including image readiness and the next CMS action; production
 excludes draft photos and their assets. The gallery has no document-level status
-callout. Captions appear above images. All draft pages and photos use the shared
+callout. Captions appear after images. Personal renders once from
+`frontend/templates/site/personal.qmd.j2`, without a generated gallery notebook or duplicate page.
+All draft pages and photos use the shared
 yellow publication-status panel with instructions, visible only in working previews. Draft course cards, course sidebar
 links, and post listings show matching yellow `draft` badges. Production excludes
 draft pages, links, cards, and assets.
@@ -192,7 +226,9 @@ section's overview; a Back link remains available while editing.
 Posts support full or partial title search. Collections use pagination and
 scrollable lists. Editor pagination
 keeps every field in the form so page changes retain edits and selected uploads.
-Personal has **Add photo** and **Edit photos** actions; Add photo opens the composer.
+Personal's **Add photo** action opens a standalone composer with Heading, Photo,
+Caption, Lifecycle, and Width. Saving adds only that photo and returns to Personal;
+existing photos retain their individual Edit links.
 
 Kanban is the final author tab. Its columns are **To do**, **In progress**, **Review**,
 and **Done** (CLI values `todo`, `in-progress`, `review`, `done`). Cards persist in
@@ -261,7 +297,7 @@ the compact photo list with per-photo up and down controls. Portfolio row **Edit
 links open the combined metadata, abstract, image and plan editor with editing
 already enabled. Save and Cancel return to Portfolio; no second editor is needed.
 Artifact editors keep Publish (or Return to draft), Delete, Cancel and Save in
-the same toolbar. Planned entries also offer Start and edit there. Publication
+the same toolbar. Planned entries offer Start draft there once their core brief is complete. Publication
 uses the saved revision and stays disabled while metadata has unsaved changes.
 Photo width fields show
 `100%` as the blank/default hint. Kanban cards show links and actions directly;

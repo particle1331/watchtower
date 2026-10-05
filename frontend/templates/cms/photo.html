@@ -1,1 +1,3 @@
-{% extends 'base.html' %}{% block content %}{% include 'photo_fragment.html' %}{% endblock %}
+{% extends 'base.html' %}
+{% block page_actions %}{% import 'editor_actions.html' as toolbar with context %}{{ toolbar.photo_actions() }}{% endblock %}
+{% block content %}{% include 'photo_fragment.html' %}{% endblock %}

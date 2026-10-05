@@ -33,7 +33,7 @@ def test_real_create_execute_preview_publish_workflow(content_service, monkeypat
     for name in ("published", "draft"):
         (images / f"{name}.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="gray"/></svg>')
     service.update_gallery({"version": 1, "photos": [{"heading": f"{name.title()} photo", "path": f"content/assets/photos/{name}.svg", "caption": f"{name.title()} caption", "lifecycle": name, "width": "80%" if name == "published" else "50%"} for name in ("published", "draft")]})
-    service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners"}})
+    service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
     service.start("course/example")
     service.create({"id": "course/example/01", "kind": "chapter", "title": "Chapter", "toc_title": "01. Chapter", "section": "main", "parent": "course/example", "path": "content/notebooks/courses/example/01.ipynb", "planned_content": "Topic", "planned_lab_and_evidence": "Check"})
     service.start("course/example/01")
@@ -49,16 +49,15 @@ def test_real_create_execute_preview_publish_workflow(content_service, monkeypat
     assert "callout-caution" not in gallery
     assert "next:    Set Published in CMS" in gallery
     assert "callout-note" not in gallery
-    for route in ["gallery.html", "personal.html"]:
-        photo_page = (Path(preview["output_location"]) / route).read_text()
-        assert 'id="TOC"' in photo_page
-        toc = photo_page.split('<nav id="TOC"', 1)[1].split('</nav>', 1)[0]
-        assert 'href="#published-photo"' in toc
-        assert 'href="#draft-photo"' in toc
-        image = re.search(r'<img[^>]*src="[^"]*photos/published.svg"[^>]*>', photo_page).group(0)
-        assert re.search(r'width:\s*80(?:\.0+)?%', image), image
-        image = re.search(r'<img[^>]*src="[^"]*photos/draft.svg"[^>]*>', photo_page).group(0)
-        assert re.search(r'width:\s*50(?:\.0+)?%', image), image
+    assert not (Path(preview["output_location"]) / "personal.html").exists()
+    assert 'id="TOC"' in gallery
+    toc = gallery.split('<nav id="TOC"', 1)[1].split('</nav>', 1)[0]
+    assert 'href="#published-photo"' in toc
+    assert 'href="#draft-photo"' in toc
+    image = re.search(r'<img[^>]*src="[^"]*photos/published.svg"[^>]*>', gallery).group(0)
+    assert re.search(r'width:\s*80(?:\.0+)?%', image), image
+    image = re.search(r'<img[^>]*src="[^"]*photos/draft.svg"[^>]*>', gallery).group(0)
+    assert re.search(r'width:\s*50(?:\.0+)?%', image), image
     for route in ["nb/posts/figure.html", "nb/courses/example/index.html", "nb/courses/example/01.html"]:
         draft_page = (Path(preview["output_location"]) / route).read_text()
         assert 'id="quarto-draft-alert"' not in draft_page

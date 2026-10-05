@@ -9,9 +9,10 @@
 {% if plan.detached_links %}<details open><summary>Links to detach</summary><p>The following records will remain; their links to the deleted entries will be removed.</p><ul>{% for link in plan.detached_links %}<li>{{ link.kind }}: {{ link.title or link.id }} — {{ link.artifact_ids | join(', ') }}</li>{% endfor %}</ul></details>{% endif %}
 <form method="post" action="/cms/delete/{{ plan.artifact.id | urlpath }}">
 <input type="hidden" name="revision" value="{{ submitted.revision if submitted else plan.revision }}">
-<label><input type="checkbox" name="confirm" value="{{ plan.artifact.id }}" required {% if submitted and submitted.confirm == plan.artifact.id %}checked{% endif %}> <span>Delete <strong>{{ plan.artifact.title }}</strong> and retain its files</span></label>
+<input type="hidden" name="confirm" value="{{ plan.artifact.id }}">
+<label class="field"><span>Type the stable ID to confirm deletion</span><input type="text" name="confirmation_id" value="{{ submitted.confirmation_id if submitted else '' }}" placeholder="{{ plan.artifact.id }}" autocomplete="off" autocapitalize="off" spellcheck="false" required data-delete-id="{{ plan.artifact.id }}"><small>Enter this ID exactly: <code>{{ plan.artifact.id }}</code></small></label>
 {% if plan.removed | length > 1 %}<label><input type="checkbox" name="cascade" value="yes" required {% if submitted and submitted.cascade == 'yes' %}checked{% endif %}> <span>Include all {{ plan.removed | length - 1 }} chapters listed above</span></label>{% endif %}
-<div class="actions"><button class="danger" {% if error and error.code == 'conflict' %}disabled{% endif %}>Delete {{ plan.artifact.kind }}</button><a class="button" href="/cms/artifact/{{ plan.artifact.id | urlpath }}">Cancel</a></div>
+<div class="actions"><button class="danger" type="submit" data-delete-submit data-delete-blocked="{{ 'true' if error and error.code == 'conflict' else 'false' }}" {% if error and error.code == 'conflict' %}disabled{% endif %}>Delete {{ plan.artifact.kind }}</button><a class="button" href="{{ return_url if plan.artifact.kind == 'chapter' else '/cms/artifact/' + (plan.artifact.id | urlpath) }}">Cancel</a></div>
 </form>
 </section>
 {% endblock %}

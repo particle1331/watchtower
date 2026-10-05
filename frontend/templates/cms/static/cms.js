@@ -1,13 +1,23 @@
 /* Native form submission and Cancel links also work without JavaScript. */
 (() => {
-  const editors = () => [...document.querySelectorAll('form[data-editor], form[data-board-editor]')];
+  const editors = () => [...document.querySelectorAll('form[data-editor], form[data-board-editor], form[data-outline-form]')];
   const values = form => JSON.stringify([...form.querySelectorAll('input, textarea, select')]
     .filter(input => input.name && !['revision', 'snapshot'].includes(input.name))
-    .map(input => [input.name, input.value]));
+    .map(input => [input.name, input.multiple ? [...input.selectedOptions].map(option => option.value) : input.value]));
   const dirty = () => editors().some(form => form.dataset.dirty === 'true');
   let leaving = false;
   let refreshing = false;
   let logState = null;
+
+  document.querySelectorAll('input[data-delete-id]').forEach(input => {
+    const button = input.form?.querySelector('[data-delete-submit]');
+    if (!button) return;
+    const update = () => {
+      button.disabled = input.value !== input.dataset.deleteId || button.dataset.deleteBlocked === 'true';
+    };
+    input.addEventListener('input', update);
+    update();
+  });
 
   const header = document.querySelector('body > header');
   const updateHeaderHeight = () => {
@@ -63,12 +73,13 @@
       const busy = form.dataset.busy === 'true';
       const fields = form.querySelector('[data-editor-fields]');
       if (fields) fields.disabled = !editing || busy;
-      form.querySelectorAll('[data-begin-edit]').forEach(button => {
+      const toolbar = form.id ? document.querySelector(`[data-editor-toolbar="${form.id}"]`) : null;
+      [...form.querySelectorAll('[data-begin-edit]'), ...(toolbar?.querySelectorAll('[data-begin-edit]') || [])].forEach(button => {
         button.hidden = editing;
         button.disabled = busy;
       });
-      const save = form.querySelector('[data-save]');
-      const cancel = form.querySelector('[data-cancel]');
+      const save = form.querySelector('[data-save]') || toolbar?.querySelector('[data-save]');
+      const cancel = form.querySelector('[data-cancel]') || toolbar?.querySelector('[data-cancel]');
       const status = form.querySelector('[data-edit-status]');
       if (save) { save.hidden = !editing; save.disabled = busy; }
       if (cancel) { cancel.hidden = !editing; cancel.setAttribute('aria-disabled', String(busy)); }
@@ -77,8 +88,8 @@
     });
     const editorBusy = editors().some(form => form.dataset.busy === 'true');
     document.querySelectorAll('[data-publication-action]').forEach(button => {
-      button.disabled = unsaved || editorBusy;
-      button.title = unsaved ? 'Save or cancel your changes before changing publication state.' : '';
+      button.disabled = unsaved || editorBusy || button.hasAttribute('data-blocked');
+      button.title = unsaved ? 'Save or cancel your changes before changing publication state.' : button.hasAttribute('data-blocked') ? 'Complete the core plan before starting' : '';
     });
     const refresh = document.getElementById('refresh-preview');
     const buildStatus = document.getElementById('build-status')?.dataset.buildStatus;
@@ -163,7 +174,106 @@
     });
   }
 
+  let relationshipCounter = 0;
+  function initializeRelationships() {
+    document.querySelectorAll('[data-relationship]').forEach(picker => {
+      if (picker.dataset.initialized) return;
+      picker.dataset.initialized = 'true';
+      const select = picker.querySelector('[data-relationship-select]');
+      const enhanced = picker.querySelector('[data-relationship-enhanced]');
+      const search = picker.querySelector('[data-relationship-search]');
+      const results = picker.querySelector('[data-relationship-results]');
+      const chips = picker.querySelector('[data-relationship-chips]');
+      const status = picker.querySelector('[data-relationship-status]');
+      const multiple = picker.dataset.multiple === 'true';
+      const originalOptions = [...select.options];
+      const listId = `relationship-results-${++relationshipCounter}`;
+      results.id = listId;
+      search.setAttribute('aria-controls', listId);
+      select.closest('label').hidden = true;
+      enhanced.hidden = false;
+      let matches = [], active = -1, requestNumber = 0, timer, controller;
+      const selected = () => [...select.selectedOptions].filter(option => option.value);
+      function close() {
+        results.hidden = true; search.setAttribute('aria-expanded', 'false');
+        search.removeAttribute('aria-activedescendant'); active = -1;
+      }
+      function renderChips() {
+        chips.replaceChildren();
+        selected().forEach(option => {
+          const chip = document.createElement('span'); chip.className = 'relationship-chip';
+          const label = document.createElement('span'); label.textContent = option.textContent;
+          const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×';
+          remove.setAttribute('aria-label', `Remove ${option.textContent}`);
+          remove.addEventListener('click', () => {
+            option.selected = false;
+            if (!multiple) select.value = '';
+            select.dispatchEvent(new Event('change', {bubbles: true}));
+            renderChips(); close(); search.focus();
+          });
+          chip.append(label, remove); chips.append(chip);
+        });
+      }
+      function choose(index) {
+        const item = matches[index]; if (!item) return;
+        let option = [...select.options].find(option => option.value === item.id);
+        if (!option) { option = new Option(`${item.title} · ${item.kind} · ${item.id} · ${item.lifecycle}`, item.id); select.add(option); }
+        if (!multiple) [...select.options].forEach(option => option.selected = false);
+        select.append(option); option.selected = true;
+        search.value = ''; close(); renderChips(); status.textContent = 'Content selected.';
+        select.dispatchEvent(new Event('change', {bubbles: true})); search.focus();
+      }
+      function highlight() {
+        [...results.children].forEach((option, index) => option.setAttribute('aria-selected', String(index === active)));
+        if (active >= 0) {
+          search.setAttribute('aria-activedescendant', `${listId}-${active}`);
+          results.children[active]?.scrollIntoView({block: 'nearest'});
+        } else search.removeAttribute('aria-activedescendant');
+      }
+      async function suggest() {
+        const number = ++requestNumber;
+        controller?.abort(); controller = new AbortController();
+        status.textContent = 'Searching…';
+        try {
+          const response = await fetch(`/cms/lookup?q=${encodeURIComponent(search.value)}&kind=${encodeURIComponent(picker.dataset.kind || '')}&parent=${encodeURIComponent(picker.dataset.parent || '')}`, {signal: controller.signal});
+          if (!response.ok) throw new Error('Search failed');
+          const data = await response.json(); if (number !== requestNumber) return;
+          const ids = new Set(selected().map(option => option.value));
+          matches = data.artifacts.filter(item => !ids.has(item.id)); active = -1; results.replaceChildren();
+          matches.forEach((item, index) => {
+            const option = document.createElement('div'); option.id = `${listId}-${index}`;
+            option.setAttribute('role', 'option'); option.setAttribute('aria-selected', 'false');
+            option.textContent = `${item.title} · ${item.kind} · ${item.id} · ${item.lifecycle}`;
+            option.addEventListener('mousedown', event => event.preventDefault());
+            option.addEventListener('click', () => choose(index));
+            results.append(option);
+          });
+          results.hidden = !matches.length; search.setAttribute('aria-expanded', String(!!matches.length));
+          status.textContent = matches.length ? `${matches.length} suggestions. Use arrow keys and Enter to select.` : 'No matching content.';
+        } catch (error) {
+          if (error.name !== 'AbortError') { close(); status.textContent = 'Search unavailable. Reload or use the content selector.'; select.closest('label').hidden = false; }
+        }
+      }
+      search.addEventListener('input', () => { clearTimeout(timer); ++requestNumber; close(); timer = setTimeout(suggest, 150); });
+      search.addEventListener('focus', suggest);
+      search.addEventListener('blur', () => { clearTimeout(timer); ++requestNumber; controller?.abort(); close(); });
+      search.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return; }
+        if (event.key === 'Enter') { event.preventDefault(); if (!results.hidden && active >= 0) choose(active); return; }
+        if (['ArrowDown', 'ArrowUp'].includes(event.key) && matches.length && !results.hidden) {
+          event.preventDefault(); active = (active + (event.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length; highlight();
+        }
+      });
+      select.addEventListener('change', renderChips);
+      select.form?.addEventListener('reset', () => setTimeout(() => {
+        originalOptions.forEach(option => select.append(option)); search.value = ''; close(); renderChips();
+      }, 0));
+      renderChips();
+    });
+  }
+
   function initialize() {
+    initializeRelationships();
     initializeLists();
     editors().forEach(form => {
       if (form.dataset.initialized) return;
@@ -178,7 +288,7 @@
   }
 
   function changed(event) {
-    const form = event.target.closest('form[data-editor], form[data-board-editor]');
+    const form = event.target.closest('form[data-editor], form[data-board-editor], form[data-outline-form]');
     if (!form) return;
     if (event.target.name === 'kind') syncKind(form);
     updateGeneratedId(form);
@@ -221,7 +331,7 @@
     }
     const edit = event.target.closest('[data-begin-edit]');
     if (edit) {
-      const form = edit.closest('form');
+      const form = edit.form || edit.closest('form');
       form.dataset.editing = 'true';
       sync();
       (form.querySelector('summary') || form.querySelector('input:not([type="hidden"]), textarea, select'))?.focus({preventScroll: true});
@@ -236,9 +346,28 @@
       if (cancel.getAttribute('aria-disabled') === 'true') event.preventDefault();
       else leaving = true;
     }
+    const briefCopy = event.target.closest('[data-copy-target]');
+    if (briefCopy) {
+      const text = document.getElementById(briefCopy.dataset.copyTarget);
+      try { await navigator.clipboard.writeText(text.value); briefCopy.textContent = 'Build brief copied'; }
+      catch { text.focus(); text.select(); briefCopy.textContent = 'Select and copy the brief below'; }
+    }
     const copy = event.target.closest('[data-copy]');
     if (copy) {
-      try { await navigator.clipboard.writeText(copy.dataset.copy); copy.textContent = 'Copied'; }
+      try {
+        await navigator.clipboard.writeText(copy.dataset.copy);
+        const originalLabel = copy.dataset.copyLabel || copy.getAttribute('aria-label') || 'Copy ID';
+        copy.dataset.copyLabel = originalLabel;
+        copy.setAttribute('aria-label', 'Card ID copied');
+        copy.setAttribute('title', 'Card ID copied');
+        copy.classList.add('is-copied');
+        window.clearTimeout(copy.copyResetTimer);
+        copy.copyResetTimer = window.setTimeout(() => {
+          copy.setAttribute('aria-label', originalLabel);
+          copy.setAttribute('title', originalLabel);
+          copy.classList.remove('is-copied');
+        }, 1400);
+      }
       catch { window.prompt('Copy canonical source path', copy.dataset.copy); }
     }
   });
@@ -249,6 +378,12 @@
     if (event.target.matches('form[data-publication-form]') && dirty()) {
       event.preventDefault();
       return;
+    }
+    if (event.target.matches('form[data-outline-form]')) {
+      if (editors().some(form => form !== event.target && form.dataset.dirty === 'true')) {
+        event.preventDefault(); window.alert('Save or cancel your other changes before changing the outline.'); return;
+      }
+      leaving = true;
     }
     if (event.target.matches('form[data-board-editor]')) leaving = !editors().some(form => form !== event.target && form.dataset.dirty === 'true');
     else if (!window.htmx && event.target.matches('form[data-editor]')) leaving = true;

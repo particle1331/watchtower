@@ -5,7 +5,7 @@
   {% if bullets %}<ul>{% for bullet in bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>{% endif %}
 {% endmacro %}
 {% macro records(key, label) %}
-<section class="data-group profile-collection">
+<section id="profile-{{ key }}" class="data-group profile-collection">
   <h2>{{ label }} <span class="badge">{{ profile[key] | length }}</span></h2>
   <div class="collection-scroll" data-client-list data-list-label="{{ label }}" tabindex="0" role="region" aria-label="{{ label }} entries">
   {% for row in profile[key] %}
@@ -16,13 +16,23 @@
   </div>
 </section>
 {% endmacro %}
-<section class="data-group profile-group" aria-label="Profile">
+{% if section == 'resume' %}<div class="profile-summary-layout"><div class="profile-summary-content">{% endif %}
+<section id="profile-general" class="data-group profile-group" aria-label="Profile">
   <p class="group-label">Profile</p><h2>{{ profile.name }}</h2><p>{{ profile.summary }}</p>
   {% if section == 'home' %}<section class="data-group"><h2>Homepage introduction</h2>{% for paragraph in profile.homepage_intro %}<p>{{ paragraph }}</p>{% endfor %}</section>{% endif %}
-  <section class="data-group profile-contact"><h2>Contact</h2><div class="contact-links">
+  <section id="profile-contact" class="data-group profile-contact"><h2>Contact</h2><div class="contact-links">
     {% if profile.contact.phone %}<span>{{ profile.contact.phone }}</span>{% endif %}
     {% if profile.contact.email %}<a href="mailto:{{ profile.contact.email }}">{{ profile.contact.email }}</a>{% endif %}
     {% for link in profile_links %}<a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }} ↗</a>{% endfor %}
   </div></section>
   {% if section == 'resume' %}{% for key, label in [('employment', 'Employment'), ('early_employment', 'Early employment'), ('skills', 'Skills'), ('education', 'Education')] %}{{ records(key, label) }}{% endfor %}{% if profile.projects %}{{ records('projects', 'Projects') }}{% endif %}{% endif %}
 </section>
+{% if section == 'resume' %}</div>
+<aside class="profile-section-nav" aria-label="Résumé sections">
+  <h2>On this page</h2>
+  <nav aria-label="Jump to résumé section">
+    <a href="#profile-general">General</a><a href="#profile-contact">Contact</a>
+    {% for key, label in [('employment', 'Employment'), ('early_employment', 'Early employment'), ('skills', 'Skills'), ('education', 'Education')] %}<a href="#profile-{{ key }}">{{ label }}</a>{% endfor %}
+    {% if profile.projects %}<a href="#profile-projects">Projects</a>{% endif %}
+  </nav>
+</aside></div>{% endif %}

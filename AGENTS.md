@@ -72,7 +72,8 @@ imports: `Plot`, `Panel`, `set_format`, and `set_seed`.
 `wt new post`, `new course`, `new chapter`, and `new portfolio` register plans
 without creating source notebooks. `wt start <id>` creates a draft from persisted
 planning data, retains the plan, and refuses existing source files. Post plans
-accept arbitrary Markdown; chapters require planned content and lab/evidence;
+accept arbitrary Markdown; chapter plans may be partial, but start requires
+nonempty planned content and lab/evidence;
 portfolio plans have introduction, what it contains, optional scope notes.
 Starting an active portfolio also initializes and registers `projects/<name>`
 using the same package scaffold as `make project`. Use its configured project
@@ -81,6 +82,8 @@ overwriting it. Notebook, scaffold, and registrations share one recoverable save
 Draft portfolio entries may omit abstract/figure metadata; publication requires
 the abstract, featured figure, and caption.
 Planned portfolio pages include reserved active source URLs before code exists.
+Portfolio planned pages and new drafts put scope notes in their own section;
+references, source code, and related links share “References and related content.”
 Portfolio cards and pages show planned/draft state as yellow diagnostic panels with monospace publication metadata.
 Planned entries include the setup command with `wt start <actual-stable-id>`.
 Active code directories are required for Draft/Published portfolio entries;
@@ -170,12 +173,50 @@ Published photos render as individual H2 sections in Personal. Working previews
 also show draft photos with the same yellow publication panel used by Portfolio,
 including image readiness and the next CMS action; production
 excludes draft photos and their assets. The gallery has no document-level status
-callout. Captions appear above images. All draft pages and photos use the shared
+callout. Captions appear after images. Personal renders once from
+`frontend/templates/site/personal.qmd.j2`, without a generated gallery notebook or duplicate page.
+All draft pages and photos use the shared
 yellow publication-status panel with instructions, visible only in working previews. Draft course cards, course sidebar
 links, and post listings show matching yellow `draft` badges. Production excludes
 draft pages, links, cards, and assets.
 The gallery page state is derived automatically; there is no collection-level
 publication control in the CMS.
+
+## CMS planning and course organization
+
+New CMS plans default to private visibility, labeled Not on the live site.
+Guided creation/editing fields capture post outlines, portfolio scope, course
+contracts and chapter content/labs, plus optional audience, evidence, references
+and next steps. Partial plans can be saved. Start requires a post outline,
+portfolio introduction/contents, course purpose/audience/summary, or chapter
+content/lab-and-evidence across CMS, CLI and API. Copy build brief exports saved
+fields, IDs, paths and context; course briefs include ordered chapter plans.
+Notebook creation preserves all plan text across cells within the size limit.
+
+Use `/cms/courses/<slug>` to edit the course brief and organize its outline.
+Add sections, rename/reorder them, add chapters in context, reorder chapters or
+move them between sections within that course. Remove empty sections only,
+retaining at least one. All actions carry revisions and atomically synchronize
+catalog membership, contract TOC and chapter plans. The advanced contract editor
+remains available. A course metadata API patch can include `contract` for an
+atomic brief save. Do not derive actualized facts from the plan.
+
+Course homes and the CMS workspace derive their chapter table from ordered TOC,
+full catalog chapter title, and chapter-plan `summary`, with columns Section,
+Chapter title, Summary. Titles link to eligible chapter pages. Missing summaries
+prompt Add summary in CMS, show a placeholder in preview, and stay empty in
+production. Builds filter rows through the existing parent/child publication
+rules. Do not maintain a second table in authored notebooks or generated files.
+
+All related stable-ID controls use search/select with suggestions by title or ID,
+showing title/kind/ID/lifecycle. Multi-selects preserve order and deduplicate;
+single links can be cleared. Native selects are the no-JavaScript fallback.
+`/cms/lookup` is read-only (`q`, optional `kind`/`parent` filters). Search text is
+never a saved relationship; shared services validate selected registered IDs.
+Conflicts preserve submitted selections and original revisions, including missing
+IDs for explicit repair. Legacy course `planned.content` is offered as a summary
+only when the contract summary is empty, and persisted on explicit save; preserve
+differing legacy text and unknown planning fields.
 
 ## Author Kanban and CMS collections
 
@@ -204,7 +245,9 @@ and record field order match the résumé view; stale saves preserve submitted
 values and the original revision.
 Posts support title search with pagination preserving active filters. Long lists
 scroll; client pagination retains all form controls and selected uploads in the DOM.
-Personal provides Add photo (opens its composer) and Edit photos actions.
+Personal provides Add photo, opening a standalone composer with Heading, Photo,
+Caption, Lifecycle, and Width. Saving adds only that photo and returns to Personal;
+existing photos retain their individual Edit links.
 
 ## Entity deletion
 

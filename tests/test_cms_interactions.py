@@ -134,7 +134,11 @@ def test_profile_edit_mode_starts_ready_and_returns_to_origin(author, view):
         assert 'data-editing="true"' in editor.text
         assert 'data-begin-edit' not in editor.text
         assert f'data-cancel href="/cms/{view}"' in editor.text
-        assert f'href="/cms/{view}">← Back to' in editor.text
+        header = re.search(r'<header>(.*?)</header>', editor.text, re.S).group(1)
+        assert f'data-cancel href="/cms/{view}"' in header
+        assert 'aria-label="Cancel editing"' in header
+        assert 'form="profile-editor-form" data-save>Save</button>' in header
+        assert 'class="action-bar' not in editor.text
         form = photo_form(editor)
         form.update(profile_view=view, **{'field:["summary"]': 'Updated summary'})
         saved = client.post('/cms/data/profile', data=form, follow_redirects=False)

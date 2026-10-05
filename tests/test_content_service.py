@@ -157,7 +157,7 @@ def test_plan_file_is_persisted_and_confined(content_service):
 
 def test_course_parent_withdrawal_preserves_children(content_service):
     service = content_service
-    service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners"}})
+    service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
     service.start("course/example")
     service.publish("course/example")
     service.create({"id": "course/example/01", "kind": "chapter", "title": "Chapter", "toc_title": "01. Chapter", "section": "main", "parent": "course/example", "path": "content/notebooks/courses/example/01.ipynb", "planned_content": "Topic", "planned_lab_and_evidence": "Check"})

@@ -1,5 +1,5 @@
 ---
-title: Personal
+title: {{ title | default('Personal') | tojson }}
 sidebar: false
 toc: true
 ---
@@ -12,10 +12,11 @@ A few snapshots from life beyond the desk.
 {% if photo.lifecycle == 'draft' %}
 {% with entry=photo, photo_status=true, image_ready=photo.src %}{% include 'site/publication-meta.html.j2' %}{% endwith %}
 {% endif %}
-{{ photo.caption }}
 
 {% if photo.src %}![]({{ photo.src }}){.lightbox fig-alt={{ photo.caption | tojson }}{% if photo.width %} width={{ photo.width | tojson }}{% endif %}}
 {% else %}{% include 'site/photo-placeholder.html.j2' %}
 {% endif %}
+
+{{ photo.caption }}
 
 {% endfor %}

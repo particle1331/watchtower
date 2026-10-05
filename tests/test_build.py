@@ -50,7 +50,7 @@ def workspace(tmp_path, monkeypatch):
     snapshot = SimpleNamespace(state=state, files=files, revision="saved-revision")
     monkeypatch.setattr(build_module, "ContentService", lambda root: SimpleNamespace(snapshot=lambda: snapshot))
     monkeypatch.setattr(build_module, "source_path", lambda a, state: a.path if a.kind != "project" else None)
-    monkeypatch.setattr(build_module, "route_for", lambda a: a.path.replace("content/notebooks/", "nb/"))
+    monkeypatch.setattr(build_module, "route_for", lambda a: str(Path(a.path.replace("content/notebooks/", "nb/")).with_suffix(".qmd")) if a.kind == "gallery" else a.path.replace("content/notebooks/", "nb/"))
     monkeypatch.setattr(build_module, "eligible", lambda a, artifacts, mode: mode == "preview" or (a.visibility == "public" and a.lifecycle in {"planned", "published"}))
     monkeypatch.setattr(build_module, "plan_body", lambda a, state: a.planned["content"])
     def pdf(stage):
@@ -389,8 +389,14 @@ def test_missing_authored_image_fails_before_quarto_and_keeps_success(workspace,
     assert service.last_successful()["id"] == success["id"]
 
 
-def test_personal_navigation_and_alias_show_only_rows_of_photos(workspace):
+def test_personal_renders_once_from_jinja_at_the_gallery_route(workspace):
+    from watchtower.models import Artifact, route_for
+
+    legacy = Artifact(id="gallery/photos", kind="gallery", title="Personal", path="content/data/photos.yaml", route="nb/photos/photos.ipynb")
+    assert route_for(legacy) == "nb/photos/photos.qmd"
     root, snapshot = workspace
+    template = "frontend/templates/site/personal.qmd.j2"
+    snapshot.files[template] = snapshot.files[template].replace(b"A few snapshots from life beyond the desk.", b"Shared gallery introduction.")
     gallery = artifact("gallery/photos", kind="gallery", path="content/notebooks/photos/photos.ipynb", title="Personal")
     snapshot.state.artifacts.append(gallery)
     note = artifact("personal/notes", kind="personal", visibility="private", title="Private prose notebook")
@@ -402,27 +408,25 @@ def test_personal_navigation_and_alias_show_only_rows_of_photos(workspace):
         stage = BuildService(root).generate(mode)
         config = yaml.safe_load((stage / "_quarto.yml").read_text())
         personal_nav = next(entry for entry in config["website"]["navbar"]["left"] if entry["text"] == "personal")
-        assert personal_nav["href"] == "nb/photos/photos.ipynb"
-        alias = (stage / "personal.qmd").read_text()
-        assert "A real photo caption.\n\n![]" in alias
-        assert "## First photo" in alias
-        assert ("Unfinished photo" in alias) == (mode == "preview")
-        assert ('aria-label="Publication status"' in alias) == (mode == "preview")
+        assert personal_nav["href"] == "nb/photos/photos.qmd"
+        assert "personal.qmd" not in config["project"]["render"]
+        assert "nb/photos/photos.ipynb" not in config["project"]["render"]
+        assert not (stage / "personal.qmd").exists()
+        assert not (stage / "nb/photos/photos.ipynb").exists()
+        page = (stage / "nb/photos/photos.qmd").read_text()
+        assert "Shared gallery introduction." in page
+        assert page.index("![](") < page.index("\nA real photo caption.")
+        assert "## First photo" in page
+        assert ("Unfinished photo" in page) == (mode == "preview")
+        assert ('aria-label="Publication status"' in page) == (mode == "preview")
         assert (stage / "assets/photos/draft.svg").exists() == (mode == "preview")
-        assert "assets/photos/first%20photo.svg" in alias
-        assert "Private prose notebook" not in alias
-        assert "personal/notes" not in alias
-        notebook = nbformat.read(stage / "nb/photos/photos.ipynb", as_version=4)
-        assert "## First photo" in notebook.cells[1].source
-        assert "A real photo caption.\n\n![]" in notebook.cells[1].source
-        header = yaml.safe_load(notebook.cells[0].source.split("---", 2)[1])
+        assert "../../assets/photos/first%20photo.svg" in page
+        assert "Private prose notebook" not in page
+        assert "personal/notes" not in page
+        header = yaml.safe_load(page.split("---", 2)[1])
         assert header["toc"] is True
         assert "page-layout" not in header
-        assert "{.lightbox fig-alt=" in notebook.cells[1].source
-        assert ("Unfinished photo" in notebook.cells[1].source) == (mode == "preview")
-        assert ('aria-label="Publication status"' in notebook.cells[1].source) == (mode == "preview")
-        assert "Private prose notebook" not in notebook.cells[1].source
-        assert "personal/notes" not in notebook.cells[1].source
+        assert "{.lightbox fig-alt=" in page
         assert (stage / "nb/personal/notes.ipynb").exists() == (mode == "preview")
 
 
@@ -437,17 +441,18 @@ def test_planned_gallery_preview_label_and_production_exclusion(workspace, has_d
         snapshot.files["content/assets/photos/draft.svg"] = b"<svg/>"
     for mode in ["preview", "production"]:
         stage = BuildService(root).generate(mode)
-        notebook = nbformat.read(stage / "nb/photos/photos.ipynb", as_version=4)
+        page = (stage / "nb/photos/photos.qmd").read_text()
+        header, body = page.split("---", 2)[1:]
         show_draft = has_draft and mode == "preview"
-        assert "callout-note" not in notebook.cells[0].source
-        assert 'aria-label="Publication status"' not in notebook.cells[0].source
-        assert ('aria-label="Publication status"' in notebook.cells[1].source) == show_draft
-        assert ("Draft afternoon" in notebook.cells[1].source) == show_draft
-        assert ('aria-label="No Photo"' in notebook.cells[1].source) == show_draft
-        assert ('image:   not uploaded' in notebook.cells[1].source) == show_draft
-        assert ('image:   uploaded' in notebook.cells[1].source) == show_draft
-        assert 'callout-caution' not in notebook.cells[1].source
-        assert ("Draft stub" in notebook.cells[1].source) == show_draft
+        assert "callout-note" not in header
+        assert 'aria-label="Publication status"' not in header
+        assert ('aria-label="Publication status"' in body) == show_draft
+        assert ("Draft afternoon" in body) == show_draft
+        assert ('aria-label="No Photo"' in body) == show_draft
+        assert ('image:   not uploaded' in body) == show_draft
+        assert ('image:   uploaded' in body) == show_draft
+        assert 'callout-caution' not in body
+        assert ("Draft stub" in body) == show_draft
         assert (stage / "assets/photos/draft.svg").exists() == show_draft
         assert gallery.lifecycle == "planned"
         if has_draft:

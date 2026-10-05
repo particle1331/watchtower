@@ -25,6 +25,7 @@ class ArtifactCreate(Artifact):
     contract: CourseInput | None = None
     planned_content: str | None = None
     planned_lab_and_evidence: str | None = None
+    plan: dict[str, Any] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -58,6 +59,7 @@ class ArtifactMetadataPatch(BaseModel):
 class ArtifactPatch(ArtifactMetadataPatch):
     detail: dict[str, Any] | None = None
     plan: dict[str, Any] | None = None
+    contract: dict[str, Any] | None = None
 
 
 class StructuredUpdate(BaseModel):

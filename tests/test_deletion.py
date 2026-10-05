@@ -25,7 +25,7 @@ def post(content, identifier="post/example"):
 
 
 def course(content):
-    content.create({"id": "course/example", "kind": "course", "title": "Course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "planned": {"summary": "Course plan", "chapters": []}}})
+    content.create({"id": "course/example", "kind": "course", "title": "Course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Python users", "planned": {"summary": "Course plan", "chapters": []}}})
     for name in ["overview", "chapter"]:
         content.create({"id": f"course/example/{name}", "kind": "chapter", "title": name, "toc_title": name, "path": f"content/notebooks/courses/example/{name}.ipynb", "parent": "course/example", "section": "main", "planned_content": "Topic", "planned_lab_and_evidence": "Check"})
     contract = content.read_data("course/example")["data"]
@@ -198,7 +198,7 @@ def test_http_cms_confirmations_and_stale_review(content):
         assert client.post('/cms/delete/post/example', data={"revision": token}).status_code == 422
         assert client.delete('/api/artifacts/post/example').status_code == 428
         content.update('post/example', {"description": "Changed"})
-        stale = client.post('/cms/delete/post/example', data={"revision": token, "confirm": "post/example"})
+        stale = client.post('/cms/delete/post/example', data={"revision": token, "confirm": "post/example", "confirmation_id": "post/example"})
         assert stale.status_code == 412
         assert f'name="revision" value="{token}"' in stale.text
         assert 'Reload deletion review' in stale.text
@@ -209,8 +209,8 @@ def test_http_cms_confirmations_and_stale_review(content):
         page = client.get('/cms/delete/course/example')
         assert 'Include all 2 chapters' in page.text
         token = re.search(r'name="revision" value="([^"]+)"', page.text)[1]
-        assert client.post('/cms/delete/course/example', data={"revision": token, "confirm": "course/example"}).status_code == 409
-        response = client.post('/cms/delete/course/example', data={"revision": token, "confirm": "course/example", "cascade": "yes"}, follow_redirects=False)
+        assert client.post('/cms/delete/course/example', data={"revision": token, "confirm": "course/example", "confirmation_id": "course/example"}).status_code == 409
+        response = client.post('/cms/delete/course/example', data={"revision": token, "confirm": "course/example", "confirmation_id": "course/example", "cascade": "yes"}, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers['location'] == '/cms/courses?deleted=1'
 

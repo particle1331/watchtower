@@ -12,6 +12,8 @@ import nbformat
 from markdown_it import MarkdownIt
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from watchtower.planning import extra_plan_body
+
 
 class Record(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -165,6 +167,7 @@ class Section(Record):
 
 
 class ChapterPlan(Record):
+    model_config = ConfigDict(extra="allow")
     chapter_id: str
     section: str
     summary: str | None = None
@@ -384,12 +387,13 @@ def source_path(artifact: Artifact, state: Workspace) -> str | None:
 
 
 def route_for(artifact: Artifact) -> str:
+    if artifact.kind == "gallery":
+        # Keep the public HTML URL when converting a legacy notebook route.
+        return Path(artifact.route or "gallery.qmd").with_suffix(".qmd").as_posix()
     if artifact.route:
         return artifact.route
     if artifact.kind == "portfolio":
         return f"nb/portfolio/{artifact.id.split('/')[-1]}.ipynb"
-    if artifact.kind == "gallery":
-        return "gallery.qmd"
     path = str(artifact.path).replace("content/notebooks/", "nb/", 1)
     return f"{path}/index.ipynb" if artifact.kind == "course" else path
 
@@ -435,14 +439,21 @@ def has_content(notebook: nbformat.NotebookNode, chapter_title: str | None = Non
 
 
 def plan_body(artifact: Artifact, state: Workspace) -> str:
+    def with_extra(body: str, kind: str, plan: dict[str, Any], exclude: set[str]) -> str:
+        extra = extra_plan_body(kind, plan, exclude)
+        return body + "\n\n" + extra if extra else body
     if artifact.kind == "chapter":
         course = state.courses[str(artifact.parent)]
         plan = next((p for p in course.planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
-        return f"# {artifact.title}\n\n## Planned content\n\n{plan.get('content', '')}\n\n## Planned lab and evidence\n\n{plan.get('lab_and_evidence', '')}"
+        body = f"# {artifact.title}\n\n## Planned content\n\n{plan.get('content', '')}\n\n## Planned lab and evidence\n\n{plan.get('lab_and_evidence', '')}"
+        return with_extra(body, "chapter", plan, {"chapter_id", "section", "content", "lab_and_evidence"})
     if artifact.kind == "portfolio":
         detail = next(p for p in state.portfolio if p.id == artifact.id)
         plan = detail.planned
-        body = f"[← Portfolio](/portfolio.html)\n\n{plan.get('introduction', '')}\n\n## What it contains\n\n{plan.get('what_it_contains', '')}\n\n## Explore the project\n\n"
+        body = f"[← Portfolio](/portfolio.html)\n\n{plan.get('introduction', '')}\n\n## What it contains\n\n{plan.get('what_it_contains', '')}"
+        if plan.get("scope_notes"):
+            body += f"\n\n## Scope notes\n\n{plan['scope_notes']}"
+        body = with_extra(body, "portfolio", plan, {"introduction", "what_it_contains", "scope_notes", "references"})
         links = []
         reserved = artifact.lifecycle == "planned" and detail.project_source == "active"
         url = source_url(detail, state.settings, reserved_name=artifact.id.split("/")[-1] if reserved else None)
@@ -452,10 +463,25 @@ def plan_body(artifact: Artifact, state: Workspace) -> str:
         for related in state.artifacts:
             if related.id in artifact.relations and eligible(related, state.artifacts):
                 links.append(f"- [{related.title}](/{Path(route_for(related)).with_suffix('.html').as_posix()})")
-        if links:
-            body += "Related content:\n\n" + "\n".join(links) + "\n\n"
-        return body + plan.get("scope_notes", "")
+        references = plan.get("references") or ""
+        resources = [part for part in (references, "\n".join(links)) if part]
+        if resources:
+            body += "\n\n## References and related content\n\n" + "\n\n".join(resources)
+        return body
     if artifact.kind == "course":
         course = state.courses[artifact.id]
-        return f"{course.purpose}\n\n{course.audience}\n\n{course.planned.get('summary', '')}"
-    return str(artifact.planned.get("content", artifact.description or ""))
+        body = f"{course.purpose}\n\n{course.audience}\n\n{course.planned.get('summary') or artifact.planned.get('content', '')}"
+        return with_extra(body, "course", course.planned, {"summary", "chapters"})
+    body = str(artifact.planned.get("content", artifact.description or ""))
+    return with_extra(body, artifact.kind, artifact.planned, {"content"})
+
+
+def course_rows(contract: CourseContract, artifacts: list[Artifact]) -> list[dict[str, Any]]:
+    """The canonical ordered chapter table, filtered by the caller's audience."""
+    by_id = {artifact.id: artifact for artifact in artifacts}
+    plans = {plan["chapter_id"]: plan for plan in contract.planned.get("chapters", [])}
+    return [
+        {"section_id": section.id, "section": section.title or ("Chapters" if section.id == "main" else section.id),
+         "chapter": by_id[chapter_id].model_dump(mode="json"), "summary": plans.get(chapter_id, {}).get("summary") or ""}
+        for section in contract.toc for chapter_id in section.chapters if chapter_id in by_id
+    ]

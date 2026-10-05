@@ -1,1 +1,3 @@
-{% extends 'base.html' %}{% block content %}{% include 'data_fragment.html' %}{% endblock %}
+{% extends 'base.html' %}
+{% block page_actions %}{% import 'editor_actions.html' as toolbar with context %}{{ toolbar.data_actions() }}{% endblock %}
+{% block content %}{% include 'data_fragment.html' %}{% endblock %}

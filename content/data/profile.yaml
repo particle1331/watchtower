@@ -36,10 +36,12 @@ education:
     MB Frames
 - dates: July 2019 -- Oct 2019
   degree: Data Science Bootcamp
-  description: "Attended a 10-week bootcamp which included 160 hours of in-class learning\
-    \ in addition to coursework. At the end of the bootcamp, I presented my capstone\
-    \ project about modeling nonlinear chaotic systems using neural networks implemented\
-    \ in TensorFlow 1.x to industry leaders in Makati City, Philippines.\r\n"
+  description: 'Attended a 10-week bootcamp which included 160 hours of in-class learning
+    in addition to coursework. At the end of the bootcamp, I presented my capstone
+    project about modeling nonlinear chaotic systems using neural networks implemented
+    in TensorFlow 1.x to industry leaders in Makati City, Philippines.
+
+    '
   institution: Eskwelabs
 employment:
 - bullets:
@@ -160,7 +162,9 @@ skills:
     of [Dive into Deep Learning](https://www.d2l.ai/) — a widely used open-source
     DL textbook; acknowledged as a [contributor](https://www.d2l.ai/chapter_preface/index.html#acknowledgments).'
   name: Others
-summary: "ML Engineer building machine learning and AI systems: from predictive models\
-  \ to applied LLMs and agentic systems, and the infrastructure that keeps them running\
-  \ in prod.\r\n"
+summary: 'ML Engineer building machine learning and AI systems: from predictive models
+  to applied LLMs and agentic systems, and the infrastructure that keeps them running
+  in prod.
+
+  '
 version: 1

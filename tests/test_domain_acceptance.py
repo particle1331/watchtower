@@ -14,7 +14,7 @@ from watchtower.services.workspace import ServiceError
 
 def course(service, slug="example", published=False):
     key = f"course/{slug}"
-    service.create({"id": key, "kind": "course", "title": f"{slug} course", "path": f"content/notebooks/courses/{slug}", "contract": {"purpose": "Teach", "audience": "Learners"}})
+    service.create({"id": key, "kind": "course", "title": f"{slug} course", "path": f"content/notebooks/courses/{slug}", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
     if published:
         service.start(key)
         service.publish(key)
@@ -56,7 +56,8 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     text = "\n".join(cell.source for cell in nb.cells)
     assert "Investigate the concrete problem." in text
     assert "## What it contains" in text
-    assert "## Explore the project" in text
+    assert "## Scope notes" in text
+    assert "## References and related content" in text
     assert "https://github.com/particle1331/watchtower/tree/main/projects/example" in text
     assert "Define the project limits." in text
     nb.cells.append(nbformat.v4.new_code_cell("#| code-fold: true\nprint(1)", execution_count=3, outputs=[nbformat.v4.new_output("stream", name="stdout", text="1\n")]))
@@ -142,14 +143,17 @@ def test_planned_portfolio_related_content_includes_reserved_source_before_code_
     service.create({"id": "portfolio/future", "kind": "portfolio", "title": "Future project",
         "relations": [related_id, private_id], "detail": {
             "project_name": project_name, "notebook_path": "content/notebooks/portfolio/future.ipynb",
-            "planned": {"introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope notes"},
+            "planned": {"introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope notes",
+                        "references": "[Prior work](https://example.org/prior)"},
         }})
     record = service.inspect("portfolio/future")
     source_name = project_name or "future"
-    assert f"Related content:\n\n- [Reserved source code](https://github.com/particle1331/watchtower/tree/main/projects/{source_name})\n- [related course]" in record["plan"]
+    assert f"## References and related content\n\n[Prior work](https://example.org/prior)\n\n- [Reserved source code](https://github.com/particle1331/watchtower/tree/main/projects/{source_name})\n- [related course]" in record["plan"]
     assert "[Example]" not in record["plan"]
     assert "nb/posts/example" not in record["plan"]
-    assert record["plan"].endswith("\n\nScope notes")
+    assert "## Scope notes\n\nScope notes\n\n## References and related content" in record["plan"]
+    assert "## References\n" not in record["plan"]
+    assert "## Explore the project" not in record["plan"]
     assert not (service.root / f"projects/{source_name}").exists()
     assert not (service.root / "content/notebooks/portfolio/future.ipynb").exists()
     service.validate()
@@ -162,6 +166,21 @@ def test_planned_archived_source_still_requires_existing_archive_directory(conte
         service.create({"id": "portfolio/missing", "kind": "portfolio", "title": "Missing archived source",
             "detail": {"project_name": "missing", "project_source": "archived", "archive_date": "2026-09-30"}})
     assert file_state(service) == original
+
+
+@pytest.mark.parametrize("references", ["", "- First reference\n- Second reference"])
+def test_portfolio_resources_do_not_create_empty_scope_section(content_service, references):
+    service = content_service
+    service.create({"id": "portfolio/resources", "kind": "portfolio", "title": "Resources",
+        "detail": {"planned": {"introduction": "Introduction", "what_it_contains": "Contents",
+                               "references": references, "legacy_note": "Keep this note"}}})
+    body = service.inspect("portfolio/resources")["plan"]
+    assert "## Scope notes" not in body
+    assert "## Legacy note\n\nKeep this note" in body
+    assert body.count("## References and related content") == 1
+    assert "- [Reserved source code]" in body
+    if references:
+        assert "- First reference\n- Second reference\n\n- [Reserved source code]" in body
 
 
 def test_photo_lifecycle_updates_gallery_automatically_and_preserves_images(content_service):

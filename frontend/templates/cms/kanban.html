@@ -1,12 +1,11 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% from 'relationship.html' import relationship with context %}
 {% macro card_form(card, action, revision, unsaved=false) %}
 <form method="post" action="/cms/kanban/{{ action }}" data-board-editor {% if unsaved %}data-unsaved{% endif %}>
 <input type="hidden" name="revision" value="{{ revision }}">{% if card.card_id or card.id %}<input type="hidden" name="card_id" value="{{ card.card_id or card.id }}">{% endif %}
 <label>Title<input name="title" value="{{ card.title or '' }}" required autofocus></label>
 <label>Description<textarea name="description" rows="3">{{ card.description or '' }}</textarea></label>
 <label>Column<select name="column">{% for column in board.columns %}<option value="{{ column.id }}" {% if (card.column or 'todo') == column.id %}selected{% endif %}>{{ column.title }}</option>{% endfor %}</select></label>
-<label>Linked stable IDs<textarea name="artifact_ids" rows="3">{{ card.artifact_ids if card.artifact_ids is string else card.artifact_ids | default([]) | join('\n') }}</textarea><small>One registered artifact ID per line. Links are validated when saved.</small></label>
-<div class="link-picker"><label>Find an artifact<input list="kanban-artifacts" data-link-picker placeholder="Type a title or stable ID"></label><button type="button" data-link-add>Link artifact</button></div>
+{{ relationship('artifact_ids', card.artifact_ids | default([]), true, 'Linked content') }}
 <div class="actions"><button type="submit" class="primary">{{ 'Add card' if action == 'create' else 'Save card' }}</button><a href="/cms/kanban" data-dialog-close>Cancel</a><small data-edit-status></small></div>
 </form>
 {% endmacro %}
@@ -24,7 +23,7 @@
 <h2>{{ column.title }} <span class="badge">{{ cards | length }}</span></h2>
 <div class="collection-scroll" data-client-list data-list-label="{{ column.title }} cards" tabindex="0" role="region" aria-label="{{ column.title }} cards">
 {% for card in cards %}<article class="data-record kanban-card" data-list-item>
-<h3>{{ card.title }} <span class="kanban-ref">{{ card.ref }}</span> <button type="button" class="kanban-copy-ref" data-copy="{{ card.ref }}">Copy ID</button></h3>{% if card.description %}<p class="card-description">{{ card.description }}</p>{% endif %}
+<h3>{{ card.title }} <span class="kanban-ref">{{ card.ref }}</span> <button type="button" class="kanban-copy-ref" data-copy="{{ card.ref }}" aria-label="Copy card ID" title="Copy card ID"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5" y="5" width="9" height="10" rx="1"/><path d="M11 3V2.5A1.5 1.5 0 0 0 9.5 1h-6A1.5 1.5 0 0 0 2 2.5v8A1.5 1.5 0 0 0 3.5 12H4"/></svg></button></h3>{% if card.description %}<p class="card-description">{{ card.description }}</p>{% endif %}
 {% for link in card.links %}<div class="kanban-link"><strong>{{ link.title }}</strong><div class="actions"><a href="{{ link.cms_url }}">Open in CMS</a>{% if link.frontend_url %}<a href="{{ link.frontend_url }}" target="_blank" rel="noopener">Open frontend ↗</a>{% endif %}{% if link.editor_url %}<a href="{{ link.editor_url }}">Edit in VS Code</a>{% endif %}</div></div>{% endfor %}
 <form method="post" action="/cms/kanban/move" class="card-move"><input type="hidden" name="revision" value="{{ board.revision }}"><input type="hidden" name="card_id" value="{{ card.id }}"><label>Move to<select name="column">{% for destination in board.columns %}<option value="{{ destination.id }}" {% if destination.id == card.column %}selected{% endif %}>{{ destination.title }}</option>{% endfor %}</select></label><button>Move</button></form>
 <div class="actions"><a class="button" href="/cms/kanban?edit={{ card.id | urlencode }}" data-dialog-open="edit-{{ card.id }}">Edit</a><a class="button danger" href="/cms/kanban?remove={{ card.id | urlencode }}" data-dialog-open="remove-{{ card.id }}">Remove</a></div>

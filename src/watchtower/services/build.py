@@ -30,7 +30,7 @@ import nbformat
 import yaml
 from jinja2 import DictLoader, Environment
 
-from watchtower.models import eligible, plan_body, route_for, source_path
+from watchtower.models import course_rows, eligible, plan_body, route_for, source_path
 from watchtower.services.content import KANBAN, ContentService
 from watchtower.services.profile import build_resume_pdf, latex_profile
 from watchtower.services.workspace import ServiceError
@@ -230,14 +230,20 @@ class _Generator:
                     value.extend(["", f"**{key.replace('_', ' ').capitalize()}**", ""])
                     value.extend(f"- {item}" for item in text)
         value.extend(["", "## Course path", ""])
-        for section in contract.toc:
-            children = [self.by_id[c] for c in section.chapters if c in self.by_id]
-            if not children:
-                continue
-            if section.title:
-                value.extend([f"### {section.title}", ""])
-            for child in children:
-                value.append(f"- [{child.toc_title}]({_relative(self.routes[child.id], self.routes[artifact.id])})")
+        rows = course_rows(contract, self.entries)
+        if rows:
+            value.extend(["| Section | Chapter title | Summary |", "| --- | --- | --- |"])
+            def cell(text: str) -> str:
+                # Treat authored labels as text, not executable Markdown/HTML.
+                return re.sub(r"([\\`*_{}\[\]()#!|])", r"\\\1", escape(text)).replace("\n", "<br>")
+            for row in rows:
+                child = row["chapter"]
+                title = self.navigation_title(self.by_id[child["id"]], cell(child["title"]))
+                link = _relative(self.routes[child["id"]], self.routes[artifact.id])
+                summary = row["summary"] or ("Summary not added yet." if self.mode == "preview" else "")
+                value.append(f"| {cell(row['section'])} | [{title}]({link}) | {cell(summary)} |")
+        else:
+            value.append("No chapters to display yet.")
         return "\n".join(value) + "\n"
 
     @staticmethod
@@ -248,7 +254,7 @@ class _Generator:
 
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
         value: dict[str, Any] = {"title": artifact.title, "toc": True, "lifecycle": artifact.lifecycle}
-        if artifact.description and artifact.kind != "gallery":
+        if artifact.description:
             value["description"] = artifact.description
         if artifact.date:
             value["date"] = str(artifact.date)
@@ -261,8 +267,6 @@ class _Generator:
         if artifact.kind == "course":
             value["sidebar"] = artifact.id.replace("/", "-")
             value["description"] = artifact.description or self.state.courses[artifact.id].purpose
-        if artifact.kind == "gallery":
-            value.update(toc=True, sidebar=False)
         cover = getattr(artifact, "cover", None) or getattr(artifact, "image", None)
         if cover:
             value["image"] = "/" + _asset_path(cover)
@@ -270,26 +274,30 @@ class _Generator:
                 self.write(_asset_path(cover), self.files[cover])
         return value
 
+    def gallery(self, artifact: Any) -> None:
+        route = self.routes[artifact.id]
+        photos: list[dict[str, Any]] = []
+        for photo in self.state.photos:
+            if photo.lifecycle == "draft" and self.mode == "production":
+                continue
+            src = ""
+            if photo.path:
+                destination = _asset_path(photo.path)
+                self.write(destination, self.files[photo.path])
+                src = _relative(destination, route)
+            photos.append({
+                "src": src,
+                "caption": photo.caption,
+                "heading": photo.heading,
+                "lifecycle": photo.lifecycle,
+                "width": getattr(photo, "width", None),
+            })
+        self.write(route, self.template("site/personal.qmd.j2", photos=photos, title=artifact.title), render=True)
+
     def notebook(self, artifact: Any) -> None:
         route = self.routes[artifact.id]
         source = source_path(artifact, self.state)
-        if artifact.kind == "gallery":
-            figures = []
-            for photo in self.state.photos:
-                if photo.lifecycle == "draft" and self.mode == "production":
-                    continue
-                status = self.template("site/publication-meta.html.j2", entry=photo, photo_status=True, image_ready=bool(photo.path)) + "\n\n" if photo.lifecycle == "draft" else ""
-                if photo.path:
-                    destination = _asset_path(photo.path)
-                    self.write(destination, self.files[photo.path])
-                    width = f" width={json.dumps(photo.width)}" if getattr(photo, "width", None) else ""
-                    image = f"![]({_relative(destination, route)}){{.lightbox fig-alt={json.dumps(photo.caption, ensure_ascii=False)}{width}}}"
-                else:
-                    image = self.template("site/photo-placeholder.html.j2", photo=photo)
-                figures.append(f"## {photo.heading}\n\n{status}{photo.caption}\n\n{image}")
-            body = "\n\n".join(figures) + "\n"
-            notebook = nbformat.v4.new_notebook(cells=[_generated_cell(artifact.id, "photo-rows", body)])
-        elif artifact.lifecycle == "planned":
+        if artifact.lifecycle == "planned":
             body = plan_body(artifact, self.state)
             if source:
                 body = self.rewrite_body(body, source, route)
@@ -307,7 +315,7 @@ class _Generator:
                         if isinstance(body, str):
                             self.rewrite_body(body, source, route)
         header = _frontmatter(self.metadata(artifact, route))
-        if artifact.kind != "gallery" and (artifact.lifecycle != "published" or artifact.visibility != "public"):
+        if artifact.lifecycle != "published" or artifact.visibility != "public":
             if artifact.kind == "portfolio" or artifact.lifecycle == "draft":
                 header += "\n" + self.template("site/publication-meta.html.j2", entry=artifact) + "\n"
             else:
@@ -316,8 +324,9 @@ class _Generator:
                     header += " · Private working preview"
                 header += "\n:::\n"
         if artifact.kind in {"post", "portfolio", "personal"}:
-            listing = {"post": "posts.qmd", "portfolio": "portfolio.qmd", "personal": "personal.qmd"}[artifact.kind]
-            if not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells):
+            gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
+            listing = {"post": "posts.qmd", "portfolio": "portfolio.qmd", "personal": self.routes[gallery.id] if gallery else None}[artifact.kind]
+            if listing and not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells):
                 header += f"\n[← {artifact.kind.capitalize()}]({_relative(listing, route)})\n"
         if artifact.kind == "post" and artifact.tags:
             header += "\n" + " · ".join(
@@ -333,10 +342,7 @@ class _Generator:
             has_include = any("_course-context.md" in c.source for c in notebook.cells)
             if not has_include:
                 notebook.cells.insert(1, _generated_cell(artifact.id, "course-context", context))
-        if route.endswith(".qmd") and artifact.kind == "gallery":
-            self.write(route, "\n\n".join(c.source for c in notebook.cells), render=True)
-        else:
-            self.write(route, nbformat.writes(notebook), render=True)
+        self.write(route, nbformat.writes(notebook), render=True)
 
     def portfolio(self) -> None:
         entries = []
@@ -380,7 +386,7 @@ class _Generator:
         gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
         website["navbar"] = yaml.safe_load(self.template(
             "shared/navigation.yaml.j2", **self.state.settings.model_dump(mode="json"),
-            personal_route=self.routes[gallery.id] if gallery else "personal.qmd",
+            personal_route=self.routes[gallery.id] if gallery else None,
         ))
         sidebars = []
         for artifact in self.entries:
@@ -417,7 +423,9 @@ class _Generator:
         self.write("assets/contact.js", self.template("site/contact.js.j2", **profile))
         self.write("assets/resume.tex", self.template("site/resume.tex.j2", **latex_profile(self.state.profile)))
         for artifact in self.entries:
-            if artifact.kind != "project":
+            if artifact.kind == "gallery":
+                self.gallery(artifact)
+            elif artifact.kind != "project":
                 self.notebook(artifact)
         posts = []
         for artifact in self.entries:
@@ -453,12 +461,6 @@ class _Generator:
             for a in self.entries if a.kind == "course"
         ]
         self.write("courses.qmd", self.template("site/courses.qmd.j2", courses=courses), render=True)
-        gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
-        photos = [
-            {"src": quote(_asset_path(photo.path), safe="/._-~") if photo.path else "", "caption": photo.caption, "heading": photo.heading, "lifecycle": photo.lifecycle, "width": getattr(photo, "width", None)}
-            for photo in self.state.photos if photo.lifecycle == "published" or self.mode == "preview"
-        ] if gallery else []
-        self.write("personal.qmd", self.template("site/personal.qmd.j2", photos=photos), render=True)
         self.write("assets/preview-reload.html", '''<script>
 (async function () {
   let revision;

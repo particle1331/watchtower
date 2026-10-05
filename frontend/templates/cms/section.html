@@ -1,12 +1,4 @@
 {% extends 'base.html' %}{% block content %}
-<div class="action-bar section-actions" aria-label="Section actions">
-  <h1>{{ title }}</h1><div class="action-buttons">
-  {% if data_name == 'profile' %}<a class="button" href="/cms/{{ section }}?edit=profile">Edit résumé</a>{% endif %}
-  {% if section == 'personal' %}<a class="button" href="/cms/data/photos?add=photo#add-photo">Add photo</a>{% endif %}
-  {% if section == 'personal' and reorder %}<a class="button" href="/cms/personal">Done</a>{% endif %}
-  {% if kind %}<a class="button" href="/cms/new?kind={{ kind }}">Create {{ kind }} plan</a>{% endif %}
-  </div>
-</div>
 {% if request.query_params.get("saved") == "photo" %}<p class="success" role="status">Photo saved.</p>{% endif %}
 {% if request.query_params.get("saved") == "profile" %}<p class="success" role="status">Profile saved.</p>{% endif %}
 {% if request.query_params.get("saved") == "portfolio" %}<p class="success" role="status">Portfolio entry saved.</p>{% endif %}
@@ -44,8 +36,8 @@
   <div class="collection-scroll" tabindex="0" role="region" aria-label="{{ title }} entries">
   {% for item in artifacts %}
     <article class="card data-group entity-row" id="{{ item.id | replace('/','-') }}">
-      <div class="entity-row-heading"><h2><a href="/cms/artifact/{{ item.id | urlpath }}">{{ item.title }}</a></h2><span class="badge">{{ item.lifecycle }}</span><span class="badge">{{ item.visibility }}</span>
-      <div class="actions"><a class="button" href="/cms/artifact/{{ item.id | urlpath }}">Edit</a><a class="button danger" data-delete-link href="/cms/delete/{{ item.id | urlpath }}">Delete</a></div></div>
+      <div class="entity-row-heading"><h2><a href="{{ '/cms/courses/' + item.id.split('/')[-1] if item.kind == 'course' else '/cms/artifact/' + (item.id | urlpath) }}">{{ item.title }}</a></h2><span class="badge">{{ item.lifecycle }}</span><span class="badge">{{ item.visibility }}</span>
+      <div class="actions"><a class="button" href="{{ '/cms/courses/' + item.id.split('/')[-1] if item.kind == 'course' else '/cms/artifact/' + (item.id | urlpath) }}">Edit</a><a class="button danger" data-delete-link href="/cms/delete/{{ item.id | urlpath }}">Delete</a></div></div>
       {% if item.description %}<p>{{ item.description }}</p>{% endif %}
       {% if item.tags %}<p>{% for label in item.tags %}<a class="tag" href="/cms/{{ section }}?tag={{ label | urlencode }}">{{ label }}</a>{% endfor %}</p>{% endif %}
       {% if item.kind == 'portfolio' %}{% set detail = records[item.id].detail %}
@@ -53,7 +45,7 @@
         {% if detail.project_source == 'archived' %}<p>Archived source</p>{% endif %}
       {% endif %}
       {% if item.kind == 'course' %}
-        <p><a href="/cms/data/course/{{ item.id.split('/')[-1] | urlpath }}">Contract and ordered TOC</a></p>
+        <p><a href="/cms/courses/{{ item.id.split('/')[-1] | urlpath }}#outline">Manage sections and chapters</a></p>
         <details class="data-record"><summary>Chapters</summary>
         {% for group in records[item.id].contract.toc %}<section><h3>{{ group.title or group.id }}</h3>
           <div class="collection-scroll" data-client-list data-list-label="Chapters" tabindex="0" role="region" aria-label="{{ group.title or group.id }} chapters">

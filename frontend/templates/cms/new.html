@@ -1,30 +1,34 @@
-{% extends 'base.html' %}{% block content %}<article id="new-editor"><h1>Create a {{ values.kind }} plan</h1>{% if error %}<div class="error" role="alert"><p>{{ error.message or error }}</p>Your submitted values are preserved. <a href="/cms/new?kind={{ values.kind }}">Reload</a> to obtain the current revision before reconciling a conflict.</div>{% endif %}
-<form data-editor data-editing="true" data-creating="true" method="post" action="/cms/new?kind={{ values.kind }}" hx-post="/cms/new?kind={{ values.kind }}" hx-target="#new-editor" hx-select="#new-editor" hx-swap="outerHTML">
+{% extends 'base.html' %}{% from 'relationship.html' import relationship with context %}
+{% block page_actions %}{% import 'editor_actions.html' as toolbar with context %}{{ toolbar.new_actions() }}{% endblock %}
+{% block content %}<article id="new-editor"><h1>Create a {{ values.kind }} plan</h1>
+<p>Save an idea now and develop it over time. New plans are private and stay off the live site.</p>
+{% if error %}<div class="error" role="alert"><p>{{ error.message or error }}</p>Your submitted values are preserved. Reload this form before reconciling a conflict.</div>{% endif %}
+{% set contextual = contextual and values.kind == 'chapter' %}
+{% set create_url = '/cms/new?kind=' + values.kind + ('&parent=' + values.parent + '&section=' + values.get('section', '') if contextual else '') %}
+<form id="new-editor-form" data-editor data-editing="true" data-creating="true" method="post" action="{{ create_url }}" hx-post="{{ create_url }}" hx-target="#new-editor" hx-select="#new-editor" hx-swap="outerHTML">
 <input type="hidden" name="revision" value="{{ revision }}">
-{% set creating = true %}{% set editor_label = 'New ' + values.kind + ' plan' %}{% set cancel_url = '/cms/' + ('courses' if values.kind in ['course','chapter'] else 'portfolio' if values.kind in ['portfolio','project'] else 'personal' if values.kind in ['personal','gallery'] else 'posts') %}{% include 'editor_actions.html' %}
+<span class="visually-hidden" data-edit-status role="status">{{ 'Unsaved changes' if error else 'New plan' }}</span>
 <fieldset class="editor-fields" data-editor-fields>
-<fieldset class="entity-group"><legend>Entry details</legend>
-<input type="hidden" name="kind" value="{{ values.kind }}">
-<label>Name<input name="name" value="{{ values.get('name','') }}" required autofocus autocomplete="off" placeholder="{{ 'e.g. htmx-todo' if values.kind == 'post' else 'e.g. test' }}"><small>Spaces and punctuation become hyphens. The stable ID and source path are generated from this name; IDs already in use or previously deleted stay reserved.</small></label>
+<fieldset class="entity-group"><legend>Title</legend><input type="hidden" name="kind" value="{{ values.kind }}">
+<label>Name<input name="name" value="{{ values.get('name','') }}" required autofocus autocomplete="off" placeholder="e.g. attention-basics"><small>Spaces and punctuation become hyphens. Names already used or previously deleted stay reserved.</small></label>
 <p class="generated-id" data-generated-id data-kind="{{ values.kind }}" aria-live="polite">Generated stable ID: <code></code></p>
 <label>Title<input name="title" value="{{ values.get('title','') }}" required></label>
 {% if values.kind == 'chapter' %}
-<label>Course<select name="parent" required data-course-select><option value="">Choose a course</option>{% for course in courses %}<option value="{{ course.id }}" {% if values.get('parent') == course.id %}selected{% endif %}>{{ course.title }}</option>{% endfor %}</select></label>
-<label>Course section<select name="section" required data-section-select><option value="">Choose a section</option>{% for course in courses %}{% for section in course.sections %}<option value="{{ section.id }}" data-course-id="{{ course.id }}" {% if values.get('parent') == course.id and values.get('section') == section.id %}selected{% endif %}>{{ course.title }} · {{ section.title or section.id }}</option>{% endfor %}{% endfor %}</select></label>
-<label>Short TOC title<input name="toc_title" value="{{ values.get('toc_title','') }}"><small>Defaults to the name if left blank.</small></label>
-{% endif %}
-{% for key,label in [('tags','Tags (comma separated)'),('relations','Related stable IDs (comma separated)')] %}
-<label>{{ label }}<input name="{{ key }}" value="{{ values.get(key,'') }}"></label>
-{% endfor %}
-<label>Visibility<select name="visibility"><option {% if values.visibility == 'public' %}selected{% endif %}>public</option><option {% if values.visibility == 'private' %}selected{% endif %}>private</option></select></label>
-<label>Description<textarea name="description">{{ values.description or '' }}</textarea></label>
+<label>Course<select name="parent" required data-course-select {% if contextual %}aria-readonly="true"{% endif %}><option value="">Choose a course</option>{% for course in courses if not contextual or course.id == values.parent %}<option value="{{ course.id }}" {% if values.get('parent') == course.id %}selected{% endif %}>{{ course.title }}</option>{% endfor %}</select></label>
+<label>Course section<select name="section" required data-section-select><option value="">Choose a section</option>{% for course in courses %}{% for group in course.sections %}<option value="{{ group.id }}" data-course-id="{{ course.id }}" {% if values.get('parent') == course.id and values.get('section') == group.id %}selected{% endif %}>{{ course.title }} · {{ group.title or ('Chapters' if group.id == 'main' else group.id) }}</option>{% endfor %}{% endfor %}</select></label>
+<label>Short TOC title<input name="toc_title" value="{{ values.get('toc_title','') }}"><small>Defaults to the name.</small></label>{% endif %}
 </fieldset>
-<fieldset class="entity-group"><legend>Plan</legend>
-<label data-kinds="post course chapter personal project gallery" {% if values.kind == 'portfolio' %}hidden{% endif %}>Planned content<textarea rows="8" name="planned_content" {% if values.kind == 'portfolio' %}disabled{% endif %}>{{ values.planned_content or '' }}</textarea></label>
-<label data-kinds="chapter" {% if values.kind != 'chapter' %}hidden{% endif %}>Planned lab and evidence<textarea rows="5" name="planned_lab_and_evidence" {% if values.kind != 'chapter' %}disabled{% endif %}>{{ values.planned_lab_and_evidence or '' }}</textarea></label>
-{% for key,label in [('introduction','Introduction'),('what_it_contains','What it contains'),('scope_notes','Scope notes (optional)')] %}
-<label data-kinds="portfolio" {% if values.kind != 'portfolio' %}hidden{% endif %}>{{ label }}<textarea rows="5" name="{{ key }}" {% if values.kind != 'portfolio' %}disabled{% endif %}>{{ values.get(key,'') }}</textarea>{% if key == 'scope_notes' %}<small>Appears under “Explore the project,” after source and related page links.</small>{% endif %}</label>
-{% endfor %}
-<p data-kinds="portfolio" {% if values.kind != 'portfolio' %}hidden{% endif %}>Saving creates a planned page from these sections. The future notebook path is generated automatically from the name. Start and edit creates the notebook as a draft.</p>
-</fieldset></fieldset>
-</form></article>{% endblock %}
+<fieldset class="entity-group"><legend>Build plan</legend><p>Markdown is supported. Every planning field can be completed later.</p>
+{% for key,label,prompt in plan_fields if key in core_keys %}{% set field_name = 'planned_content' if key == 'content' else 'planned_lab_and_evidence' if key == 'lab_and_evidence' else key %}
+<label>{{ label }}<textarea rows="6" name="{{ field_name }}" placeholder="{{ prompt }}">{{ values.get(field_name, values.get(key, '')) }}</textarea><small>{{ prompt }}</small></label>
+{% else %}{% if not plan_fields %}<label>Planned content<textarea rows="8" name="planned_content">{{ values.get('planned_content','') }}</textarea></label>{% endif %}{% endfor %}
+</fieldset>
+{% if plan_fields %}<details class="entity-group"><summary>More planning details (optional)</summary>
+{% for key,label,prompt in plan_fields if key not in core_keys %}<label>{{ label }}<textarea rows="4" name="{{ key }}" placeholder="{{ prompt }}">{{ values.get(key, '') }}</textarea><small>{{ prompt }}</small></label>{% endfor %}
+</details>{% endif %}
+<details class="entity-group"><summary>Settings</summary>
+<label>Tags (comma separated)<input name="tags" value="{{ values.get('tags','') }}"></label>
+{{ relationship('relations', values.get('relations','').replace(',', '\n'), true) }}
+<label>Visibility<select name="visibility"><option value="private" {% if values.visibility == 'private' %}selected{% endif %}>Private · Not on the live site</option><option value="public" {% if values.visibility == 'public' %}selected{% endif %}>Public · Planned placeholders can appear on the live site</option></select></label>
+<label>Description<textarea name="description">{{ values.description or '' }}</textarea></label>
+</details></fieldset></form></article>{% endblock %}

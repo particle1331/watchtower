@@ -133,6 +133,8 @@ def test_start_editor_link_and_conflict_preserves_form_values(client):
     assert response.status_code == 412, response.text
     assert "My unsaved &lt;title&gt;" in response.text
     assert "Reload saved values" in response.text
+    assert 'id="cms-page-actions"' in response.text
+    assert 'hx-swap-oob="outerHTML"' in response.text
     current = client.get("/api/artifacts/post/a%20space")
     started = client.post("/api/actions/start/post/a%20space", headers={"If-Match": current.headers["etag"]})
     assert started.status_code == 200, started.text
@@ -401,19 +403,140 @@ def test_editor_cancel_after_failed_save_reloads_saved_values(client):
 
 def test_native_editor_actions_have_form_and_cancel_destinations(client):
     assert create_post(client).status_code == 201
-    for route, cancel in [
-        ("/cms/data/profile", "/cms/resume"),
-        ("/cms/artifact/post/a%20space", "/cms/artifact/post/a%20space"),
-        ("/cms/new?kind=chapter", "/cms/courses"),
+    create_portfolio(client)
+    create_image_course(client)
+    create_image_gallery(client)
+    client.app.state.content.update_gallery({"version": 1, "photos": [{"heading": "Draft photo", "caption": "Caption", "lifecycle": "draft"}]})
+    for route, cancel, form_id in [
+        ("/cms/data/profile", "/cms/resume", "profile-editor-form"),
+        ("/cms/home?edit=profile", "/cms/home", "profile-editor-form"),
+        ("/cms/artifact/post/a%20space", "/cms/posts", "artifact-editor-form"),
+        ("/cms/artifact/portfolio/image", "/cms/portfolio", "artifact-editor-form"),
+        ("/cms/courses/image", "/cms/courses", "artifact-editor-form"),
+        ("/cms/new?kind=post", "/cms/posts", "new-editor-form"),
+        ("/cms/new?kind=portfolio", "/cms/portfolio", "new-editor-form"),
+        ("/cms/new?kind=course", "/cms/courses", "new-editor-form"),
+        ("/cms/new?kind=chapter", "/cms/courses", "new-editor-form"),
+        ("/cms/photos/new", "/cms/personal", "photo-add-form"),
+        ("/cms/data/photos?add=photo", "/cms/personal", "photo-add-form"),
+        ("/cms/photos/0/edit", "/cms/personal", "photo-editor-form"),
     ]:
         page = client.get(route)
         assert page.status_code == 200
-        assert f'data-cancel href="{cancel}"' in page.text
-        assert 'type="submit" data-save' in page.text
-        assert re.search(r'class="action-bar(?: |")', page.text)
+        header = re.search(r"<header>(.*?)</header>", page.text, re.S).group(1)
+        assert f'data-cancel href="{cancel}"' in header
+        assert 'aria-label="Cancel editing"' in header and '<svg' in header
+        assert f'type="submit" form="{form_id}" data-save' in header
+        assert '>Save</button>' in header
+        assert f'<form id="{form_id}" data-editor' in page.text
+        assert page.text.count('id="cms-page-actions"') == 1
+        assert not re.search(r'class="action-bar(?: |")', page.text)
         # Fields remain usable if JavaScript is unavailable; enhanced viewing
         # mode disables their fieldset only after the script initializes.
         assert 'data-editor-fields disabled' not in page.text
+
+
+@pytest.mark.parametrize("kind", ["portfolio", "post", "course"])
+def test_creation_errors_refresh_header_actions_without_extra_banner(client, kind):
+    page = client.get(f"/cms/new?kind={kind}")
+    revision = re.search(r'name="revision" value="([^"]+)"', page.text).group(1)
+    failed = client.post(f"/cms/new?kind={kind}", headers={"HX-Request": "true"}, data={
+        "revision": revision, "name": "", "title": "An unsaved title",
+    })
+    assert failed.status_code == 422
+    assert "An unsaved title" in failed.text
+    assert failed.text.count('id="cms-page-actions"') == 1
+    assert 'hx-swap-oob="outerHTML"' in failed.text
+    assert 'form="new-editor-form" data-save>Save</button>' in failed.text
+    assert not re.search(r'class="action-bar(?: |")', failed.text)
+
+
+def test_photo_header_save_retries_only_the_new_photo(client):
+    create_image_gallery(client)
+    add_uploaded_photo(client)
+    service = client.app.state.content
+    existing = service.read_data("photos")["data"]["photos"]
+    page = client.get("/cms/photos/new")
+    revision = re.search(r'name="revision" value="([^"]+)"', page.text).group(1)
+    failed = client.post("/cms/photos/new", headers={"HX-Request": "true"}, data={
+        "revision": revision, "heading": "Pending photo", "caption": "Pending caption", "width": "101%",
+    })
+    assert failed.status_code == 422, failed.text
+    assert "Pending photo" in failed.text
+    assert "Uploaded photo" not in failed.text
+    assert 'hx-swap-oob="outerHTML"' in failed.text
+    assert 'form="photo-add-form" data-save>Save</button>' in failed.text
+    assert f'name="revision" value="{revision}"' in failed.text
+    assert service.read_data("photos")["data"]["photos"] == existing
+    saved = client.post("/cms/photos/new", headers={"HX-Request": "true"}, data={
+        "revision": revision, "heading": "Pending photo", "caption": "Repaired caption", "width": "80%",
+    }, files={"new_photo_image": ("photo.png", portfolio_image_bytes(color="red"), "image/png")})
+    assert saved.status_code == 200, saved.text
+    assert saved.headers["HX-Redirect"] == "/cms/personal?saved=photo"
+    photos = service.read_data("photos")["data"]["photos"]
+    assert len(photos) == 2 and photos[:1] == existing
+    assert photos[1]["heading"] == "Pending photo" and photos[1]["caption"] == "Repaired caption"
+    assert client.get("/cms/photo/0").content == portfolio_image_bytes()
+    assert client.get("/cms/photo/1").content == portfolio_image_bytes(color="red")
+
+
+def test_photo_composer_only_shows_new_fields_and_ignores_existing_row_edits(client):
+    create_image_gallery(client)
+    add_uploaded_photo(client, heading="Existing photo")
+    service = client.app.state.content
+    existing = service.read_data("photos")["data"]["photos"]
+    page = client.get("/cms/photos/new")
+    assert "Existing photo" not in page.text
+    assert 'name="snapshot"' not in page.text and 'name="collection_action"' not in page.text
+    assert "Adding it also saves the other fields" not in page.text
+    controls = re.findall(r'<(?:input|select|textarea)\b[^>]*name="([^"]+)"', page.text)
+    assert controls == ["revision", "heading", "new_photo_image", "caption", "lifecycle", "width"]
+    assert 'id="add-photo" open' in page.text and 'placeholder="100%"' in page.text
+    revision = re.search(r'name="revision" value="([^"]+)"', page.text).group(1)
+    payload = {"revision": revision, "heading": "New draft", "caption": "New caption", "snapshot": "{}", 'field:["photos", "0", "caption"]': "Unwanted edit", "path": existing[0]["path"]}
+    saved = client.post("/cms/photos/new", data=payload, follow_redirects=False)
+    assert saved.status_code == 303 and saved.headers["location"] == "/cms/personal?saved=photo"
+    photos = service.read_data("photos")["data"]["photos"]
+    assert photos[:1] == existing and len(photos) == 2
+    assert photos[1]["path"] == "" and photos[1]["lifecycle"] == "draft"
+    duplicate = client.post("/cms/photos/new", data=payload)
+    assert duplicate.status_code == 412
+    assert "New draft" in duplicate.text and "Existing photo" not in duplicate.text
+    assert f'name="revision" value="{revision}"' in duplicate.text
+    assert service.read_data("photos")["data"]["photos"] == photos
+
+
+@pytest.mark.parametrize("payload,upload,status", [
+    ({"caption": "Needs a heading"}, None, 422),
+    ({"heading": "Needs an image", "caption": "Caption", "lifecycle": "published"}, None, 422),
+    ({"heading": "Bad image", "caption": "Caption"}, b"not an image", 422),
+    ({"heading": "Missing revision", "caption": "Caption", "revision": ""}, None, 428),
+])
+def test_photo_composer_errors_preserve_only_new_values(client, payload, upload, status):
+    create_image_gallery(client)
+    add_uploaded_photo(client, heading="Existing photo")
+    service = client.app.state.content
+    before = service.read_data("photos")
+    files = {"new_photo_image": ("photo.png", upload, "image/png")} if upload else None
+    failed = client.post("/cms/photos/new", data={"revision": before["revision"], **payload}, files=files)
+    assert failed.status_code == status, failed.text
+    assert payload["caption"] in failed.text
+    assert "Existing photo" not in failed.text
+    assert service.read_data("photos") == before
+
+
+def test_artifact_action_refreshes_header_publication_controls(client):
+    assert create_post(client).status_code == 201
+    revision, _ = form_snapshot(client.get("/cms/artifact/post/a%20space"))
+    started = client.post("/cms/action/start/post/a%20space", headers={"HX-Request": "true"}, data={"revision": revision})
+    assert started.status_code == 200, started.text
+    assert 'hx-swap-oob="outerHTML"' in started.text
+    assert 'form="artifact-publish-action" data-publication-action' in started.text
+    assert 'form="artifact-start-action"' not in started.text
+    updated_revision, _ = form_snapshot(started)
+    assert updated_revision != revision
+    publication_form = re.search(r'<form id="artifact-publish-action".*?</form>', started.text, re.S).group(0)
+    assert f'name="revision" value="{updated_revision}"' in publication_form
 
 
 @pytest.mark.parametrize("kind", ["portfolio", "chapter", "post"])
@@ -421,7 +544,7 @@ def test_new_plan_fields_follow_entry_kind(client, kind):
     page = client.get(f"/cms/new?kind={kind}")
     assert page.status_code == 200
     controls = re.findall(r"<(?:input|textarea|select)\b([^>]*)>", page.text)
-    enabled = {re.search(r'name="([^"]+)"', attrs).group(1) for attrs in controls if "disabled" not in attrs}
+    enabled = {match.group(1) for attrs in controls if "disabled" not in attrs and (match := re.search(r'name="([^"]+)"', attrs))}
     chapter_fields = {"parent", "toc_title", "section", "planned_lab_and_evidence"}
     portfolio_fields = {"introduction", "what_it_contains", "scope_notes"}
     assert enabled & chapter_fields == (chapter_fields if kind == "chapter" else set())
@@ -472,7 +595,7 @@ def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(cl
     generated = BuildService(root).generate("production")
     notebook = nbformat.read(generated / f"nb/portfolio/{slug}.ipynb", as_version=4)
     body = "\n".join(cell.source for cell in notebook.cells)
-    for text in ["[← Portfolio]", "## What it contains", "## Explore the project", *plan.values()]:
+    for text in ["[← Portfolio]", "## What it contains", "## Scope notes", "## References and related content", *plan.values()]:
         assert text in body
     assert "Stale" not in body
     assert not source.exists()
@@ -687,11 +810,11 @@ def test_photo_draft_without_image_saves_then_requires_upload_to_publish(client,
     assert 'src="/cms/photo/0"' not in personal
     assert client.get("/cms/photo/0").status_code == 404
     preview = BuildService(client.app.state.root).generate("preview")
-    assert 'aria-label="No Photo"' in (preview / "personal.qmd").read_text()
+    assert not (preview / "personal.qmd").exists()
     assert 'aria-label="No Photo"' in (preview / "gallery.qmd").read_text()
     production = BuildService(client.app.state.root).generate("production")
-    assert "Unfinished photo" not in (production / "personal.qmd").read_text()
-    assert "No Photo" not in (production / "personal.qmd").read_text()
+    assert "Unfinished photo" not in (production / "gallery.qmd").read_text()
+    assert "No Photo" not in (production / "gallery.qmd").read_text()
     revision, snapshot = form_snapshot(saved)
     original = service.snapshot().files
     publishing = {"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "lifecycle"]': "published"}
@@ -707,8 +830,8 @@ def test_photo_draft_without_image_saves_then_requires_upload_to_publish(client,
     assert photo["lifecycle"] == "published" and photo["path"]
     assert client.get("/cms/photo/0").content == portfolio_image_bytes()
     production = BuildService(client.app.state.root).generate("production")
-    assert "Unfinished photo" in (production / "personal.qmd").read_text()
-    assert 'aria-label="No Photo"' not in (production / "personal.qmd").read_text()
+    assert "Unfinished photo" in (production / "gallery.qmd").read_text()
+    assert 'aria-label="No Photo"' not in (production / "gallery.qmd").read_text()
 
 
 def test_gallery_api_accepts_draft_with_omitted_path_but_rejects_invalid_paths(client):
@@ -782,7 +905,7 @@ def test_new_photo_upload_and_publication(client, monkeypatch, format, extension
     assert not (production / path.removeprefix("content/")).exists()
     preview = build.generate("preview")
     assert (preview / path.removeprefix("content/")).exists()
-    assert "Uploaded photo" in (preview / "personal.qmd").read_text()
+    assert "Uploaded photo" in (preview / "gallery.qmd").read_text()
     revision, snapshot = form_snapshot(saved)
     published = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot,
                             'field:["photos", "0", "lifecycle"]': "published"},
@@ -790,7 +913,7 @@ def test_new_photo_upload_and_publication(client, monkeypatch, format, extension
     assert published.status_code == 200, published.text
     production = build.generate("production")
     assert (production / path.removeprefix("content/")).exists()
-    assert "Photo caption" in (production / "personal.qmd").read_text()
+    assert "Photo caption" in (production / "gallery.qmd").read_text()
 
 
 @pytest.mark.parametrize("kind", ["course", "photo"])
@@ -926,13 +1049,14 @@ def test_personal_add_photo_and_pagination_keep_source_indices(client):
     service.update_gallery({"version": 1, "photos": [{"heading": f"Photo {index}", "caption": "Saved caption", "path": "", "lifecycle": "draft"} for index in range(12)]})
     page = client.get("/cms/personal?page=2")
     assert "11–12 of 12" in page.text and "Photo 10" in page.text and "Photo 0 " not in page.text
-    assert 'href="/cms/data/photos?add=photo#add-photo"' in page.text
+    assert 'href="/cms/photos/new"' in page.text
     assert '>Edit photos</a>' not in page.text
     assert 'href="/cms/personal?reorder=1">Reorder photos</a>' in page.text
     editor = client.get("/cms/data/photos?add=photo")
     assert 'id="add-photo" open' in editor.text
     assert 'data-editing="true"' in editor.text
-    assert not re.search(r'<details class="entity-group"[^>]*\bopen\b', editor.text)
+    assert "Photo 0" not in editor.text and "Photo 11" not in editor.text
+    editor = client.get("/cms/data/photos")
     revision, snapshot = form_snapshot(editor)
     saved = client.post("/cms/data/photos", data={"revision": revision, "snapshot": snapshot, 'field:["photos", "0", "caption"]': "First edit", 'field:["photos", "11", "caption"]': "Last edit"})
     assert saved.status_code == 200

@@ -18,7 +18,7 @@ the exact URL. A separate port alone does not isolate source/build files.
 2. Set purpose/audience/planned prose through `wt data course/<slug>` or the CMS.
 3. `wt start course/<slug>` creates the editable draft home from that contract.
 4. `wt new section <slug> "<Section>"` adds an ordered section.
-5. Create chapters with title/TOC-title/section and nonempty planned content/lab:
+5. Create chapters with title/TOC-title/section and planned content/lab (partial plans can be saved; both are required to start):
 
    ```sh
    .venv/bin/wt new chapter example 01-introduction --title "Introduction" \

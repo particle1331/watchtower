@@ -7,8 +7,9 @@ left:
     text: posts
   - href: courses.qmd
     text: courses
-  - href: {{ personal_route }}
+{% if personal_route %}  - href: {{ personal_route }}
     text: personal
+{% endif %}
 right:
   - icon: github
     href: {{ repository_url }}/tree/{{ source_ref }}/src/watchtower

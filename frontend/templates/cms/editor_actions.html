@@ -1,12 +1,36 @@
-<div class="action-bar" aria-label="Editor actions">
-<div class="action-context"><strong>{{ editor_label }}</strong><span data-edit-status role="status">{{ 'Unsaved changes' if error else 'New plan' if creating else 'Saved values' }}</span></div>
-<div class="action-buttons">
-{% if not creating and not direct_edit | default(false) %}<button type="button" data-begin-edit hidden>Edit</button>{% endif %}
-<a class="button" data-cancel href="{{ cancel_url }}">Cancel</a>
-{% if name is defined and name == 'photos' and request.query_params.get('add') == 'photo' %}
-{% set photo_collection = collections | selectattr('path', 'equalto', ('photos',)) | first %}
-<button class="primary" type="submit" data-save name="collection_action" value='{{ {"path": photo_collection.path, "action": "add", "prototype": photo_collection.prototype} | tojson }}'>Add photo</button>
-{% else %}<button class="primary" type="submit" data-save>{{ 'Create plan' if creating else 'Save' }}</button>{% endif %}
-{% for action, label in publication_actions | default([]) %}<button type="submit" form="artifact-{{ action }}-action" data-publication-action>{{ label }}</button>{% endfor %}
+{% macro actions(form_id, cancel_url, direct_edit=true, creating=false, publication_actions=[]) %}
+<div id="cms-page-actions" class="section-tools" aria-label="Editor actions" data-editor-toolbar="{{ form_id }}"{% if request.headers.get('HX-Request') %} hx-swap-oob="outerHTML"{% endif %}>
+{% if not creating and not direct_edit %}<button type="button" form="{{ form_id }}" data-begin-edit hidden>Edit</button>{% endif %}
+<a class="button section-tool-cancel" data-cancel href="{{ cancel_url }}" aria-label="Cancel editing" title="Cancel editing"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></a>
+<button class="primary" type="submit" form="{{ form_id }}" data-save>Save</button>
+{% for action, label in publication_actions %}<button type="submit" form="artifact-{{ action }}-action" data-publication-action {% if action == 'start' and record.missing_plan_fields %}data-blocked disabled title="Complete the core plan before starting"{% endif %}>{{ label }}</button>{% endfor %}
 {% if artifact is defined and not creating and artifact.kind != 'gallery' %}<a class="button danger" data-delete-link href="/cms/delete/{{ artifact.id | urlpath }}">Delete</a>{% endif %}
-</div></div>
+</div>
+{% endmacro %}
+
+{% macro artifact_actions() %}
+{% set publication_actions = [] %}
+{% if record.artifact.kind != 'gallery' %}
+{% if record.artifact.lifecycle == 'planned' and record.artifact.kind != 'project' %}{% set publication_actions = [('start', 'Start draft')] %}{% endif %}
+{% if record.artifact.lifecycle != 'planned' %}{% set publication_actions = [('draft', 'Return to draft')] if record.artifact.lifecycle == 'published' else [('publish', 'Publish')] %}{% endif %}
+{% endif %}
+{% set cancel_url = '/cms/portfolio' if artifact.kind == 'portfolio' else '/cms/posts' if artifact.kind == 'post' else '/cms/courses' if artifact.kind == 'course' else '/cms/courses/' + artifact.parent.split('/')[-1] + '#outline' if artifact.kind == 'chapter' else '/cms/artifact/' + (artifact.id | urlpath) %}
+{{ actions('artifact-editor-form', cancel_url, publication_actions=publication_actions) }}
+{% endmacro %}
+
+{% macro new_actions() %}
+{% set cancel_url = '/cms/courses/' + values.get('parent', '').split('/')[-1] + '#outline' if contextual and values.kind == 'chapter' else '/cms/' + section %}
+{{ actions('new-editor-form', cancel_url, creating=true) }}
+{% endmacro %}
+
+{% macro data_actions() %}
+{{ actions('data-editor-form', '/cms/personal' if name == 'photos' else '/cms/data/' + (name | urlpath), direct_edit=name == 'photos') }}
+{% endmacro %}
+
+{% macro photo_actions() %}
+{{ actions('photo-editor-form', '/cms/personal') }}
+{% endmacro %}
+
+{% macro photo_add_actions() %}
+{{ actions('photo-add-form', '/cms/personal', creating=true) }}
+{% endmacro %}

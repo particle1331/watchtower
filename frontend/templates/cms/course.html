@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block page_actions %}{% import 'editor_actions.html' as toolbar with context %}{{ toolbar.artifact_actions() }}{% endblock %}
+{% block content %}
+<p><a href="/cms/courses">← Back to Courses</a></p>
+<nav class="actions" aria-label="Course workspace"><a href="#plan-fields">Course brief</a><a href="#outline">Sections and chapters</a></nav>
+{% include 'artifact_fragment.html' %}
+<section id="outline" class="course-outline"><h2>Sections and chapters</h2>
+{% if submitted %}<div role="alert" class="error"><p>{{ error.message or error }}</p><p>The outline action was not saved. Submitted values and their original revision are kept below. <a href="/cms/courses/{{ slug }}">Reload the workspace</a> before reconciling.</p><form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}">{% for key,value in submitted.items() if key != 'revision' %}<label>{{ key | replace('_',' ') | capitalize }}<input name="{{ key }}" value="{{ value }}"></label>{% endfor %}<button>Retry submitted action</button></form></div>{% endif %}
+<div class="table-scroll"><table><thead><tr><th>Section</th><th>Chapter title</th><th>Summary</th></tr></thead><tbody>
+{% for row in record.chapter_rows %}<tr><td>{{ row.section }}</td><td><a href="/cms/artifact/{{ row.chapter.id | urlpath }}">{{ row.chapter.title }}</a> <span class="badge">{{ row.chapter.lifecycle }}</span></td><td>{{ row.summary or '' }}{% if not row.summary %}<a href="/cms/artifact/{{ row.chapter.id | urlpath }}">Add summary</a>{% endif %}</td></tr>{% else %}<tr><td colspan="3">No chapters yet. Add one to a section below.</td></tr>{% endfor %}
+</tbody></table></div>
+{% for group in record.contract.toc %}{% set section_index = loop.index0 %}
+<section class="data-group"><h3>{{ group.title or ('Chapters' if group.id == 'main' else group.id) }}</h3>
+<div class="actions"><a class="button" href="/cms/new?kind=chapter&amp;parent={{ artifact.id | urlencode }}&amp;section={{ group.id | urlencode }}">Add chapter</a></div>
+<form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="section" value="{{ group.id }}"><label>Section title<input name="title" value="{{ group.title }}"></label><div class="actions"><button name="action" value="rename-section">Rename</button><button name="action" value="section-up" {% if loop.first %}disabled{% endif %}>Move up</button><button name="action" value="section-down" {% if loop.last %}disabled{% endif %}>Move down</button><button name="action" value="remove-section" {% if group.chapters or record.contract.toc | length == 1 %}disabled{% endif %}>Remove empty section</button></div></form>
+{% for chapter_id in group.chapters %}{% for row in record.chapter_rows if row.chapter.id == chapter_id %}
+<details class="data-record"><summary>{{ row.chapter.title }} · {{ row.chapter.lifecycle }}</summary><div class="actions"><a href="/cms/artifact/{{ chapter_id | urlpath }}">Edit chapter plan</a><a data-delete-link class="danger" href="/cms/delete/{{ chapter_id | urlpath }}">Delete</a></div></details>
+<form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="chapter" value="{{ chapter_id }}"><div class="actions"><button name="action" value="chapter-up" {% if chapter_id == group.chapters[0] %}disabled{% endif %}>Move {{ row.chapter.title }} up</button><button name="action" value="chapter-down" {% if chapter_id == group.chapters[-1] %}disabled{% endif %}>Move {{ row.chapter.title }} down</button><label>Move to section<select name="section">{% for target in record.contract.toc %}<option value="{{ target.id }}" {% if target.id == group.id %}selected{% endif %}>{{ target.title or ('Chapters' if target.id == 'main' else target.id) }}</option>{% endfor %}</select></label><button name="action" value="move-chapter">Move chapter</button></div></form>
+{% endfor %}{% else %}<p>No chapters in this section.</p>{% endfor %}</section>
+{% endfor %}
+<form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline" class="entity-group"><input type="hidden" name="revision" value="{{ revision }}"><label>New section title<input name="title" required placeholder="e.g. Foundations"></label><button name="action" value="add-section">Add section</button></form>
+<p><a href="/cms/data/course/{{ slug }}">Advanced contract editor</a></p>
+</section>{% endblock %}
