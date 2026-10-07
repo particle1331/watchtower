@@ -547,35 +547,6 @@ artifacts:
   tags: []
   planned: {}
   route: nb/photos/photos.ipynb
-- id: project/test-portfolio
-  kind: project
-  title: Test Portfolio
-  path: projects/test-portfolio
-  visibility: public
-  lifecycle: draft
-  relations: []
-  tags: []
-  planned: {}
-- id: project/test-portfolio-3
-  kind: project
-  title: Test Portfolio 3
-  path: projects/test-portfolio-3
-  visibility: private
-  lifecycle: draft
-  relations: []
-  internal_notes: ''
-  tags: []
-  planned: {}
-- id: project/yeah1
-  kind: project
-  title: Yeah1
-  path: projects/yeah1
-  visibility: private
-  lifecycle: draft
-  relations: []
-  internal_notes: ''
-  tags: []
-  planned: {}
 - id: portfolio/test1123
   kind: portfolio
   title: test
@@ -622,6 +593,9 @@ retired_ids:
 - portfolio/test1
 - portfolio/yeah1
 - post/test-planned-post
+- project/test-portfolio
+- project/test-portfolio-3
+- project/yeah1
 - test-portfolio
 retired_sources:
 - content/notebooks/courses/test/index.ipynb
