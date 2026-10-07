@@ -107,10 +107,12 @@ def collections(data: Any, prefix: tuple[str, ...] = ()) -> list[dict[str, Any]]
         for key, value in data.items():
             result.extend(collections(value, (*prefix, key)))
     elif isinstance(data, list) and (bool(data) and isinstance(data[0], dict) or not data and is_complex_collection(prefix)):
-        defaults = {"photos": {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}, "toc": {"id": "", "title": "", "chapters": []}, "chapters": {"chapter_id": "", "section": "", "content": "", "lab_and_evidence": ""}, "entries": {"id": "", "project_source": "active", "planned": {}}, "projects": {"title": "", "bullets": [], "artifact_id": None}, "employment": {"title": "", "company": "", "dates": "", "bullets": []}, "early_employment": {"title": "", "company": "", "dates": "", "bullets": []}, "education": {"institution": "", "degree": "", "dates": ""}, "skills": {"name": "", "entries": []}}
+        defaults = {"photos": {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}, "toc": {"id": "", "title": "", "chapters": []}, "chapters": {"chapter_id": "", "section": "", "content": "", "lab_and_evidence": ""}, "entries": {"id": "", "notebook_path": "", "project_path": "", "abstract": None, "figure_path": None, "figure_caption": None, "planned": {}}, "projects": {"title": "", "bullets": [], "artifact_id": None}, "employment": {"title": "", "company": "", "dates": "", "bullets": []}, "early_employment": {"title": "", "company": "", "dates": "", "bullets": []}, "education": {"institution": "", "degree": "", "dates": ""}, "skills": {"name": "", "entries": []}}
         prototype = blank_record(data[0]) if data else defaults.get(prefix[-1] if prefix else "", {})
         if prefix[-1] == "photos":
             prototype = {**defaults["photos"], "width": "", **prototype, "lifecycle": "draft"}
+        if prefix == ("entries",):
+            prototype = {**prototype, **defaults["entries"]}
         result.append({"path": prefix, "label": " / ".join(prefix), "rows": list(enumerate(data)), "prototype": prototype, "fields": form_fields(prototype, prefix)})
         for index, value in enumerate(data):
             result.extend(collections(value, (*prefix, str(index))))
@@ -293,6 +295,14 @@ def cms_router(root: Path) -> APIRouter:
     templates.env.filters["urlpath"] = lambda value: quote(str(value), safe="/")
 
     def render(request: Request, template: str, context: dict[str, Any], status: int = 200) -> HTMLResponse:
+        def visible_field(field: dict[str, Any]) -> bool:
+            path = json.loads(field["name"])
+            return not path or path[-1] not in {"project_name", "project_source", "archive_date"}
+
+        if "fields" in context:
+            context["fields"] = [field for field in context["fields"] if visible_field(field)]
+        for collection in context.get("collections", []):
+            collection["fields"] = [field for field in collection["fields"] if visible_field(field)]
         context.update({"navigation": NAVIGATION, "root": str(root)})
         try:
             context.setdefault("relationship_artifacts", request.app.state.content.list()["artifacts"])
@@ -351,8 +361,12 @@ def cms_router(root: Path) -> APIRouter:
                 for group in context["groups"]:
                     for field in group["fields"]:
                         if field["label"] == "detail / abstract":
-                            field.update(caption="Abstract", type="text", prompt="Shown on the portfolio card. Optional during planning: Start draft fills a blank abstract from Introduction / problem and What it contains. Review and edit it before publishing.")
+                            field.update(caption="Abstract", type="text", prompt="Shown on the portfolio card and entry page. Optional while planning: Start draft can fill a first draft from Introduction / problem and What it contains. Paste the finished abstract here before publishing; publishing requires it.")
                             abstract_fields.append(field)
+                        if field["label"] == "detail / project_path":
+                            field.update(hint="Where the code lives: `projects/<name>` or `archive/<date>/projects/<name>`. Defaults to projects/<portfolio name>.")
+                        if field["label"] == "detail / notebook_path":
+                            field.update(hint="Where the draft notebook is created; defaults to content/notebooks/portfolio/<name>.ipynb.")
                     group["fields"] = [field for field in group["fields"] if field["label"] not in {"description", "detail / abstract"}]
                 context["groups"] = [group for group in context["groups"] if group["fields"]]
                 context["groups"].insert(1, {"title": "Abstract", "fields": abstract_fields, "fold": False})
@@ -388,6 +402,9 @@ def cms_router(root: Path) -> APIRouter:
                 artifact["detail"] = {key: value for key, value in result["detail"].items() if key != "id"}
                 if not artifact["detail"].get("abstract"):
                     artifact["detail"]["abstract"] = artifact.get("description") or ""
+                if not artifact["detail"].get("project_path"):
+                    # Show the effective default instead of an empty box.
+                    artifact["detail"]["project_path"] = f"projects/{artifact['id'].split('/')[-1]}"
             if artifact.get("kind") in {"post", "personal"}:
                 artifact.setdefault("planned", {}).setdefault("content", "")
             if artifact.get("kind") == "course":

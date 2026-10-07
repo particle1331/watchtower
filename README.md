@@ -53,7 +53,7 @@ Plans are persisted, so temporary files can be removed afterward.
   --toc-title "01. Introduction" --section main \
   --planned-content "Explain the topic." --planned-lab-and-evidence "Check a reproducible example."
 .venv/bin/wt start course/example/01-introduction
-.venv/bin/wt new portfolio example --project-name example --plan-file .tmp/example.md \
+.venv/bin/wt new portfolio example --project-path projects/example --plan-file .tmp/example.md \
   --abstract "Project purpose" --figure-path content/assets/portfolio/example.svg --figure-caption "System diagram"
 ```
 
@@ -61,16 +61,22 @@ Creation registers private plans in YAML without creating notebooks. Plans appea
 only in the CMS, never in preview or production. `start` creates a private draft
 notebook with editable sections seeded from the saved plan and refuses existing
 files. Posts receive their outline, audience, takeaway and evidence; portfolios
-receive the problem, contents, approach and evaluation criteria; courses receive
+receive the problem, contents, approach, evaluation criteria and references;
+courses receive
 purpose, audience, progression, prerequisites, outcomes and practice. Chapters
-receive content and labs. Empty plans create title-only drafts. Portfolio plans
-show an optional **Abstract** field. Start fills a blank abstract with a short
+receive content and labs. Empty plans create title-only drafts. Generated pages
+show the catalog title once: a notebook H1 that repeats the title is dropped from
+the build, while chapters keep their authored H1 as the page title. Portfolio plans
+show an optional **Abstract** field under the optional planning details. Start
+fills a blank abstract with a short
 excerpt from the introduction and contents; existing abstracts or legacy public
 descriptions take precedence. Review and edit this draft abstract before publishing.
 
-Seeding happens once. Internal notes, next steps, unknown fields, portfolio scope
-notes and portfolio planning references stay in the CMS. Later plan edits do not
-rewrite the notebook. Review seeded prose before publishing; no AI generation is
+Seeding never rewrites hand-edited cells. Internal notes, next steps, unknown
+fields and portfolio scope
+notes stay in the CMS. Plan saves refresh the seeded sections while the draft
+still matches its last seed; the first hand edit freezes the notebook, and
+hand-edited content is never rewritten. Review seeded prose before publishing; no AI generation is
 involved. Course chapter tables remain generated from the ordered TOC.
 
 Preview shows started drafts and published notebooks, including private content.
@@ -223,6 +229,11 @@ and actualized facts are preserved.
 Portfolio editors accept a featured image (PNG, JPEG, WebP, or GIF, up to 20 MB)
 and figure caption. Saving stores the image under `content/assets/portfolio/`
 with the metadata in one transaction. Portfolio cards show it below the abstract;
+entry pages show the same abstract, featured figure and source link above the
+notebook content. The CMS shows one **Project path** field (`projects/<name>`,
+or `archive/<date>/projects/<name>` for migrated historical entries); it
+defaults to `projects/<name>` after the portfolio name, and
+`wt data portfolio` repairs it.
 planned and draft project cards and pages show a yellow diagnostic panel with monospace publication metadata.
 Planned entries include the setup command with the actual stable ID in `wt start <id>`.
 Course editors accept a card image in the same formats and size limit, stored
@@ -230,9 +241,10 @@ under `content/assets/courses/` through the catalog's `cover` field. It appears
 in the Courses card grid. Personal photo editors support uploading new photos
 and replacing existing ones under `content/assets/photos/`. Images and metadata
 save in one transaction; leaving an upload empty keeps the saved image.
-Starting an active portfolio creates its notebook and `projects/<name>` with
-the same package scaffold as `make project NAME=<name>`, and registers both
-in one recoverable save. The name comes from the configured project name or
+Starting an active portfolio creates its notebook and the `projects/<name>` code
+directory behind its project path
+with the same package scaffold as `make project NAME=<name>`, and registers both
+in one recoverable save. The path defaults to `projects/<name>` from
 the final segment of the stable ID. Existing project code is reused untouched.
 Drafts may start before the abstract and featured figure are complete;
 publication still requires the abstract, image, and caption.

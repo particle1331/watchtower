@@ -208,7 +208,7 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
         put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("Historical notebook.")])
         snapshot.state.portfolio.append(Record(
             id=entry.id, abstract=f"Abstract {name}", figure_path=f"content/assets/{name}.svg", figure_caption=f"Figure {name}",
-            notebook_path=entry.path, project_name=name, project_source="archived", archive_date="2026-09-30", planned={},
+            notebook_path=entry.path, project_path=f"archive/2026-09-30/projects/{name}", planned={},
         ))
         snapshot.files[f"content/assets/{name}.svg"] = b"<svg/>"
     stage = BuildService(root).generate("production")
@@ -217,6 +217,8 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
     assert "Abstract first" in page
     assert "Abstract draft" not in page and "Abstract planned" not in page
     assert "[Source </>](https://github.com/example/site/tree/main/archive/2026-09-30/projects/first)" in page
+    assert "[`first/`](https://github.com/example/site/tree/main/archive/2026-09-30/projects/first)" in page
+    assert "Archived source" not in page
     assert "https://github.com/example/site/tree/main/archive/2026-09-30/projects/first" in page
     assert page.count("#portfolio-first") == 2
     assert "[Read the full project page →](nb/portfolio/first.ipynb)" in page
@@ -233,6 +235,104 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
     assert "portfolio/planned" not in preview_page
     assert not (preview / "nb/portfolio/planned.ipynb").exists()
     assert not (preview / "assets/planned.svg").exists()
+
+
+def test_started_draft_removes_duplicate_title_h1_and_preserves_body(workspace):
+    root, snapshot = workspace
+    entry = artifact("posts/started", lifecycle="draft", title="Started Draft")
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("# Started Draft\n\nBody content survives.")])
+    original = snapshot.files[entry.path]
+
+    stage = BuildService(root).generate("preview")
+    generated = nbformat.read(stage / "nb/posts/started.ipynb", as_version=4)
+
+    header = yaml.safe_load(generated.cells[0].source.split("---", 2)[1])
+    assert header["title"] == entry.title
+    assert sum(cell.source.count(entry.title) for cell in generated.cells) == 1
+    assert "# Started Draft" not in "\n".join(cell.source for cell in generated.cells[1:])
+    assert "Body content survives." in "\n".join(cell.source for cell in generated.cells[1:])
+    assert snapshot.files[entry.path] == original
+
+
+@pytest.mark.parametrize(
+    ("abstract", "description", "expected_abstract"),
+    [
+        ("A project-specific abstract.", "Catalog description.", "A project-specific abstract."),
+        ("", "Catalog fallback description.", "Catalog fallback description."),
+        ("", None, "Project description not added yet."),
+    ],
+)
+def test_portfolio_page_header_includes_figure_abstract_and_active_source(
+    workspace, abstract, description, expected_abstract,
+):
+    root, snapshot = workspace
+    entry = artifact(
+        "portfolio/featured-project", kind="portfolio", lifecycle="draft",
+        title="Featured project", description=description,
+    )
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("Project details.")])
+    figure_path = "content/assets/featured-project.svg"
+    snapshot.files[figure_path] = b"<svg/>"
+    snapshot.state.portfolio.append(Record(
+        id=entry.id, abstract=abstract, figure_path=figure_path, figure_caption="Featured figure",
+        notebook_path=entry.path, project_path="projects/featured-project", planned={},
+    ))
+    original = snapshot.files[entry.path]
+
+    stage = BuildService(root).generate("preview")
+    generated = nbformat.read(stage / "nb/portfolio/featured-project.ipynb", as_version=4)
+    header = generated.cells[0].source
+    figure = "![Featured figure](../../assets/featured-project.svg)"
+    source = "[Source </>](https://github.com/example/site/tree/main/projects/featured-project)"
+
+    assert figure in header
+    assert f"**Abstract.** {expected_abstract}" in header
+    assert source in header
+    # The abstract renders once: as labeled body content, not again in the title block.
+    assert "description" not in yaml.safe_load(header.split("---", 2)[1])
+    assert header.index('aria-label="Publication status"') < header.index("[← Portfolio]")
+    assert header.index("[← Portfolio]") < header.index(figure)
+    assert header.index(figure) < header.index(f"**Abstract.** {expected_abstract}")
+    assert header.index(f"**Abstract.** {expected_abstract}") < header.index(source)
+    assert (stage / "assets/featured-project.svg").read_bytes() == b"<svg/>"
+    assert snapshot.files[entry.path] == original
+
+
+def test_portfolio_page_links_archived_code_under_archive(workspace):
+    root, snapshot = workspace
+    entry = artifact("portfolio/historical", kind="portfolio", lifecycle="published", title="Historical project", description=None)
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("Project details.")])
+    snapshot.state.portfolio.append(Record(
+        id=entry.id, abstract="An archived project.", figure_path=None, figure_caption=None,
+        notebook_path=entry.path, project_path="archive/2026-09-30/projects/historical", planned={},
+    ))
+
+    stage = BuildService(root).generate()
+    header = nbformat.read(stage / "nb/portfolio/historical.ipynb", as_version=4).cells[0].source
+
+    assert "[Source </>](https://github.com/example/site/tree/main/archive/2026-09-30/projects/historical)" in header
+
+
+def test_chapter_page_preserves_authored_title_h1(workspace):
+    root, snapshot = workspace
+    course = artifact("courses/example/index", kind="course", title="Example course")
+    chapter = artifact(
+        "courses/example/01-introduction", kind="chapter", title="Introduction",
+        parent=course.id, toc_title="Introduction", section="main",
+    )
+    put_notebook(snapshot, course, [nbformat.v4.new_markdown_cell("Course introduction.")])
+    put_notebook(snapshot, chapter, [nbformat.v4.new_markdown_cell("# Introduction\n\nChapter content.")])
+    snapshot.state.courses[course.id] = Record(purpose="Learn.", audience="Readers", planned={}, actualized={}, toc=[])
+
+    stage = BuildService(root).generate("preview")
+    generated = nbformat.read(stage / "nb/courses/example/01-introduction.ipynb", as_version=4)
+
+    assert generated.cells[1].source.startswith("# Introduction")
+    assert "Chapter content." in generated.cells[1].source
+    # The authored H1 supplies the title; the generated title block stays empty.
+    header = yaml.safe_load(generated.cells[0].source.split("---", 2)[1])
+    assert header["format"]["html"]["template-partials"] == ["/templates/title-block.html"]
+    assert (stage / "templates/title-block.html").exists()
 
 
 def fake_quarto(command, cwd, **kwargs):

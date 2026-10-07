@@ -13,6 +13,7 @@ from markdown_it import MarkdownIt
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from watchtower.planning import extra_plan_body
+from watchtower.services.projects import project_name as validate_project_name
 
 
 class Record(BaseModel):
@@ -121,39 +122,76 @@ class PortfolioEntry(Record):
     figure_path: str | None = None
     figure_caption: str | None = None
     notebook_path: str | None = None
-    project_name: str | None = None
-    project_source: Literal["active", "archived"] = "active"
-    archive_date: Date | None = None
+    project_path: str | None = None
     planned: dict[str, str] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_project_reference(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        value = dict(value)
+        project_name = value.get("project_name")
+        if not value.get("project_path") and project_name:
+            project_source = value.get("project_source", "active")
+            if project_source == "active":
+                value["project_path"] = f"projects/{project_name}"
+            elif project_source == "archived":
+                archive_date = value.get("archive_date")
+                if archive_date is None or archive_date == "":
+                    raise ValueError("legacy archived project requires archive_date")
+                value["project_path"] = f"archive/{archive_date}/projects/{project_name}"
+            else:
+                raise ValueError("legacy project_source must be 'active' or 'archived'")
+        elif not project_name and not value.get("project_path"):
+            value["project_path"] = None
+        for key in ("project_name", "project_source", "archive_date"):
+            value.pop(key, None)
+        return value
 
     @field_validator("figure_path", "notebook_path")
     @classmethod
     def safe_paths(cls, value: str | None) -> str | None:
         return relative_path(value) if value is not None else None
 
-    @field_validator("project_name")
+    @field_validator("project_path")
     @classmethod
-    def safe_name(cls, value: str | None) -> str | None:
-        if value is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", value):
-            raise ValueError("project_name must be a single folder name")
+    def safe_project_path(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        parts = value.split("/")
+        if any(part in {".", ".."} for part in parts):
+            raise ValueError("project_path must not contain '.' or '..' segments")
+        try:
+            normalized = relative_path(value)
+        except ValueError as error:
+            raise ValueError("project_path must be repository-relative") from error
+        if normalized != value:
+            raise ValueError("project_path must not contain empty or dot segments")
+        if len(parts) == 2 and parts[0] == "projects":
+            name = parts[1]
+        elif len(parts) == 4 and parts[0] == "archive" and parts[2] == "projects":
+            archive_date = parts[1]
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", archive_date):
+                raise ValueError("project_path archive date must use YYYY-MM-DD")
+            try:
+                Date.fromisoformat(archive_date)
+            except ValueError as error:
+                raise ValueError("project_path archive date must be a valid YYYY-MM-DD date") from error
+            name = parts[3]
+        else:
+            raise ValueError("project_path must match projects/<name> or archive/YYYY-MM-DD/projects/<name>")
+        try:
+            validate_project_name(name)
+        except ValueError as error:
+            raise ValueError("project_path must end with a single safe project folder name") from error
         return value
 
     @model_validator(mode="after")
     def reference(self) -> PortfolioEntry:
-        if self.project_source == "archived" and self.archive_date is None:
-            raise ValueError("archived source requires archive_date")
-        if self.project_source == "active" and self.archive_date is not None:
-            raise ValueError("active source forbids archive_date")
         if self.notebook_path and (not self.notebook_path.startswith("content/notebooks/portfolio/") or not self.notebook_path.endswith(".ipynb")):
             raise ValueError("portfolio notebook must be under content/notebooks/portfolio/")
         return self
-
-    @property
-    def project_path(self) -> str | None:
-        if self.project_name is None:
-            return None
-        prefix = f"archive/{self.archive_date}/projects" if self.project_source == "archived" else "projects"
-        return f"{prefix}/{self.project_name}"
 
 
 class Portfolio(Record):
@@ -426,7 +464,7 @@ def route_for(artifact: Artifact) -> str:
 
 def source_url(detail: PortfolioEntry, settings: SiteSettings, *, reserved_name: str | None = None) -> str | None:
     project_path = detail.project_path
-    if project_path is None and reserved_name and detail.project_source == "active":
+    if project_path is None and reserved_name:
         project_path = f"projects/{reserved_name}"
     if project_path is None:
         return None
@@ -482,10 +520,10 @@ def plan_body(artifact: Artifact, state: Workspace) -> str:
             body += f"\n\n## Scope notes\n\n{plan['scope_notes']}"
         body = with_extra(body, "portfolio", plan, {"introduction", "what_it_contains", "scope_notes", "references"})
         links = []
-        reserved = artifact.lifecycle == "planned" and detail.project_source == "active"
+        reserved = artifact.lifecycle == "planned" and not (detail.project_path or "").startswith("archive/")
         url = source_url(detail, state.settings, reserved_name=artifact.id.split("/")[-1] if reserved else None)
         if url:
-            source_label = "Reserved source code" if reserved else "Archived source" if detail.project_source == "archived" else "Source"
+            source_label = "Reserved source code" if reserved else "Source"
             links.append(f"- [{source_label}]({url})")
         for related in state.artifacts:
             if related.id in artifact.relations and eligible(related, state.artifacts):

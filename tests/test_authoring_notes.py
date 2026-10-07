@@ -33,7 +33,7 @@ def create(author, kind):
             return parent
         values.update(id='course/parent/notes', parent=parent, section='main', toc_title='Notes', path='content/notebooks/courses/parent/notes.ipynb', plan={**plan, 'lab_and_evidence': 'SEED-LAB-SENTINEL', 'summary': 'Public chapter summary'})
     elif kind == 'portfolio':
-        values['detail'] = {'planned': {'introduction': plan['content'], 'what_it_contains': 'SEED-CONTENTS-SENTINEL', 'scope_notes': 'INTERNAL-SCOPE-SENTINEL', 'references': 'INTERNAL-REFERENCES-SENTINEL'}}
+        values['detail'] = {'planned': {'introduction': plan['content'], 'what_it_contains': 'SEED-CONTENTS-SENTINEL', 'scope_notes': 'INTERNAL-SCOPE-SENTINEL', 'references': 'SEED-REFERENCES-SENTINEL'}}
     else:
         values.update(path=f'content/notebooks/{kind}/notes.ipynb', planned=plan)
     author.create(values)
@@ -139,7 +139,7 @@ def test_renaming_a_scaffold_does_not_make_it_publishable(author, kind):
     elif kind == 'chapter':
         author.update(identifier, {'plan': {'content': '', 'lab_and_evidence': ''}})
     elif kind == 'portfolio':
-        author.update(identifier, {'detail': {'planned': {'introduction': '', 'what_it_contains': ''}}})
+        author.update(identifier, {'detail': {'planned': {'introduction': '', 'what_it_contains': '', 'references': ''}}})
     else:
         author.update(identifier, {'planned': {'content': ''}})
     author.start(identifier)

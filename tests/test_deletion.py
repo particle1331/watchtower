@@ -115,7 +115,7 @@ def test_course_deletion_requires_explicit_cascade_and_preserves_contract(conten
 
 
 def test_portfolio_project_and_images_are_retained(content):
-    content.create({"id": "portfolio/example", "kind": "portfolio", "title": "Portfolio", "detail": {"notebook_path": "content/notebooks/portfolio/example.ipynb", "planned": {"introduction": "Intro", "what_it_contains": "Code"}, "project_name": "example"}})
+    content.create({"id": "portfolio/example", "kind": "portfolio", "title": "Portfolio", "detail": {"notebook_path": "content/notebooks/portfolio/example.ipynb", "planned": {"introduction": "Intro", "what_it_contains": "Code"}, "project_path": "projects/example"}})
     content.start("portfolio/example")
     project = content.root / "projects/example"
     files = {path.relative_to(project): path.read_bytes() for path in project.rglob('*') if path.is_file()}

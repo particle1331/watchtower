@@ -257,8 +257,14 @@ def test_portfolio_abstract_create_start_and_edit(author, abstract):
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/new?kind=portfolio')
         assert 'name="abstract"' in page.text
+        details_start = page.text.index('<summary>More planning details (optional)</summary>')
+        details_end = page.text.index('</details>', details_start)
+        abstract_field = page.text.index('name="abstract"')
+        assert details_start < abstract_field < details_end
         assert 'name="description"' not in page.text
-        assert 'Start draft will create an editable abstract' in page.text
+        assert 'can fill a first draft from Introduction / problem and What it contains' in page.text
+        assert 'Paste the finished abstract here before publishing; publishing requires it.' in page.text
+        assert 'portfolio card and entry page' in page.text
         created = client.post('/cms/new?kind=portfolio', data={'revision': token(page), 'name': 'abstract', 'title': 'Abstract example', 'abstract': abstract, 'introduction': 'Compare models.', 'what_it_contains': 'Reports and checks.'}, follow_redirects=False)
         assert created.status_code == 303, created.text
         saved = author.inspect('portfolio/abstract')
@@ -269,6 +275,9 @@ def test_portfolio_abstract_create_start_and_edit(author, abstract):
         page = client.get('/cms/artifact/portfolio/abstract')
         assert 'Public description' not in page.text
         assert html.unescape(page.text).count('name="field:["detail", "abstract"]"') == 1
+        assert 'Shown on the portfolio card and entry page.' in page.text
+        assert 'can fill a first draft from Introduction / problem and What it contains' in page.text
+        assert 'Paste the finished abstract here before publishing; publishing requires it.' in page.text
         revision, snapshot = form_snapshot(page)
         edited = client.post('/cms/save/portfolio/abstract', data={'revision': revision, 'snapshot': snapshot, 'field:["detail", "abstract"]': 'Edited abstract.'}, follow_redirects=False)
         assert edited.status_code == 303, edited.text

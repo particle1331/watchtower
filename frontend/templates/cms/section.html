@@ -42,7 +42,6 @@
       {% if item.tags %}<p>{% for label in item.tags %}<a class="tag" href="/cms/{{ section }}?tag={{ label | urlencode }}">{{ label }}</a>{% endfor %}</p>{% endif %}
       {% if item.kind == 'portfolio' %}{% set detail = records[item.id].detail %}
         {% if detail.abstract or detail.figure_path %}<details class="data-record"><summary>Project details</summary>{% if detail.abstract %}<p><strong>Abstract.</strong> {{ detail.abstract }}</p>{% endif %}{% if detail.figure_path %}<figure><img class="featured-figure-preview" src="/cms/figure/{{ item.id | urlpath }}" alt="{{ detail.figure_caption or item.title }}"><figcaption>{{ detail.figure_caption or '' }}</figcaption></figure>{% endif %}</details>{% endif %}
-        {% if detail.project_source == 'archived' %}<p>Archived source</p>{% endif %}
       {% endif %}
       {% if item.kind == 'course' %}
         <p><a href="/cms/courses/{{ item.id.split('/')[-1] | urlpath }}#outline">Manage sections and chapters</a></p>

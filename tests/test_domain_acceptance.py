@@ -7,7 +7,7 @@ import yaml
 from test_content_service import author_body, post
 from test_content_service import content_service as content_service
 
-from watchtower.models import eligible
+from watchtower.models import PortfolioEntry, eligible
 from watchtower.services.content import ContentService, yaml_bytes
 from watchtower.services.workspace import ServiceError
 
@@ -37,7 +37,7 @@ def portfolio_payload(service, name="example"):
     figure = service.root / f"content/assets/portfolio/{name}.svg"
     figure.parent.mkdir(parents=True, exist_ok=True)
     figure.write_text("<svg><title>Authored diagram</title></svg>")
-    return {"id": f"portfolio/{name}", "kind": "portfolio", "title": "Portfolio example", "detail": {"abstract": "A project for a concrete problem.", "figure_path": f"content/assets/portfolio/{name}.svg", "figure_caption": "The intended architecture.", "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "project_name": name, "project_source": "active", "planned": {"introduction": "Investigate the concrete problem.", "what_it_contains": "A reproducible implementation and checks.", "scope_notes": "Define the project limits."}}}
+    return {"id": f"portfolio/{name}", "kind": "portfolio", "title": "Portfolio example", "detail": {"abstract": "A project for a concrete problem.", "figure_path": f"content/assets/portfolio/{name}.svg", "figure_caption": "The intended architecture.", "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "project_path": f"projects/{name}", "planned": {"introduction": "Investigate the concrete problem.", "what_it_contains": "A reproducible implementation and checks.", "scope_notes": "Define the project limits."}}}
 
 
 def file_state(service):
@@ -100,15 +100,38 @@ def test_portfolio_start_accepts_partial_plan(content_service, missing):
     assert record["has_authored_content"]
 
 
-@pytest.mark.parametrize("patch", [{"project_name": "../outside"}, {"project_name": "."}, {"project_name": "nested/example"}, {"project_source": "remote"}, {"project_source": "archived"}, {"archive_date": "2026-09-30"}, {"project_source": "archived", "archive_date": "2026-02-30"}])
-def test_invalid_portfolio_reference_never_writes(content_service, patch):
+@pytest.mark.parametrize("project_path", [
+    "bare-name",
+    "projects/nested/example",
+    "projects/../outside",
+    "projects/./example",
+    "archive/2026-09-30/code/example",
+    "archive/2026-02-30/projects/example",
+])
+def test_invalid_portfolio_path_never_writes(content_service, project_path):
     service = content_service
     payload = portfolio_payload(service)
-    payload["detail"].update(patch)
+    payload["detail"]["project_path"] = project_path
     before = file_state(service)
-    with pytest.raises(ServiceError):
+    with pytest.raises(ServiceError, match="project_path"):
         service.create(payload)
     assert file_state(service) == before
+
+
+def test_legacy_portfolio_project_fields_load_and_dump_as_project_path():
+    archived = PortfolioEntry.model_validate({
+        "id": "portfolio/historical", "project_name": "historical",
+        "project_source": "archived", "archive_date": "2026-09-30",
+    })
+    active = PortfolioEntry.model_validate({"id": "portfolio/current", "project_name": "current"})
+    empty = PortfolioEntry.model_validate({"id": "portfolio/unresolved", "project_name": ""})
+
+    assert archived.project_path == "archive/2026-09-30/projects/historical"
+    assert active.project_path == "projects/current"
+    assert empty.project_path is None
+    dumped = archived.model_dump(mode="json")
+    assert dumped["project_path"] == "archive/2026-09-30/projects/historical"
+    assert not {"project_name", "project_source", "archive_date"}.intersection(dumped)
 
 
 def test_portfolio_escaping_project_symlink_is_rejected(content_service):
@@ -117,7 +140,7 @@ def test_portfolio_escaping_project_symlink_is_rejected(content_service):
     external = service.root / "other-root"
     external.mkdir()
     (service.root / "projects/escape").symlink_to(external, target_is_directory=True)
-    payload["detail"]["project_name"] = "escape"
+    payload["detail"]["project_path"] = "projects/escape"
     before = file_state(service)
     with pytest.raises(ServiceError, match="symlink escapes"):
         service.create(payload)
@@ -136,19 +159,22 @@ def test_portfolio_project_relation_must_identify_same_directory(content_service
     assert file_state(service) == before
 
 
-@pytest.mark.parametrize("project_name", [None, "future-code"])
-def test_planned_portfolio_related_content_includes_reserved_source_before_code_exists(content_service, project_name):
+@pytest.mark.parametrize("project_path", [None, "projects/future-code"])
+def test_planned_portfolio_related_content_includes_reserved_source_before_code_exists(content_service, project_path):
     service = content_service
     related_id = course(service, "related", published=True)
     private_id = post(service, visibility="private")["artifact"]["id"]
+    detail = {
+        "notebook_path": "content/notebooks/portfolio/future.ipynb",
+        "planned": {"introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope notes",
+                    "references": "[Prior work](https://example.org/prior)"},
+    }
+    if project_path is not None:
+        detail["project_path"] = project_path
     service.create({"id": "portfolio/future", "kind": "portfolio", "title": "Future project",
-        "relations": [related_id, private_id], "detail": {
-            "project_name": project_name, "notebook_path": "content/notebooks/portfolio/future.ipynb",
-            "planned": {"introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope notes",
-                        "references": "[Prior work](https://example.org/prior)"},
-        }})
+        "relations": [related_id, private_id], "detail": detail})
     record = service.inspect("portfolio/future")
-    source_name = project_name or "future"
+    source_name = project_path.rsplit("/", 1)[-1] if project_path else "future"
     assert f"## References and related content\n\n[Prior work](https://example.org/prior)\n\n- [Reserved source code](https://github.com/particle1331/watchtower/tree/main/projects/{source_name})\n- [related course]" in record["plan"]
     assert "[Example]" not in record["plan"]
     assert "nb/posts/example" not in record["plan"]
@@ -165,7 +191,7 @@ def test_planned_archived_source_still_requires_existing_archive_directory(conte
     original = file_state(service)
     with pytest.raises(ServiceError, match="missing project directory"):
         service.create({"id": "portfolio/missing", "kind": "portfolio", "title": "Missing archived source",
-            "detail": {"project_name": "missing", "project_source": "archived", "archive_date": "2026-09-30"}})
+            "detail": {"project_path": "archive/2026-09-30/projects/missing"}})
     assert file_state(service) == original
 
 

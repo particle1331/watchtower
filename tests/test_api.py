@@ -13,7 +13,7 @@ from test_content_service import author_body
 
 from watchtower.api import create_app
 from watchtower.api.cms import apply_fields, field_groups, form_fields
-from watchtower.services.content import ContentService
+from watchtower.services.content import ContentService, yaml_bytes
 
 
 def author_workspace(root: Path) -> Path:
@@ -49,6 +49,15 @@ def form_snapshot(response):
     revision = re.search(r'name="revision" value="([^"]+)"', response.text).group(1)
     source = re.search(r'name="snapshot" value=\'([^\']+)\'', response.text).group(1)
     return revision, html.unescape(source)
+
+
+def cms_field_paths(response):
+    paths = []
+    for name in re.findall(r'name="([^"]+)"', response.text):
+        name = html.unescape(name)
+        if name.startswith(("field:", "new:")):
+            paths.append(json.loads(name.split(":", 1)[1]))
+    return paths
 
 
 def lifecycle_options(response):
@@ -614,7 +623,7 @@ def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(cl
     revision = service.inspect(identifier)["revision"]
     ready = service.update(identifier, {"detail": {
         "abstract": "A browser interface for the agent.", "figure_path": "content/assets/demo.svg",
-        "figure_caption": "The session flow.", "project_name": "demo",
+        "figure_caption": "The session flow.", "project_path": "projects/demo",
     }}, expected_revision=revision)
     assert not source.exists()
     started = service.start(identifier, expected_revision=ready["revision"])
@@ -638,7 +647,7 @@ def test_portfolio_editor_omits_chapter_fields_and_preserves_routing_on_save(cli
     assert page.status_code == 200
     for key in ("parent", "toc_title", "section", "path", "route"):
         assert f'name="field:["{key}"]"' not in html.unescape(page.text)
-    for key in ("abstract", "figure_path", "notebook_path", "project_name"):
+    for key in ("abstract", "figure_path", "notebook_path", "project_path"):
         assert f'name="field:["detail", "{key}"]"' in html.unescape(page.text)
     revision, snapshot = form_snapshot(page)
     saved = client.post("/cms/save/portfolio/demo", data={
@@ -650,6 +659,80 @@ def test_portfolio_editor_omits_chapter_fields_and_preserves_routing_on_save(cli
     assert artifact["path"] == "content/notebooks/portfolio/legacy.ipynb"
     assert artifact["route"] == "nb/portfolio/custom.ipynb"
     assert not (client.app.state.root / "content/notebooks/portfolio/demo.ipynb").exists()
+
+
+def test_portfolio_reference_fields_are_hidden_and_preserved_in_data_editor(client):
+    service = ContentService(client.app.state.root)
+    (service.root / "archive/2026-09-30/projects/legacy-example").mkdir(parents=True)
+    service.create({
+        "id": "portfolio/legacy-example", "kind": "portfolio", "title": "Legacy example",
+        "detail": {
+            "notebook_path": "content/notebooks/portfolio/legacy-example.ipynb",
+            "project_path": "archive/2026-09-30/projects/legacy-example",
+            "abstract": "Existing summary.", "planned": {},
+        },
+    })
+
+    page = client.get("/cms/data/portfolio")
+    assert page.status_code == 200, page.text
+    assert "Project name" not in page.text and "Project source" not in page.text and "Archive date" not in page.text
+    assert not any(path[-1] in {"project_name", "project_source", "archive_date"} for path in cms_field_paths(page))
+    revision, snapshot = form_snapshot(page)
+    saved = client.post("/cms/data/portfolio", data={
+        "revision": revision, "snapshot": snapshot,
+        'field:["entries", "0", "abstract"]': "Updated summary.",
+    })
+    assert saved.status_code == 200, saved.text
+    entry = service.read_data("portfolio")["data"]["entries"][0]
+    assert entry["abstract"] == "Updated summary."
+    assert entry["project_path"] == "archive/2026-09-30/projects/legacy-example"
+
+
+def test_portfolio_data_editor_add_row_keeps_project_path_valid(client):
+    from starlette.datastructures import FormData
+
+    from watchtower.api.cms import collections
+
+    service = ContentService(client.app.state.root)
+    service.create({
+        "id": "portfolio/repair", "kind": "portfolio", "title": "Repair",
+        "detail": {"notebook_path": "content/notebooks/portfolio/repair.ipynb", "project_path": "projects/repair", "planned": {}},
+    })
+    # Simulate a lost detail row: the entry must be re-addable from the data editor.
+    path = client.app.state.root / "content/data/portfolio.yaml"
+    data = service.read_data("portfolio")["data"]
+    detail = service.inspect("portfolio/repair")["detail"]
+    assert detail["project_path"] == "projects/repair"
+    data["entries"] = []
+    path.write_bytes(yaml_bytes(data))
+
+    prototype = collections(data)[0]["prototype"]
+    assert prototype == {
+        "id": "", "notebook_path": "", "project_path": "", "abstract": None,
+        "figure_path": None, "figure_caption": None, "planned": {},
+    }
+    page = client.get("/cms/data/portfolio")
+    assert "Project name" not in page.text and "Project source" not in page.text and "Archive date" not in page.text
+    revision, snapshot = form_snapshot(page)
+    saved = client.post("/cms/data/portfolio", data={
+        "revision": revision, "snapshot": snapshot,
+        "collection_action": json.dumps({"path": ["entries"], "action": "add", "prototype": prototype}),
+        'new:["entries", "id"]': "portfolio/repair",
+        'new:["entries", "notebook_path"]': "content/notebooks/portfolio/repair.ipynb",
+        'new:["entries", "project_path"]': "projects/repair",
+    })
+    assert saved.status_code == 200, saved.text
+    entry = service.inspect("portfolio/repair")["detail"]
+    assert entry["project_path"] == "projects/repair"
+
+    # Prototype fields that are never rendered still merge into valid rows.
+    row = apply_fields({"entries": []}, FormData({
+        "collection_action": json.dumps({"path": ["entries"], "action": "add", "prototype": prototype}),
+        'new:["entries", "id"]': "portfolio/other",
+        'new:["entries", "notebook_path"]': "content/notebooks/portfolio/other.ipynb",
+        'new:["entries", "project_path"]': "projects/other",
+    }))["entries"][0]
+    assert row["project_path"] == "projects/other"
 
 
 def portfolio_image_bytes(format="PNG", color="blue"):
@@ -710,7 +793,10 @@ def test_portfolio_image_upload_saves_caption_and_renders_above_abstract(client,
     assert 'callout-caution' not in listing
     assert 'Review content, then publish in CMS' in listing
     generated_page = nbformat.read(generated / "nb/portfolio/image.ipynb", as_version=4)
-    assert yaml.safe_load(generated_page.cells[0].source.split("---", 2)[1])["description"] == "The project abstract."
+    header = generated_page.cells[0].source
+    # The abstract renders once, as labeled body content below the figure.
+    assert "description" not in yaml.safe_load(header.split("---", 2)[1])
+    assert header.index("![The featured figure caption.](") < header.index("**Abstract.** The project abstract.")
     assert any('aria-label="Publication status"' in cell.source and 'Review content, then publish in CMS' in cell.source for cell in generated_page.cells)
     assert (generated / relative).read_bytes() == image
 

@@ -59,6 +59,9 @@ Source notebooks own body cells, execution metadata, attachments, outputs, and
 cell-level Quarto options. Document front matter belongs in generated copies.
 Chapters have exactly one real H1 matching the full catalog title; fenced-code
 examples do not count. `toc_title` is an independent short navigation label.
+Generated notebook copies render the catalog title once: a non-chapter H1 that
+repeats the title is dropped from the build, and chapters keep their authored H1
+because their generated title block is empty.
 Use `wt update <id> --title ...` for coordinated metadata/H1 changes. Preserve
 individual cell visibility/folding options.
 
@@ -87,27 +90,41 @@ Planning fields are optional for starting across CMS, CLI and API. No generation
 flag is implemented; use the saved build brief to author content explicitly.
 Post plans accept arbitrary Markdown; chapter plans may be partial;
 portfolio plans have introduction, what it contains, optional scope notes.
-Starting an active portfolio also initializes and registers `projects/<name>`
-using the same package scaffold as `make project`. Use its configured project
-name, or the final stable-ID segment when omitted. Reuse existing code without
+Starting an active portfolio also initializes and registers the code directory
+behind its `project_path` using the same package scaffold as `make project`.
+Each entry stores one `project_path`: `projects/<name>`, or
+`archive/<date>/projects/<name>` for migrated historical work. It defaults to
+`projects/<name>` from the final stable-ID segment; legacy project
+name/source/date triples normalize to it on load. Reuse existing code without
 overwriting it. Notebook, scaffold, and registrations share one recoverable save.
 Draft portfolio entries may omit abstract/figure metadata; publication requires
 the abstract, featured figure, and caption. Portfolio CMS forms use one visible
-Abstract field. Start seeds a blank abstract from introduction/contents (opening
-prose, capped at 80 words), preserving explicit abstracts or legacy descriptions.
-Seeding occurs once; plan edits never overwrite an abstract. CMS editing preserves
+Abstract field: the create form keeps it under optional planning details, and the
+entry editor is where a finished abstract is pasted. Start seeds a blank abstract
+from introduction/contents (opening prose, capped at 80 words), preserving
+explicit abstracts or legacy descriptions. A still-blank abstract is seeded again
+while the draft still matches its last seed; plan edits never overwrite an
+existing abstract. CMS editing preserves
 legacy description fallbacks as abstracts on explicit save.
 Planned portfolios have no frontend pages or cards.
-Portfolio scope notes and planning references stay in the internal brief.
+Portfolio scope notes stay in the internal brief.
 Start seeds posts with outline/audience/takeaway/evidence; portfolios with
-problem/users/contents/approach/success criteria; courses with purpose/audience/
-progression/prerequisites/outcomes/project/tools/assessment; chapters with content/labs.
-Post, course and chapter references may be seeded. Internal notes, next steps,
-unknown fields, portfolio scope notes and portfolio references remain internal.
-Seeding happens once; later plan saves never rewrite notebook content. Empty plans
+problem/users/contents/approach/success criteria/references; courses with
+purpose/audience/progression/prerequisites/outcomes/project/tools/assessment;
+chapters with content/labs.
+Post, course, chapter and portfolio references may be seeded. Internal notes,
+next steps, unknown fields and portfolio scope notes remain internal.
+Seeding never rewrites hand-edited cells. While a started draft still matches
+its last seed exactly (a stored fingerprint of the seeded section cells; the
+title cell is excluded so coordinated renames do not count as edits), saving the
+plan re-seeds its sections and fills a still-blank abstract. The first hand edit
+freezes the draft, and notebooks without a stored fingerprint are treated as
+edited. Empty plans
 create title-only drafts. Review seeded prose before publication. Course chapter
 tables remain generated, not copied into notebooks. Draft portfolio cards and pages
 show yellow diagnostic panels with monospace publication metadata in preview.
+Portfolio entry pages project the abstract, featured figure and source link from
+portfolio YAML in the generated copy; the notebook keeps only its own content.
 Active code directories are required for Draft/Published portfolio entries;
 archived source references must always resolve to existing archived code.
 Plan files must be under `<repo>/.tmp/`; persist their bodies before removing them.
@@ -130,8 +147,12 @@ commands `new`, `import`, `register`, and `kanban add` do not accept custom IDs.
 derives IDs from the source filename stem (directory name for courses/projects),
 prefixed by kind or the required `--parent` course ID for chapters.
 Portfolio abstracts/figures
-and active/archived references belong in portfolio YAML, not duplicated project
-paths or per-entry GitHub URLs.
+and the project path belong in portfolio YAML; per-entry GitHub URLs are never
+stored. `project_path` is the single code reference (`projects/<name>`, or
+`archive/<date>/projects/<name>` for migrated historical entries), validated and
+turned into a source URL from shared repository settings. The CMS shows one
+Project path field with that default; repair it through `wt data portfolio` or
+the structured-data API.
 
 Planned notebooks have no authored content and never render in preview or production,
 including legacy public plans. Draft requires a source notebook and may contain

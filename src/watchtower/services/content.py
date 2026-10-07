@@ -26,6 +26,7 @@ from watchtower.models import (
     Kanban,
     Photos,
     Portfolio,
+    PortfolioEntry,
     Profile,
     SiteSettings,
     Workspace,
@@ -40,7 +41,7 @@ from watchtower.models import (
     source_path,
 )
 from watchtower.planning import extra_plan_body, missing_fields
-from watchtower.starters import draft_sections, portfolio_abstract
+from watchtower.starters import draft_notebook_cells, portfolio_abstract, seed_fingerprint
 
 from .images import portfolio_figure, uploaded_image
 from .projects import project_name, scaffold_project
@@ -201,20 +202,21 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
         if artifact.kind == "portfolio" and artifact.id in details:
             detail = details[artifact.id]
             if artifact.lifecycle != "planned":
-                required = ("abstract", "figure_path", "figure_caption", "notebook_path", "project_name") if artifact.lifecycle == "published" else ("notebook_path", "project_name")
+                required = ("abstract", "figure_path", "figure_caption", "notebook_path", "project_path") if artifact.lifecycle == "published" else ("notebook_path", "project_path")
                 for field in required:
                     if not getattr(detail, field):
                         fail(f"{artifact.id}: {field} required for {artifact.lifecycle}", PORTFOLIO)
             if detail.figure_path:
                 exists(detail.figure_path, f"{artifact.id} figure")
             if detail.project_path:
-                prefix = f"archive/{detail.archive_date}/projects" if detail.project_source == "archived" else "projects"
+                project_root = Path(detail.project_path).parent
+                archived = detail.project_path.startswith("archive/")
                 key = f"@dir/{detail.project_path}"
                 resolved = files.get(key)
                 if resolved is None:
-                    if artifact.lifecycle != "planned" or detail.project_source != "active":
+                    if artifact.lifecycle != "planned" or archived:
                         fail(f"{artifact.id}: missing project directory {detail.project_path}", PORTFOLIO)
-                elif not Path(resolved.decode()).is_relative_to(root / prefix):
+                elif not Path(resolved.decode()).is_relative_to(root / project_root):
                     fail(f"{artifact.id}: project symlink escapes selected project root", PORTFOLIO)
                 for related in artifact.relations:
                     target = artifacts.get(related)
@@ -278,6 +280,19 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
             fail(f"unregistered active notebook: {name}", name)
     if errors:
         raise ServiceError("\n".join(errors), paths=sorted(set(paths)))
+
+
+def rename_title_h1(notebook: nbformat.NotebookNode, old_title: str, new_title: str) -> None:
+    """Rename the authored H1 that supplies a notebook's title, keeping its position."""
+    for cell in notebook.cells:
+        if cell.cell_type != "markdown":
+            continue
+        tokens = MarkdownIt().parse(cell.source)
+        for index, token in enumerate(tokens):
+            if token.type == "heading_open" and token.tag == "h1" and displayed_text(tokens[index + 1]) == old_title and token.map:
+                lines = cell.source.splitlines()
+                lines[token.map[0]:token.map[1]] = [f"# {new_title}"]
+                cell.source = "\n".join(lines)
 
 
 class ContentService:
@@ -575,7 +590,12 @@ class ContentService:
             writes = {CATALOG: yaml_bytes(catalog)}
             if artifact.kind == "portfolio":
                 portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
-                portfolio["entries"].append({"id": artifact.id, **(detail or {})})
+                entry = {"id": artifact.id, **(detail or {})}
+                legacy_project_fields = {"project_name", "project_source", "archive_date"}
+                if not entry.get("project_path") and not legacy_project_fields.intersection(entry):
+                    entry["project_path"] = f"projects/{project_name(artifact.id.split('/')[-1])}"
+                entry = PortfolioEntry.model_validate(entry).model_dump(mode="json")
+                portfolio["entries"].append(entry)
                 writes[PORTFOLIO] = yaml_bytes(portfolio)
             if artifact.kind == "course":
                 name = f"content/data/courses/{artifact.id.split('/')[-1]}.yaml"
@@ -725,6 +745,9 @@ class ContentService:
                 if isinstance(detail.get("planned"), dict):
                     detail["planned"] = {**target.get("planned", {}), **detail["planned"]}
                 target.update(detail)
+                normalized_detail = PortfolioEntry.model_validate(target).model_dump(mode="json")
+                target.clear()
+                target.update(normalized_detail)
                 writes[PORTFOLIO] = yaml_bytes(portfolio)
             if record["kind"] == "chapter":
                 if record.get("parent") != before.get("parent"):
@@ -750,16 +773,7 @@ class ContentService:
                     notebook = nbformat.reads((files[source] or b"").decode(), as_version=4)
                     if h1s(notebook) != [before["title"]]:
                         raise ServiceError("existing H1 differs from old title; repair source first", paths=[source])
-                    from markdown_it import MarkdownIt
-                    for cell in notebook.cells:
-                        if cell.cell_type != "markdown":
-                            continue
-                        tokens = MarkdownIt().parse(cell.source)
-                        for index, token in enumerate(tokens):
-                            if token.type == "heading_open" and token.tag == "h1" and displayed_text(tokens[index + 1]) == before["title"] and token.map:
-                                lines = cell.source.splitlines()
-                                lines[token.map[0]:token.map[1]] = [f"# {record['title']}"]
-                                cell.source = "\n".join(lines)
+                    rename_title_h1(notebook, before["title"], record["title"])
                     writes[source] = nbformat.writes(notebook).encode()
             if record["kind"] != "chapter" and record["title"] != before["title"]:
                 source = source_path(Artifact.model_validate(before), parse_state(files))
@@ -770,13 +784,61 @@ class ContentService:
                             if cell.cell_type == "markdown" and cell.source.strip():
                                 cell.source = f"# {record['title']}\n"
                         writes[source] = nbformat.writes(notebook).encode()
+                    elif h1s(notebook) == [before["title"]]:
+                        # Seeded drafts own their title H1; keep it aligned so the
+                        # generated page still renders the catalog title once.
+                        rename_title_h1(notebook, before["title"], record["title"])
+                        writes[source] = nbformat.writes(notebook).encode()
             writes[CATALOG] = yaml_bytes(catalog)
             candidate = dict(files)
             candidate.update(writes)
             state = parse_state(candidate)
+            plan_touched = any(key in patch for key in ("planned", "plan", "contract")) or isinstance(patch.get("detail"), dict) and "planned" in patch["detail"]
+            if plan_touched:
+                self._reseed_scaffold(files, writes, state, record["id"])
             affected = [{"id": a.id, "eligible": eligible(a, state.artifacts)} for a in state.artifacts if a.parent == record["id"]]
             return {"artifact": record, "affected_children": affected}, writes
         return self._mutate("update", apply, expected_revision)
+
+    def _reseed_scaffold(self, files: dict[str, bytes | None], writes: dict[str, bytes], state: Workspace, artifact_id: str) -> None:
+        """Refresh plan seeding while a started draft is still exactly its last seed.
+
+        A draft that matches its stored seed fingerprint owns no hand-written
+        prose, so plan saves rebuild its sections (and fill a still-blank abstract)
+        instead of leaving the page stale. The first hand edit freezes the draft:
+        authored cells and explicit abstracts are never rewritten.
+        """
+        artifact = next((a for a in state.artifacts if a.id == artifact_id), None)
+        if artifact is None or artifact.lifecycle != "draft" or artifact.kind not in {"post", "chapter", "portfolio", "personal", "course"}:
+            return
+        source = source_path(artifact, state)
+        if not source or files.get(source) is None:
+            return
+        current = (writes.get(source) or files[source] or b"").decode()
+        notebook = nbformat.reads(current, as_version=4)
+        if any(cell.cell_type != "markdown" for cell in notebook.cells):
+            return
+        existing = [cell.source for cell in notebook.cells]
+        seeded = str((notebook.get("metadata") or {}).get("watchtower_seed") or "")
+        # A notebook matching its last seed owns no hand-written prose: the plan
+        # may refresh it. Anything else is authored and never rewritten.
+        pristine = bool(seeded) and seed_fingerprint(existing) == seeded
+        if not pristine and has_content(notebook, artifact.title):
+            return
+        bodies = draft_notebook_cells(artifact.kind, artifact.title, self._planning(artifact, state))
+        if existing != bodies:
+            metadata: dict[str, Any] = dict(notebook.get("metadata") or {"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
+            metadata["watchtower_seed"] = seed_fingerprint(bodies)
+            rebuilt = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in bodies], metadata=metadata)
+            writes[source] = nbformat.writes(rebuilt).encode()
+        if artifact.kind == "portfolio":
+            detail = next((p for p in state.portfolio if p.id == artifact.id), None)
+            if detail is not None and not (detail.abstract or "").strip():
+                portfolio = load_yaml(writes.get(PORTFOLIO) or files[PORTFOLIO] or b"", PORTFOLIO)
+                target = next((p for p in portfolio["entries"] if p["id"] == artifact.id), None)
+                if target is not None:
+                    target["abstract"] = (artifact.description or "").strip() or portfolio_abstract(detail.planned) or None
+                    writes[PORTFOLIO] = yaml_bytes(portfolio)
 
     def start(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -791,14 +853,15 @@ class ContentService:
             if artifact.kind == "portfolio":
                 detail = next(p for p in state.portfolio if p.id == artifact.id)
                 detail.notebook_path = detail.notebook_path or f"content/notebooks/portfolio/{artifact.id.split('/')[-1]}.ipynb"
-                if detail.project_source == "active":
-                    name = project_name(detail.project_name or artifact.id.split("/")[-1])
-                    detail.project_name = name
+                if detail.project_path and detail.project_path.startswith("projects/"):
+                    name = project_name(detail.project_path.rsplit("/", 1)[-1])
                     project_path, project_writes = self._initialize_project(catalog, name, "private")
                     writes.update(project_writes)
                 portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
                 target = next(p for p in portfolio["entries"] if p["id"] == artifact.id)
-                target.update(notebook_path=detail.notebook_path, project_name=detail.project_name)
+                for key in ("project_name", "project_source", "archive_date"):
+                    target.pop(key, None)
+                target.update(notebook_path=detail.notebook_path, project_path=detail.project_path)
                 if not (detail.abstract or "").strip():
                     target["abstract"] = (artifact.description or "").strip() or portfolio_abstract(detail.planned) or None
                 writes[PORTFOLIO] = yaml_bytes(portfolio)
@@ -807,8 +870,8 @@ class ContentService:
                 raise ServiceError("configure notebook_path before starting")
             if self.store.safe_path(path).exists() or files.get(path) is not None:
                 raise ServiceError("start refuses an existing source notebook", code="conflict", status=412, paths=[path])
-            sections = draft_sections(artifact.kind, self._planning(artifact, state))
-            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in [f"# {artifact.title}\n", *sections]], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
+            bodies = draft_notebook_cells(artifact.kind, artifact.title, self._planning(artifact, state))
+            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in bodies], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}, "watchtower_seed": seed_fingerprint(bodies)})
             record["lifecycle"] = "draft"
             record["visibility"] = "private"
             writes.update({CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()})

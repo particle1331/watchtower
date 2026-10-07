@@ -179,7 +179,7 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
             emit(service.read_data("photos"))
 
     @new_app.command("portfolio")
-    def portfolio(name: str, title: str | None = None, abstract: str | None = None, figure_path: str | None = typer.Option(None, "--figure-path"), figure_caption: str | None = typer.Option(None, "--figure-caption"), project_name: str | None = typer.Option(None, "--project-name"), project_source: str = typer.Option("active", "--project-source"), archive_date: str | None = typer.Option(None, "--archive-date"), introduction: str | None = None, what_it_contains: str | None = typer.Option(None, "--what-it-contains"), scope_notes: str | None = typer.Option(None, "--scope-notes"), plan_file: str | None = typer.Option(None, "--plan-file"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+    def portfolio(name: str, title: str | None = None, abstract: str | None = None, figure_path: str | None = typer.Option(None, "--figure-path"), figure_caption: str | None = typer.Option(None, "--figure-caption"), project_path: str | None = typer.Option(None, "--project-path", help="Repository-relative project directory."), introduction: str | None = None, what_it_contains: str | None = typer.Option(None, "--what-it-contains"), scope_notes: str | None = typer.Option(None, "--scope-notes"), plan_file: str | None = typer.Option(None, "--plan-file"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
         """Register a portfolio plan without creating its source notebook."""
         service = ContentService()
         slug(name)
@@ -188,7 +188,7 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
                 raise ServiceError("choose a plan file or inline portfolio plan")
             parts = split_plan(service.plan_file(plan_file), ["What it contains", "Explore the project"], ["What it contains"])
             introduction, what_it_contains, scope_notes = parts["introduction"], parts["What it contains"], parts.get("Explore the project", "")
-        detail = {"abstract": abstract, "figure_path": figure_path, "figure_caption": figure_caption, "project_name": project_name, "project_source": project_source, "archive_date": archive_date, "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "planned": {"introduction": introduction or "", "what_it_contains": what_it_contains or "", "scope_notes": scope_notes or ""}}
+        detail = {"abstract": abstract, "figure_path": figure_path, "figure_caption": figure_caption, "project_path": project_path or f"projects/{name}", "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "planned": {"introduction": introduction or "", "what_it_contains": what_it_contains or "", "scope_notes": scope_notes or ""}}
         emit(service.create({"id": f"portfolio/{name}", "kind": "portfolio", "title": title or name.replace("-", " ").title(), "detail": detail}, expected_revision))
 
     @app.command("build")

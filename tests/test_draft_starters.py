@@ -28,8 +28,17 @@ def test_start_and_publish_defaults_and_later_plan_edits(content_service):
     before = path.read_bytes()
     assert b'Explain the example.' in before
     assert b'Private todo' not in before and b'Private notes' not in before
+    # An untouched seed follows the plan; the first hand edit freezes the draft.
     service.update('post/flow', {'planned': {'content': 'A revised plan'}})
-    assert path.read_bytes() == before
+    refreshed = path.read_bytes()
+    assert b'A revised plan' in refreshed and b'Explain the example.' not in refreshed
+    assert b'Private todo' not in refreshed and b'Private notes' not in refreshed
+    notebook = nbformat.read(path, as_version=4)
+    notebook.cells.append(nbformat.v4.new_markdown_cell('My own prose.'))
+    path.write_bytes(nbformat.writes(notebook).encode())
+    edited = path.read_bytes()
+    service.update('post/flow', {'planned': {'content': 'An ignored plan edit'}})
+    assert path.read_bytes() == edited
     with pytest.raises(ServiceError):
         service.publish('post/flow', started['revision'])
     assert service.inspect('post/flow')['artifact']['visibility'] == 'private'
@@ -37,7 +46,7 @@ def test_start_and_publish_defaults_and_later_plan_edits(content_service):
     assert published['artifact']['lifecycle'] == 'published'
     assert published['artifact']['visibility'] == 'public'
     assert service.inspect('post/flow')['eligible']
-    assert path.read_bytes() == before
+    assert path.read_bytes() == edited
 
 
 def test_starter_demotes_h1s_and_preserves_fences_and_lists():
@@ -94,3 +103,83 @@ def test_abstract_seed_is_bounded_and_ignores_nonprose():
     assert portfolio_abstract({'introduction': 'Same paragraph.', 'what_it_contains': 'Same paragraph.'}) == 'Same paragraph.'
     text = portfolio_abstract({'introduction': 'word ' * 100})
     assert len(text.split()) == 80 and text.endswith('…')
+
+
+def test_draft_notebook_cells_seed_title_sections_and_references():
+    from watchtower.starters import draft_notebook_cells
+    cells = draft_notebook_cells('portfolio', 'Signal filters', {
+        'introduction': 'Filters drift.', 'references': 'ref1\nref2',
+        'scope_notes': 'INTERNAL', 'next_steps': 'INTERNAL',
+    })
+    assert cells[0] == '# Signal filters\n'
+    assert cells[1].startswith('## The problem')
+    assert cells[-1] == '## References\n\n- ref1\n- ref2'
+    joined = '\n'.join(cells)
+    assert 'INTERNAL' not in joined
+    assert draft_notebook_cells('portfolio', 'Title only', {}) == ['# Title only\n']
+
+
+def test_plain_reference_lines_seed_as_a_list():
+    from watchtower.starters import draft_sections
+    assert draft_sections('portfolio', {'references': 'ref1\nref2\nref3'}) == ['## References\n\n- ref1\n- ref2\n- ref3']
+    assert draft_sections('post', {'references': 'ref1\nref2'}) == ['## References\n\n- ref1\n- ref2']
+    # Authored Markdown keeps its own structure.
+    assert draft_sections('portfolio', {'references': 'Paragraph one.\n\nParagraph two.'}) == ['## References\n\nParagraph one.\n\nParagraph two.']
+    assert draft_sections('portfolio', {'references': '> quoted reference'}) == ['## References\n\n> quoted reference']
+
+
+def test_portfolio_project_path_defaults_to_the_portfolio_name(content_service):
+    service = content_service
+    service.create({'id': 'portfolio/named', 'kind': 'portfolio', 'title': 'Named', 'detail': {'planned': {}}})
+    assert service.inspect('portfolio/named')['detail']['project_path'] == 'projects/named'
+    service.create({'id': 'portfolio/aliased', 'kind': 'portfolio', 'title': 'Aliased', 'detail': {'project_path': 'projects/shared-code', 'planned': {}}})
+    assert service.inspect('portfolio/aliased')['detail']['project_path'] == 'projects/shared-code'
+
+
+def test_plan_save_reseeds_only_unedited_scaffolds(content_service):
+    service = content_service
+    created = service.create({'id': 'portfolio/late', 'kind': 'portfolio', 'title': 'Late', 'detail': {'planned': {}}})
+    started = service.start('portfolio/late', created['revision'])
+    source = service.root / started['source_path']
+    assert [cell.source for cell in nbformat.read(source, as_version=4).cells] == ['# Late\n']
+    service.update('portfolio/late', {'detail': {'planned': {'introduction': 'The problem to solve.', 'what_it_contains': 'A checked pipeline.', 'references': 'ref1\nref2'}}})
+    cells = [cell.source for cell in nbformat.read(source, as_version=4).cells]
+    assert cells[0] == '# Late\n' and 'The problem to solve.' in cells[1]
+    assert cells[-1] == '## References\n\n- ref1\n- ref2'
+    assert service.inspect('portfolio/late')['detail']['abstract'] == 'The problem to solve. A checked pipeline.'
+    # Authored content ends re-seeding; later plan edits never rewrite the notebook.
+    notebook = nbformat.read(source, as_version=4)
+    notebook.cells.append(nbformat.v4.new_markdown_cell('My own prose.'))
+    source.write_bytes(nbformat.writes(notebook).encode())
+    before = source.read_bytes()
+    service.update('portfolio/late', {'detail': {'planned': {'introduction': 'A changed problem.'}}})
+    assert source.read_bytes() == before
+    assert service.inspect('portfolio/late')['detail']['abstract'] == 'The problem to solve. A checked pipeline.'
+
+
+def test_reseed_never_overwrites_an_explicit_abstract(content_service):
+    service = content_service
+    service.create({'id': 'portfolio/kept', 'kind': 'portfolio', 'title': 'Kept', 'detail': {'abstract': 'Handwritten.', 'planned': {}}})
+    service.start('portfolio/kept')
+    service.update('portfolio/kept', {'detail': {'planned': {'introduction': 'A problem.'}}})
+    saved = service.inspect('portfolio/kept')
+    assert saved['detail']['abstract'] == 'Handwritten.'
+    cells = [cell.source for cell in nbformat.read(service.root / saved['source_path'], as_version=4).cells]
+    assert any('A problem.' in cell for cell in cells)
+
+
+def test_rename_keeps_scaffold_titles_in_sync_and_reseeds(content_service):
+    service = content_service
+    created = service.create_post('renamed', {'title': 'Old title', 'planned': {'content': 'Body plan.'}})
+    started = service.start('post/renamed', created['revision'])
+    source = service.root / started['source_path']
+    # A seeded draft's title H1 follows coordinated renames, so the page shows the title once.
+    service.update('post/renamed', {'title': 'New title'})
+    cells = [cell.source for cell in nbformat.read(source, as_version=4).cells]
+    assert cells[0].strip() == '# New title' and any('Body plan.' in cell for cell in cells)
+    # A combined rename and plan save still re-seeds a title-only scaffold.
+    service.create_post('combined', {'title': 'Old title', 'planned': {}})
+    service.start('post/combined')
+    service.update('post/combined', {'title': 'Renamed', 'planned': {'content': 'Seeded body.'}})
+    cells = [cell.source for cell in nbformat.read(service.root / 'content/notebooks/posts/combined.ipynb', as_version=4).cells]
+    assert cells[0] == '# Renamed\n' and any('Seeded body.' in cell for cell in cells)

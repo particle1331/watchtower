@@ -28,6 +28,15 @@ def photo_form(page):
     return {'revision': token, 'snapshot': html.unescape(snapshot)}
 
 
+def field_paths(page):
+    paths = []
+    for name in re.findall(r'name="([^"]+)"', page.text):
+        name = html.unescape(name)
+        if name.startswith(("field:", "new:")):
+            paths.append(json.loads(name.split(":", 1)[1]))
+    return paths
+
+
 @pytest.mark.parametrize('section', ['posts', 'portfolio', 'courses'])
 def test_list_lifecycle_and_visibility_dropdowns_auto_submit(author, section):
     with TestClient(create_app(author.root)) as client:
@@ -43,7 +52,8 @@ def test_list_lifecycle_and_visibility_dropdowns_auto_submit(author, section):
 
 @pytest.mark.parametrize('htmx', [False, True])
 def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author, htmx):
-    author.create({'id': 'portfolio/example', 'kind': 'portfolio', 'title': 'Example project', 'detail': {'notebook_path': 'content/notebooks/portfolio/example.ipynb', 'planned': {'introduction': 'The introduction', 'what_it_contains': 'The contents'}}})
+    (author.root / 'archive/2026-09-30/projects/legacy-example').mkdir(parents=True)
+    author.create({'id': 'portfolio/example', 'kind': 'portfolio', 'title': 'Example project', 'detail': {'notebook_path': 'content/notebooks/portfolio/example.ipynb', 'project_path': 'archive/2026-09-30/projects/legacy-example', 'planned': {'introduction': 'The introduction', 'what_it_contains': 'The contents'}}})
     with TestClient(create_app(author.root)) as client:
         overview = client.get('/cms/portfolio')
         assert 'href="/cms/artifact/portfolio/example">Edit</a>' in overview.text
@@ -53,6 +63,8 @@ def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author
         assert 'data-cancel href="/cms/portfolio"' in editor.text
         assert 'href="/cms/portfolio">← Back to Portfolio</a>' in editor.text
         assert 'href="/cms/data/portfolio"' not in editor.text
+        assert 'Project name' not in editor.text and 'Project source' not in editor.text and 'Archive date' not in editor.text
+        assert not any(path[-1] in {'project_name', 'project_source', 'archive_date'} for path in field_paths(editor))
         for field in ['title', 'detail / abstract', 'detail / figure_path', 'detail / planned / introduction']:
             assert f'title="{field}"' in editor.text
         form = photo_form(editor)
@@ -65,6 +77,7 @@ def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author
         assert record['artifact']['title'] == 'Updated project'
         assert record['detail']['abstract'] == 'Updated abstract'
         assert record['detail']['planned']['introduction'] == 'The introduction'
+        assert record['detail']['project_path'] == 'archive/2026-09-30/projects/legacy-example'
         restored = client.get(target)
         assert 'Portfolio entry saved.' in restored.text
         assert 'Updated project' in restored.text and 'Updated abstract' in restored.text

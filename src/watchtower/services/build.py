@@ -28,8 +28,15 @@ from urllib.parse import quote, unquote, urlsplit
 import nbformat
 import yaml
 from jinja2 import DictLoader, Environment
+from markdown_it import MarkdownIt
 
-from watchtower.models import course_rows, eligible, route_for, source_path
+from watchtower.models import (
+    course_rows,
+    displayed_text,
+    eligible,
+    route_for,
+    source_path,
+)
 from watchtower.services.content import KANBAN, ContentService
 from watchtower.services.profile import build_resume_pdf, latex_profile
 from watchtower.services.workspace import ServiceError
@@ -80,13 +87,27 @@ def _relative(target: str, route: str) -> str:
 
 
 def _source_url(entry: Any, settings: Any) -> str | None:
-    if not entry.project_name or not entry.project_source:
+    if not entry.project_path:
         return None
-    parts = ["projects", entry.project_name]
-    if entry.project_source == "archived":
-        parts = ["archive", str(entry.archive_date), *parts]
-    encoded = "/".join(quote(part, safe="") for part in parts)
+    encoded = "/".join(quote(part, safe="") for part in entry.project_path.split("/"))
     return f"{settings.repository_url.rstrip('/')}/tree/{quote(settings.source_ref, safe='')}/{encoded}"
+
+
+def _remove_title_h1s(source: str, title: str) -> tuple[str, bool]:
+    tokens = MarkdownIt().parse(source)
+    ignored: set[int] = set()
+    for index, token in enumerate(tokens):
+        if (
+            token.type == "heading_open"
+            and token.tag == "h1"
+            and index + 1 < len(tokens)
+            and displayed_text(tokens[index + 1]) == title
+            and token.map
+        ):
+            ignored.update(range(*token.map))
+    if not ignored:
+        return source, False
+    return "\n".join(line for index, line in enumerate(source.splitlines()) if index not in ignored), True
 
 
 class _Generator:
@@ -250,12 +271,10 @@ class _Generator:
 
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
         value: dict[str, Any] = {"title": artifact.title, "toc": True, "lifecycle": artifact.lifecycle}
-        if artifact.description:
+        # Portfolio entry pages show their abstract as body content from portfolio
+        # YAML; a front-matter description would render it a second time.
+        if artifact.description and artifact.kind != "portfolio":
             value["description"] = artifact.description
-        if artifact.kind == "portfolio":
-            detail = next((entry for entry in self.state.portfolio if entry.id == artifact.id), None)
-            if detail and detail.abstract:
-                value["description"] = detail.abstract
         if artifact.date:
             value["date"] = str(artifact.date)
         if artifact.tags:
@@ -300,14 +319,21 @@ class _Generator:
         if not source:
             raise ValueError(f"Missing notebook source for {artifact.id}")
         notebook = copy.deepcopy(nbformat.reads(self.files[source].decode("utf-8"), as_version=4))
+        cells = []
         for cell in notebook.cells:
             if cell.cell_type == "markdown":
+                if artifact.kind != "chapter":
+                    cell.source, removed_title = _remove_title_h1s(cell.source, artifact.title)
+                    if removed_title and not cell.source.strip():
+                        continue
                 cell.source = self.rewrite_body(cell.source, source, route)
             for output in cell.get("outputs", []):
                 for mimetype in ("text/html", "text/markdown"):
                     body = output.get("data", {}).get(mimetype)
                     if isinstance(body, str):
                         self.rewrite_body(body, source, route)
+            cells.append(cell)
+        notebook.cells = cells
         header = _frontmatter(self.metadata(artifact, route))
         if artifact.lifecycle != "published" or artifact.visibility != "public":
             if artifact.kind == "portfolio" or artifact.lifecycle == "draft":
@@ -322,6 +348,16 @@ class _Generator:
             listing = {"post": "posts.qmd", "portfolio": "portfolio.qmd", "personal": self.routes[gallery.id] if gallery else None}[artifact.kind]
             if listing and not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells):
                 header += f"\n[← {artifact.kind.capitalize()}]({_relative(listing, route)})\n"
+        if artifact.kind == "portfolio" and (detail := self.details.get(artifact.id)) is not None:
+            if detail.figure_path:
+                destination = _asset_path(detail.figure_path)
+                self.write(destination, self.files[detail.figure_path])
+                header += f"\n![{detail.figure_caption or ''}]({_relative(destination, route)})\n"
+            abstract = detail.abstract or artifact.description or "Project description not added yet."
+            header += f"\n**Abstract.** {abstract}\n"
+            source_url = _source_url(detail, self.state.settings)
+            if source_url:
+                header += f"\n[Source </>]({source_url})\n"
         notebook.cells.insert(0, _generated_cell(artifact.id, "header", header))
         if artifact.kind == "course":
             context = self.context(artifact)
@@ -352,7 +388,7 @@ class _Generator:
                 self.write(destination, self.files[detail.figure_path])
                 data["figure"] = destination
             data["source_url"] = _source_url(detail, self.state.settings)
-            data["source_label"] = "Archived source" if detail.project_source == "archived" else "Source"
+            data["project_name"] = detail.project_path.rsplit("/", 1)[-1] if detail.project_path else None
             entries.append(data)
         self.write("portfolio.qmd", self.template("site/portfolio.qmd.j2", entries=entries), render=True)
 

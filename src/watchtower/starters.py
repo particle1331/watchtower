@@ -1,4 +1,6 @@
 """One-time draft sections drawn from explicitly supported planning fields."""
+import hashlib
+import re
 from typing import Any
 
 from markdown_it import MarkdownIt
@@ -10,7 +12,7 @@ SECTIONS = {
              ("content", ""), ("evidence", "Examples and evidence"), ("references", "References")],
     "portfolio": [("introduction", "The problem"), ("intended_users", "Who it is for"),
                   ("what_it_contains", "What it contains"), ("approach", "Implementation approach"),
-                  ("success_criteria", "How to evaluate it")],
+                  ("success_criteria", "How to evaluate it"), ("references", "References")],
     "course": [("purpose", "About this course"), ("audience", "Who this is for"),
                ("summary", "Course progression"), ("prerequisites", "Prerequisites"),
                ("outcomes", "Learning outcomes"), ("running_project", "The running project"),
@@ -42,6 +44,21 @@ def portfolio_abstract(plan: dict[str, Any]) -> str:
     return " ".join(words[:80]).rstrip(".,;:") + "…" if len(words) > 80 else text
 
 
+def draft_notebook_cells(kind: str, title: str, plan: dict[str, Any]) -> list[str]:
+    """Notebook bodies for a fresh draft: the title and the seeded plan sections."""
+    return [f"# {title}\n", *draft_sections(kind, plan)]
+
+
+def seed_fingerprint(bodies: list[str]) -> str:
+    """Identity of a draft's seeded sections, excluding the title cell.
+
+    A notebook matching its fingerprint is still exactly its last seed: plan
+    saves may refresh it, and no hand edit can be lost. A single hand edit
+    changes the fingerprint and freezes the draft.
+    """
+    return hashlib.sha256("\x1e".join(bodies[1:]).encode()).hexdigest()
+
+
 def draft_sections(kind: str, plan: dict[str, Any]) -> list[str]:
     """Preserve Markdown and fences; keep notes and unknown plan fields internal."""
     sections = []
@@ -49,7 +66,16 @@ def draft_sections(kind: str, plan: dict[str, Any]) -> list[str]:
         value = plan.get(key)
         if not value:
             continue
-        body = "\n".join(f"- {item}" for item in value) if isinstance(value, list) else str(value)
+        if isinstance(value, list):
+            body = "\n".join(f"- {item}" for item in value)
+        else:
+            body = str(value)
+            if key == "references":
+                # Plain reference lines are a list of items, not one soft-wrapped paragraph.
+                items = [line.strip() for line in body.strip().splitlines() if line.strip()]
+                already_markdown = "\n\n" in body.strip() or re.search(r"(?m)^\s{0,3}(?:[-*+] |\d+[.)] |#{1,6} |>|\|)", body)
+                if len(items) > 1 and not already_markdown:
+                    body = "\n".join(f"- {item}" for item in items)
         if not body.strip():
             continue
         lines = body.strip().splitlines()

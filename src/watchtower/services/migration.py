@@ -314,10 +314,10 @@ class Migration:
                 detail: dict[str, Any] = {"id": item["id"], "abstract": item.pop("summary", ""), "notebook_path": target}
                 name = HISTORICAL_PROJECTS.get(item["id"])
                 if name:
-                    detail.update(project_name=name, project_source="archived", archive_date="2026-09-30")
-                    project = f"archive/2026-09-30/projects/{name}"
+                    detail["project_path"] = f"archive/2026-09-30/projects/{name}"
+                    project = detail["project_path"]
                     if not (self.root / project).is_dir():
-                        block(source, "project_source", f"archived project directory missing: {project}")
+                        block(source, "project_path", f"archived project directory missing: {project}")
                     figure = f"archive/2026-09-30/nb/portfolio/img/{name}-flow.svg"
                     report["warnings"].append({"path": source, "message": "review historical figure and caption without adopting archived claims", "suggested_figure": figure if (self.root / figure).is_file() else None})
                     caption = historical_captions.get(f"{name}-flow.svg")
@@ -326,7 +326,7 @@ class Migration:
                         detail.update(figure_path=figure_target, figure_caption=caption)
                         files[figure_target] = (self.root / figure).read_bytes()
                 else:
-                    block(source, "project_source", "project reference requires review")
+                    block(source, "project_path", "project reference requires review")
                 if not detail.get("figure_path"):
                     block(source, "figure_path", "required figure and caption need author review")
                 portfolio.append(detail)

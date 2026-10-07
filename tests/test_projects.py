@@ -12,17 +12,20 @@ from watchtower.services.content import ContentService
 from watchtower.services.workspace import ServiceError
 
 
-def planned_portfolio(service, name=None):
-    return service.create({"id": "portfolio/future", "kind": "portfolio", "title": "Future project",
-        "detail": {"project_name": name, "planned": {"introduction": "The problem.", "what_it_contains": "The implementation."}}})
+def planned_portfolio(service, project_path=None):
+    detail = {"planned": {"introduction": "The problem.", "what_it_contains": "The implementation."}}
+    if project_path is not None:
+        detail["project_path"] = project_path
+    return service.create({"id": "portfolio/future", "kind": "portfolio", "title": "Future project", "detail": detail})
 
 
-@pytest.mark.parametrize("name", [None, "custom-package"])
-def test_start_portfolio_creates_notebook_package_and_registration(content_service, name):
+@pytest.mark.parametrize("project_path", [None, "projects/custom-package"])
+def test_start_portfolio_creates_notebook_package_and_registration(content_service, project_path):
     service = content_service
-    created = planned_portfolio(service, name)
+    created = planned_portfolio(service, project_path)
+    name = project_path.rsplit("/", 1)[-1] if project_path else "future"
+    assert service.inspect("portfolio/future")["detail"]["project_path"] == f"projects/{name}"
     result = service.start("portfolio/future", expected_revision=created["revision"])
-    name = name or "future"
     assert result["project_path"] == f"projects/{name}"
     assert result["artifact"]["lifecycle"] == "draft"
     config = tomllib.loads((service.root / f"projects/{name}/pyproject.toml").read_text())
@@ -34,7 +37,7 @@ def test_start_portfolio_creates_notebook_package_and_registration(content_servi
     assert "The implementation." in service.inspect("portfolio/future")["build_brief"]
     assert f"projects/{name}" in service.inspect("portfolio/future")["build_brief"]
     record = service.inspect("portfolio/future")
-    assert record["detail"]["project_name"] == name
+    assert record["detail"]["project_path"] == f"projects/{name}"
     assert record["detail"]["notebook_path"] == "content/notebooks/portfolio/future.ipynb"
     assert service.inspect(f"project/{name}")["artifact"]["path"] == f"projects/{name}"
     assert not any(path.startswith("projects/") for path in service.snapshot().files)
@@ -56,6 +59,28 @@ def test_start_reuses_existing_project_without_changing_code(content_service):
     assert list(project.iterdir()) == [code]
     projects = [artifact for artifact in service.list()["artifacts"] if artifact["kind"] == "project"]
     assert [artifact["id"] for artifact in projects] == ["project/custom-id"]
+
+
+def test_start_archived_portfolio_does_not_scaffold_a_project(content_service):
+    service = content_service
+    archive = service.root / "archive/2026-09-30/projects/historical"
+    archive.mkdir(parents=True)
+    code = archive / "code.py"
+    code.write_text("# Historical code\n")
+    service.create({
+        "id": "portfolio/historical", "kind": "portfolio", "title": "Historical project",
+        "detail": {
+            "project_path": "archive/2026-09-30/projects/historical",
+            "planned": {"introduction": "History", "what_it_contains": "Existing code."},
+        },
+    })
+
+    service.start("portfolio/historical")
+
+    assert code.read_text() == "# Historical code\n"
+    assert not (service.root / "projects/historical").exists()
+    assert not any(item["id"] == "project/historical" for item in service.list()["artifacts"])
+    assert service.inspect("portfolio/historical")["detail"]["project_path"] == "archive/2026-09-30/projects/historical"
 
 
 @pytest.mark.parametrize("stage", ["prepared", "installed"])

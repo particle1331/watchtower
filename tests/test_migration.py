@@ -181,9 +181,9 @@ def test_reviewed_historical_figures_are_copied_with_original_caption_and_mappin
     assert result["report"]["ready"]
     entries = load_yaml(result["files"]["content/data/portfolio.yaml"].decode())["entries"]
     for entry in entries:
-        name = entry["project_name"]
-        assert entry["project_source"] == "archived"
-        assert entry["archive_date"] == "2026-09-30"
+        name = entry["project_path"].rsplit("/", 1)[-1]
+        assert entry["project_path"] == f"archive/2026-09-30/projects/{name}"
+        assert not {"project_name", "project_source", "archive_date"}.intersection(entry)
         assert entry["figure_caption"] == f"Original {name} caption."
         assert entry["abstract"] == f"Historical {name}"
         assert result["files"][entry["figure_path"]] == (tmp_path / f"archive/2026-09-30/nb/portfolio/img/{name}-flow.svg").read_bytes()
