@@ -1,5 +1,5 @@
 [project]
-name = "yeah1"
+name = "test1123"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -10,7 +10,7 @@ requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
-yeah1 = "yeah1:main"
+test1123 = "test1123:main"
 
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]

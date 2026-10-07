@@ -566,19 +566,49 @@ artifacts:
   internal_notes: ''
   tags: []
   planned: {}
-- id: portfolio/yeah1
-  kind: portfolio
-  title: YEAH
-  visibility: private
-  lifecycle: draft
-  relations: []
-  internal_notes: sdfsdfds
-  tags: []
-  planned: {}
 - id: project/yeah1
   kind: project
   title: Yeah1
   path: projects/yeah1
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: portfolio/test1123
+  kind: portfolio
+  title: test
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ???
+  tags: []
+  planned: {}
+- id: project/test1123
+  kind: project
+  title: Test1123
+  path: projects/test1123
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: portfolio/12321
+  kind: portfolio
+  title: testtttt
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/llms-from-scratch/04-gpt-model
+  internal_notes: '222'
+  tags: []
+  planned: {}
+- id: project/12321
+  kind: project
+  title: '12321'
+  path: projects/12321
   visibility: private
   lifecycle: draft
   relations: []
@@ -590,6 +620,7 @@ retired_ids:
 - htmx-todo
 - portfolio/test-portfolio-3
 - portfolio/test1
+- portfolio/yeah1
 - post/test-planned-post
 - test-portfolio
 retired_sources:
@@ -597,5 +628,6 @@ retired_sources:
 - content/notebooks/portfolio/test-portfolio-3.ipynb
 - content/notebooks/portfolio/test-portfolio.ipynb
 - content/notebooks/portfolio/test1.ipynb
+- content/notebooks/portfolio/yeah1.ipynb
 - content/notebooks/posts/htmx-todo.ipynb
 - content/notebooks/posts/test-planned-post.ipynb
