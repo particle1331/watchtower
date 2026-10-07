@@ -1,7 +1,7 @@
 ---
 description: Performs an independent read-only review of proposed changes and identifies regressions or verification gaps.
 mode: subagent
-model: opencode-go/kimi-k2.6
+model: opencode-go/mimo-v2.6-pro
 permission:
   edit: deny
   task: deny

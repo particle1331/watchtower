@@ -1,7 +1,7 @@
 ---
 description: Implements scoped code changes with minimal diffs and verifies the result.
 mode: subagent
-model: opencode-go/gpt-5.6-luna
+model: opencode-go/gpt-6-luna
 variant: max
 permission:
   task: deny

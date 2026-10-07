@@ -1,8 +1,7 @@
 ---
 description: Coordinates repository work, delegates focused tasks to specialist agents, and verifies their results.
 mode: primary
-model: opencode-go/gpt-5.6-luna
-variant: high
+model: opencode-go/mimo-v2.6-pro
 permission:
   task:
     "*": deny

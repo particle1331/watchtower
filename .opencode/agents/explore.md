@@ -1,8 +1,8 @@
 ---
 description: Fast read-only filesystem and codebase exploration that returns relevant paths, symbols, and risks.
 mode: subagent
-model: opencode-go/gpt-5.6-luna
-variant: high
+model: opencode-go/gpt-6-luna
+variant: medium
 permission:
   edit: deny
   task: deny

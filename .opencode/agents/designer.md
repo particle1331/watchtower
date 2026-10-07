@@ -1,7 +1,7 @@
 ---
 description: Designs and implements polished, responsive frontend experiences while preserving the existing design system.
 mode: subagent
-model: opencode-go/kimi-k2.7-code
+model: opencode-go/mimo-v2.6-pro
 permission:
   task: deny
 ---
