@@ -56,8 +56,8 @@ def test_cli_register_validate_and_site_visibility(repo):
     portfolio.mkdir(parents=True)
     (portfolio / "public.qmd").write_text("# Public\n", encoding="utf-8")
     (portfolio / "private.qmd").write_text("# Private\n", encoding="utf-8")
-    run("register", "portfolio", "portfolio/public", "nb/portfolio/public.qmd", "Public", "--summary", "Public work", "--lifecycle", "published")
-    run("register", "portfolio", "portfolio/private", "nb/portfolio/private.qmd", "Private", "--summary", "Private work", "--visibility", "private", "--lifecycle", "published")
+    run("register", "portfolio", "nb/portfolio/public.qmd", "Public", "--summary", "Public work", "--lifecycle", "published")
+    run("register", "portfolio", "nb/portfolio/private.qmd", "Private", "--summary", "Private work", "--visibility", "private", "--lifecycle", "published")
     run("validate")
     run("sync-site")
     config = yaml.safe_load(Path("_quarto.yml").read_text())
@@ -71,6 +71,19 @@ def test_cli_register_validate_and_site_visibility(repo):
     result = runner.invoke(cli.app, ["validate"])
     assert result.exit_code == 1
     assert "unregistered active path: nb/portfolio/orphan.qmd" in result.output
+
+
+def test_register_chapter_derives_id_from_parent_and_source(repo):
+    run("new", "course", "signals", "Signals")
+    source = Path("nb/courses/signals/03-extra.ipynb")
+    nbformat.write(nbformat.v4.new_notebook(), source)
+    missing_parent = runner.invoke(cli.app, ["register", "chapter", str(source), "Extra"])
+    assert missing_parent.exit_code == 2
+    assert "requires --parent" in missing_parent.output
+    run("register", "chapter", str(source), "Extra", "--parent", "course/signals")
+    artifact = json.loads(run("context", "course/signals/03-extra"))["artifact"]
+    assert artifact["path"] == str(source)
+    assert artifact["parent"] == "course/signals"
 
 
 def test_cli_scaffold_import_and_archive_are_separate(repo):

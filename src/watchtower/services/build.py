@@ -17,7 +17,6 @@ import subprocess
 import sys
 import threading
 import uuid
-from collections import Counter
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from html import escape
@@ -30,7 +29,7 @@ import nbformat
 import yaml
 from jinja2 import DictLoader, Environment
 
-from watchtower.models import course_rows, eligible, plan_body, route_for, source_path
+from watchtower.models import course_rows, eligible, route_for, source_path
 from watchtower.services.content import KANBAN, ContentService
 from watchtower.services.profile import build_resume_pdf, latex_profile
 from watchtower.services.workspace import ServiceError
@@ -215,11 +214,8 @@ class _Generator:
 
     def context(self, artifact: Any) -> str:
         contract = self.state.courses[artifact.id]
-        value = ["## Course context", "", "**Purpose.** " + contract.purpose]
-        if contract.audience:
-            audience = contract.audience
-            value.extend(["", "**Audience.** " + (", ".join(audience) if isinstance(audience, list) else str(audience))])
-        for label, record in (("Planned", contract.planned), ("Actualized", contract.actualized)):
+        value = ["## Course context"]
+        for label, record in (("Actualized", contract.actualized),):
             value.extend(["", f"### {label}"])
             for key, text in record.items():
                 if key == "chapters" or not text:
@@ -256,17 +252,21 @@ class _Generator:
         value: dict[str, Any] = {"title": artifact.title, "toc": True, "lifecycle": artifact.lifecycle}
         if artifact.description:
             value["description"] = artifact.description
+        if artifact.kind == "portfolio":
+            detail = next((entry for entry in self.state.portfolio if entry.id == artifact.id), None)
+            if detail and detail.abstract:
+                value["description"] = detail.abstract
         if artifact.date:
             value["date"] = str(artifact.date)
         if artifact.tags:
-            value["tags"] = artifact.tags
+            value["categories"] = artifact.tags
         if artifact.kind == "chapter":
             value["format"] = {"html": {"template-partials": ["/templates/title-block.html"]}}
         if artifact.kind in {"post", "personal"}:
             value["author"] = self.state.profile.name
         if artifact.kind == "course":
             value["sidebar"] = artifact.id.replace("/", "-")
-            value["description"] = artifact.description or self.state.courses[artifact.id].purpose
+            value["description"] = artifact.description or ""
         cover = getattr(artifact, "cover", None) or getattr(artifact, "image", None)
         if cover:
             value["image"] = "/" + _asset_path(cover)
@@ -297,23 +297,17 @@ class _Generator:
     def notebook(self, artifact: Any) -> None:
         route = self.routes[artifact.id]
         source = source_path(artifact, self.state)
-        if artifact.lifecycle == "planned":
-            body = plan_body(artifact, self.state)
-            if source:
-                body = self.rewrite_body(body, source, route)
-            notebook = nbformat.v4.new_notebook(cells=[_generated_cell(artifact.id, "planned-body", body)])
-        else:
-            if not source:
-                raise ValueError(f"Missing notebook source for {artifact.id}")
-            notebook = copy.deepcopy(nbformat.reads(self.files[source].decode("utf-8"), as_version=4))
-            for cell in notebook.cells:
-                if cell.cell_type == "markdown":
-                    cell.source = self.rewrite_body(cell.source, source, route)
-                for output in cell.get("outputs", []):
-                    for mimetype in ("text/html", "text/markdown"):
-                        body = output.get("data", {}).get(mimetype)
-                        if isinstance(body, str):
-                            self.rewrite_body(body, source, route)
+        if not source:
+            raise ValueError(f"Missing notebook source for {artifact.id}")
+        notebook = copy.deepcopy(nbformat.reads(self.files[source].decode("utf-8"), as_version=4))
+        for cell in notebook.cells:
+            if cell.cell_type == "markdown":
+                cell.source = self.rewrite_body(cell.source, source, route)
+            for output in cell.get("outputs", []):
+                for mimetype in ("text/html", "text/markdown"):
+                    body = output.get("data", {}).get(mimetype)
+                    if isinstance(body, str):
+                        self.rewrite_body(body, source, route)
         header = _frontmatter(self.metadata(artifact, route))
         if artifact.lifecycle != "published" or artifact.visibility != "public":
             if artifact.kind == "portfolio" or artifact.lifecycle == "draft":
@@ -328,11 +322,6 @@ class _Generator:
             listing = {"post": "posts.qmd", "portfolio": "portfolio.qmd", "personal": self.routes[gallery.id] if gallery else None}[artifact.kind]
             if listing and not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells):
                 header += f"\n[← {artifact.kind.capitalize()}]({_relative(listing, route)})\n"
-        if artifact.kind == "post" and artifact.tags:
-            header += "\n" + " · ".join(
-                f"[{tag}]({_relative('posts.html', route)}?tag={quote(tag, safe='')})"
-                for tag in artifact.tags
-            ) + "\n"
         notebook.cells.insert(0, _generated_cell(artifact.id, "header", header))
         if artifact.kind == "course":
             context = self.context(artifact)
@@ -356,7 +345,7 @@ class _Generator:
             data.update(detail.model_dump(mode="json"))
             data["anchor"] = artifact.id.replace("/", "-")
             data["route"] = self.routes[artifact.id]
-            data["abstract"] = detail.abstract or artifact.description or "This project is planned."
+            data["abstract"] = detail.abstract or artifact.description or "Project description not added yet."
             data["figure"] = None
             if detail.figure_path:
                 destination = _asset_path(detail.figure_path)
@@ -430,33 +419,30 @@ class _Generator:
         posts = []
         for artifact in self.entries:
             if artifact.kind == "post":
-                data = artifact.model_dump(mode="json")
-                data["href"] = _href(self.routes[artifact.id])
+                data = {
+                    "path": "/" + self.routes[artifact.id],
+                    "outputHref": "/" + _href(self.routes[artifact.id]),
+                    "title": self.navigation_title(artifact, artifact.title),
+                    "description": artifact.description or "",
+                    "categories": artifact.tags,
+                }
+                if artifact.date:
+                    data["date"] = str(artifact.date)
                 source = source_path(artifact, self.state)
-                if artifact.lifecycle == "planned":
-                    prose = plan_body(artifact, self.state)
-                elif source:
+                if source:
                     saved = nbformat.reads(self.files[source].decode("utf-8"), as_version=4)
                     prose = " ".join(cell.source for cell in saved.cells if cell.cell_type == "markdown")
                 else:
                     prose = ""
-                data["reading_minutes"] = max(1, (len(re.findall(r"\w+", prose)) + 199) // 200)
+                data["reading-time"] = max(1, (len(re.findall(r"\w+", prose)) + 199) // 200)
                 posts.append(data)
         posts.sort(key=lambda p: (p.get("date") or "", p["title"]), reverse=True)
-        counts: Counter[str] = Counter()
-        spelling: dict[str, str] = {}
-        for post in posts:
-            for tag in post["tags"]:
-                canonical = tag.casefold()
-                spelling.setdefault(canonical, tag)
-                counts[canonical] += 1
-        tags = [(spelling[tag], counts[tag]) for tag in sorted(counts)]
-        self.write("posts.qmd", self.template("site/posts.qmd.j2", posts=posts, tags=tags), render=True)
+        self.write("posts.qmd", self.template("site/posts.qmd.j2", posts=posts), render=True)
         self.portfolio()
         courses = [
             {"path": _href(self.routes[a.id]), "outputHref": _href(self.routes[a.id]),
              "title": self.navigation_title(a, a.title),
-             "description": a.description or self.state.courses[a.id].purpose,
+             "description": a.description or "",
              **({"image": _asset_path(a.cover)} if getattr(a, "cover", None) else {})}
             for a in self.entries if a.kind == "course"
         ]

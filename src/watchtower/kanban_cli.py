@@ -18,16 +18,17 @@ def install(app: typer.Typer) -> None:
         emit(KanbanService().read(column=column, query=query))
 
     @board.command("add")
-    def add(title: str = typer.Option(..., "--title"), description: str = "", column: str = "todo", link: list[str] | None = typer.Option(None, "--link"), identifier: str | None = typer.Option(None, "--id"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Add a card; --link accepts registered stable IDs and can be repeated."""
+    def add(title: str = typer.Option(..., "--title"), description: str = "", column: str = "todo", link: list[str] | None = typer.Option(None, "--link"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+        """Add a card with an automatic ID and card#N reference; repeat --link for artifacts."""
         data: dict[str, Any] = {"title": title, "description": description, "column": column, "artifact_ids": link or []}
-        if identifier is not None:
-            data["id"] = identifier
         emit(KanbanService().create(data, expected_revision))
 
     @board.command("update")
     def update(card_id: str, title: str | None = None, description: str | None = None, column: str | None = None, link: list[str] | None = typer.Option(None, "--link"), clear_links: bool = typer.Option(False, "--clear-links"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
         """Edit a card; --link replaces its links, --clear-links removes all links."""
+        if link and clear_links:
+            from watchtower.services.workspace import ServiceError
+            raise ServiceError("choose --link or --clear-links")
         patch: dict[str, Any] = {key: value for key, value in {"title": title, "description": description, "column": column}.items() if value is not None}
         if link is not None or clear_links:
             patch["artifact_ids"] = link or []

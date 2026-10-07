@@ -1,14 +1,14 @@
 """Revision-aware Kanban tasks with validated catalog links, shared by all clients."""
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import quote
 from uuid import uuid4
 
-from watchtower.models import KANBAN_COLUMNS, Kanban, KanbanCard, route_for, source_path
+from watchtower.models import KANBAN_COLUMNS, Kanban, KanbanCard, eligible, route_for, source_path
 from watchtower.services.build import BuildService
 from watchtower.services.content import KANBAN, ContentService, yaml_bytes
-from watchtower.services.workspace import ServiceError, load_yaml
+from watchtower.services.workspace import ServiceError, digest, load_yaml
 
 
 class KanbanService:
@@ -19,19 +19,23 @@ class KanbanService:
     @staticmethod
     def _board(files: Mapping[str, bytes | None]) -> Kanban:
         board = Kanban.model_validate(load_yaml(files[KANBAN] or b"", KANBAN)) if files.get(KANBAN) is not None else Kanban()
-        # Give pre-reference cards permanent human-friendly identifiers. Once any
-        # write occurs, these values and the counter are saved with the board.
-        used = {int(card.ref.removeprefix("card#")) for card in board.cards if card.ref}
-        number = max(board.next_number, max(used, default=0) + 1)
-        for card in board.cards:
-            if card.ref is None:
-                while number in used:
-                    number += 1
-                card.ref = f"card#{number}"
-                used.add(number)
-                number += 1
-        board.next_number = max(number, max(used, default=0) + 1)
-        return board
+        return board.assign_references()
+
+    @staticmethod
+    def board_revision(files: Mapping[str, bytes | None]) -> str:
+        return "kanban:" + digest(files.get(KANBAN))
+
+    def _mutate(self, operation: str, apply: Callable, expected_revision: str | None) -> dict[str, Any]:
+        token = expected_revision.strip('"') if expected_revision is not None else None
+        scoped = token is not None and token.startswith("kanban:")
+
+        def checked(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
+            current = self.board_revision(files)
+            if scoped and token != current:
+                raise ServiceError(f"stale Kanban revision; current revision {current}", code="conflict", status=412, paths=[KANBAN])
+            return apply(files)
+
+        return self.content._mutate(operation, checked, None if scoped else token)
 
     @staticmethod
     def _find_card(board: Kanban, identifier: str) -> int | None:
@@ -49,13 +53,13 @@ class KanbanService:
         for card in board.cards:
             if column and card.column != column:
                 continue
-            if query.casefold() not in " ".join([card.title, card.description, *card.artifact_ids]).casefold():
+            if query.casefold() not in " ".join([card.id, card.ref or "", card.title, card.description, *card.artifact_ids]).casefold():
                 continue
             data = card.model_dump(mode="json")
             links = []
             for identifier in card.artifact_ids:
                 artifact = artifacts[identifier]
-                route = None if artifact.kind == "project" else route_for(artifact)
+                route = route_for(artifact) if eligible(artifact, snapshot.state.artifacts, "preview") else None
                 source = artifact.path if artifact.kind in {"project", "gallery"} else source_path(artifact, snapshot.state)
                 existing = bool(source and (snapshot.files.get(source) is not None or artifact.kind == "project" and (self.root / source).is_dir()))
                 links.append({
@@ -67,7 +71,7 @@ class KanbanService:
                 })
             data["links"] = links
             cards.append(data)
-        return {"cards": cards, "columns": [{"id": key, "title": title} for key, title in KANBAN_COLUMNS], "revision": snapshot.revision}
+        return {"cards": cards, "columns": [{"id": key, "title": title} for key, title in KANBAN_COLUMNS], "revision": snapshot.revision, "board_revision": self.board_revision(snapshot.files)}
 
     def create(self, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -80,7 +84,7 @@ class KanbanService:
             board.cards.append(card)
             board.next_number += 1
             return {"card": card.model_dump(mode="json")}, {KANBAN: yaml_bytes(board.model_dump(mode="json"))}
-        return self.content._mutate("kanban create", apply, expected_revision)
+        return self._mutate("kanban create", apply, expected_revision)
 
     def update(self, card_id: str, patch: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
         if "id" in patch or "ref" in patch:
@@ -93,7 +97,7 @@ class KanbanService:
             card = KanbanCard.model_validate({**board.cards[index].model_dump(mode="json"), **patch})
             board.cards[index] = card
             return {"card": card.model_dump(mode="json")}, {KANBAN: yaml_bytes(board.model_dump(mode="json"))}
-        return self.content._mutate("kanban update", apply, expected_revision)
+        return self._mutate("kanban update", apply, expected_revision)
 
     def remove(self, card_id: str, expected_revision: str | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -103,4 +107,4 @@ class KanbanService:
                 raise ServiceError("Unknown Kanban card: " + card_id, code="not_found", status=404)
             removed = board.cards.pop(index)
             return {"removed": removed.ref or removed.id}, {KANBAN: yaml_bytes(board.model_dump(mode="json"))}
-        return self.content._mutate("kanban remove", apply, expected_revision)
+        return self._mutate("kanban remove", apply, expected_revision)

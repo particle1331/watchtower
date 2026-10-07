@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 from fastapi.testclient import TestClient
+from test_content_service import author_body
 
 from watchtower.api import create_app
 from watchtower.api.cms import apply_fields, field_groups, form_fields
@@ -69,6 +70,12 @@ def test_cms_lifecycle_choices_follow_authored_content(client):
     assert lifecycle_options(page) == ["draft", "published"]
     current = client.get("/api/artifacts/post/a%20space")
     assert current.json()["has_authored_content"] is True
+    assert current.json()["artifact"]["visibility"] == "private"
+    author_body(ContentService(client.app.state.root), "post/a space")
+    page = client.get("/cms/artifact/post/a%20space")
+    assert lifecycle_options(page) == ["draft", "published"]
+    current = client.get("/api/artifacts/post/a%20space")
+    assert current.json()["has_authored_content"] is True
     assert client.post("/api/actions/publish/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
     assert lifecycle_options(client.get("/cms/artifact/post/a%20space")) == ["draft", "published"]
 
@@ -77,6 +84,7 @@ def test_cms_rejects_authored_post_as_planned_without_changing_files(client):
     assert create_post(client).status_code == 201
     current = client.get("/api/artifacts/post/a%20space")
     assert client.post("/api/actions/start/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
+    author_body(ContentService(client.app.state.root), "post/a space")
     source = client.app.state.root / "content/notebooks/posts/a space.ipynb"
     catalog = client.app.state.root / "content/data/catalog.yaml"
     original = source.read_bytes(), catalog.read_bytes()
@@ -92,6 +100,7 @@ def test_cms_can_repair_authored_post_with_mismatched_planned_metadata(client):
     assert create_post(client).status_code == 201
     current = client.get("/api/artifacts/post/a%20space")
     assert client.post("/api/actions/start/post/a%20space", headers={"If-Match": current.headers["etag"]}).status_code == 200
+    author_body(ContentService(client.app.state.root), "post/a space")
     catalog = client.app.state.root / "content/data/catalog.yaml"
     data = yaml.safe_load(catalog.read_text())
     data["artifacts"][0]["lifecycle"] = "planned"
@@ -593,11 +602,8 @@ def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(cl
 
     monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
     generated = BuildService(root).generate("production")
-    notebook = nbformat.read(generated / f"nb/portfolio/{slug}.ipynb", as_version=4)
-    body = "\n".join(cell.source for cell in notebook.cells)
-    for text in ["[← Portfolio]", "## What it contains", "## Scope notes", "## References and related content", *plan.values()]:
-        assert text in body
-    assert "Stale" not in body
+    assert not (generated / f"nb/portfolio/{slug}.ipynb").exists()
+    assert slug not in (generated / "portfolio.qmd").read_text()
     assert not source.exists()
 
     # Complete the existing card/source requirements before starting the plan.
@@ -615,7 +621,8 @@ def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(cl
     assert started["artifact"]["lifecycle"] == "draft"
     assert source.exists()
     authored = nbformat.read(source, as_version=4)
-    assert all(text in authored.cells[0].source for text in plan.values())
+    assert authored.cells[0].source == f"# {record['artifact']['title']}\n"
+    assert service.inspect(identifier)["detail"]["planned"] == plan
 
 
 def test_portfolio_editor_omits_chapter_fields_and_preserves_routing_on_save(client):
@@ -665,7 +672,7 @@ def create_portfolio(client):
 
 
 @pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
-def test_portfolio_image_upload_saves_caption_and_renders_below_abstract(client, monkeypatch, format, extension):
+def test_portfolio_image_upload_saves_caption_and_renders_above_abstract(client, monkeypatch, format, extension):
     import nbformat
 
     from watchtower.services.build import BuildService
@@ -694,15 +701,17 @@ def test_portfolio_image_upload_saves_caption_and_renders_below_abstract(client,
     assert record["artifact"]["lifecycle"] == "planned"
     assert not (client.app.state.root / detail["notebook_path"]).exists()
     monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
+    ContentService(client.app.state.root).start("portfolio/image")
     generated = BuildService(client.app.state.root).generate("preview")
     listing = (generated / "portfolio.qmd").read_text()
     relative = path.removeprefix("content/")
-    assert listing.index("The project abstract.") < listing.index(f"![The featured figure caption.]({relative})")
+    assert listing.index(f"![The featured figure caption.]({relative})") < listing.index("The project abstract.")
     assert 'aria-label="Publication status"' in listing
     assert 'callout-caution' not in listing
-    assert 'start:   wt start portfolio/image' in listing
+    assert 'Review content, then publish in CMS' in listing
     generated_page = nbformat.read(generated / "nb/portfolio/image.ipynb", as_version=4)
-    assert any('aria-label="Publication status"' in cell.source and 'start:   wt start portfolio/image' in cell.source for cell in generated_page.cells)
+    assert yaml.safe_load(generated_page.cells[0].source.split("---", 2)[1])["description"] == "The project abstract."
+    assert any('aria-label="Publication status"' in cell.source and 'Review content, then publish in CMS' in cell.source for cell in generated_page.cells)
     assert (generated / relative).read_bytes() == image
 
 
@@ -868,6 +877,9 @@ def test_course_upload_is_used_by_card_grid(client, monkeypatch, format, extensi
     assert client.get("/cms/figure/course/image").content == image
     assert 'class="featured-figure-preview"' in saved.text
     monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)
+    service.start("course/image")
+    author_body(service, "course/image")
+    service.publish("course/image")
     generated = BuildService(client.app.state.root).generate("production")
     page = nbformat.read(generated / "nb/courses/image/index.ipynb", as_version=4)
     assert yaml.safe_load(page.cells[0].source.split("---")[1])["image"] == "/" + cover.removeprefix("content/")
@@ -1029,12 +1041,12 @@ def test_posts_title_search_pagination_preserves_filters(client):
     service = ContentService(client.app.state.root)
     for index in range(23):
         service.create({"id": f"post/item-{index}", "kind": "post", "title": f"A very long article title about attention mechanisms and evaluation {index:02}", "path": f"content/notebooks/posts/item-{index}.ipynb", "planned": {"content": "Planned body"}, "tags": ["Models"]})
-    second = client.get("/cms/posts", params={"q": "long article title about attention", "tag": "Models", "lifecycle": "planned", "visibility": "public", "page": 2})
+    second = client.get("/cms/posts", params={"q": "long article title about attention", "tag": "Models", "lifecycle": "planned", "visibility": "private", "page": 2})
     assert second.status_code == 200
     assert "11–20 of 23" in second.text
     assert 'id="post-item-0"' not in second.text and 'id="post-item-10"' in second.text
     next_link = html.unescape(re.search(r'rel="next" href="([^"]+)"', second.text).group(1))
-    assert "page=3" in next_link and "tag=Models" in next_link and "visibility=public" in next_link and "q=" in next_link
+    assert "page=3" in next_link and "tag=Models" in next_link and "visibility=private" in next_link and "q=" in next_link
     last = client.get(next_link)
     assert "21–23 of 23" in last.text
     found = client.get("/cms/posts", params={"q": "VERY LONG ARTICLE TITLE ABOUT ATTENTION MECHANISMS AND EVALUATION 22"})

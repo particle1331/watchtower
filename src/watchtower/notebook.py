@@ -322,6 +322,7 @@ def cat_notebook(
     out_offset: int = 0,
     out_limit: int | None = None,
     context: int = 0,
+    with_revision: bool = False,
 ) -> str:
     """Render notebook cell sources as markdown.
 
@@ -338,7 +339,9 @@ def cat_notebook(
     their header).
     """
     path = resolve_ipynb(name)
-    nb = read_notebook(path)
+    from .services.notebooks import read_source
+    nb, token = read_source(path)
+    header = f"> source-revision: {token}\n\n" if with_revision else ""
 
     def render(i: int, *, context: bool = False) -> str:
         return _render_cell(
@@ -350,7 +353,7 @@ def cat_notebook(
         )
 
     if index is None and tag is None and label is None:
-        return "\n\n".join(render(i) for i in range(len(nb["cells"])))
+        return header + "\n\n".join(render(i) for i in range(len(nb["cells"])))
     idxs = _matching_indices(nb, index=index, tag=tag, label=label)
     if not idxs:
         raise ValueError(
@@ -361,10 +364,10 @@ def cat_notebook(
         lo = max(0, min(idxs) - context)
         hi = min(len(nb["cells"]), max(idxs) + context + 1)
         matched = set(idxs)
-        return "\n\n".join(
+        return header + "\n\n".join(
             render(i, context=i not in matched) for i in range(lo, hi)
         )
-    return "\n\n".join(render(i) for i in idxs)
+    return header + "\n\n".join(render(i) for i in idxs)
 
 
 def edit_cell(
@@ -374,6 +377,7 @@ def edit_cell(
     index: int | None = None,
     tag: str | None = None,
     label: str | None = None,
+    expected_revision: str | None = None,
 ) -> Path:
     """Replace a single cell's source in-place, preserving outputs/metadata.
 
@@ -397,7 +401,7 @@ def _new_cell(cell_type: str, source: str) -> nbformat.NotebookNode:
 
 
 def append_cell(
-    name: str, source: str, *, cell_type: str = CELL_TYPE_MD
+    name: str, source: str, *, cell_type: str = CELL_TYPE_MD, expected_revision: str | None = None
 ) -> Path:
     """Append a new cell to the end of the notebook."""
     path = resolve_ipynb(name)
@@ -417,6 +421,7 @@ def insert_cell(
     tag: str | None = None,
     label: str | None = None,
     cell_type: str = CELL_TYPE_MD,
+    expected_revision: str | None = None,
 ) -> Path:
     """Insert a new cell above/below a located cell.
 
@@ -451,6 +456,7 @@ def remove_cell(
     index: int | None = None,
     tag: str | None = None,
     label: str | None = None,
+    expected_revision: str | None = None,
 ) -> Path:
     """Remove cells matching the locator. A tag may remove multiple.
 
@@ -476,6 +482,7 @@ def clear_outputs(
     tag: str | None = None,
     label: str | None = None,
     from_index: int | None = None,
+    expected_revision: str | None = None,
 ) -> Path:
     """Clear stored outputs of code cells matching the locator.
 
@@ -518,6 +525,7 @@ def tag_cell(
     label: str | None = None,
     add: list[str] | None = None,
     remove: list[str] | None = None,
+    expected_revision: str | None = None,
 ) -> Path | list[str]:
     """Add and/or remove tags from a single cell.
 

@@ -39,11 +39,12 @@ from watchtower.models import (
     route_for,
     source_path,
 )
-from watchtower.planning import extra_plan_body, missing_fields, starter_chunks
+from watchtower.planning import extra_plan_body, missing_fields
+from watchtower.starters import draft_sections, portfolio_abstract
 
 from .images import portfolio_figure, uploaded_image
 from .projects import project_name, scaffold_project
-from .workspace import ServiceError, WorkspaceStore, load_yaml, revision
+from .workspace import ServiceError, WorkspaceStore, digest, load_yaml, revision
 
 CATALOG = "content/data/catalog.yaml"
 PORTFOLIO = "content/data/portfolio.yaml"
@@ -188,8 +189,8 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
                 if artifact.kind == "chapter" and h1s(notebook) != [artifact.title]:
                     fail(f"{artifact.id}: expected exactly one H1 matching '{artifact.title}', found {h1s(notebook)}", str(source))
                 content = has_content(notebook, artifact.title)
-                if (artifact.lifecycle == "planned") == content:
-                    fail(f"{artifact.id}: planned must have no authored content; draft/published must have content", str(source))
+                if artifact.lifecycle == "planned" and content or artifact.lifecycle == "published" and not content:
+                    fail(f"{artifact.id}: planned must have no authored content; published requires authored content; draft may be a scaffold", str(source))
                 for cell in notebook.cells:
                     if cell.cell_type == "markdown":
                         header = re.match(r"\A\s*---\s*\n(.*?)\n---(?:\s*\n|$)", cell.source, re.S)
@@ -330,8 +331,14 @@ class ContentService:
         if artifact.kind == "portfolio":
             detail = next(p for p in state.portfolio if p.id == artifact.id)
             lines.append(f"Project: {detail.project_path or 'projects/' + artifact.id.split('/')[-1]}")
-        if artifact.description:
+        if artifact.kind == "portfolio":
+            detail = next(entry for entry in state.portfolio if entry.id == artifact.id)
+            if abstract := detail.abstract or artifact.description:
+                lines.extend(["", "Abstract: " + abstract])
+        elif artifact.description:
             lines.extend(["", "Description: " + artifact.description])
+        if artifact.internal_notes:
+            lines.extend(["", "## Internal notes", "", artifact.internal_notes])
         if artifact.tags:
             lines.append("Tags: " + ", ".join(artifact.tags))
         if artifact.relations:
@@ -340,7 +347,7 @@ class ContentService:
         if artifact.planned and artifact.kind in {"course", "portfolio", "chapter"}:
             lines.extend(["", "## Legacy catalog plan", "", extra_plan_body(artifact.kind, artifact.planned, set())])
         missing = missing_fields(artifact.kind, plan)
-        lines.extend(["", "Core plan missing: " + (", ".join(missing) if missing else "None")])
+        lines.extend(["", "Suggested planning fields missing (optional): " + (", ".join(missing) if missing else "None")])
         if artifact.kind == "course":
             for row in course_rows(state.courses[artifact.id], state.artifacts):
                 child = next(a for a in state.artifacts if a.id == row["chapter"]["id"])
@@ -350,6 +357,8 @@ class ContentService:
             context = cls._planning(parent, state)
             lines.extend(["", f"## Course context: {parent.title}", "", f"Course ID: {parent.id}",
                           f"Section: {artifact.section}", "", extra_plan_body("course", context, {"chapters"})])
+            if parent.internal_notes:
+                lines.extend(["", "### Course internal notes", "", parent.internal_notes])
         return "\n".join(lines)
 
     def organize_course(self, artifact_id: str, action: str, values: dict[str, str], expected_revision: str) -> dict[str, Any]:
@@ -418,6 +427,26 @@ class ContentService:
             return {"course_id": artifact_id}, {CATALOG: yaml_bytes(catalog), name: yaml_bytes(contract)}
         return self._mutate("organize course", apply, expected_revision)
 
+    def read_plan(self, stable_id: str) -> dict[str, Any]:
+        """Read internal authoring context independently of notebook content or lifecycle."""
+        with self.store.locked():
+            files = self.store.inputs()
+            state = parse_state(files)
+            artifact = next((a for a in state.artifacts if a.id == stable_id), None)
+            if artifact is None:
+                raise ServiceError(f"unknown artifact stable ID: {stable_id}", code="not_found", status=404)
+            return {
+                "id": artifact.id,
+                "kind": artifact.kind,
+                "title": artifact.title,
+                "lifecycle": artifact.lifecycle,
+                "source_path": source_path(artifact, state),
+                "plan": self._planning(artifact, state),
+                "internal_notes": artifact.internal_notes,
+                "build_brief": self._build_brief(artifact, state),
+                "revision": revision(files),
+            }
+
     def inspect(self, artifact_id: str) -> dict[str, Any]:
         with self.store.locked():
             files = self.store.inputs()
@@ -427,7 +456,7 @@ class ContentService:
                 raise ServiceError(f"unknown artifact: {artifact_id}", code="not_found", status=404)
             path = source_path(artifact, state)
             existing = bool(path and files.get(path) is not None)
-            result = {"artifact": artifact.model_dump(mode="json"), "revision": revision(files), "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / str(path)), safe="/") if existing else None, "eligible": eligible(artifact, state.artifacts), "plan": plan_body(artifact, state), "route": route_for(artifact)}
+            result = {"artifact": artifact.model_dump(mode="json"), "revision": revision(files), "source_path": path, "has_source": existing, "editor_url": "vscode://file/" + quote(str(self.root / str(path)), safe="/") if existing else None, "eligible": eligible(artifact, state.artifacts), "plan": plan_body(artifact, state), "route": route_for(artifact)}
             if path:
                 try:
                     result["has_authored_content"] = existing and has_content(nbformat.reads((files[path] or b"").decode(), as_version=4), artifact.title)
@@ -462,6 +491,25 @@ class ContentService:
             candidate = copy.deepcopy(original)
             try:
                 result, writes = callback(candidate)
+                if KANBAN in writes and writes[KANBAN] is not None:
+                    incoming = Kanban.model_validate(load_yaml(writes[KANBAN], KANBAN))
+                    try:
+                        previous = Kanban.model_validate(load_yaml(original[KANBAN] or b"", KANBAN)) if original.get(KANBAN) is not None else Kanban()
+                    except (ServiceError, ValidationError):
+                        if operation not in {"update kanban", "batch"}:
+                            raise
+                        # Explicit whole-board repair remains available for malformed YAML.
+                        previous = Kanban()
+                    try:
+                        incoming.preserve_identities(previous)
+                    except ValueError as error:
+                        raise ServiceError(str(error), paths=[KANBAN]) from error
+                    saved_board = incoming.model_dump(mode="json")
+                    writes[KANBAN] = yaml_bytes(saved_board)
+                    if operation == "update kanban":
+                        result["data"] = saved_board
+                    elif operation == "batch" and "kanban" in result.get("data", {}):
+                        result["data"]["kanban"] = saved_board
                 candidate.update(writes)
                 candidate.update(self.store.project_directories(writes))
                 state = parse_state(candidate)
@@ -470,6 +518,8 @@ class ContentService:
                 raise ServiceError(f"invalid candidate: {error}") from error
             transaction = self.store.commit(writes, original, operation)
             result.update(revision=revision(self.store.inputs()), transaction=transaction)
+            if KANBAN in writes:
+                result["board_revision"] = "kanban:" + digest(writes[KANBAN])
             return result
 
     @staticmethod
@@ -508,6 +558,8 @@ class ContentService:
             if payload.get("kind") in {"post", "personal"}:
                 payload.setdefault("date", datetime.now(ZoneInfo(settings.timezone)).date().isoformat())
             artifact = Artifact.model_validate(payload)
+            if artifact.lifecycle == "planned" and artifact.kind not in {"gallery", "project"}:
+                artifact.visibility = "private"
             catalog = self._catalog(files)
             if any(a.get("id", "").casefold() == artifact.id.casefold() for a in catalog["artifacts"]):
                 raise ServiceError(f"Name is already used: {artifact.id.split('/')[-1]}" if artifact.kind == "post" else f"ID already registered: {artifact.id}")
@@ -636,6 +688,10 @@ class ContentService:
                 updates["planned"] = {**record.get("planned", {}), **updates["planned"]}
             record.update(updates)
             normalized = Artifact.model_validate(record)
+            if record["lifecycle"] == "planned" and record["kind"] not in {"gallery", "project"}:
+                normalized.visibility = "private"
+            elif updates.get("lifecycle") == "published" and before["lifecycle"] != "published":
+                normalized.visibility = updates.get("visibility", "public")
             record.clear()
             record.update(normalized.model_dump(mode="json", exclude_none=True))
             writes: dict[str, bytes] = {}
@@ -705,6 +761,15 @@ class ContentService:
                                 lines[token.map[0]:token.map[1]] = [f"# {record['title']}"]
                                 cell.source = "\n".join(lines)
                     writes[source] = nbformat.writes(notebook).encode()
+            if record["kind"] != "chapter" and record["title"] != before["title"]:
+                source = source_path(Artifact.model_validate(before), parse_state(files))
+                if source and files.get(source) is not None:
+                    notebook = nbformat.reads((files[source] or b"").decode(), as_version=4)
+                    if not has_content(notebook, before["title"]):
+                        for cell in notebook.cells:
+                            if cell.cell_type == "markdown" and cell.source.strip():
+                                cell.source = f"# {record['title']}\n"
+                        writes[source] = nbformat.writes(notebook).encode()
             writes[CATALOG] = yaml_bytes(catalog)
             candidate = dict(files)
             candidate.update(writes)
@@ -721,37 +786,33 @@ class ContentService:
                 raise ServiceError("start requires a planned notebook entry")
             state = parse_state(files)
             artifact = next(a for a in state.artifacts if a.id == record["id"])
-            missing = missing_fields(artifact.kind, self._planning(artifact, state))
-            if missing:
-                raise ServiceError("Complete the core plan before starting: " + ", ".join(missing))
             writes: dict[str, bytes] = {}
             project_path = None
             if artifact.kind == "portfolio":
                 detail = next(p for p in state.portfolio if p.id == artifact.id)
-                if not all(detail.planned.get(field, "").strip() for field in ("introduction", "what_it_contains")):
-                    raise ServiceError("portfolio start requires planned.introduction and planned.what_it_contains", paths=[PORTFOLIO])
                 detail.notebook_path = detail.notebook_path or f"content/notebooks/portfolio/{artifact.id.split('/')[-1]}.ipynb"
                 if detail.project_source == "active":
                     name = project_name(detail.project_name or artifact.id.split("/")[-1])
                     detail.project_name = name
-                    project_path, project_writes = self._initialize_project(catalog, name, artifact.visibility)
+                    project_path, project_writes = self._initialize_project(catalog, name, "private")
                     writes.update(project_writes)
                 portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
                 target = next(p for p in portfolio["entries"] if p["id"] == artifact.id)
                 target.update(notebook_path=detail.notebook_path, project_name=detail.project_name)
+                if not (detail.abstract or "").strip():
+                    target["abstract"] = (artifact.description or "").strip() or portfolio_abstract(detail.planned) or None
                 writes[PORTFOLIO] = yaml_bytes(portfolio)
             path = source_path(artifact, state)
             if path is None:
                 raise ServiceError("configure notebook_path before starting")
             if self.store.safe_path(path).exists() or files.get(path) is not None:
                 raise ServiceError("start refuses an existing source notebook", code="conflict", status=412, paths=[path])
-            body = plan_body(artifact, state)
-            if not body.strip():
-                raise ServiceError("supply planning content before starting")
-            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(chunk) for chunk in starter_chunks(body)], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
+            sections = draft_sections(artifact.kind, self._planning(artifact, state))
+            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in [f"# {artifact.title}\n", *sections]], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
             record["lifecycle"] = "draft"
+            record["visibility"] = "private"
             writes.update({CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()})
-            result = {"artifact": record, "source_path": path, "editor_url": "vscode://file/" + quote(str(self.root / path), safe="/")}
+            result = {"artifact": record, "source_path": path, "has_source": True, "editor_url": "vscode://file/" + quote(str(self.root / path), safe="/")}
             if project_path:
                 result["project_path"] = project_path
             return result, writes
@@ -794,14 +855,12 @@ class ContentService:
                 raise ServiceError("stale workspace revision", code="conflict", status=412, paths=[CATALOG])
             catalog = self._catalog(files)
             record = self._find(catalog, artifact_id)
-            if record["visibility"] != "public":
-                raise ServiceError("publishing requires public visibility")
             if record["kind"] == "chapter":
                 parent = self._find(catalog, record["parent"])
                 if parent["visibility"] != "public" or parent["lifecycle"] != "published":
                     raise ServiceError("publish the public parent course first")
             captured = revision(files)
-        return self.update(artifact_id, {"lifecycle": "published"}, expected_revision or captured)
+        return self.update(artifact_id, {"lifecycle": "published", "visibility": "public"}, expected_revision or captured)
 
     def draft(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
         with self.store.locked():

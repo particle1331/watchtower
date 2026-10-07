@@ -3,6 +3,7 @@ import json
 
 import nbformat
 import pytest
+from test_content_service import author_body
 from test_content_service import content_service as content_service
 from typer.testing import CliRunner
 
@@ -19,6 +20,20 @@ def invoke(monkeypatch, service, arguments):
     return json.loads(result.output)
 
 
+def test_register_project_derives_id_and_rejects_old_id_argument(content_service, monkeypatch):
+    service = content_service
+    monkeypatch.chdir(service.root)
+    project = service.root / "projects/existing.v2"
+    project.mkdir(parents=True)
+    result = runner.invoke(app, ["register", "project", "projects/existing.v2", "Existing project"])
+    assert result.exit_code == 0, (result.output, result.exception)
+    assert service.inspect("project/existing.v2")["artifact"]["path"] == "projects/existing.v2"
+    before = service.list()["revision"]
+    result = runner.invoke(app, ["register", "project", "project/custom", "projects/existing.v2", "Custom"])
+    assert result.exit_code == 2
+    assert service.list()["revision"] == before
+
+
 def test_cli_post_plan_file_tags_start_publish_draft(content_service, monkeypatch):
     service = content_service
     plan = service.root / ".tmp/post.md"
@@ -29,6 +44,7 @@ def test_cli_post_plan_file_tags_start_publish_draft(content_service, monkeypatc
     assert record["artifact"]["tags"] == ["Test"]
     plan.unlink()
     invoke(monkeypatch, service, ["start", "post/article"])
+    author_body(service, "post/article")
     invoke(monkeypatch, service, ["publish", "post/article"])
     invoke(monkeypatch, service, ["draft", "post/article"])
     assert service.inspect("post/article")["artifact"]["lifecycle"] == "draft"

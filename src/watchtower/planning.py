@@ -1,4 +1,4 @@
-"""Shared author prompts and readiness rules for saved, unfinished plans."""
+"""Shared optional author prompts for saved, unfinished plans."""
 
 from typing import Any
 
@@ -31,7 +31,7 @@ PLAN_FIELDS: dict[str, list[tuple[str, str, str]]] = {
     "chapter": [
         ("content", "Planned content", "What will this chapter teach? Outline the explanations and examples."),
         ("lab_and_evidence", "Planned lab and evidence", "What will learners do, and what result will demonstrate understanding?"),
-        ("summary", "Short summary", "One or two sentences for the course chapter table."),
+        ("summary", "Short summary", "Public: one or two reader-facing sentences for the course chapter table."),
     ],
 }
 for _fields in PLAN_FIELDS.values():
@@ -40,7 +40,7 @@ for _fields in PLAN_FIELDS.values():
         ("next_steps", "Next steps", "What should you or a collaborator do next? Record open questions here."),
     ])
 
-REQUIRED = {
+CORE_FIELDS = {
     "post": ("content",),
     "portfolio": ("introduction", "what_it_contains"),
     "course": ("purpose", "audience", "summary"),
@@ -50,7 +50,7 @@ REQUIRED = {
 
 def missing_fields(kind: str, plan: dict[str, Any]) -> list[str]:
     labels = {key: label for key, label, _ in PLAN_FIELDS.get(kind, [])}
-    return [labels[key] for key in REQUIRED.get(kind, ()) if not str(plan.get(key) or "").strip()]
+    return [labels[key] for key in CORE_FIELDS.get(kind, ()) if not str(plan.get(key) or "").strip()]
 
 
 def extra_plan_body(kind: str, plan: dict[str, Any], exclude: set[str]) -> str:
@@ -63,16 +63,3 @@ def extra_plan_body(kind: str, plan: dict[str, Any], exclude: set[str]) -> str:
         text = "\n".join(f"- {item}" for item in value) if isinstance(value, list) else str(value)
         parts.append(f"## {labels.get(key, key.replace('_', ' ').capitalize())}\n\n{text}")
     return "\n\n".join(parts)
-
-
-def starter_chunks(body: str, limit: int = 20_000) -> list[str]:
-    """Preserve every character while preferring Markdown block boundaries."""
-    chunks = []
-    while len(body) > limit:
-        split = body.rfind("\n\n", 0, limit)
-        split = split + 2 if split > 0 else limit
-        chunks.append(body[:split])
-        body = body[split:]
-    if body:
-        chunks.append(body)
-    return chunks

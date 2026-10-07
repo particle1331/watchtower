@@ -5,6 +5,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 from test_api import author_workspace
+from test_content_service import author_body
 from typer.testing import CliRunner
 
 from watchtower.api import create_app
@@ -42,6 +43,8 @@ def test_deletion_archives_exact_source_and_removes_build_entry(content, lifecyc
         source = content.root / "content/notebooks/posts/example.ipynb"
         original = source.read_bytes()
     if lifecycle == "published":
+        author_body(content, "post/example")
+        original = source.read_bytes()
         content.publish("post/example")
     preview = content.deletion_plan("post/example")
     result = content.delete("post/example", preview["revision"])

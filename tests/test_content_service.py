@@ -28,6 +28,14 @@ def post(service, **extra):
     return service.create({"id": "post/example", "kind": "post", "path": "content/notebooks/posts/example.ipynb", "title": "Example", "planned": {"content": "## Question\n\nInvestigate a question."}, **extra})
 
 
+def author_body(service, identifier):
+    record = service.inspect(identifier)
+    path = service.root / record["source_path"]
+    notebook = nbformat.read(path, as_version=4)
+    notebook.cells.append(nbformat.v4.new_markdown_cell("An authored explanation with an example."))
+    nbformat.write(notebook, path)
+
+
 def test_complete_post_workflow_preserves_outputs_and_tags(content_service):
     service = content_service
     created = post(service, tags=[" Test ", "test", "Science"])
@@ -150,7 +158,8 @@ def test_plan_file_is_persisted_and_confined(content_service):
     post(service, planned={"content": body})
     plan.unlink()
     service.start("post/example")
-    assert body in nbformat.read(service.root / "content/notebooks/posts/example.ipynb", as_version=4).cells[0].source
+    assert body == service.inspect("post/example")["artifact"]["planned"]["content"]
+    assert nbformat.read(service.root / "content/notebooks/posts/example.ipynb", as_version=4).cells[0].source == "# Example\n"
     with pytest.raises(ServiceError):
         service.plan_file("frontend/site.yaml")
 
@@ -159,9 +168,11 @@ def test_course_parent_withdrawal_preserves_children(content_service):
     service = content_service
     service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
     service.start("course/example")
+    author_body(service, "course/example")
     service.publish("course/example")
     service.create({"id": "course/example/01", "kind": "chapter", "title": "Chapter", "toc_title": "01. Chapter", "section": "main", "parent": "course/example", "path": "content/notebooks/courses/example/01.ipynb", "planned_content": "Topic", "planned_lab_and_evidence": "Check"})
     service.start("course/example/01")
+    author_body(service, "course/example/01")
     service.publish("course/example/01")
     body = (service.root / "content/notebooks/courses/example/01.ipynb").read_bytes()
     result = service.draft("course/example")

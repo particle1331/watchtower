@@ -29,7 +29,7 @@ def test_task_links_follow_content_without_changing_publication(board):
     created = service.create({"id": "edit-article", "title": "Edit article", "artifact_ids": ["post/task", "post/task"]})
     card = service.read()["cards"][0]
     assert card["artifact_ids"] == ["post/task"]
-    assert card["links"][0]["frontend_url"].endswith("/nb/posts/task.html")
+    assert card["links"][0]["frontend_url"] is None
     assert card["links"][0]["editor_url"] is None
     content.start("post/task")
     card = service.read()["cards"][0]
@@ -98,7 +98,7 @@ def test_http_and_cms_use_same_board_and_revisions(board):
         created = client.post("/api/kanban", headers={"If-Match": token}, json={"id": "one", "title": "Review article", "artifact_ids": ["post/task"]})
         assert created.status_code == 201
         card_page = client.get("/cms/kanban")
-        assert "Open frontend" in card_page.text and "Linked article" in card_page.text
+        assert "Open frontend" not in card_page.text and "Linked article" in card_page.text
         current = client.get("/api/kanban").headers["etag"]
         moved = client.patch("/api/kanban/one", headers={"If-Match": current}, json={"column": "review"})
         assert moved.status_code == 200
@@ -120,32 +120,45 @@ def test_cli_shares_cards_revisions_and_validated_columns(board, monkeypatch):
     content, service = board
     monkeypatch.chdir(content.root)
     runner = CliRunner()
-    created = runner.invoke(app, ["kanban", "add", "--id", "one", "--title", "CLI task", "--link", "post/task"])
+    created = runner.invoke(app, ["kanban", "add", "--title", "CLI task", "--link", "post/task"])
     assert created.exit_code == 0, created.output
+    card = json.loads(created.output)["card"]
+    assert re.fullmatch(r"[0-9a-f]{32}", card["id"])
+    assert card["ref"] == "card#1"
     read = runner.invoke(app, ["kanban", "ls"])
     assert read.exit_code == 0, read.output
     payload = json.loads(read.output)
     assert payload["cards"][0]["title"] == "CLI task"
     revision = payload["revision"]
-    moved = runner.invoke(app, ["kanban", "move", "one", "review", "--expected-revision", revision])
+    moved = runner.invoke(app, ["kanban", "move", card["ref"], "review", "--expected-revision", revision])
     assert moved.exit_code == 0, moved.output
     assert json.loads(moved.output)["card"]["column"] == "review"
-    stale = runner.invoke(app, ["kanban", "update", "one", "--title", "Stale", "--expected-revision", revision])
+    stale = runner.invoke(app, ["kanban", "update", card["ref"], "--title", "Stale", "--expected-revision", revision])
     assert stale.exit_code == 1
     assert isinstance(stale.exception, ServiceError)
     assert stale.exception.status == 412
     assert service.read()["cards"][0]["title"] == "CLI task"
-    invalid = runner.invoke(app, ["kanban", "move", "one", "published"])
+    invalid = runner.invoke(app, ["kanban", "move", card["ref"], "published"])
     assert invalid.exit_code == 1
     assert isinstance(invalid.exception, ServiceError)
     assert service.read()["cards"][0]["column"] == "review"
     listed = runner.invoke(app, ["kanban", "ls", "--query", "CLI task", "--column", "review"])
     assert listed.exit_code == 0
-    assert json.loads(listed.output)["cards"][0]["id"] == "one"
-    assert runner.invoke(app, ["kanban", "move", "one", "done"]).exit_code == 0
-    assert runner.invoke(app, ["kanban", "update", "one", "--clear-links"]).exit_code == 0
+    assert json.loads(listed.output)["cards"][0]["id"] == card["id"]
+    assert runner.invoke(app, ["kanban", "move", card["ref"], "done"]).exit_code == 0
+    assert runner.invoke(app, ["kanban", "update", card["ref"], "--clear-links"]).exit_code == 0
     assert service.read()["cards"][0]["artifact_ids"] == []
-    assert runner.invoke(app, ["kanban", "rm", "one"]).exit_code == 0
+    assert runner.invoke(app, ["kanban", "rm", card["ref"]]).exit_code == 0
+
+
+def test_cli_rejects_custom_card_id_without_writing(board, monkeypatch):
+    content, service = board
+    monkeypatch.chdir(content.root)
+    before = service.read()
+    result = CliRunner().invoke(app, ["kanban", "add", "--title", "Task", "--id", "chosen"])
+    assert result.exit_code == 2
+    assert "No such option: --id" in result.output
+    assert service.read() == before
 
 
 def test_editor_order_folding_and_contacts(board):

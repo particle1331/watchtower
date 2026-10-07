@@ -42,6 +42,7 @@ class ArtifactMetadataPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str | None = None
     description: str | None = None
+    internal_notes: str | None = None
     visibility: Literal["public", "private"] | None = None
     lifecycle: Literal["planned", "draft", "published"] | None = None
     tags: list[str] | None = None

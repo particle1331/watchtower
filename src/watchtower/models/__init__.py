@@ -36,6 +36,7 @@ class Artifact(Record):
     relations: list[str] = Field(default_factory=list)
     date: Date | None = None
     description: str | None = None
+    internal_notes: str = ""
     tags: list[str] = Field(default_factory=list)
     cover: str | None = None
     planned: dict[str, Any] = Field(default_factory=dict)
@@ -339,6 +340,32 @@ class Kanban(Record):
     cards: list[KanbanCard] = Field(default_factory=list)
     next_number: int = Field(default=1, ge=1)
 
+    def assign_references(self) -> Kanban:
+        """Normalize legacy cards while preserving the reference high-water mark."""
+        used = {int(card.ref.removeprefix("card#")) for card in self.cards if card.ref}
+        number = max(self.next_number, max(used, default=0) + 1)
+        for card in self.cards:
+            if card.ref is None:
+                card.ref = f"card#{number}"
+                number += 1
+        self.next_number = number
+        return self
+
+    def preserve_identities(self, previous: Kanban) -> Kanban:
+        """Whole-board saves obey the same identity rules as individual cards."""
+        previous.assign_references()
+        by_id = {card.id: card for card in previous.cards}
+        for card in self.cards:
+            existing = by_id.get(card.id)
+            if existing is not None:
+                if card.ref is not None and card.ref != existing.ref:
+                    raise ValueError(f"Kanban card reference cannot be changed: {card.id}")
+                card.ref = existing.ref
+            elif card.ref is not None and int(card.ref.removeprefix("card#")) < previous.next_number:
+                raise ValueError(f"Kanban card reference is already reserved: {card.ref}")
+        self.next_number = max(self.next_number, previous.next_number)
+        return self.assign_references()
+
     @model_validator(mode="after")
     def unique_cards(self) -> Kanban:
         if len({card.id for card in self.cards}) != len(self.cards):
@@ -362,17 +389,16 @@ class Workspace(Record):
 def eligible(artifact: Artifact, artifacts: list[Artifact], mode: str = "production") -> bool:
     if artifact.kind == "project":
         return False
-    if mode == "preview":
-        return True
-    if artifact.visibility != "public" or artifact.lifecycle == "draft":
+    # Personal is a built-in surface; its state is derived from individual photos.
+    if artifact.kind == "gallery":
+        return mode == "preview" or artifact.visibility == "public"
+    if artifact.lifecycle == "planned":
         return False
     if artifact.kind == "chapter":
         parent = next((a for a in artifacts if a.id == artifact.parent), None)
-        if parent is None or parent.visibility != "public" or parent.lifecycle == "draft":
+        if parent is None or not eligible(parent, artifacts, mode):
             return False
-        if artifact.lifecycle == "published" and parent.lifecycle != "published":
-            return False
-    return True
+    return mode == "preview" or artifact.visibility == "public" and artifact.lifecycle == "published"
 
 
 def source_path(artifact: Artifact, state: Workspace) -> str | None:
@@ -439,6 +465,7 @@ def has_content(notebook: nbformat.NotebookNode, chapter_title: str | None = Non
 
 
 def plan_body(artifact: Artifact, state: Workspace) -> str:
+    """Internal plan preview for inspection; never use as a public page or starter."""
     def with_extra(body: str, kind: str, plan: dict[str, Any], exclude: set[str]) -> str:
         extra = extra_plan_body(kind, plan, exclude)
         return body + "\n\n" + extra if extra else body

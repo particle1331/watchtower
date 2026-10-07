@@ -297,6 +297,10 @@
   }
   document.addEventListener('input', changed);
   document.addEventListener('change', changed);
+  document.addEventListener('change', event => {
+    const select = event.target.closest('select[data-auto-submit]');
+    if (select?.form) select.form.requestSubmit();
+  });
   document.addEventListener('click', async event => {
     const dialogLink = event.target.closest('[data-dialog-open]');
     if (dialogLink && typeof HTMLDialogElement !== 'undefined') {

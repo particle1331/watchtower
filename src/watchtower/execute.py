@@ -14,12 +14,13 @@ cell's outputs and execution count are copied back to the notebook.
 
 import copy
 from pathlib import Path
+from uuid import uuid4
 
 import nbformat
 from nbclient import NotebookClient
 
-from .inspect import resolve_ipynb
-from .notebook import read_notebook
+from .services.notebooks import execution_source, write_notebook
+from .services.workspace import ServiceError, WorkspaceStore, durable_write
 
 
 def _cell_error_summary(
@@ -73,6 +74,7 @@ def run_notebook(
     index: int | None = None,
     kernel: str | None = None,
     timeout: int = 300,
+    expected_revision: str | None = None,
 ) -> dict:
     """Execute a notebook's code cells and write outputs back in-place.
 
@@ -87,18 +89,28 @@ def run_notebook(
     outputs (and execution count) back onto the original cell. Without:
     execute all code cells; if there are none, no kernel is launched.
     """
-    path = resolve_ipynb(name)
-    nb = read_notebook(path)
+    path, nb, token = execution_source(name, expected_revision=expected_revision)
     kernelspec = nb.metadata.get("kernelspec") or {}
     kernel_name: str = kernel or str(kernelspec.get("name") or "python3")
     if index is not None:
-        return _run_single_cell(nb, path, index, kernel_name, timeout)
-    code_count = sum(1 for c in nb["cells"] if c.get("cell_type") == "code")
-    if code_count == 0:
-        return {"ran": 0, "errors": [], "path": path}
-    _execute(nb, kernel=kernel_name, timeout=timeout)
-    write_notebook(nb, path)
-    return {"ran": code_count, "errors": _collect_errors(nb), "path": path}
+        result = _run_single_cell(nb, path, index, kernel_name, timeout)
+    else:
+        code_count = sum(1 for c in nb["cells"] if c.get("cell_type") == "code")
+        if code_count == 0:
+            return {"ran": 0, "errors": [], "path": path}
+        _execute(nb, kernel=kernel_name, timeout=timeout)
+        result = {"ran": code_count, "errors": _collect_errors(nb), "path": path}
+    if result["ran"]:
+        try:
+            write_notebook(nb, path, expected_revision=token)
+        except ServiceError as error:
+            if error.status != 412:
+                raise
+            store = WorkspaceStore(Path.cwd())
+            retained = store.safe_path(f".tmp/execution-conflicts/{uuid4().hex}.ipynb")
+            durable_write(retained, nbformat.writes(nb).encode("utf-8"))
+            raise ServiceError(f"{error}; execution results retained at {retained}", code="conflict", status=412, paths=[*error.paths, str(retained)]) from error
+    return result
 
 
 def _run_single_cell(
@@ -124,14 +136,8 @@ def _run_single_cell(
     executed = temp["cells"][index]
     cell["outputs"] = executed.get("outputs", [])
     cell["execution_count"] = executed.get("execution_count")
-    write_notebook(nb, path)
     return {
         "ran": sum(1 for c in temp["cells"] if c.get("cell_type") == "code"),
         "errors": _collect_errors(temp),
         "path": path,
     }
-
-
-from .services.notebooks import managed, write_notebook  # noqa: E402
-
-run_notebook = managed(run_notebook)

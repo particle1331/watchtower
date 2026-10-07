@@ -44,11 +44,12 @@ def test_private_partial_plan_reopens_with_guidance(author, kind):
         assert "Investigate an example" in record["build_brief"]
         editor = client.get(response.headers["location"])
         assert 'data-editing="true"' in editor.text
-        assert "Complete" in html.unescape(editor.text) or "complete:" in editor.text
+        assert "Plans appear only in the CMS" in editor.text
         assert "Copy build brief" in editor.text and "Not on the live site" in editor.text
         assert "Investigate an example" in editor.text
-        with pytest.raises(ServiceError, match="Complete the core plan"):
-            author.start(f"{kind}/idea")
+        started = author.start(f"{kind}/idea")
+        assert started["artifact"]["lifecycle"] == "draft"
+        assert not author.inspect(f"{kind}/idea")["has_authored_content"]
         assert not record["editor_url"]
 
 
@@ -99,7 +100,8 @@ def test_contextual_chapter_partial_save_then_ready_draft(author):
         author.start("course/demo/first", record["revision"])
         body = "\n".join(c.source for c in nbformat.read(author.root / record["source_path"], as_version=4).cells)
         assert body.count("# First chapter\n") == 1
-        assert "A useful source" in body and "A short summary" in body
+        assert "Explain the idea" in body and "Build and check" in body
+        assert "A useful source" in body
         brief = author.inspect("course/demo")["build_brief"]
         assert "First chapter" in brief and "A useful source" in brief
         assert "Python users" in author.inspect("course/demo/first")["build_brief"]
@@ -176,6 +178,12 @@ def test_course_table_updates_filters_and_escapes(author):
     course(author)
     chapter(author, plan={"summary": "Compare a | b\n<script>alert(1)</script>"})
     chapter(author, "private", visibility="private", plan={"summary": "Secret summary"})
+    author.start("course/demo")
+    author.publish("course/demo")
+    for identifier in ("course/demo/first", "course/demo/private"):
+        author.update(identifier, {"plan": {"content": "Teach the topic"}})
+        author.start(identifier)
+    author.publish("course/demo/first")
     def rendered(mode):
         snapshot = author.snapshot()
         return _Generator(snapshot, author.root / ".tmp/table", mode).context(snapshot.state.courses and next(a for a in snapshot.state.artifacts if a.id == "course/demo"))
@@ -195,14 +203,18 @@ def test_course_table_updates_filters_and_escapes(author):
     assert "No chapters to display yet." in rendered("production")
 
 
-def test_long_draft_keeps_every_character_and_limits_cells(author):
+def test_long_plan_seeds_bounded_cells_and_preserves_plan(author):
     body = "## Outline\n\n" + "A detailed plan.\n\n" * 1800
     author.create_post("long", {"title": "Long", "planned": {"content": body, "references": "Source"}})
     record = author.inspect("post/long")
     author.start("post/long")
     notebook = nbformat.read(author.root / record["source_path"], as_version=4)
     assert all(len(cell.source) <= 20_000 for cell in notebook.cells)
-    assert "".join(cell.source for cell in notebook.cells) == record["plan"]
+    seeded = "".join(cell.source for cell in notebook.cells)
+    assert body.strip() in seeded
+    assert "## References\n\nSource" in seeded
+    assert author.inspect("post/long")["plan"] == record["plan"]
+    assert body in author.inspect("post/long")["build_brief"]
 
 
 def test_api_brief_patch_preserves_unknown_fields_and_toc(author):
@@ -238,3 +250,40 @@ def test_single_resume_relationship_native_select_can_clear(author):
         cleared = client.post("/cms/data/profile", data={"revision": revision, "snapshot": snapshot, "profile_view": "resume", 'field:["projects", "0", "artifact_id"]': ""})
         assert cleared.status_code == 200
         assert not author.read_data("profile")["data"]["projects"][0]["artifact_id"]
+
+
+@pytest.mark.parametrize('abstract', ['', 'A handwritten summary.'])
+def test_portfolio_abstract_create_start_and_edit(author, abstract):
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/new?kind=portfolio')
+        assert 'name="abstract"' in page.text
+        assert 'name="description"' not in page.text
+        assert 'Start draft will create an editable abstract' in page.text
+        created = client.post('/cms/new?kind=portfolio', data={'revision': token(page), 'name': 'abstract', 'title': 'Abstract example', 'abstract': abstract, 'introduction': 'Compare models.', 'what_it_contains': 'Reports and checks.'}, follow_redirects=False)
+        assert created.status_code == 303, created.text
+        saved = author.inspect('portfolio/abstract')
+        assert saved['detail']['abstract'] == (abstract or None)
+        assert not saved['artifact']['description']
+        author.start('portfolio/abstract')
+        assert author.inspect('portfolio/abstract')['detail']['abstract'] == (abstract or 'Compare models. Reports and checks.')
+        page = client.get('/cms/artifact/portfolio/abstract')
+        assert 'Public description' not in page.text
+        assert html.unescape(page.text).count('name="field:["detail", "abstract"]"') == 1
+        revision, snapshot = form_snapshot(page)
+        edited = client.post('/cms/save/portfolio/abstract', data={'revision': revision, 'snapshot': snapshot, 'field:["detail", "abstract"]': 'Edited abstract.'}, follow_redirects=False)
+        assert edited.status_code == 303, edited.text
+        assert author.inspect('portfolio/abstract')['detail']['abstract'] == 'Edited abstract.'
+        stale = client.post('/cms/save/portfolio/abstract', data={'revision': revision, 'snapshot': snapshot, 'field:["detail", "abstract"]': 'Unsaved abstract.'})
+        assert stale.status_code == 412 and 'Unsaved abstract.' in stale.text
+
+
+def test_portfolio_legacy_description_is_preserved_as_abstract_on_save(author):
+    author.create({'id': 'portfolio/legacy', 'kind': 'portfolio', 'title': 'Legacy', 'description': 'Existing summary.'})
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/artifact/portfolio/legacy')
+        revision, snapshot = form_snapshot(page)
+        assert json.loads(snapshot)['detail']['abstract'] == 'Existing summary.'
+        assert not author.inspect('portfolio/legacy')['detail']['abstract']
+        response = client.post('/cms/save/portfolio/legacy', data={'revision': revision, 'snapshot': snapshot}, follow_redirects=False)
+        assert response.status_code == 303
+        assert author.inspect('portfolio/legacy')['detail']['abstract'] == 'Existing summary.'

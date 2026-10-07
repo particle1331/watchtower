@@ -27,10 +27,10 @@
 <div class="listing-layout"><section>
   <form method="get" class="filters">
     {% if section == 'posts' %}<label class="title-search">Search title<input type="search" name="q" value="{{ q }}" placeholder="Full title or a few words"></label>{% endif %}
-    <label>Lifecycle<select name="lifecycle"><option value="">All states</option>{% for value in ['planned','draft','published'] %}<option {% if lifecycle == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
-    <label>Visibility<select name="visibility"><option value="">All visibility</option>{% for value in ['public','private'] %}<option {% if visibility == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+    <label>Lifecycle<select name="lifecycle" data-auto-submit><option value="">All states</option>{% for value in ['planned','draft','published'] %}<option {% if lifecycle == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+    <label>Visibility<select name="visibility" data-auto-submit><option value="">All visibility</option>{% for value in ['public','private'] %}<option {% if visibility == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
     {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
-    <input type="hidden" name="page_size" value="{{ pagination.page_size }}"><button>Filter</button>
+    <input type="hidden" name="page_size" value="{{ pagination.page_size }}">
   </form>
   {% include 'pagination.html' %}
   <div class="collection-scroll" tabindex="0" role="region" aria-label="{{ title }} entries">

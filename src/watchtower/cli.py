@@ -42,7 +42,7 @@ def new_post(
     plan_file: str | None = typer.Option(None, "--plan-file"),
     tag: list[str] | None = typer.Option(None, "--tag"),
     description: str | None = typer.Option(None, "--description"),
-    visibility: str = typer.Option("public", "--visibility"),
+    visibility: str = typer.Option("private", "--visibility", help="Plans remain private until started and published."),
     expected_revision: str | None = typer.Option(None, "--expected-revision"),
 ) -> None:
     """Create a planned post; use start to materialize its notebook."""
@@ -265,8 +265,8 @@ def sync_site_cmd() -> None:
 
 
 @app.command(name="publish")
-def publish_cmd(name: str = typer.Argument(..., help="public artifact ID/path"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-    """Make authored public content eligible for the next deployment."""
+def publish_cmd(name: str = typer.Argument(..., help="artifact ID/path"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+    """Publish authored content with public visibility for the next deployment."""
     from .content_cli import active, emit
     if active():
         from .services.content import ContentService
@@ -285,7 +285,6 @@ def publish_cmd(name: str = typer.Argument(..., help="public artifact ID/path"),
 @app.command(name="register")
 def register_cmd(
     kind: str = typer.Argument(..., help="post | course | chapter | portfolio | project"),
-    artifact_id: str = typer.Argument(..., help="stable knowledge ID"),
     path: str = typer.Argument(..., help="existing relative source path"),
     title: str = typer.Argument(..., help="display title"),
     parent: str | None = typer.Option(None, "--parent", help="registered course ID for a chapter"),
@@ -294,13 +293,21 @@ def register_cmd(
     summary: str | None = typer.Option(None, "--summary", help="required description for a portfolio entry"),
     relation: list[str] | None = typer.Option(None, "--relation", help="related catalog ID; repeat for multiple links"),
 ) -> None:
-    """Register an existing knowledge work, especially a project or portfolio piece."""
+    """Register existing work, deriving its ID from the source path and chapter parent."""
     from pathlib import Path
 
     from . import knowledge
 
+    source = Path(path)
+    name = source.name if kind in {"course", "project"} else source.stem
+    if kind == "chapter":
+        if not parent:
+            raise typer.BadParameter("chapter registration requires --parent", param_hint="--parent")
+        artifact_id = f"{parent}/{name}"
+    else:
+        artifact_id = f"{kind}/{name}"
     knowledge.add_artifact(
-        artifact_id, kind, Path(path), title,
+        artifact_id, kind, source, title,
         parent=parent, visibility=visibility, lifecycle=lifecycle,
         summary=summary, relations=relation,
     )
@@ -325,6 +332,7 @@ def cat(
     offset: int = typer.Option(0, "--offset", "-o", help="char offset into the cell source (use with --limit)"),
     limit: int | None = typer.Option(None, "--limit", help="max chars per cell source (default: 4096; 0 = unlimited)"),
     with_outputs: bool = typer.Option(False, "--with-outputs", help="also show each code cell's outputs"),
+    with_revision: bool = typer.Option(False, "--with-revision", help="include the notebook token for --expected-revision writes"),
     out_offset: int = typer.Option(0, "--out-offset", help="char offset into each output's text body"),
     out_limit: int | None = typer.Option(None, "--out-limit", help="max chars per output body"),
     context: int = typer.Option(0, "--context", "-C", help="include N neighboring cells in this notebook (not course context)"),
@@ -346,7 +354,7 @@ def cat(
             offset=offset, limit=effective_limit,
             with_outputs=with_outputs,
             out_offset=out_offset, out_limit=out_limit,
-            context=context,
+            context=context, with_revision=with_revision,
         ),
         end="",
     )
@@ -517,6 +525,7 @@ def edit_cell(
     tag: str | None = typer.Option(None, "--tag", "-t", help="cell tag to match (must be unique)"),
     label: str | None = typer.Option(None, "--label", "-l", help="Quarto `#| label:` to match (must be unique)"),
     content: str | None = typer.Option(None, "--content", "-c", help="new source string (if omitted, read from stdin)"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Replace a notebook cell's source. Preserves outputs/metadata.
 
@@ -527,7 +536,7 @@ def edit_cell(
     from . import notebook
 
     src = content if content is not None else sys.stdin.read()
-    out = notebook.edit_cell(name, src, index=index, tag=tag, label=label)
+    out = notebook.edit_cell(name, src, index=index, tag=tag, label=label, expected_revision=expected_revision)
     console.print(f"[green]updated {out}[/green]")
 
 
@@ -536,12 +545,13 @@ def append_cell(
     name: str,
     cell_type: str = typer.Option("md", "--type", "-t", help="md | code"),
     content: str | None = typer.Option(None, "--content", "-c", help="cell source (if omitted, read from stdin)"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Append a new cell to the end of the notebook."""
     from . import notebook
 
     src = content if content is not None else sys.stdin.read()
-    out = notebook.append_cell(name, src, cell_type=cell_type)
+    out = notebook.append_cell(name, src, cell_type=cell_type, expected_revision=expected_revision)
     console.print(f"[green]appended to {out}[/green]")
 
 
@@ -554,6 +564,7 @@ def insert_cell(
     tag: str | None = typer.Option(None, "--tag", help="insert below the cell with this tag (must be unique)"),
     label: str | None = typer.Option(None, "--label", help="insert below the cell with this Quarto label (must be unique)"),
     content: str | None = typer.Option(None, "--content", "-c", help="cell source (if omitted, read from stdin)"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Insert a new cell above/below a located cell.
 
@@ -565,7 +576,7 @@ def insert_cell(
     src = content if content is not None else sys.stdin.read()
     out = notebook.insert_cell(
         name, src, after=after, before=before, tag=tag, label=label,
-        cell_type=cell_type,
+        cell_type=cell_type, expected_revision=expected_revision,
     )
     console.print(f"[green]inserted into {out}[/green]")
 
@@ -576,11 +587,12 @@ def remove_cell(
     index: int | None = typer.Option(None, "--index", "-i", help="0-based cell index"),
     tag: str | None = typer.Option(None, "--tag", "-t", help="remove all cells with this tag"),
     label: str | None = typer.Option(None, "--label", "-l", help="remove cell with this Quarto label"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Remove cells matching the locator. A tag may remove multiple."""
     from . import notebook
 
-    out = notebook.remove_cell(name, index=index, tag=tag, label=label)
+    out = notebook.remove_cell(name, index=index, tag=tag, label=label, expected_revision=expected_revision)
     console.print(f"[green]removed from {out}[/green]")
 
 
@@ -591,6 +603,7 @@ def clear_outputs(
     tag: str | None = typer.Option(None, "--tag", "-t", help="clear outputs of all cells with this tag"),
     label: str | None = typer.Option(None, "--label", "-l", help="clear outputs of cell with this Quarto label"),
     from_index: int | None = typer.Option(None, "--from", "-f", help="clear outputs of all code cells from this index to the end"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Clear stored outputs of code cells.
 
@@ -602,7 +615,7 @@ def clear_outputs(
     from . import notebook
 
     out = notebook.clear_outputs(
-        name, index=index, tag=tag, label=label, from_index=from_index
+        name, index=index, tag=tag, label=label, from_index=from_index, expected_revision=expected_revision
     )
     console.print(f"[green]cleared outputs in {out}[/green]")
 
@@ -615,6 +628,7 @@ def tag(
     label: str | None = typer.Option(None, "--label", "-l", help="Quarto `#| label:` to match (must be unique)"),
     add: list[str] = typer.Option([], "--add", "-a", help="tag to add (may be repeated)"),
     remove: list[str] = typer.Option([], "--remove", "-r", help="tag to remove (may be repeated)"),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Add and/or remove tags on a single cell.
 
@@ -624,7 +638,7 @@ def tag(
     from . import notebook
 
     out = notebook.tag_cell(
-        name, index=index, tag=tag, label=label, add=add or None, remove=remove or None
+        name, index=index, tag=tag, label=label, add=add or None, remove=remove or None, expected_revision=expected_revision
     )
     if isinstance(out, list):
         if out:
@@ -652,6 +666,7 @@ def run(
         "-k",
         help="kernel name (run `wt kernels`; default: notebook kernelspec, then python3)",
     ),
+    expected_revision: str | None = typer.Option(None, "--expected-revision", help="Notebook token from cat --with-revision."),
 ) -> None:
     """Execute a notebook's code cells in-place, writing outputs back.
 
@@ -663,7 +678,7 @@ def run(
     from . import execute
 
     try:
-        result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout)
+        result = execute.run_notebook(name, index=index, kernel=kernel, timeout=timeout, expected_revision=expected_revision)
     except ValueError as e:
         if kernel is not None and str(e).startswith("kernel '"):
             from . import kernels

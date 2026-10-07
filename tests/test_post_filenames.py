@@ -5,6 +5,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 from test_api import author_workspace
+from test_content_service import author_body
 
 from watchtower.api import create_app
 from watchtower.services.content import ContentService
@@ -62,6 +63,7 @@ def test_deleted_filename_stays_reserved_without_archive(service, lifecycle):
     if lifecycle != 'planned':
         service.start('post/gliner')
     if lifecycle == 'published':
+        author_body(service, 'post/gliner')
         service.publish('post/gliner')
     result = service.delete('post/gliner')
     # Persistent reservations are independent of the archive record.

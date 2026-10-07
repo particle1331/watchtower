@@ -30,8 +30,9 @@ def test_start_portfolio_creates_notebook_package_and_registration(content_servi
     assert (service.root / f"projects/{name}/src/{name.replace('-', '_')}/__init__.py").exists()
     assert (service.root / f"projects/{name}/README.md").exists()
     notebook = nbformat.read(service.root / "content/notebooks/portfolio/future.ipynb", as_version=4)
-    assert "The implementation." in notebook.cells[0].source
-    assert f"projects/{name}" in notebook.cells[0].source
+    assert notebook.cells[0].source == "# Future project\n"
+    assert "The implementation." in service.inspect("portfolio/future")["build_brief"]
+    assert f"projects/{name}" in service.inspect("portfolio/future")["build_brief"]
     record = service.inspect("portfolio/future")
     assert record["detail"]["project_name"] == name
     assert record["detail"]["notebook_path"] == "content/notebooks/portfolio/future.ipynb"

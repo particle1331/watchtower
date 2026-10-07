@@ -51,8 +51,6 @@ def workspace(tmp_path, monkeypatch):
     monkeypatch.setattr(build_module, "ContentService", lambda root: SimpleNamespace(snapshot=lambda: snapshot))
     monkeypatch.setattr(build_module, "source_path", lambda a, state: a.path if a.kind != "project" else None)
     monkeypatch.setattr(build_module, "route_for", lambda a: str(Path(a.path.replace("content/notebooks/", "nb/")).with_suffix(".qmd")) if a.kind == "gallery" else a.path.replace("content/notebooks/", "nb/"))
-    monkeypatch.setattr(build_module, "eligible", lambda a, artifacts, mode: mode == "preview" or (a.visibility == "public" and a.lifecycle in {"planned", "published"}))
-    monkeypatch.setattr(build_module, "plan_body", lambda a, state: a.planned["content"])
     def pdf(stage):
         (stage / "assets/resume.pdf").write_bytes(b"%PDF-1.7\n")
     monkeypatch.setattr(build_module, "build_resume_pdf", pdf)
@@ -81,7 +79,9 @@ def test_generation_preserves_notebook_cells_outputs_and_attachments(workspace):
     assert generated.cells[1:] == original.cells
     assert snapshot.files[entry.path] == before
     assert (stage / "nb/posts/images/chart.svg").read_bytes() == b"<svg></svg>"
-    assert "tag=Attention" in generated.cells[0].source
+    metadata = yaml.safe_load(generated.cells[0].source.split("---", 2)[1])
+    assert metadata["categories"] == ["Attention"]
+    assert "?tag=" not in generated.cells[0].source
     config = yaml.safe_load((stage / "_quarto.yml").read_text())
     assert config["execute"] == {"enabled": False}
     assert "nb/posts/images/chart.svg" in config["project"]["resources"]
@@ -104,48 +104,72 @@ def test_production_omits_private_draft_notebooks_assets_and_tags(workspace):
     assert not (stage / "nb/posts/draft.ipynb").exists()
     assert not (stage / "nb/posts/Private secret.svg").exists()
     listing = (stage / "posts.qmd").read_text()
-    assert "Public (1)" in listing
+    metadata = yaml.safe_load(listing.split("---", 2)[1])
+    assert metadata["listing"]["contents"][0]["categories"] == ["Public"]
     assert "Private secret" not in listing
     assert "Draft secret" not in listing
 
 
-def test_posts_listing_has_one_tags_column_with_legacy_labels(workspace):
+def test_posts_listing_uses_native_categories_with_legacy_labels(workspace):
     from watchtower.models import Artifact
     root, snapshot = workspace
-    entry = Artifact(id='post/tagged', kind='post', title='Tagged post', path='content/notebooks/posts/tagged.ipynb', lifecycle='planned', categories=['meta', 'dev'], tags=['Meta', 'NLP'], planned={'content': 'A planned post.'})
-    snapshot.state.artifacts.append(entry)
+    entry = Artifact(id='post/tagged', kind='post', title='Tagged post', path='content/notebooks/posts/tagged.ipynb', lifecycle='draft', categories=['meta', 'dev'], tags=['Meta', 'NLP'], planned={'content': 'A planned post.'})
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell('Saved body')])
     stage = BuildService(root).generate('preview')
-    listing = (stage / 'posts.qmd').read_text()
-    assert '<th>Tags</th>' in listing and 'Categories' not in listing
-    for tag in ['Meta', 'NLP', 'dev']:
-        assert f'?tag={tag}' in listing
-        assert f'{tag} (1)' in listing
+    listing = yaml.safe_load((stage / 'posts.qmd').read_text().split('---', 2)[1])['listing']
+    assert listing['type'] == 'table'
+    assert listing['categories'] is True
+    assert listing['fields'] == ['date', 'title', 'description', 'categories', 'reading-time']
+    assert listing['page-size'] == 10
+    assert listing['sort-ui'] == ['date', 'title', 'reading-time']
+    post = listing['contents'][0]
+    assert post['categories'] == ['Meta', 'NLP', 'dev']
+    assert 'tags' not in post
+    assert post['path'] == '/nb/posts/tagged.ipynb'
+    assert post['outputHref'] == '/nb/posts/tagged.html'
+    assert post['reading-time'] == 1
+    assert not (stage / 'assets/post-tags.js').exists()
+    assert entry.model_dump()['tags'] == ['Meta', 'NLP', 'dev']
 
 
-@pytest.mark.parametrize('kind', ['post', 'personal'])
-def test_generated_metadata_uses_tags_with_legacy_labels(workspace, kind):
+@pytest.mark.parametrize('kind', ['post', 'personal', 'portfolio'])
+def test_generated_metadata_maps_tags_to_quarto_categories(workspace, kind):
     from watchtower.models import Artifact
 
     root, snapshot = workspace
-    entry = Artifact(id=f'{kind}/tagged', kind=kind, title='Tagged entry', path=f'content/notebooks/{kind}/tagged.ipynb', categories=['meta', 'dev'], tags=['Meta', 'NLP'], planned={'content': 'A planned entry.'})
-    snapshot.state.artifacts.append(entry)
+    entry = Artifact(id=f'{kind}/tagged', kind=kind, title='Tagged entry', path=f'content/notebooks/{kind}/tagged.ipynb', lifecycle='draft', categories=['meta', 'dev'], tags=['Meta', 'NLP'], planned={'content': 'A planned entry.'})
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell('Saved body')])
     stage = BuildService(root).generate('preview')
     notebook = nbformat.read(stage / f'nb/{kind}/tagged.ipynb', as_version=4)
     metadata = yaml.safe_load(notebook.cells[0].source.split('---')[1])
-    assert metadata['tags'] == ['Meta', 'NLP', 'dev']
-    assert 'categories' not in metadata
+    assert metadata['categories'] == ['Meta', 'NLP', 'dev']
+    assert 'tags' not in metadata
+    assert entry.model_dump()['tags'] == ['Meta', 'NLP', 'dev']
 
 
-def test_planned_generation_uses_plan_and_never_copies_optional_scaffold(workspace):
+def test_native_posts_listing_preserves_draft_badges_only_in_preview(workspace):
+    root, snapshot = workspace
+    entry = artifact('posts/draft', lifecycle='draft', tags=['meta', 'dev'], description=None, date=None)
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell('Saved draft body.')])
+    stage = BuildService(root).generate('preview')
+    listing = yaml.safe_load((stage / 'posts.qmd').read_text().split('---', 2)[1])['listing']
+    assert '<span class="draft-badge">draft</span>' in listing['contents'][0]['title']
+    assert listing['contents'][0]['description'] == ''
+    assert 'date' not in listing['contents'][0]
+    production = BuildService(root).generate('production')
+    listing = yaml.safe_load((production / 'posts.qmd').read_text().split('---', 2)[1])['listing']
+    assert listing['contents'] == []
+
+
+def test_planned_generation_uses_public_description_and_never_copies_optional_scaffold(workspace):
     root, snapshot = workspace
     entry = artifact("posts/plan", lifecycle="planned")
     entry.planned = {"content": "## A flexible outline\n\nSaved planning prose."}
     put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("")])
-    stage = BuildService(root).generate("production")
-    notebook = nbformat.read(stage / "nb/posts/plan.ipynb", as_version=4)
-    assert notebook.cells[1].source == entry.planned["content"]
-    assert "**Planned**" in notebook.cells[0].source
-    assert len(notebook.cells) == 2
+    for mode in ("preview", "production"):
+        stage = BuildService(root).generate(mode)
+        assert not (stage / "nb/posts/plan.ipynb").exists()
+        assert "posts/plan" not in (stage / "posts.qmd").read_text()
 
 
 @pytest.mark.parametrize("kind", ["post", "chapter", "course", "personal"])
@@ -156,6 +180,12 @@ def test_shared_draft_panel_without_native_banner(workspace, kind, lifecycle):
     put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("An authored page.")])
     if kind == "course":
         snapshot.state.courses[entry.id] = Record(purpose="A course purpose.", audience="Readers", planned={}, actualized={}, toc=[])
+    if kind == "chapter":
+        parent = artifact("courses/parent/index", kind="course")
+        entry.parent = parent.id
+        entry.toc_title = entry.title
+        put_notebook(snapshot, parent, [nbformat.v4.new_markdown_cell("Course home")])
+        snapshot.state.courses[parent.id] = Record(actualized={}, planned={}, toc=[Record(id="main", title="", chapters=[entry.id])])
     stage = BuildService(root).generate("preview")
     notebook = nbformat.read(stage / entry.path.replace("content/notebooks/", "nb/"), as_version=4)
     header = yaml.safe_load(notebook.cells[0].source.split("---", 2)[1])
@@ -193,14 +223,16 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
     assert "View notebook" not in page
     preview = BuildService(root).generate("preview")
     preview_page = (preview / "portfolio.qmd").read_text()
-    assert preview_page.count('aria-label="Publication status"') == 2
+    assert preview_page.count('aria-label="Publication status"') == 1
     assert "callout-caution" not in preview_page
-    for name in ("draft", "planned"):
+    for name in ("draft",):
         notebook = nbformat.read(preview / f"nb/portfolio/{name}.ipynb", as_version=4)
         assert 'aria-label="Publication status"' in notebook.cells[0].source
         assert "callout-" not in notebook.cells[0].source
         assert ('start:   wt start' in notebook.cells[0].source) == (name == "planned")
-    assert "wt start portfolio/planned" in preview_page
+    assert "portfolio/planned" not in preview_page
+    assert not (preview / "nb/portfolio/planned.ipynb").exists()
+    assert not (preview / "assets/planned.svg").exists()
 
 
 def fake_quarto(command, cwd, **kwargs):
@@ -307,11 +339,9 @@ def test_course_withdrawal_suppresses_descendants_and_keeps_authored_toc(workspa
     assert not (restored / "nb/courses/example/02-private.ipynb").exists()
 
 
-def test_planned_chapter_body_matches_shared_start_template_and_preserves_one_h1(workspace, monkeypatch):
-    from watchtower.models import plan_body
+def test_planned_chapter_is_absent_from_frontend(workspace):
 
     root, snapshot = workspace
-    monkeypatch.setattr(build_module, "plan_body", plan_body)
     course = artifact("courses/example/index", kind="course")
     chapter = artifact("courses/example/chapter", kind="chapter", lifecycle="planned", parent=course.id, toc_title="01. Short label", section="first")
     put_notebook(snapshot, course, [nbformat.v4.new_markdown_cell("A course home.")])
@@ -321,13 +351,10 @@ def test_planned_chapter_body_matches_shared_start_template_and_preserves_one_h1
         planned={"summary": "A planned path", "chapters": [{"chapter_id": chapter.id, "content": "Explain the model.", "lab_and_evidence": "Check saved results.", "section": "first"}]},
         toc=[Record(id="first", title="First", chapters=[chapter.id])],
     )
-    stage = BuildService(root).generate()
-    notebook = nbformat.read(stage / "nb/courses/example/chapter.ipynb", as_version=4)
-    assert notebook.cells[1].source == plan_body(chapter, snapshot.state)
-    assert notebook.cells[1].source.count(f"# {chapter.title}") == 1
-    assert "## Planned content" in notebook.cells[1].source
-    assert "## Planned lab and evidence" in notebook.cells[1].source
-    assert "template-partials" in notebook.cells[0].source
+    for mode in ("preview", "production"):
+        stage = BuildService(root).generate(mode)
+        assert not (stage / "nb/courses/example/chapter.ipynb").exists()
+        assert "chapter.ipynb" not in (stage / "_quarto.yml").read_text()
 
 
 def test_validation_failure_does_not_promote_and_is_visible_in_record(workspace, monkeypatch):

@@ -28,6 +28,19 @@ def photo_form(page):
     return {'revision': token, 'snapshot': html.unescape(snapshot)}
 
 
+@pytest.mark.parametrize('section', ['posts', 'portfolio', 'courses'])
+def test_list_lifecycle_and_visibility_dropdowns_auto_submit(author, section):
+    with TestClient(create_app(author.root)) as client:
+        page = client.get(f'/cms/{section}')
+        assert page.status_code == 200
+        assert page.text.count('name="lifecycle" data-auto-submit') == 1
+        assert page.text.count('name="visibility" data-auto-submit') == 1
+        assert '<button>Filter</button>' not in page.text
+        assert 'name="page_size"' in page.text
+        if section == 'posts':
+            assert 'name="q"' in page.text
+
+
 @pytest.mark.parametrize('htmx', [False, True])
 def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author, htmx):
     author.create({'id': 'portfolio/example', 'kind': 'portfolio', 'title': 'Example project', 'detail': {'notebook_path': 'content/notebooks/portfolio/example.ipynb', 'planned': {'introduction': 'The introduction', 'what_it_contains': 'The contents'}}})

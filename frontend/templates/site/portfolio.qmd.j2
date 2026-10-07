@@ -15,11 +15,11 @@ Selected projects and their full project pages.
 {% if entry.lifecycle != 'published' %}
 {% include 'site/publication-meta.html.j2' %}
 {% endif %}
-**Abstract.** {{ entry.abstract }}
-
 {% if entry.figure %}
 ![{{ entry.figure_caption }}]({{ entry.figure }})
 {% endif %}
+**Abstract.** {{ entry.abstract }}
+
 [Read the full project page →]({{ entry.route }}){% if entry.source_url %} ⠀|⠀ [Source </>]({{ entry.source_url }}){% endif %}
 
 :::

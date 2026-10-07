@@ -4,8 +4,8 @@
 import nbformat
 import pytest
 import yaml
+from test_content_service import author_body, post
 from test_content_service import content_service as content_service
-from test_content_service import post
 
 from watchtower.models import eligible
 from watchtower.services.content import ContentService, yaml_bytes
@@ -17,6 +17,7 @@ def course(service, slug="example", published=False):
     service.create({"id": key, "kind": "course", "title": f"{slug} course", "path": f"content/notebooks/courses/{slug}", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
     if published:
         service.start(key)
+        author_body(service, key)
         service.publish(key)
     return key
 
@@ -55,11 +56,9 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     nb = nbformat.read(source, as_version=4)
     text = "\n".join(cell.source for cell in nb.cells)
     assert "Investigate the concrete problem." in text
-    assert "## What it contains" in text
-    assert "## Scope notes" in text
-    assert "## References and related content" in text
-    assert "https://github.com/particle1331/watchtower/tree/main/projects/example" in text
-    assert "Define the project limits." in text
+    assert "A reproducible implementation and checks." in text
+    assert "Define the project limits." not in text
+    assert "Define the project limits." in service.inspect(payload["id"])["build_brief"]
     nb.cells.append(nbformat.v4.new_code_cell("#| code-fold: true\nprint(1)", execution_count=3, outputs=[nbformat.v4.new_output("stream", name="stdout", text="1\n")]))
     nbformat.write(nb, source)
     body = source.read_bytes()
@@ -79,6 +78,8 @@ def test_portfolio_publish_missing_required_detail_is_atomic(content_service, mi
     payload["detail"].pop(missing)
     service.create(payload)
     service.start(payload["id"])
+    author_body(service, payload["id"])
+    service.update(payload["id"], {"detail": {missing: None}})
     before = file_state(service)
     with pytest.raises(ServiceError):
         service.publish(payload["id"])
@@ -88,15 +89,15 @@ def test_portfolio_publish_missing_required_detail_is_atomic(content_service, mi
 
 
 @pytest.mark.parametrize("missing", ["introduction", "what_it_contains"])
-def test_portfolio_start_requires_full_plan_prose(content_service, missing):
+def test_portfolio_start_accepts_partial_plan(content_service, missing):
     service = content_service
     payload = portfolio_payload(service)
     payload["detail"]["planned"].pop(missing)
     service.create(payload)
-    before = file_state(service)
-    with pytest.raises(ServiceError):
-        service.start(payload["id"])
-    assert file_state(service) == before
+    service.start(payload["id"])
+    record = service.inspect(payload["id"])
+    assert record["artifact"]["lifecycle"] == "draft"
+    assert record["has_authored_content"]
 
 
 @pytest.mark.parametrize("patch", [{"project_name": "../outside"}, {"project_name": "."}, {"project_name": "nested/example"}, {"project_source": "remote"}, {"project_source": "archived"}, {"archive_date": "2026-09-30"}, {"project_source": "archived", "archive_date": "2026-02-30"}])
@@ -138,7 +139,7 @@ def test_portfolio_project_relation_must_identify_same_directory(content_service
 @pytest.mark.parametrize("project_name", [None, "future-code"])
 def test_planned_portfolio_related_content_includes_reserved_source_before_code_exists(content_service, project_name):
     service = content_service
-    related_id = course(service, "related")
+    related_id = course(service, "related", published=True)
     private_id = post(service, visibility="private")["artifact"]["id"]
     service.create({"id": "portfolio/future", "kind": "portfolio", "title": "Future project",
         "relations": [related_id, private_id], "detail": {
@@ -280,15 +281,16 @@ def test_title_only_scaffolds_do_not_count_as_authored_content(content_service):
     path.parent.mkdir(parents=True)
     nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell("# Example")]), path)
     service.validate()
-    with pytest.raises(ServiceError, match="must have content"):
-        service.update("post/example", {"lifecycle": "draft"})
-    path.unlink()
+    service.update("post/example", {"lifecycle": "draft"})
+    assert not service.inspect("post/example")["has_authored_content"]
+    with pytest.raises(ServiceError, match="requires authored content"):
+        service.publish("post/example")
     course(service)
     chapter(service, start=True)
     chapter_source = service.root / "content/notebooks/courses/example/01.ipynb"
     nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell("# Chapter Title")]), chapter_source)
-    with pytest.raises(ServiceError, match="must have content"):
-        service.validate()
+    assert service.validate()["valid"]
+    assert not service.inspect("course/example/01")["has_authored_content"]
 
 
 @pytest.mark.parametrize("membership", ["duplicate", "foreign", "missing"])
@@ -306,19 +308,20 @@ def test_manual_course_toc_must_have_each_own_chapter_once(content_service, memb
         service.validate()
 
 
-def test_public_planned_parent_exposes_only_planned_children(content_service):
+def test_planned_parent_hides_all_children(content_service):
     service = content_service
     parent = course(service, published=True)
     planned = chapter(service, name="01")
     published = chapter(service, name="02", start=True)
+    author_body(service, published)
     service.publish(published)
     parent_path = service.root / "content/notebooks/courses/example/index.ipynb"
     nbformat.write(nbformat.v4.new_notebook(), parent_path)
     service.update(parent, {"lifecycle": "planned"})
     state = service.snapshot().state
     visibility = {artifact.id: eligible(artifact, state.artifacts) for artifact in state.artifacts}
-    assert visibility[parent]
-    assert visibility[planned]
+    assert not visibility[parent]
+    assert not visibility[planned]
     assert not visibility[published]
     source = service.root / "content/notebooks/courses/example/01.ipynb"
     service.start(planned)

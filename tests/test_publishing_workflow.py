@@ -1,4 +1,5 @@
 """Real installed notebook environment -> saved figure -> Quarto publication."""
+import json
 import re
 import shutil
 from pathlib import Path
@@ -41,6 +42,11 @@ def test_real_create_execute_preview_publish_workflow(content_service, monkeypat
     preview = builds.build("preview")
     assert preview["status"] == "succeeded", preview["error"]
     assert (Path(preview["output_location"]) / "nb/posts/figure.html").exists()
+    posts = (Path(preview["output_location"]) / "posts.html").read_text()
+    assert 'quarto-listing-table' in posts
+    assert 'class="draft-badge"' in posts
+    assert 'quarto-listing-category' in posts
+    assert 'post-tags.js' not in posts
     gallery = (Path(preview["output_location"]) / "gallery.html").read_text()
     assert 'id="published-photo"' in gallery and "<h2" in gallery
     assert 'id="draft-photo"' in gallery
@@ -76,6 +82,9 @@ def test_real_create_execute_preview_publish_workflow(content_service, monkeypat
     production = builds.build("production")
     assert production["status"] == "succeeded", production["error"]
     page = (Path(production["output_location"]) / "nb/posts/figure.html").read_text()
+    assert '<div class="quarto-category">Verification</div>' in page
+    listings = json.loads((Path(production["output_location"]) / "listings.json").read_text())
+    assert {"listing": "/posts.html", "items": ["/nb/posts/figure.html"]} in listings
     assert "A stored figure." in page
     assert "plt.plot" not in page
     gallery = (Path(production["output_location"]) / "gallery.html").read_text()

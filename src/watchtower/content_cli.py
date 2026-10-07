@@ -48,7 +48,7 @@ def split_plan(body: str, headings: list[str], required: list[str]) -> dict[str,
     return result
 
 
-def create_post(name: str, title: str | None, content: str | None, plan_file: str | None, tags: list[str] | None, description: str | None = None, visibility: str = "public", expected_revision: str | None = None) -> None:
+def create_post(name: str, title: str | None, content: str | None, plan_file: str | None, tags: list[str] | None, description: str | None = None, visibility: str = "private", expected_revision: str | None = None) -> None:
     service = ContentService()
     slug(name)
     if plan_file and content is not None:
@@ -75,6 +75,11 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
     from .kanban_cli import install as install_kanban
     install_kanban(app)
 
+    @app.command("plan")
+    def plan(stable_id: str) -> None:
+        """Return saved planning fields, internal notes and build brief as JSON by stable ID."""
+        emit(ContentService().read_plan(stable_id))
+
     @app.command("delete")
     def delete(name: str, dry_run: bool = typer.Option(False, "--dry-run"), cascade: bool = typer.Option(False, "--cascade"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
         """Remove an entry, retaining files; use --cascade to include course chapters."""
@@ -83,7 +88,7 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
 
     @app.command("start")
     def start(name: str, expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Materialize a planned notebook as a draft without executing cells."""
+        """Create a private draft seeded from the saved plan; retain internal notes separately."""
         emit(ContentService().start(name, expected_revision))
 
     @app.command("draft")
@@ -92,12 +97,12 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
         emit(ContentService().draft(name, expected_revision))
 
     @app.command("update")
-    def update(name: str, title: str | None = None, description: str | None = None, visibility: str | None = None, lifecycle: str | None = None, toc_title: str | None = typer.Option(None, "--toc-title"), section: str | None = None, tag: list[str] | None = typer.Option(None, "--tag"), add_tag: list[str] | None = typer.Option(None, "--add-tag"), remove_tag: list[str] | None = typer.Option(None, "--remove-tag"), planned_content: str | None = typer.Option(None, "--planned-content"), plan_file: str | None = typer.Option(None, "--plan-file"), patch_file: str | None = typer.Option(None, "--patch-file"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+    def update(name: str, title: str | None = None, description: str | None = None, internal_notes: str | None = typer.Option(None, "--internal-notes", help="Internal Markdown notes, excluded from site rendering."), visibility: str | None = None, lifecycle: str | None = None, toc_title: str | None = typer.Option(None, "--toc-title"), section: str | None = None, tag: list[str] | None = typer.Option(None, "--tag"), add_tag: list[str] | None = typer.Option(None, "--add-tag"), remove_tag: list[str] | None = typer.Option(None, "--remove-tag"), planned_content: str | None = typer.Option(None, "--planned-content", help="Post outline, chapter content, or course summary."), planned_lab_and_evidence: str | None = typer.Option(None, "--planned-lab-and-evidence", help="Chapter lab and evidence."), plan_file: str | None = typer.Option(None, "--plan-file"), patch_file: str | None = typer.Option(None, "--patch-file"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
         """Update metadata through validated services; never edit source headers."""
         service = ContentService()
         inspected = service.inspect(name)
         patch = json.loads(Path(patch_file).read_text()) if patch_file else {}
-        for key, value in {"title": title, "description": description, "visibility": visibility, "lifecycle": lifecycle, "toc_title": toc_title, "section": section}.items():
+        for key, value in {"title": title, "description": description, "internal_notes": internal_notes, "visibility": visibility, "lifecycle": lifecycle, "toc_title": toc_title, "section": section}.items():
             if value is not None:
                 patch[key] = value
         if tag is not None or add_tag or remove_tag:
@@ -105,16 +110,47 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
             tags.extend(add_tag or [])
             removed = {t.strip().casefold() for t in remove_tag or []}
             patch["tags"] = [t for t in tags if t.strip().casefold() not in removed]
-        if plan_file and planned_content is not None:
-            raise ServiceError("choose --plan-file or --planned-content")
-        if plan_file or planned_content is not None:
+        kind = inspected["artifact"]["kind"]
+        if plan_file and (planned_content is not None or planned_lab_and_evidence is not None):
+            raise ServiceError("choose --plan-file or inline plan fields")
+        if planned_lab_and_evidence is not None and kind != "chapter":
+            raise ServiceError("--planned-lab-and-evidence is only valid for chapters")
+        if plan_file or planned_content is not None or planned_lab_and_evidence is not None:
             body = service.plan_file(plan_file) if plan_file else planned_content
-            patch["planned"] = {"content": body}
+            if kind == "chapter":
+                plan = dict(patch.get("plan") or {})
+                if plan_file:
+                    parts = split_plan(str(body), ["Planned content", "Planned lab and evidence"], ["Planned content", "Planned lab and evidence"])
+                    plan.update(content=parts["Planned content"], lab_and_evidence=parts["Planned lab and evidence"])
+                else:
+                    if body is not None:
+                        plan["content"] = body
+                    if planned_lab_and_evidence is not None:
+                        plan["lab_and_evidence"] = planned_lab_and_evidence
+                patch["plan"] = plan
+            elif kind == "course":
+                contract = dict(patch.get("contract") or {})
+                contract["planned"] = {**(contract.get("planned") or {}), "summary": body}
+                patch["contract"] = contract
+            elif kind == "portfolio":
+                if not plan_file:
+                    raise ServiceError("portfolio plans use --plan-file or a detail patch")
+                parts = split_plan(str(body), ["What it contains", "Explore the project"], ["What it contains"])
+                detail = dict(patch.get("detail") or {})
+                plan = {**(detail.get("planned") or {}), "introduction": parts["introduction"], "what_it_contains": parts["What it contains"]}
+                if "Explore the project" in parts:
+                    plan["scope_notes"] = parts["Explore the project"]
+                detail["planned"] = plan
+                patch["detail"] = detail
+            elif kind in {"post", "personal"}:
+                patch["planned"] = {**(patch.get("planned") or {}), "content": body}
+            else:
+                raise ServiceError(f"{kind} entries do not have notebook planning fields")
         emit(service.update(name, patch, expected_revision or inspected["revision"]))
 
     @app.command("data")
     def data(name: str, file: str | None = None, expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Read or replace profile, portfolio, photos, settings, or course/<slug>."""
+        """Read or replace profile, portfolio, photos, kanban, settings, or course/<slug>."""
         service = ContentService()
         if file:
             payload = load_yaml(Path(file).read_bytes(), file)
@@ -123,9 +159,14 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
             emit(service.read_data(name))
 
     @app.command("batch")
-    def batch(file: str, expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Apply related metadata/data repairs as one validated transaction."""
-        payload = json.loads(Path(file).read_text())
+    def batch(payload_file: str | None = typer.Argument(None, metavar="FILE"), file: str | None = typer.Option(None, "--file", help="JSON with updates [{id, patch}] and/or data {name: record}."), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
+        """Apply related metadata/data repairs as one validated transaction.
+
+        Example payload: {"updates": [{"id": "post/example", "patch": {"description": "Revised"}}], "data": {}}
+        """
+        if (file is None) == (payload_file is None):
+            raise typer.BadParameter("provide exactly one FILE or --file")
+        payload = json.loads(Path(file or str(payload_file)).read_text())
         emit(ContentService().batch(payload.get("updates", []), payload.get("data", {}), expected_revision))
 
     @app.command("gallery")

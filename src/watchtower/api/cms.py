@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.datastructures import UploadFile
 
 from watchtower.models import KANBAN_COLUMNS
-from watchtower.planning import PLAN_FIELDS, REQUIRED
+from watchtower.planning import CORE_FIELDS, PLAN_FIELDS
 from watchtower.services.images import MAX_FIGURE_BYTES
 from watchtower.services.workspace import ServiceError
 
@@ -326,13 +326,36 @@ def cms_router(root: Path) -> APIRouter:
                 plan_fields = [field for group in groups if group["title"] == "Build plan" for field in group["fields"]]
                 order = [key for key, _, _ in PLAN_FIELDS[artifact["kind"]]]
                 plan_fields.sort(key=lambda field: order.index(json.loads(field["name"])[-1]) if json.loads(field["name"])[-1] in order else len(order))
-                core_keys = {*REQUIRED[artifact["kind"]], *(('summary',) if artifact["kind"] == "chapter" else ())}
+                core_keys = {*CORE_FIELDS[artifact["kind"]], *(('summary',) if artifact["kind"] == "chapter" else ())}
                 core = [field for field in plan_fields if json.loads(field["name"])[-1] in core_keys]
                 optional = [field for field in plan_fields if json.loads(field["name"])[-1] not in core_keys]
                 groups = [group for group in groups if group["title"] != "Build plan"]
                 groups.extend([{"title": "Build plan", "fields": core, "fold": False}, {"title": "More planning details (optional)", "fields": optional, "fold": True}])
                 groups.sort(key=lambda group: {"Title": 0, "Build plan": 1, "More planning details (optional)": 2}.get(group["title"], 3))
                 context["groups"] = groups
+        if context.get("artifact") and "groups" in context:
+            notes = []
+            for group in context["groups"]:
+                notes.extend(field for field in group["fields"] if field["label"] == "internal_notes")
+                group["fields"] = [field for field in group["fields"] if field["label"] != "internal_notes"]
+                for field in group["fields"]:
+                    if field["label"] == "description":
+                        field.update(caption="Public description", prompt="Reader-facing summary for listings once the draft is started.")
+            for field in notes:
+                field.update(prompt="Markdown notes for research, decisions, and future revisions. Excluded from site pages; included in the build brief.")
+            context["groups"] = [group for group in context["groups"] if group["fields"]]
+            if notes:
+                context["groups"].insert(1, {"title": "Internal notes", "fields": notes, "fold": False})
+            if context["artifact"].get("kind") == "portfolio":
+                abstract_fields = []
+                for group in context["groups"]:
+                    for field in group["fields"]:
+                        if field["label"] == "detail / abstract":
+                            field.update(caption="Abstract", type="text", prompt="Shown on the portfolio card. Optional during planning: Start draft fills a blank abstract from Introduction / problem and What it contains. Review and edit it before publishing.")
+                            abstract_fields.append(field)
+                    group["fields"] = [field for field in group["fields"] if field["label"] not in {"description", "detail / abstract"}]
+                context["groups"] = [group for group in context["groups"] if group["fields"]]
+                context["groups"].insert(1, {"title": "Abstract", "fields": abstract_fields, "fold": False})
         if context.get("name") == "profile":
             sections = []
             for key, label in [(None, "General"), ("contact", "Contact"), ("employment", "Employment"), ("early_employment", "Early employment"), ("skills", "Skills"), ("education", "Education"), ("projects", "Projects")]:
@@ -357,11 +380,14 @@ def cms_router(root: Path) -> APIRouter:
             # A concurrently malformed saved file cannot erase the submitted form.
             result = {"artifact": values, "revision": revision, "eligible": False}
         artifact = copy.deepcopy(values if values is not None else result["artifact"])
+        artifact.setdefault("internal_notes", "")
         if values is None:
             if artifact.get("kind") == "chapter" and result.get("chapter_plan") is not None:
                 artifact["plan"] = {key: value for key, value in result["chapter_plan"].items() if key not in {"chapter_id", "section"}}
             if artifact.get("kind") == "portfolio":
                 artifact["detail"] = {key: value for key, value in result["detail"].items() if key != "id"}
+                if not artifact["detail"].get("abstract"):
+                    artifact["detail"]["abstract"] = artifact.get("description") or ""
             if artifact.get("kind") in {"post", "personal"}:
                 artifact.setdefault("planned", {}).setdefault("content", "")
             if artifact.get("kind") == "course":
@@ -384,7 +410,7 @@ def cms_router(root: Path) -> APIRouter:
         if result.get("has_authored_content") is not None:
             for field in fields:
                 if field["label"] == "lifecycle":
-                    field["options"] = ["draft", "published"] if result["has_authored_content"] else ["planned"]
+                    field["options"] = ["draft", "published"] if result["has_authored_content"] else ["planned", "draft"] if result.get("has_source") else ["planned"]
         return {"artifact": artifact, "record": result, "revision": revision or result["revision"], "error": error, "source_path": str(root / source) if source else None, "editor_url": editor_url, "fields": fields, "section": "courses" if artifact.get("kind") in {"course", "chapter"} else "posts" if artifact.get("kind") == "post" else "portfolio" if artifact.get("kind") == "portfolio" else "personal"}
 
     @router.get("/lookup")
@@ -429,7 +455,7 @@ def cms_router(root: Path) -> APIRouter:
             for course in request.app.state.content.list("course")["artifacts"]:
                 record = request.app.state.content.inspect(course["id"])
                 courses.append({"id": course["id"], "title": course["title"], "sections": record["contract"].get("toc", [])})
-        return {"section": CREATE_SECTIONS.get(kind, "posts"), "values": values, "revision": revision or listing["revision"], "courses": courses, "error": error, "plan_fields": PLAN_FIELDS.get(kind, []), "core_keys": {*REQUIRED.get(kind, ()), *(('summary',) if kind == 'chapter' else ())}, "contextual": bool(request.query_params.get("parent"))}
+        return {"section": CREATE_SECTIONS.get(kind, "posts"), "values": values, "revision": revision or listing["revision"], "courses": courses, "error": error, "plan_fields": PLAN_FIELDS.get(kind, []), "core_keys": {*CORE_FIELDS.get(kind, ()), *(('summary',) if kind == 'chapter' else ())}, "contextual": bool(request.query_params.get("parent"))}
 
     @router.get("/new")
     def new(request: Request, kind: str = "post") -> HTMLResponse:
@@ -493,7 +519,8 @@ def cms_router(root: Path) -> APIRouter:
                     data["toc_title"] = str(form.get("name", "")).strip()
             elif selected_kind == "portfolio":
                 data["id"] = f"portfolio/{slug}"
-                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", "planned": portfolio_plan}
+                legacy_description = data.pop("description", None)
+                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", "planned": portfolio_plan, "abstract": data.pop("abstract", legacy_description)}
             elif selected_kind == "project":
                 data["id"] = f"project/{slug}"
                 data["path"] = f"projects/{slug}"
@@ -570,6 +597,10 @@ def cms_router(root: Path) -> APIRouter:
         try:
             values = apply_fields(baseline, form)
             patch = {key: value for key, value in values.items() if baseline.get(key) != value}
+            if values.get("kind") == "portfolio":
+                saved_detail = request.app.state.content.inspect(artifact_id)["detail"]
+                if not saved_detail.get("abstract") and values.get("detail", {}).get("abstract"):
+                    patch["detail"] = {**patch.get("detail", {}), "abstract": values["detail"]["abstract"]}
             if values.get("kind") == "course" and values.get("planned", {}).get("content") and not request.app.state.content.inspect(artifact_id)["contract"]["planned"].get("summary"):
                 patch["contract"] = values["contract"]
             if "route" in patch:
