@@ -10,8 +10,11 @@ read the pages themselves rather than reload this authoring guidance.
 `content/data/courses/<slug>.yaml` is the compact, structured course context. Keep purpose and
 audience there, along with separate `planned.summary` and
 `actualized.summary` fields. The latter records completed work, not an
-inference from chapter files. The generated include places these shared facts
-in the rendered home. Keep teaching narrative, setup steps, links, and other
+inference from chapter files. Purpose, audience, planned fields and artifact
+`internal_notes` are authoring context. Start seeds supported course fields into
+the home once; internal notes remain excluded. Review that draft before publishing.
+The generated include renders explicit actualized facts and the ordered chapter
+table. Use catalog `description` for the public listing summary. Keep teaching narrative, setup steps, links, and other
 reader guidance in the notebook.
 
 ## Index page: the course README
@@ -20,7 +23,7 @@ The `index.ipynb` is the learner-facing home page. It should be concise but
 substantive: a learner should understand the promise, scope, path,
 prerequisites, and expected outcome in one sitting.
 
-1. **Metadata:** manage title, description, categories, and optional cover
+1. **Metadata:** manage title, public description, tags, and optional cover
    through the content service/catalog. Generated copies receive front matter;
    the authored home body does not repeat the generated title.
 2. **Short introduction:** one or two paragraphs explaining what the course is
@@ -29,9 +32,9 @@ prerequisites, and expected outcome in one sitting.
 3. **Completed-course outcome:** name the artifact, capability, proof, or
    comparison the learner will finish with. State scope boundaries when the
    title could otherwise overpromise.
-4. **Learning path:** use a table with one row per chapter and a one-line
-   description of what it teaches or adds. Group rows by the same phases or
-   parts used in the sidebar.
+4. **Learning path:** maintain the ordered contract TOC and each chapter-plan
+   `summary` as explicit public text. The generated chapter table uses those
+   fields; do not duplicate it in the notebook.
 5. **Prerequisites:** separate tooling from assumed knowledge.
 6. **Execution at a glance:** name the default local path and any paid,
    remote, optional, or accelerated path without reproducing the full setup or

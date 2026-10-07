@@ -58,7 +58,11 @@ does not isolate the files or Quarto's `_site` output.
 ## Course content after orientation
 
 Run `wt context <chapter-id-or-path>` first. The catalog and `course.yaml` give
-the course contract, separating planned work from actualized work. Then read
+the course contract, separating planned work from actualized work. Internal
+notes and structured plans are authoring inputs, not rendered prose. `wt start`
+seeds a private draft from supported plan fields once. Review and develop these
+sections as learner-facing prose; later plan edits do not rewrite the notebook. Keep
+notes available after publication and use linked Kanban cards to track work. Then read
 `index.ipynb` (the learner-facing home), `00-overview.ipynb` when present, and
 the target chapter. Read adjacent chapter openings only when a handoff matters;
 do not load all sibling chapters. Return to the course-home authoring reference
