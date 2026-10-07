@@ -164,9 +164,9 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
         if artifact.cover:
             exists(artifact.cover, f"{artifact.id} cover image")
         if artifact.kind == "project":
-            key = f"@dir/{artifact.path}"
-            if key not in files:
-                fail(f"{artifact.id}: project directory missing", str(artifact.path))
+            # Registration requires existing code at creation; code later removed
+            # outside the system is drift and must not block the saves that retire
+            # it. References stay strict: portfolio entries check their project_path.
             continue
         if artifact.kind == "gallery":
             expected = "published" if any(photo.lifecycle == "published" for photo in state.photos) else "planned"
@@ -586,6 +586,8 @@ class ContentService:
                 raise ServiceError(f"Name / source was previously deleted and remains reserved: {source}")
             if artifact.kind == "post" and any(a.get("path", "").casefold() == (artifact.path or "").casefold() for a in catalog["artifacts"] if a.get("path")):
                 raise ServiceError("Name is already used by another post.")
+            if artifact.kind == "project" and files.get(f"@dir/{artifact.path}") is None:
+                raise ServiceError(f"project code directory missing: {artifact.path}", paths=[str(artifact.path)])
             catalog["artifacts"].append(artifact.model_dump(mode="json", exclude_none=True))
             writes = {CATALOG: yaml_bytes(catalog)}
             if artifact.kind == "portfolio":

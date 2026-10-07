@@ -141,7 +141,9 @@ Portfolio inline content is ambiguous and rejected; use its plan file or a
 the positional file form remains supported. Supply exactly one file form.
 `new section` and chapter section updates preserve catalog/plan/TOC consistency.
 Record actualized work explicitly. `make project NAME=<name>` scaffolds/registers
-code; `wt register project <path> <title>` registers existing code. The CLI
+code; `wt register project <path> <title>` registers existing code. Registration
+requires an existing code directory; code removed outside the system is drift
+that never blocks saves, and such a registration is retired with `wt delete`. The CLI
 commands `new`, `import`, `register`, and `kanban add` do not accept custom IDs.
 `new` and `import` derive IDs from names; `register`
 derives IDs from the source filename stem (directory name for courses/projects),

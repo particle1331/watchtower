@@ -1,6 +1,7 @@
 """Portfolio starts and make project share a transactional uv package scaffold."""
 
 import runpy
+import shutil
 import tomllib
 from pathlib import Path
 
@@ -148,3 +149,21 @@ def test_make_project_uses_the_shared_scaffold_and_refuses_existing_code(content
     with pytest.raises(ServiceError, match="refuses an existing"):
         function()
     assert {str(item.relative_to(path)): item.read_bytes() for item in path.rglob("*") if item.is_file()} == original
+
+
+def test_project_code_removed_outside_the_system_can_be_retired(content_service):
+    service = content_service
+    (service.root / "projects/gone").mkdir(parents=True)
+    service.create({"id": "project/gone", "kind": "project", "title": "Gone", "path": "projects/gone"})
+    shutil.rmtree(service.root / "projects/gone")
+    # Drift never blocks unrelated saves, metadata edits, or the repair itself.
+    planned_portfolio(service)
+    service.update("project/gone", {"title": "Retired"})
+    service.delete("project/gone")
+    assert all(artifact["id"] != "project/gone" for artifact in service.list()["artifacts"])
+
+
+def test_registering_a_project_requires_existing_code(content_service):
+    service = content_service
+    with pytest.raises(ServiceError, match="project code directory missing"):
+        service.create({"id": "project/missing", "kind": "project", "title": "Missing", "path": "projects/missing"})
