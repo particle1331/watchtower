@@ -1,2 +1,19 @@
 version: 1
-entries: []
+entries:
+- id: portfolio/yeah1
+  notebook_path: content/notebooks/portfolio/yeah1.ipynb
+  planned:
+    introduction: problem
+    references: "ref1\r\nref2\r\nref3"
+    approach: build sequence
+    scope_notes: scope
+    success_criteria: metrics
+    what_it_contains: content
+    next_steps: sleep
+    intended_users: me
+  project_name: yeah1
+  abstract: null
+  archive_date: null
+  figure_caption: null
+  figure_path: null
+  project_source: active

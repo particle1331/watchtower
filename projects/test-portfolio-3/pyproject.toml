@@ -1,0 +1,17 @@
+[project]
+name = "test-portfolio-3"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "particle", email = "54845098+particle1331@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+test-portfolio-3 = "test_portfolio_3:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"

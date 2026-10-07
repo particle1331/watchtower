@@ -8,10 +8,17 @@ artifacts:
   lifecycle: published
   relations: []
   date: '2026-09-30'
+  internal_notes: ''
   tags:
   - meta
   - dev
-  planned: {}
+  planned:
+    audience: ''
+    content: ''
+    evidence: ''
+    next_steps: ''
+    references: ''
+    takeaway: ''
   route: nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
 - id: course/llms-from-scratch
   kind: course
@@ -549,13 +556,46 @@ artifacts:
   relations: []
   tags: []
   planned: {}
+- id: project/test-portfolio-3
+  kind: project
+  title: Test Portfolio 3
+  path: projects/test-portfolio-3
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: portfolio/yeah1
+  kind: portfolio
+  title: YEAH
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: sdfsdfds
+  tags: []
+  planned: {}
+- id: project/yeah1
+  kind: project
+  title: Yeah1
+  path: projects/yeah1
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
 retired_ids:
 - course/test
 - htmx-todo
+- portfolio/test-portfolio-3
 - portfolio/test1
+- post/test-planned-post
 - test-portfolio
 retired_sources:
 - content/notebooks/courses/test/index.ipynb
+- content/notebooks/portfolio/test-portfolio-3.ipynb
 - content/notebooks/portfolio/test-portfolio.ipynb
 - content/notebooks/portfolio/test1.ipynb
 - content/notebooks/posts/htmx-todo.ipynb
+- content/notebooks/posts/test-planned-post.ipynb
