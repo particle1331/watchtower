@@ -3,6 +3,7 @@
 import html
 import json
 import re
+from datetime import UTC, datetime
 
 import nbformat
 import pytest
@@ -378,3 +379,66 @@ def test_portfolio_legacy_description_is_preserved_as_abstract_on_save(author):
         response = client.post('/cms/save/portfolio/legacy', data={'revision': revision, 'snapshot': snapshot}, follow_redirects=False)
         assert response.status_code == 303
         assert author.inspect('portfolio/legacy')['detail']['abstract'] == 'Existing summary.'
+
+
+def test_editor_scopes_keep_public_summaries_and_internal_fields_separate(author):
+    course(author)
+    chapter(author, plan={"summary": "Reader summary", "content": "Teaching plan", "next_steps": "Research later"}, internal_notes="Author decisions")
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/artifact/course/demo/first')
+        assert page.status_code == 200
+        panes = {scope: re.search(rf'<section id="{scope}-fields".*?</section>', page.text, re.S)[0] for scope in ['site', 'planning', 'internal']}
+        assert 'Reader summary' in panes['site']
+        assert 'Teaching plan' in panes['planning']
+        assert 'Author decisions' in panes['internal'] and 'Research later' in panes['internal']
+        assert 'Author decisions' not in panes['site'] and 'Research later' not in panes['planning']
+        assert 'hidden' not in re.search(r'<section id="site-fields"[^>]*>', page.text)[0]
+        revision, snapshot = form_snapshot(page)
+        saved = client.post('/cms/save/course/demo/first', data={
+            'revision': revision, 'snapshot': snapshot,
+            'field:["plan", "summary"]': 'New reader summary',
+            'field:["plan", "content"]': 'New teaching plan',
+            'field:["internal_notes"]': 'New author decisions',
+        }, follow_redirects=False)
+        assert saved.status_code == 303
+        record = author.inspect('course/demo/first')
+        assert record['chapter_plan']['summary'] == 'New reader summary'
+        assert record['chapter_plan']['content'] == 'New teaching plan'
+        assert record['artifact']['internal_notes'] == 'New author decisions'
+
+
+def test_course_outline_compact_controls_keep_native_actions_and_revisions(author):
+    course(author)
+    chapter(author)
+    chapter(author, 'second')
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/courses/demo')
+        assert page.status_code == 200
+        assert 'data-default-pane="outline"' in page.text
+        assert page.text.count('class="outline-chapter"') == 2
+        assert 'aria-label="Move First down"' in page.text
+        assert 'Move First down</button>' not in page.text
+        assert '<details class="chapter-details">' in page.text
+        revision = token(page)
+        moved = client.post('/cms/courses/demo/outline', data={
+            'revision': revision, 'action': 'chapter-down', 'chapter': 'course/demo/first',
+        }, follow_redirects=False)
+        assert moved.status_code == 303
+        assert author.inspect('course/demo')['contract']['toc'][0]['chapters'] == ['course/demo/second', 'course/demo/first']
+
+
+def test_new_portfolio_editor_shows_the_creation_date(author, monkeypatch):
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 8, 21, tzinfo=UTC).astimezone(tz)
+
+    monkeypatch.setattr('watchtower.services.content.datetime', FixedDatetime)
+    with TestClient(create_app(author.root)) as client:
+        new = client.get('/cms/new?kind=portfolio')
+        created = client.post('/cms/new?kind=portfolio', data={
+            'revision': token(new), 'name': 'dated', 'title': 'Dated portfolio',
+        }, follow_redirects=False)
+        assert created.status_code == 303
+        editor = client.get(created.headers['location'])
+        assert 'name="field:["date"]" value="2026-10-09"' in html.unescape(editor.text)

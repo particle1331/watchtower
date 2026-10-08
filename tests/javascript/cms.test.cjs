@@ -197,3 +197,82 @@ test('header controls follow their associated editor through edit and save state
   assert.equal(cancel.attrs['aria-disabled'], 'false');
   assert.equal(fields.disabled, false);
 });
+
+function workspaceEnvironment(hash = '') {
+  const handlers = new Map();
+  const windowHandlers = new Map();
+  const location = {hash};
+  function element(id) {
+    return {id, attrs: {}, dataset: {}, listeners: {}, hidden: false,
+      setAttribute(key, value) { this.attrs[key] = value; },
+      addEventListener(key, callback) { this.listeners[key] = callback; },
+      querySelector() { return null; }, focus() { this.focused = true; },
+      closest(selector) { return selector === '[data-workspace-pane]' ? this : null; },
+      matches() { return false; },
+    };
+  }
+  const panes = ['site-fields', 'planning-fields', 'internal-fields'].map(element);
+  const inputs = panes.map(pane => ({name: pane.id, value: '', disabled: false}));
+  const fields = {disabled: false};
+  const form = {
+    id: 'artifact-editor-form', dataset: {editing: 'true'},
+    hasAttribute: () => false, closest: () => null,
+    querySelector: selector => selector === '[data-editor-fields]' ? fields : null,
+    querySelectorAll: selector => selector === 'input, textarea, select' ? inputs : [],
+  };
+  let links, nav;
+  function replaceNav() {
+    links = panes.map(pane => Object.assign(element(pane.id + '-tab'), {hash: '#' + pane.id}));
+    nav = element('nav'); nav.dataset.defaultPane = 'site-fields';
+    nav.querySelectorAll = () => links;
+  }
+  replaceNav();
+  const document = {
+    querySelector: () => null,
+    querySelectorAll: selector => selector === '[data-workspace-tabs]' ? [nav] : selector.startsWith('form[') ? [form] : [],
+    getElementById: id => panes.find(pane => pane.id === id) || null,
+    addEventListener: (name, callback) => {
+      const list = handlers.get(name) || []; list.push(callback); handlers.set(name, list);
+    },
+  };
+  vm.runInNewContext(source, {document, location, history: {replaceState(_, __, hash) { location.hash = hash; }},
+    window: {addEventListener(name, callback) { windowHandlers.set(name, callback); }},
+  });
+  function click(index) { links[index].listeners.click({preventDefault() {}}); }
+  function key(index, key) { links[index].listeners.keydown({key, preventDefault() {}}); }
+  function swap() {
+    replaceNav();
+    for (const callback of handlers.get('htmx:afterSwap')) callback({detail: {target: {id: 'artifact-editor'}}});
+  }
+  return {panes, inputs, fields, form, get links() { return links; }, click, key, swap, location, handlers, windowHandlers};
+}
+
+test('workspace tabs retain controls, support keyboard navigation and survive HTMX replacement', () => {
+  const env = workspaceEnvironment('#internal-fields');
+  assert.deepEqual(env.panes.map(pane => pane.hidden), [true, true, false]);
+  env.inputs[2].value = 'An unsaved note';
+  env.click(0);
+  assert.deepEqual(env.panes.map(pane => pane.hidden), [false, true, true]);
+  assert.equal(env.inputs[2].value, 'An unsaved note');
+  assert.equal(env.inputs[2].disabled, false);
+  assert.equal(env.fields.disabled, false);
+  assert.equal(env.form.querySelectorAll('input, textarea, select').length, 3);
+  env.key(0, 'ArrowLeft');
+  assert.equal(env.links[2].attrs['aria-selected'], 'true');
+  assert.equal(env.links[2].focused, true);
+  env.key(2, 'Home');
+  assert.equal(env.links[0].tabIndex, 0);
+  env.key(0, 'End');
+  env.swap();
+  assert.equal(env.links[2].attrs['aria-selected'], 'true');
+  assert.equal(env.location.hash, '#internal-fields');
+});
+
+test('native validation exposes a required control in another workspace pane', () => {
+  const env = workspaceEnvironment();
+  const details = {open: false};
+  const target = {closest(selector) { return selector === 'details' ? details : env.panes[2]; }};
+  for (const callback of env.handlers.get('invalid')) callback({target});
+  assert.equal(env.panes[2].hidden, false);
+  assert.equal(details.open, true);
+});

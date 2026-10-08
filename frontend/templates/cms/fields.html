@@ -6,7 +6,9 @@
 {% if artifact.kind == 'portfolio' %}{% set hidden_fields = hidden_fields + ['path', 'route'] %}{% endif %}
 {% endif %}
 {% for group in groups %}
-{% if group.fold %}<details class="entity-group" data-list-item><summary>{% if group.context %}<small>{{ group.context }}</small> {% endif %}{{ group.title }}</summary>{% else %}<fieldset class="entity-group{% if hide_group_title | default(false) %} profile-basic-fields{% endif %}" data-list-item><legend{% if hide_group_title | default(false) %} class="visually-hidden"{% endif %}>{% if group.context %}<small>{{ group.context }}</small> {% endif %}{{ group.title }}</legend>{% endif %}
+{% set folded = group.fold and group.title != 'Settings' %}
+{% set group_class = ' settings-group' if group.title == 'Settings' else '' %}
+{% if folded %}<details class="entity-group{{ group_class }}{% if group.title == 'Internal notes' %} internal-notes-group{% endif %}" data-list-item><summary>{% if group.context %}<small>{{ group.context }}</small> {% endif %}{{ group.title }}</summary>{% else %}<fieldset class="entity-group{{ group_class }}{% if group.title == 'Internal notes' %} internal-notes-group{% endif %}{% if hide_group_title | default(false) %} profile-basic-fields{% endif %}" data-list-item><legend{% if hide_group_title | default(false) %} class="visually-hidden"{% endif %}>{% if group.context %}<small>{{ group.context }}</small> {% endif %}{{ group.title }}</legend>{% endif %}
 {% for field in group.fields %}
 {% if field.label not in hidden_fields and not (artifact is defined and artifact.kind == 'gallery' and field.label == 'lifecycle') %}
 {% set featured_image = artifact is defined and ((artifact.kind == 'portfolio' and field.label == 'detail / figure_path') or (artifact.kind == 'course' and field.label == 'cover')) %}
@@ -39,4 +41,4 @@
 {% for action,label in [('up','Move up'),('down','Move down'),('remove','Remove row')] %}
 <button type="submit" name="collection_action" value='{{ {"path": row.path, "index": row.index, "action": action} | tojson }}' {% if (action == 'up' and row.index == 0) or (action == 'down' and row.index == row.count - 1) %}disabled{% endif %}>{{ label }}</button>
 {% endfor %}</div>{% endif %}
-{% if group.fold %}</details>{% else %}</fieldset>{% endif %}{% endfor %}
+{% if folded %}</details>{% else %}</fieldset>{% endif %}{% endfor %}

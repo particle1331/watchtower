@@ -328,8 +328,12 @@ def cms_router(root: Path) -> APIRouter:
                         group.update(title="Build plan", fold=False)
                     if group["title"] == "General":
                         title_fields = [field for field in group["fields"] if field["label"] == "title"]
-                        other_fields = [field for field in group["fields"] if field["label"] != "title"]
+                        public_labels = {"description", "cover", "date", "toc_title", "tags"}
+                        public_fields = [field for field in group["fields"] if field["label"] in public_labels]
+                        other_fields = [field for field in group["fields"] if field["label"] != "title" and field["label"] not in public_labels]
                         groups.append({**group, "title": "Title", "fields": title_fields, "fold": False})
+                        if public_fields:
+                            groups.append({**group, "title": "Page details", "fields": public_fields, "fold": False})
                         groups.append({**group, "title": "Settings", "fields": other_fields, "fold": True})
                     else:
                         groups.append(group)
@@ -370,6 +374,23 @@ def cms_router(root: Path) -> APIRouter:
                     group["fields"] = [field for field in group["fields"] if field["label"] not in {"description", "detail / abstract"}]
                 context["groups"] = [group for group in context["groups"] if group["fields"]]
                 context["groups"].insert(1, {"title": "Abstract", "fields": abstract_fields, "fold": False})
+            # Keep every control in the same form; panes change presentation only.
+            scoped_groups = []
+            for group in context["groups"]:
+                partitions: dict[str, list[dict[str, Any]]] = {}
+                for field in group["fields"]:
+                    path = json.loads(field["name"])
+                    if path[-1] in {"internal_notes", "next_steps", "scope_notes"}:
+                        scope = "internal"
+                    elif "planned" in path or path[0] in {"plan", "contract"}:
+                        scope = "site" if artifact.get("kind") == "chapter" and path[-1] == "summary" else "planning"
+                    else:
+                        scope = "site"
+                    partitions.setdefault(scope, []).append(field)
+                for scope, scoped_fields in partitions.items():
+                    title = "Next steps & scope notes" if scope == "internal" and group["title"] != "Internal notes" else "Course table summary" if scope == "site" and group["title"] == "Build plan" else group["title"]
+                    scoped_groups.append({**group, "title": title, "fields": scoped_fields, "scope": scope})
+            context["groups"] = scoped_groups
         if context.get("name") == "profile":
             sections = []
             for key, label in [(None, "General"), ("contact", "Contact"), ("employment", "Employment"), ("early_employment", "Early employment"), ("skills", "Skills"), ("education", "Education"), ("projects", "Projects")]:

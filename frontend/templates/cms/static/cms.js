@@ -9,6 +9,52 @@
   let refreshing = false;
   let logState = null;
 
+  function initializeWorkspaceTabs() {
+    document.querySelectorAll('[data-workspace-tabs]').forEach(nav => {
+      if (nav.dataset.initialized) return;
+      const links = [...nav.querySelectorAll('a[href^="#"]')];
+      const panes = links.map(link => document.getElementById(link.hash.slice(1)));
+      if (panes.some(pane => !pane)) return;
+      nav.dataset.initialized = 'true';
+      nav.setAttribute('role', 'tablist');
+      function select(index, focus = false) {
+        links.forEach((link, i) => {
+          link.setAttribute('role', 'tab');
+          link.setAttribute('aria-controls', panes[i].id);
+          link.setAttribute('aria-selected', String(i === index));
+          link.tabIndex = i === index ? 0 : -1;
+          panes[i].setAttribute('role', 'tabpanel');
+          panes[i].hidden = i !== index;
+        });
+        if (focus) links[index].focus({preventScroll: true});
+        nav.dataset.activePane = panes[index].id;
+      }
+      nav.selectPane = id => {
+        const index = panes.findIndex(pane => pane.id === id);
+        if (index >= 0) select(index);
+      };
+      links.forEach((link, index) => {
+        link.addEventListener('click', event => {
+          event.preventDefault();
+          select(index);
+          history.replaceState(null, '', link.hash);
+        });
+        link.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? links.length - 1 :
+            (index + (event.key === 'ArrowRight' ? 1 : -1) + links.length) % links.length;
+          select(next, true);
+          history.replaceState(null, '', links[next].hash);
+        });
+      });
+      const hash = decodeURIComponent(location.hash.slice(1));
+      const errorPane = panes.find(pane => pane.querySelector('.error'));
+      const initial = errorPane?.id || (panes.some(pane => pane.id === hash) ? hash : nav.dataset.defaultPane);
+      nav.selectPane(initial || panes[0].id);
+    });
+  }
+
   document.querySelectorAll('input[data-delete-id]').forEach(input => {
     const button = input.form?.querySelector('[data-delete-submit]');
     if (!button) return;
@@ -273,6 +319,7 @@
   }
 
   function initialize() {
+    initializeWorkspaceTabs();
     initializeRelationships();
     initializeLists();
     editors().forEach(form => {
@@ -297,6 +344,12 @@
   }
   document.addEventListener('input', changed);
   document.addEventListener('change', changed);
+  document.addEventListener('invalid', event => {
+    const pane = event.target.closest('[data-workspace-pane]');
+    if (pane) document.querySelectorAll('[data-workspace-tabs]').forEach(nav => nav.selectPane?.(pane.id));
+    const details = event.target.closest('details');
+    if (details) details.open = true;
+  }, true);
   document.addEventListener('change', event => {
     const select = event.target.closest('select[data-auto-submit]');
     if (select?.form) select.form.requestSubmit();
@@ -463,6 +516,8 @@
   });
   function openHash() {
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    const pane = target?.closest('[data-workspace-pane]');
+    if (pane) document.querySelectorAll('[data-workspace-tabs]').forEach(nav => nav.selectPane?.(pane.id));
     if (target?.matches('details')) target.open = true;
   }
   window.addEventListener('hashchange', openHash);

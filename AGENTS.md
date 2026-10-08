@@ -245,6 +245,9 @@ publication control in the CMS.
 ## CMS planning and course organization
 
 New CMS plans default to private visibility, labeled Not on the live site.
+New posts, personal notebooks, portfolios, courses and chapters default Date to
+the creation day in the site's configured timezone. Preserve explicit dates;
+later saves do not refresh the default.
 Guided creation/editing fields capture post outlines, portfolio scope, course
 contracts and chapter content/labs, plus optional audience, evidence, references
 and next steps. Partial plans can be saved and started. Start seeds supported
@@ -281,11 +284,12 @@ catalog membership, contract TOC and chapter plans. The advanced contract editor
 remains available. A course metadata API patch can include `contract` for an
 atomic brief save. Do not derive actualized facts from the plan.
 
-Course homes and the CMS workspace derive their chapter table from ordered TOC,
-full catalog chapter title, and chapter-plan `summary`, with columns Section,
-Chapter title, Summary. Titles link to eligible chapter pages. Missing summaries
-prompt Add summary in CMS, show a placeholder in preview, and stay empty in
-production. Builds filter rows through the existing parent/child publication
+Course homes derive their chapter table from ordered TOC, full catalog chapter
+title, and chapter-plan `summary`, with columns Section, Chapter title, Summary.
+Titles link to eligible chapter pages. The CMS shows the same ordered data once
+in compact section/chapter rows; summaries and section transfer are disclosed
+inside each chapter. Missing summaries prompt editing in CMS, show a placeholder
+in preview, and stay empty in production. Builds filter rows through the existing parent/child publication
 rules. Do not maintain a second table in authored notebooks or generated files.
 
 All related stable-ID controls use search/select with suggestions by title or ID,
@@ -324,6 +328,18 @@ Whole-board data and batch saves preserve the numbering counter and existing
 card references; omitted refs retain their saved value. Reassigned or reused
 references are rejected. Explicit malformed-board repairs should include the
 known counter and identities. `--link` and `--clear-links` cannot be combined.
+
+Artifact editors and plan creation separate Site content, Build plan and Internal
+notes into keyboard-accessible panes. Settings groups remain unfolded. Keep all controls in the same form when
+switching panes so unsaved values and selected uploads survive. Without
+JavaScript, show the areas as sections. Reveal a pane before native validation
+focuses a required control. Internal notes, next steps and scope notes belong in
+the CMS-only pane; chapter short summaries belong with site content. Preserve the
+optional reader-facing Abstract in creation's optional planning details, with an
+explicit site-content label. Course workspaces open on the compact outline.
+Chapter reorder arrows and Edit remain visible; transfer and deletion sit inside
+the chapter disclosure. Section settings start folded. Outline actions save
+immediately with their original revision.
 
 CMS short information and row actions stay visible. Every employment, early
 employment, skill and education entry starts folded in résumé views and editors,

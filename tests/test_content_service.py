@@ -1,5 +1,7 @@
 """Domain, stale-write, and crash-recovery acceptance checks."""
 
+from datetime import UTC, datetime
+
 import nbformat
 import pytest
 import yaml
@@ -26,6 +28,36 @@ def content_service(tmp_path):
 
 def post(service, **extra):
     return service.create({"id": "post/example", "kind": "post", "path": "content/notebooks/posts/example.ipynb", "title": "Example", "planned": {"content": "## Question\n\nInvestigate a question."}, **extra})
+
+
+@pytest.mark.parametrize("kind", ["post", "personal", "portfolio", "course", "chapter"])
+@pytest.mark.parametrize("timezone, expected_date", [("Asia/Manila", "2026-10-09"), ("UTC", "2026-10-08")])
+def test_creation_date_uses_the_site_timezone(content_service, monkeypatch, kind, timezone, expected_date):
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 8, 21, tzinfo=UTC).astimezone(tz)
+
+    monkeypatch.setattr("watchtower.services.content.datetime", FixedDatetime)
+    settings = content_service.read_data("settings")["data"]
+    content_service.update_data("settings", {**settings, "timezone": timezone})
+    payload = {"id": f"{kind}/dated", "kind": kind, "title": "Dated"}
+    if kind == "course":
+        payload["path"] = "content/notebooks/courses/dated"
+    elif kind == "chapter":
+        content_service.create({"id": "course/parent", "kind": "course", "title": "Parent", "path": "content/notebooks/courses/parent"})
+        payload.update(id="course/parent/dated", parent="course/parent", section="main", toc_title="Dated", path="content/notebooks/courses/parent/dated.ipynb")
+    elif kind != "portfolio":
+        payload["path"] = f"content/notebooks/{kind}/dated.ipynb"
+    created = content_service.create(payload)
+    assert created["artifact"]["date"] == expected_date
+    content_service.update(payload["id"], {"description": "Updated later"})
+    assert content_service.inspect(payload["id"])["artifact"]["date"] == expected_date
+
+
+def test_creation_preserves_an_explicit_date(content_service):
+    created = content_service.create({"id": "portfolio/dated", "kind": "portfolio", "title": "Dated", "date": "2025-12-31"})
+    assert created["artifact"]["date"] == "2025-12-31"
 
 
 def author_body(service, identifier):

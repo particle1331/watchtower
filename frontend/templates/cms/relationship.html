@@ -11,7 +11,12 @@
 {% for identifier in selected %}{% set match = relationship_artifacts | selectattr('id', 'equalto', identifier) | first %}<option value="{{ identifier }}" selected>{{ (match.title + ' · ' + match.kind + ' · ' + match.id + ' · ' + match.lifecycle) if match else identifier + ' (missing — remove or replace)' }}</option>{% endfor %}
 {% for item in relationship_artifacts if item.id not in selected %}<option value="{{ item.id }}">{{ item.title }} · {{ item.kind }} · {{ item.id }} · {{ item.lifecycle }}</option>{% endfor %}
 </select></label>
-<div data-relationship-enhanced hidden><div data-relationship-chips class="relationship-chips"></div><label>{{ label }}<input type="search" data-relationship-search role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off" placeholder="Search by title or stable ID"></label><div data-relationship-results role="listbox" hidden></div><small data-relationship-status role="status"></small></div>
+<div data-relationship-enhanced hidden>
+<label>{{ label }}<input type="search" data-relationship-search role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off" placeholder="Search by title or stable ID"></label>
+<div data-relationship-results role="listbox" hidden></div>
+<small data-relationship-status role="status"></small>
+<div data-relationship-chips class="relationship-chips" role="region" aria-label="Selected {{ label | lower }}" tabindex="0"></div>
+</div>
 <small>Select registered content. Titles and stable IDs are searchable.</small>
 </div>
 {% endmacro %}

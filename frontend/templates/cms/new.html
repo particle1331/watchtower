@@ -5,10 +5,12 @@
 {% if error %}<div class="error" role="alert"><p>{{ error.message or error }}</p>Your submitted values are preserved. Reload this form before reconciling a conflict.</div>{% endif %}
 {% set contextual = contextual and values.kind == 'chapter' %}
 {% set create_url = '/cms/new?kind=' + values.kind + ('&parent=' + values.parent + '&section=' + values.get('section', '') if contextual else '') %}
+<nav class="workspace-tabs" data-workspace-tabs data-default-pane="site-fields" aria-label="Editor areas"><a id="site-tab" href="#site-fields">Site content</a><a id="planning-tab" href="#planning-fields">Build plan</a><a id="internal-tab" href="#internal-fields">Internal notes <span class="scope-badge">CMS only</span></a></nav>
 <form id="new-editor-form" data-editor data-editing="true" data-creating="true" method="post" action="{{ create_url }}" hx-post="{{ create_url }}" hx-target="#new-editor" hx-select="#new-editor" hx-swap="outerHTML">
 <input type="hidden" name="revision" value="{{ revision }}">
 <span class="visually-hidden" data-edit-status role="status">{{ 'Unsaved changes' if error else 'New plan' }}</span>
 <fieldset class="editor-fields" data-editor-fields>
+<section id="site-fields" class="workspace-pane scope-site" data-workspace-pane tabindex="-1" aria-labelledby="site-tab"><div class="scope-heading"><h2>Site content & settings</h2><p>Metadata for the eventual page. New plans stay off the live site.</p></div><div class="editor-main">
 <fieldset class="entity-group"><legend>Title</legend><input type="hidden" name="kind" value="{{ values.kind }}">
 <label>Name<input name="name" value="{{ values.get('name','') }}" required autofocus autocomplete="off" placeholder="e.g. attention-basics"><small>Spaces and punctuation become hyphens. Names already used or previously deleted stay reserved.</small></label>
 <p class="generated-id" data-generated-id data-kind="{{ values.kind }}" aria-live="polite">Generated stable ID: <code></code></p>
@@ -18,19 +20,21 @@
 <label>Course section<select name="section" required data-section-select><option value="">Choose a section</option>{% for course in courses %}{% for group in course.sections %}<option value="{{ group.id }}" data-course-id="{{ course.id }}" {% if values.get('parent') == course.id and values.get('section') == group.id %}selected{% endif %}>{{ course.title }} · {{ group.title or ('Chapters' if group.id == 'main' else group.id) }}</option>{% endfor %}{% endfor %}</select></label>
 <label>Short TOC title<input name="toc_title" value="{{ values.get('toc_title','') }}"><small>Defaults to the name.</small></label>{% endif %}
 </fieldset>
-<fieldset class="entity-group"><legend>Build plan</legend><p>Markdown is supported. Every planning field can be completed later. Start draft copies supported fields into an editable notebook and keeps them fresh until you edit it. Chapter short summaries are reader-facing.</p>
-{% for key,label,prompt in plan_fields if key in core_keys %}{% set field_name = 'planned_content' if key == 'content' else 'planned_lab_and_evidence' if key == 'lab_and_evidence' else key %}
-<label>{{ label }}<textarea rows="6" name="{{ field_name }}" placeholder="{{ prompt }}">{{ values.get(field_name, values.get(key, '')) }}</textarea><small>{{ prompt }}</small></label>
-{% else %}{% if not plan_fields %}<label>Planned content<textarea rows="8" name="planned_content">{{ values.get('planned_content','') }}</textarea></label>{% endif %}{% endfor %}
-</fieldset>
-{% if plan_fields %}<details class="entity-group"><summary>More planning details (optional)</summary>
-{% for key,label,prompt in plan_fields if key not in core_keys %}<label>{{ label }}<textarea rows="4" name="{{ key }}" placeholder="{{ prompt }}">{{ values.get(key, '') }}</textarea><small>{{ prompt }}</small></label>{% endfor %}
-{% if values.kind == 'portfolio' %}<label>Abstract<textarea name="abstract" rows="3">{{ values.get('abstract', values.get('description', '')) }}</textarea><small>Optional while planning. Start draft can fill a first draft from Introduction / problem and What it contains. Paste the finished abstract here before publishing; publishing requires it. It renders on the portfolio card and entry page.</small></label>{% endif %}
-</details>{% endif %}
-<fieldset class="entity-group"><legend>Internal notes</legend><label>Notes<textarea rows="6" name="internal_notes">{{ values.get('internal_notes', '') }}</textarea><small>Research, decisions, questions, and future revisions. Excluded from site pages; available at every publication stage.</small></label></fieldset>
-<details class="entity-group"><summary>Settings</summary>
+{% for key,label,prompt in plan_fields if values.kind == 'chapter' and key == 'summary' %}<fieldset class="entity-group"><legend>Course table summary</legend><label>{{ label }}<textarea name="summary" rows="3">{{ values.get('summary', '') }}</textarea><small>{{ prompt }}</small></label></fieldset>{% endfor %}<fieldset class="entity-group"><legend>Settings</legend>
 <label>Tags (comma separated)<input name="tags" value="{{ values.get('tags','') }}"></label>
 {{ relationship('relations', values.get('relations','').replace(',', '\n'), true) }}
 <input type="hidden" name="visibility" value="private"><p>Plans are private and appear only in the CMS. Start creates a private draft for preview; Publish makes it public.</p>
 {% if values.kind != 'portfolio' %}<label>Public description<textarea name="description">{{ values.description or '' }}</textarea><small>Reader-facing summary for listings once the draft is started.</small></label>{% endif %}
-</details></fieldset></form></article>{% endblock %}
+</fieldset></div></section>
+<section id="planning-fields" class="workspace-pane scope-planning" data-workspace-pane tabindex="-1" aria-labelledby="planning-tab"><div class="scope-heading"><h2>Build plan</h2><p>Authoring brief. Supported fields seed an editable draft when you start it.</p></div><div class="editor-main"><fieldset class="entity-group"><legend>Build plan</legend><p>Markdown is supported. Every planning field can be completed later. Start draft copies supported fields into an editable notebook and keeps them fresh until you edit it. Chapter short summaries are reader-facing.</p>
+{% for key,label,prompt in plan_fields if key in core_keys and key != 'summary' %}{% set field_name = 'planned_content' if key == 'content' else 'planned_lab_and_evidence' if key == 'lab_and_evidence' else key %}
+<label>{{ label }}<textarea rows="6" name="{{ field_name }}" placeholder="{{ prompt }}">{{ values.get(field_name, values.get(key, '')) }}</textarea><small>{{ prompt }}</small></label>
+{% else %}{% if not plan_fields %}<label>Planned content<textarea rows="8" name="planned_content">{{ values.get('planned_content','') }}</textarea></label>{% endif %}{% endfor %}
+</fieldset>
+{% if plan_fields %}<details class="entity-group"><summary>More planning details (optional)</summary>
+{% for key,label,prompt in plan_fields if key not in core_keys and key not in ['summary', 'next_steps', 'scope_notes'] %}<label>{{ label }}<textarea rows="4" name="{{ key }}" placeholder="{{ prompt }}">{{ values.get(key, '') }}</textarea><small>{{ prompt }}</small></label>{% endfor %}
+
+{% if values.kind == 'portfolio' %}<label>Abstract <span class="scope-badge">Site content · optional</span><textarea name="abstract" rows="3">{{ values.get('abstract', values.get('description', '')) }}</textarea><small>Optional while planning. Start draft can fill a first draft from Introduction / problem and What it contains. Paste the finished abstract here before publishing; publishing requires it. It renders on the portfolio card and entry page.</small></label>{% endif %}</details>{% endif %}
+</div></section>
+<section id="internal-fields" class="workspace-pane scope-internal" data-workspace-pane tabindex="-1" aria-labelledby="internal-tab"><div class="scope-heading"><h2>Internal notes</h2><p>Only in the CMS and build brief. These fields never appear on site pages.</p></div><div class="editor-main"><fieldset class="entity-group internal-notes-group"><legend>Internal notes</legend><label>Notes<textarea rows="6" name="internal_notes">{{ values.get('internal_notes', '') }}</textarea><small>Research, decisions, questions, and future revisions. Excluded from site pages; available at every publication stage.</small></label></fieldset>{% for key,label,prompt in plan_fields if key in ['next_steps', 'scope_notes'] %}<fieldset class="entity-group internal-notes-group"><legend>{{ label }}</legend><label>{{ label }}<textarea rows="4" name="{{ key }}">{{ values.get(key, '') }}</textarea><small>{{ prompt }}</small></label></fieldset>{% endfor %}</div></section>
+</fieldset></form></article>{% endblock %}

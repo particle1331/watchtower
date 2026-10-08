@@ -575,7 +575,7 @@ class ContentService:
             if payload.get("kind") == "chapter":
                 payload["lifecycle"] = "planned"
             settings = SiteSettings.model_validate(load_yaml(files[SETTINGS] or b"", SETTINGS))
-            if payload.get("kind") in {"post", "personal"}:
+            if payload.get("kind") in {"post", "personal", "portfolio", "course", "chapter"}:
                 payload.setdefault("date", datetime.now(ZoneInfo(settings.timezone)).date().isoformat())
             artifact = Artifact.model_validate(payload)
             if artifact.lifecycle == "planned" and artifact.kind not in {"gallery", "project"}:

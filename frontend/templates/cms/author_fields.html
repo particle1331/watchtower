@@ -1,0 +1,23 @@
+{% for scope, heading, explanation in [
+  ('site', 'Site content & settings', 'Reader-facing metadata and publication settings. Notebook body content is edited in VS Code. Saving here does not deploy the live site.'),
+  ('planning', 'Build plan', 'Authoring brief. Supported fields seed a draft until you hand-edit its notebook; later plan edits do not rewrite authored content.'),
+  ('internal', 'Internal notes', 'Only in the CMS and build brief. These fields never appear on site pages.')
+] %}
+<section id="{{ scope }}-fields" class="workspace-pane scope-{{ scope }}" data-workspace-pane tabindex="-1" aria-labelledby="{{ scope }}-tab">
+<div class="scope-heading"><h2>{{ heading }}</h2><p>{{ explanation }}</p></div>
+{% if scope == 'site' and editor_url %}<p><a class="button primary vscode-button" href="{{ editor_url }}">Edit notebook in VS Code</a></p>{% endif %}
+{% set pane_groups = groups | selectattr('scope', 'equalto', scope) | list %}
+<div class="editor-main{% if scope == 'site' and artifact.kind == 'portfolio' %} portfolio-fields{% endif %}">
+{% if scope == 'site' and artifact.kind == 'portfolio' %}
+<div class="editor-stack portfolio-metadata">
+{% with groups = pane_groups | rejectattr('title', 'equalto', 'Abstract') | rejectattr('title', 'equalto', 'Detail') | list %}{% include 'fields.html' %}{% endwith %}
+</div>
+<div class="editor-stack portfolio-content">
+{% with groups = pane_groups | selectattr('title', 'in', ['Abstract', 'Detail']) | list %}{% include 'fields.html' %}{% endwith %}
+</div>
+{% else %}
+{% with groups = pane_groups %}{% include 'fields.html' %}{% endwith %}
+{% endif %}
+</div>
+</section>
+{% endfor %}

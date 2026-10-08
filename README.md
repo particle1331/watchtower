@@ -177,6 +177,10 @@ exports the saved planning fields, internal notes and context as Markdown, with
 selectable text as a clipboard fallback. **Start draft** creates a private notebook seeded from supported plan fields;
 partial plans can be started across CMS, CLI and API. Review the draft before publishing.
 
+New posts, personal notebooks, portfolio entries, courses and chapters default
+**Date** to the creation day in the site's configured timezone (Asia/Manila by
+default). Explicit dates are preserved; later saves keep the chosen date.
+
 **Internal notes** are a persistent Markdown field alongside the structured brief.
 Use the CMS, `wt update <id> --internal-notes "..."`, a patch file containing
 `internal_notes`, or an API artifact patch. Notes remain available after publication;
@@ -298,7 +302,17 @@ draft pages, links, cards, and assets.
 The gallery page state is derived automatically; there is no collection-level
 publication control in the CMS.
 
-The CMS uses the available width. Short information and row actions stay visible.
+The CMS uses the available width. Artifact editors and plan creation separate
+**Site content**, **Build plan**, and **Internal notes** into keyboard-accessible
+areas. Switching areas retains every control, unsaved value and upload in the
+same form. Without JavaScript the areas remain visible as sections. Internal
+notes, next steps and scope notes are marked CMS-only; build-plan guidance
+explains draft seeding. Course workspaces open on the compact outline: chapter
+rows show status, reorder arrows and Edit; expanding a row reveals its summary,
+section transfer and deletion link. Section settings and secondary authoring
+tools start folded. Outline actions save immediately with the current revision.
+Artifact and plan-creation Settings fields stay visible.
+Short information and row actions stay visible.
 Employment, early employment, skill and education entries start folded regardless
 of length, in both résumé views and editors.
 Résumé editor groups follow the frontend order, beginning with General and Contact.
