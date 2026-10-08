@@ -152,11 +152,14 @@ test('header controls follow their associated editor through edit and save state
     querySelectorAll: selector => selector === 'input, textarea, select' ? [input] : [],
   };
   input.closest = selector => selector.startsWith('form') ? form : null;
-  const save = {}, cancel = {attrs: {}, setAttribute(key, value) { this.attrs[key] = value; }};
+  const save = {hasAttribute: () => false};
+  const savePublish = {hasAttribute: () => false};
+  const blockedPublish = {hasAttribute: key => key === 'data-blocked'};
+  const cancel = {attrs: {}, setAttribute(key, value) { this.attrs[key] = value; }};
   const edit = {form, closest: selector => selector === '[data-begin-edit]' ? edit : null};
   const toolbar = {
     querySelector: selector => selector === '[data-save]' ? save : selector === '[data-cancel]' ? cancel : null,
-    querySelectorAll: selector => selector === '[data-begin-edit]' ? [edit] : [],
+    querySelectorAll: selector => selector === '[data-begin-edit]' ? [edit] : selector === '[data-save]' ? [save, savePublish, blockedPublish] : [],
   };
   const document = {
     querySelector: selector => selector === '[data-editor-toolbar="data-editor-form"]' ? toolbar : null,
@@ -180,12 +183,17 @@ test('header controls follow their associated editor through edit and save state
   input.value = 'Unsaved title';
   for (const callback of handlers.get('input')) callback({target: input});
   assert.equal(form.dataset.dirty, 'true');
+  assert.equal(savePublish.disabled, false);
+  assert.equal(blockedPublish.disabled, true);
   for (const callback of handlers.get('htmx:beforeRequest')) callback({detail: {elt: form}});
   assert.equal(save.disabled, true);
+  assert.equal(savePublish.disabled, true);
   assert.equal(cancel.attrs['aria-disabled'], 'true');
   assert.equal(fields.disabled, true);
   for (const callback of handlers.get('htmx:afterRequest')) callback({detail: {elt: form, failed: false}});
   assert.equal(save.disabled, false);
+  assert.equal(savePublish.disabled, false);
+  assert.equal(blockedPublish.disabled, true);
   assert.equal(cancel.attrs['aria-disabled'], 'false');
   assert.equal(fields.disabled, false);
 });

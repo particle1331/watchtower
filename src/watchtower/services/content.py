@@ -918,19 +918,33 @@ class ContentService:
             return {"project_path": path}, writes
         return self._mutate("create_project", apply, expected_revision)
 
-    def publish(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
+    def publish(
+        self, artifact_id: str, expected_revision: str | None = None, *,
+        patch: dict[str, Any] | None = None, figure_image: bytes | None = None,
+    ) -> dict[str, Any]:
         with self.store.locked():
             files = self.store.inputs()
             if expected_revision is not None and expected_revision.strip('"') != revision(files):
                 raise ServiceError("stale workspace revision", code="conflict", status=412, paths=[CATALOG])
             catalog = self._catalog(files)
             record = self._find(catalog, artifact_id)
+            if record["kind"] in {"post", "portfolio", "course", "chapter", "personal"}:
+                path = source_path(Artifact.model_validate(record), parse_state(files))
+                notebook = files.get(path) if path else None
+                if notebook is None or not has_content(nbformat.reads(notebook.decode(), as_version=4), record["title"]):
+                    raise ServiceError(
+                        "Cannot publish: the notebook has no body content. Use Edit in VS Code to add content beyond the title, save the notebook, then try Publish again.",
+                        paths=[path or CATALOG],
+                    )
             if record["kind"] == "chapter":
                 parent = self._find(catalog, record["parent"])
                 if parent["visibility"] != "public" or parent["lifecycle"] != "published":
                     raise ServiceError("publish the public parent course first")
             captured = revision(files)
-        return self.update(artifact_id, {"lifecycle": "published", "visibility": "public"}, expected_revision or captured)
+        return self.update(
+            artifact_id, {**(patch or {}), "lifecycle": "published", "visibility": "public"},
+            expected_revision or captured, figure_image=figure_image,
+        )
 
     def draft(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
         with self.store.locked():

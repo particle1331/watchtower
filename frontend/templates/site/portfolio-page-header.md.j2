@@ -1,0 +1,11 @@
+{% if back_url or source_url %}
+{% if back_url %}[← Portfolio]({{ back_url }}){% endif %}{% if back_url and source_url %} | {% endif %}{% if source_url %}[Project source]({{ source_url }}){% endif %}
+
+{% endif %}
+{% if detail %}
+{% if figure_url %}
+![{{ detail.figure_caption or '' }}]({{ figure_url }})
+
+{% endif %}
+**Abstract.** {{ detail.abstract or description or 'Project description not added yet.' }}
+{% endif %}

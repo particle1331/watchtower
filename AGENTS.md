@@ -387,9 +387,16 @@ Portfolio row Edit links open the combined artifact/detail editor with editing
 enabled immediately. Save and Cancel return to Portfolio; do not add a separate
 bulk-detail editor link to this flow.
 Artifact publication and deletion controls belong in the editor toolbar beside
-Cancel and Save, without a separate Publication actions section. Keep lifecycle
-forms separate from metadata saves, carrying the same revision. Disable
-publication while metadata is dirty or saving.
+Cancel and Save, without a separate Publication actions section. In draft post,
+portfolio, course and chapter editors, Publish submits the metadata form and
+atomically saves metadata/uploads and sets Published/public using the submitted
+revision. It remains enabled with unsaved edits; there is no extra Save and publish
+button. Other lifecycle forms stay separate from metadata saves and are disabled
+while metadata is dirty or saving. Validation or conflicts leave all
+changes unsaved. Disable Publish only while saving; keep it clickable for
+incomplete drafts and show the missing requirements after a failed attempt.
+Chapters still require a public published parent; publishing a course does not
+publish its chapters.
 Blank photo width fields show a `100%` hint. Kanban card actions are visible;
 Add/Edit/Remove use native dialogs with keyboard dismissal, focus restoration,
 unsaved-change handling and server-rendered fallback links. Preserve revisions,

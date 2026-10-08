@@ -22,8 +22,8 @@ header .section-tools .section-tool-cancel, header .section-tools .section-tool-
 header .section-tools .section-tool-cancel:hover { border-color: #999; background: #444; }
 header .section-tools .section-tool-cancel { width: 40px; height: 40px; padding: 0; }
 header .section-tools .section-tool-cancel svg { display: block; width: 18px; height: 18px; }
-header .section-tools [data-publication-action] { border-color: #777; background: transparent; color: #fff; }
-header .section-tools [data-publication-action]:hover { border-color: #999; background: #444; }
+header .section-tools [data-publication-action], header .section-tools [data-save-publish] { border-color: #777; background: transparent; color: #fff; }
+header .section-tools [data-publication-action]:hover, header .section-tools [data-save-publish]:hover { border-color: #999; background: #444; }
 header .section-tools .danger, header .section-tools .danger:visited { border-color: #cc5b65; background: #fff2f2; color: #a01c26; }
 header .section-tools .danger:hover { background: #ffe0e2; color: #821520; }
 header nav { order: 2; flex-basis: 100%; gap: .25rem; }

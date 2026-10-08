@@ -624,13 +624,20 @@ def cms_router(root: Path) -> APIRouter:
                 raise ServiceError("Route is managed by the site and cannot be edited in the CMS.")
             if "cover" in patch and request.app.state.content.inspect(artifact_id)["artifact"]["kind"] != "course":
                 raise ServiceError("Only course card images can be changed here.")
+            if form.get("save_action") == "publish":
+                saved_artifact = request.app.state.content.inspect(artifact_id)["artifact"]
+                if saved_artifact["kind"] not in {"post", "portfolio", "course", "chapter"} or saved_artifact["lifecycle"] != "draft":
+                    raise ServiceError("Save and publish is available for draft posts, portfolio entries, courses and chapters only.")
             image = None
             if isinstance(upload, UploadFile) and uploading:
                 try:
                     image = await upload.read(MAX_FIGURE_BYTES + 1)
                 finally:
                     await upload.close()
-            request.app.state.content.update(artifact_id, patch, expected_revision=form_revision(revision), figure_image=image)
+            if form.get("save_action") == "publish":
+                request.app.state.content.publish(artifact_id, expected_revision=form_revision(revision), patch=patch, figure_image=image)
+            else:
+                request.app.state.content.update(artifact_id, patch, expected_revision=form_revision(revision), figure_image=image)
         except ServiceError as error:
             context = detail_context(request, artifact_id, values, revision, error.as_dict())
             context["upload_retry"] = uploading

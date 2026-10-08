@@ -32,6 +32,88 @@ def chapter(author, name="first", **extra):
     author.create({"id": f"course/demo/{name}", "kind": "chapter", "title": name.title(), "parent": "course/demo", "section": "main", "toc_title": name.title(), "path": f"content/notebooks/courses/demo/{name}.ipynb", **extra})
 
 
+@pytest.mark.parametrize("kind", ["post", "course"])
+@pytest.mark.parametrize("htmx", [False, True])
+def test_post_and_course_save_and_publish(author, kind, htmx):
+    if kind == "course":
+        course(author)
+        identifier, url = "course/demo", "/cms/courses/demo"
+        field = 'field:["contract", "planned", "outcomes"]'
+    else:
+        author.create({"id": "post/idea", "kind": "post", "title": "Idea", "path": "content/notebooks/posts/idea.ipynb", "planned": {"content": "Post content"}})
+        identifier, url = "post/idea", "/cms/artifact/post/idea"
+        field = 'field:["planned", "takeaway"]'
+    author.start(identifier)
+    with TestClient(create_app(author.root)) as client:
+        editor = client.get(url)
+        assert 'form="artifact-editor-form" name="save_action" value="publish" data-save data-save-publish>Publish</button>' in editor.text
+        assert editor.text.count('>Publish</button>') == 1
+        assert 'Save and publish</button>' not in editor.text
+        assert 'id="artifact-publish-action"' not in editor.text
+        revision, snapshot = form_snapshot(editor)
+        result = client.post(f"/cms/save/{identifier}", data={"revision": revision, "snapshot": snapshot, "save_action": "publish", 'field:["title"]': "Finished title", field: "Finished outcome"}, headers={"HX-Request": "true"} if htmx else {}, follow_redirects=False)
+        assert result.status_code == (303 if kind == "course" and not htmx else 200), result.text
+        record = author.inspect(identifier)
+        assert record["artifact"]["title"] == "Finished title"
+        assert record["artifact"]["lifecycle"] == "published"
+        assert record["artifact"]["visibility"] == "public"
+        if kind == "course":
+            assert result.headers["hx-redirect" if htmx else "location"] == url
+            assert record["contract"]["planned"]["outcomes"] == "Finished outcome"
+        else:
+            assert record["artifact"]["planned"]["takeaway"] == "Finished outcome"
+            assert 'Return to draft' in result.text
+
+
+@pytest.mark.parametrize("kind", ["post", "course"])
+@pytest.mark.parametrize("failure", ["stale", "content"])
+def test_post_and_course_save_and_publish_fail_atomically(author, kind, failure):
+    author.create({"id": f"{kind}/idea", "kind": kind, "title": "Idea", "path": "content/notebooks/posts/idea.ipynb" if kind == "post" else "content/notebooks/courses/idea", "planned": {"content": "Post content"} if kind == "post" and failure != "content" else {}, **({"contract": {"purpose": "Course purpose" if failure != "content" else ""}} if kind == "course" else {})})
+    identifier = f"{kind}/idea"
+    author.start(identifier)
+    with TestClient(create_app(author.root)) as client:
+        editor = client.get(f"/cms/artifact/{identifier}")
+        revision, snapshot = form_snapshot(editor)
+        if failure == "content":
+            assert 'data-save data-save-publish>Publish</button>' in editor.text
+            assert 'data-blocked' not in editor.text
+            assert 'The notebook has no body content yet.' in editor.text
+        else:
+            author.update(identifier, {"title": "Concurrent title"})
+        before = author.inspect(identifier)
+        result = client.post(f"/cms/save/{identifier}", data={"revision": revision, "snapshot": snapshot, "save_action": "publish", 'field:["title"]': "Unsaved title"}, headers={"HX-Request": "true"})
+        assert result.status_code == (412 if failure == "stale" else 422), result.text
+        assert "Unsaved title" in result.text
+        if failure == "content":
+            assert "Cannot publish: the notebook has no body content." in result.text
+        assert token(result) == revision
+        assert author.inspect(identifier)["artifact"] == before["artifact"]
+        assert author.inspect(identifier)["artifact"]["lifecycle"] == "draft"
+
+
+@pytest.mark.parametrize("parent_published", [False, True])
+def test_chapter_save_and_publish_requires_public_published_parent(author, parent_published):
+    course(author)
+    author.start("course/demo")
+    if parent_published:
+        author.publish("course/demo")
+    chapter(author, plan={"content": "Chapter content"})
+    author.start("course/demo/first")
+    parent = author.inspect("course/demo")["artifact"]
+    with TestClient(create_app(author.root)) as client:
+        revision, snapshot = form_snapshot(client.get("/cms/artifact/course/demo/first"))
+        result = client.post("/cms/save/course/demo/first", data={"revision": revision, "snapshot": snapshot, "save_action": "publish", 'field:["title"]': "Finished chapter"}, headers={"HX-Request": "true"})
+        assert result.status_code == (200 if parent_published else 422), result.text
+        record = author.inspect("course/demo/first")["artifact"]
+        assert record["lifecycle"] == ("published" if parent_published else "draft")
+        assert record["title"] == ("Finished chapter" if parent_published else "First")
+        assert author.inspect("course/demo")["artifact"] == parent
+        if parent_published:
+            assert result.headers["hx-redirect"] == "/cms/courses/demo#outline"
+        else:
+            assert "publish the public parent course first" in result.text
+
+
 @pytest.mark.parametrize("kind", ["post", "portfolio", "course"])
 def test_private_partial_plan_reopens_with_guidance(author, kind):
     with TestClient(create_app(author.root)) as client:

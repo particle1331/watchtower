@@ -549,11 +549,12 @@ def test_artifact_action_refreshes_header_publication_controls(client):
     started = client.post("/cms/action/start/post/a%20space", headers={"HX-Request": "true"}, data={"revision": revision})
     assert started.status_code == 200, started.text
     assert 'hx-swap-oob="outerHTML"' in started.text
-    assert 'form="artifact-publish-action" data-publication-action' in started.text
+    assert 'form="artifact-editor-form" name="save_action" value="publish" data-save data-save-publish>Publish</button>' in started.text
+    assert 'id="artifact-publish-action"' not in started.text
     assert 'form="artifact-start-action"' not in started.text
     updated_revision, _ = form_snapshot(started)
     assert updated_revision != revision
-    publication_form = re.search(r'<form id="artifact-publish-action".*?</form>', started.text, re.S).group(0)
+    publication_form = re.search(r'<form id="artifact-editor-form".*?</form>', started.text, re.S).group(0)
     assert f'name="revision" value="{updated_revision}"' in publication_form
 
 

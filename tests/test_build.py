@@ -283,17 +283,17 @@ def test_portfolio_page_header_includes_figure_abstract_and_active_source(
     generated = nbformat.read(stage / "nb/portfolio/featured-project.ipynb", as_version=4)
     header = generated.cells[0].source
     figure = "![Featured figure](../../assets/featured-project.svg)"
-    source = "[Source </>](https://github.com/example/site/tree/main/projects/featured-project)"
+    source = "[Project source](https://github.com/example/site/tree/main/projects/featured-project)"
 
     assert figure in header
     assert f"**Abstract.** {expected_abstract}" in header
-    assert source in header
+    assert f"[← Portfolio](../../portfolio.qmd) | {source}\n" in header
     # The abstract renders once: as labeled body content, not again in the title block.
     assert "description" not in yaml.safe_load(header.split("---", 2)[1])
     assert header.index('aria-label="Publication status"') < header.index("[← Portfolio]")
     assert header.index("[← Portfolio]") < header.index(figure)
+    assert header.index(source) < header.index(figure)
     assert header.index(figure) < header.index(f"**Abstract.** {expected_abstract}")
-    assert header.index(f"**Abstract.** {expected_abstract}") < header.index(source)
     assert (stage / "assets/featured-project.svg").read_bytes() == b"<svg/>"
     assert snapshot.files[entry.path] == original
 
@@ -310,7 +310,7 @@ def test_portfolio_page_links_archived_code_under_archive(workspace):
     stage = BuildService(root).generate()
     header = nbformat.read(stage / "nb/portfolio/historical.ipynb", as_version=4).cells[0].source
 
-    assert "[Source </>](https://github.com/example/site/tree/main/archive/2026-09-30/projects/historical)" in header
+    assert "[Project source](https://github.com/example/site/tree/main/archive/2026-09-30/projects/historical)" in header
 
 
 def test_chapter_page_preserves_authored_title_h1(workspace):
@@ -393,6 +393,47 @@ def test_submit_returns_queued_record_before_worker_finishes(workspace, monkeypa
     assert result["status"] == "queued"
     assert calls[0][1]["start_new_session"] is True
     assert json.loads((root / f"backend/runtime/builds/{result['id']}.json").read_text()) == result
+
+
+def test_preview_code_changes_rebuild_in_fresh_worker(tmp_path, monkeypatch):
+    source = tmp_path / "src/watchtower/services/build.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("# original build code\n")
+    service = BuildService(tmp_path)
+    ready = threading.Event()
+    submitted = threading.Event()
+    calls = []
+    signature = service._preview_signature
+
+    def read_signature():
+        value = signature()
+        ready.set()
+        return value
+
+    def submit(mode):
+        calls.append(mode)
+        submitted.set()
+
+    class Server:
+        def __init__(self, *args):
+            pass
+
+        def serve_forever(self):
+            assert ready.wait(3)
+            source.write_text("# updated build code using Jinja\n")
+            assert submitted.wait(3)
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr(service, "build", lambda mode: {"status": "succeeded"})
+    monkeypatch.setattr(service, "submit", submit)
+    monkeypatch.setattr(service, "_preview_signature", read_signature)
+    monkeypatch.setattr(build_module, "ThreadingHTTPServer", Server)
+
+    service.preview()
+
+    assert calls == ["preview"]
 
 
 def test_course_withdrawal_suppresses_descendants_and_keeps_authored_toc(workspace, monkeypatch):

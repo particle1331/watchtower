@@ -309,7 +309,7 @@ def test_title_only_scaffolds_do_not_count_as_authored_content(content_service):
     service.validate()
     service.update("post/example", {"lifecycle": "draft"})
     assert not service.inspect("post/example")["has_authored_content"]
-    with pytest.raises(ServiceError, match="requires authored content"):
+    with pytest.raises(ServiceError, match="Cannot publish: the notebook has no body content"):
         service.publish("post/example")
     course(service)
     chapter(service, start=True)

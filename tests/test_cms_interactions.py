@@ -5,7 +5,7 @@ import re
 
 import pytest
 from fastapi.testclient import TestClient
-from test_api import author_workspace
+from test_api import author_workspace, portfolio_image_bytes
 
 from watchtower.api import create_app
 from watchtower.api.cms import field_groups, form_fields
@@ -98,6 +98,59 @@ def test_portfolio_conflict_keeps_combined_editor_and_submitted_values(author):
         record = author.inspect('portfolio/example')
         assert record['artifact']['title'] == 'Concurrent title'
         assert record['detail']['abstract'] is None
+
+
+@pytest.mark.parametrize('htmx', [False, True])
+def test_portfolio_save_and_publish_saves_metadata_and_upload_atomically(author, htmx):
+    author.create({'id': 'portfolio/example', 'kind': 'portfolio', 'title': 'Example', 'detail': {'planned': {'introduction': 'Project introduction'}}})
+    author.start('portfolio/example')
+    with TestClient(create_app(author.root)) as client:
+        editor = client.get('/cms/artifact/portfolio/example')
+        assert 'form="artifact-editor-form" name="save_action" value="publish" data-save data-save-publish>Publish</button>' in editor.text
+        assert editor.text.count('>Publish</button>') == 1
+        assert 'Save and publish</button>' not in editor.text
+        assert 'id="artifact-publish-action"' not in editor.text
+        form = photo_form(editor)
+        form.update(save_action='publish', **{'field:["title"]': 'Finished project', 'field:["detail", "abstract"]': 'Finished abstract', 'field:["detail", "figure_caption"]': 'Finished figure'})
+        saved = client.post('/cms/save/portfolio/example', data=form, files={'featured_image': ('figure.png', portfolio_image_bytes(), 'image/png')}, headers={'HX-Request': 'true'} if htmx else {}, follow_redirects=False)
+        assert saved.status_code == (200 if htmx else 303), saved.text
+        assert saved.headers['hx-redirect' if htmx else 'location'] == '/cms/portfolio?saved=portfolio'
+        record = author.inspect('portfolio/example')
+        assert record['artifact']['title'] == 'Finished project'
+        assert record['artifact']['lifecycle'] == 'published'
+        assert record['artifact']['visibility'] == 'public'
+        assert record['detail']['abstract'] == 'Finished abstract'
+        assert record['detail']['figure_caption'] == 'Finished figure'
+        assert (author.root / record['detail']['figure_path']).is_file()
+
+
+@pytest.mark.parametrize('failure', ['metadata', 'content', 'stale'])
+def test_portfolio_save_and_publish_failure_preserves_draft_and_submitted_values(author, failure):
+    author.create({'id': 'portfolio/example', 'kind': 'portfolio', 'title': 'Example', 'detail': {'planned': {} if failure == 'content' else {'introduction': 'Project introduction'}}})
+    author.start('portfolio/example')
+    with TestClient(create_app(author.root)) as client:
+        editor = client.get('/cms/artifact/portfolio/example')
+        form = photo_form(editor)
+        if failure == 'content':
+            assert 'data-save data-save-publish>Publish</button>' in editor.text
+            assert 'data-blocked' not in editor.text
+            assert 'The notebook has no body content yet.' in editor.text
+            assert 'The abstract and featured image do not count as notebook body content.' in editor.text
+        if failure == 'stale':
+            author.update('portfolio/example', {'title': 'Concurrent title'})
+        before = author.inspect('portfolio/example')
+        form.update(save_action='publish', **{'field:["title"]': 'Unsaved title', 'field:["detail", "abstract"]': '' if failure == 'metadata' else 'Unsaved abstract', 'field:["detail", "figure_caption"]': 'Unsaved caption'})
+        failed = client.post('/cms/save/portfolio/example', data=form, files={'featured_image': ('figure.png', portfolio_image_bytes(), 'image/png')}, headers={'HX-Request': 'true'})
+        assert failed.status_code == (412 if failure == 'stale' else 422), failed.text
+        assert 'Unsaved title' in failed.text
+        if failure == 'content':
+            assert 'Cannot publish: the notebook has no body content.' in failed.text
+        assert photo_form(failed)['revision'] == form['revision']
+        after = author.inspect('portfolio/example')
+        assert after['artifact'] == before['artifact']
+        assert after['detail'] == before['detail']
+        assert after['artifact']['lifecycle'] == 'draft'
+        assert not list((author.root / 'content/assets/portfolio').glob('*.png'))
 
 
 def test_short_overviews_have_visible_actions_and_thumbnails(author):

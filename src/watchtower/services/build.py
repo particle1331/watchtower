@@ -346,18 +346,25 @@ class _Generator:
         if artifact.kind in {"post", "portfolio", "personal"}:
             gallery = next((entry for entry in self.entries if entry.kind == "gallery"), None)
             listing = {"post": "posts.qmd", "portfolio": "portfolio.qmd", "personal": self.routes[gallery.id] if gallery else None}[artifact.kind]
-            if listing and not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells):
-                header += f"\n[← {artifact.kind.capitalize()}]({_relative(listing, route)})\n"
-        if artifact.kind == "portfolio" and (detail := self.details.get(artifact.id)) is not None:
-            if detail.figure_path:
-                destination = _asset_path(detail.figure_path)
-                self.write(destination, self.files[detail.figure_path])
-                header += f"\n![{detail.figure_caption or ''}]({_relative(destination, route)})\n"
-            abstract = detail.abstract or artifact.description or "Project description not added yet."
-            header += f"\n**Abstract.** {abstract}\n"
-            source_url = _source_url(detail, self.state.settings)
-            if source_url:
-                header += f"\n[Source </>]({source_url})\n"
+            back_url = (
+                _relative(listing, route)
+                if listing and not any(f"[← {artifact.kind.capitalize()}]" in cell.source for cell in notebook.cells)
+                else None
+            )
+            if artifact.kind == "portfolio":
+                detail = self.details.get(artifact.id)
+                figure_url = None
+                if detail and detail.figure_path:
+                    destination = _asset_path(detail.figure_path)
+                    self.write(destination, self.files[detail.figure_path])
+                    figure_url = _relative(destination, route)
+                header += "\n" + self.template(
+                    "site/portfolio-page-header.md.j2", back_url=back_url, detail=detail,
+                    source_url=_source_url(detail, self.state.settings) if detail else None,
+                    figure_url=figure_url, description=artifact.description,
+                ) + "\n"
+            elif back_url:
+                header += f"\n[← {artifact.kind.capitalize()}]({back_url})\n"
         notebook.cells.insert(0, _generated_cell(artifact.id, "header", header))
         if artifact.kind == "course":
             context = self.context(artifact)
@@ -621,9 +628,12 @@ class BuildService:
 
     def _preview_signature(self) -> str:
         digest = hashlib.sha256()
-        for folder in (self.root / "content", self.root / "frontend/templates", self.root / "frontend/assets"):
+        for folder in (
+            self.root / "content", self.root / "frontend/templates", self.root / "frontend/assets",
+            self.root / "src/watchtower",
+        ):
             for path in sorted(folder.rglob("*")):
-                if path.is_file() and path.relative_to(self.root).as_posix() != KANBAN:
+                if path.is_file() and "__pycache__" not in path.parts and path.relative_to(self.root).as_posix() != KANBAN:
                     stat = path.stat()
                     digest.update(f"{path}:{stat.st_mtime_ns}:{stat.st_size}".encode())
         settings = self.root / "frontend/site.yaml"
@@ -649,7 +659,8 @@ class BuildService:
                     if stopped.wait(0.25):
                         break
                     previous = self._preview_signature()
-                    service.build("preview")
+                    # Load current Python code, just like CMS-triggered builds.
+                    service.submit("preview")
 
         class Handler(SimpleHTTPRequestHandler):
             def __init__(self, *args: Any, **kwargs: Any) -> None:

@@ -78,10 +78,10 @@
         button.hidden = editing;
         button.disabled = busy;
       });
-      const save = form.querySelector('[data-save]') || toolbar?.querySelector('[data-save]');
+      const saves = [...form.querySelectorAll('[data-save]'), ...(toolbar?.querySelectorAll('[data-save]') || [])];
       const cancel = form.querySelector('[data-cancel]') || toolbar?.querySelector('[data-cancel]');
       const status = form.querySelector('[data-edit-status]');
-      if (save) { save.hidden = !editing; save.disabled = busy; }
+      saves.forEach(save => { save.hidden = !editing; save.disabled = busy || save.hasAttribute('data-blocked'); });
       if (cancel) { cancel.hidden = !editing; cancel.setAttribute('aria-disabled', String(busy)); }
       if (status) status.textContent = busy ? 'Saving…' :
         form.dataset.dirty === 'true' ? 'Unsaved changes' : editing ? 'Editing' : 'Saved values';

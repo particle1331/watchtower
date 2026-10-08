@@ -398,7 +398,17 @@ links open the combined metadata, abstract, image and plan editor with editing
 already enabled. Save and Cancel return to Portfolio; no second editor is needed.
 Artifact editors keep Publish (or Return to draft), Delete, Cancel and Save in
 the same toolbar. Planned entries offer Start draft there once their core brief is complete. Publication
-uses the saved revision and stays disabled while metadata has unsaved changes.
+uses the saved revision. In draft post, portfolio, course and chapter editors,
+**Publish** saves pending fields and any image and publishes in one atomic
+operation; no separate Save and publish button is needed. Other lifecycle actions
+stay disabled while metadata has unsaved changes. Portfolio
+returns to its overview, courses and chapters to their course workspace, and
+posts remain in their editor. Chapters require a public published parent;
+publishing a course does not publish its chapters.
+Validation failures or stale revisions save neither the edits nor publication;
+submitted values remain in the editor for correction.
+Publish stays clickable for incomplete drafts and reports missing requirements
+when attempted. It is disabled while a save is in progress.
 Photo width fields show
 `100%` as the blank/default hint. Kanban cards show links and actions directly;
 Add, Edit and Remove open accessible native dialogs with keyboard dismissal,

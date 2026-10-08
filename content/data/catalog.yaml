@@ -567,10 +567,32 @@ artifacts:
   internal_notes: ''
   tags: []
   planned: {}
+- id: project/test
+  kind: project
+  title: Test
+  path: projects/test
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: project/12
+  kind: project
+  title: '12'
+  path: projects/12
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
 retired_ids:
 - course/test
 - htmx-todo
+- portfolio/12
 - portfolio/12321
+- portfolio/test
 - portfolio/test-portfolio-3
 - portfolio/test1
 - portfolio/test1123
@@ -582,9 +604,11 @@ retired_ids:
 - test-portfolio
 retired_sources:
 - content/notebooks/courses/test/index.ipynb
+- content/notebooks/portfolio/12.ipynb
 - content/notebooks/portfolio/12321.ipynb
 - content/notebooks/portfolio/test-portfolio-3.ipynb
 - content/notebooks/portfolio/test-portfolio.ipynb
+- content/notebooks/portfolio/test.ipynb
 - content/notebooks/portfolio/test1.ipynb
 - content/notebooks/portfolio/test1123.ipynb
 - content/notebooks/portfolio/yeah1.ipynb
