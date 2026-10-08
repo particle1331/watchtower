@@ -61,4 +61,4 @@ build:
 	@$(PYTHON) -m watchtower.cli build --mode production
 
 cms:
-	@$(PYTHON) -m watchtower.cli serve --port 8000
+	@$(PYTHON) -m watchtower.cli serve --port 5200
