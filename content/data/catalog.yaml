@@ -587,6 +587,60 @@ artifacts:
   internal_notes: ''
   tags: []
   planned: {}
+- id: post/cli-test-post-2026
+  kind: post
+  title: CLI Test Post
+  path: content/notebooks/posts/cli-test-post-2026.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-08'
+  description: CLI test post for metadata inspection.
+  internal_notes: "sum notes\r\n"
+  tags:
+  - cli
+  - test
+  planned:
+    content: A small test post used to inspect Watchtower CLI planning fields and
+      query output.
+    audience: audience
+    evidence: example
+    next_steps: nba
+    references: "ref1\r\nref2\r\nref3\r\n"
+    takeaway: takeaway
+- id: portfolio/cli-test-portfolio-2026
+  kind: portfolio
+  title: CLI Test Portfolio
+  visibility: private
+  lifecycle: planned
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: course/cli-test-course-2026
+  kind: course
+  title: CLI Test Course
+  path: content/notebooks/courses/cli-test-course-2026
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: course/cli-test-course-2026/ch0-the-start
+  kind: chapter
+  title: ch0 ttttt
+  path: content/notebooks/courses/cli-test-course-2026/ch0-the-start.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  description: public dddd
+  internal_notes: ''
+  tags: []
+  planned: {}
+  parent: course/cli-test-course-2026
+  toc_title: ch0
+  section: main
 retired_ids:
 - course/test
 - htmx-todo

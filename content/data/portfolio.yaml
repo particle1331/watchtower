@@ -1,2 +1,12 @@
 version: 1
-entries: []
+entries:
+- id: portfolio/cli-test-portfolio-2026
+  abstract: null
+  figure_path: null
+  figure_caption: null
+  notebook_path: content/notebooks/portfolio/cli-test-portfolio-2026.ipynb
+  project_path: projects/cli-test-portfolio-2026
+  planned:
+    introduction: A test portfolio entry created through the Watchtower CLI.
+    what_it_contains: A short description of the CLI-created portfolio plan.
+    scope_notes: Temporary CLI inspection entry.
