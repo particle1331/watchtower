@@ -94,15 +94,21 @@ def parse_state(files: dict[str, bytes | None]) -> Workspace:
         raise ServiceError(str(error)) from error
 
 
-def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path) -> None:
+def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path, *, missing_references_ok: bool = False) -> None:
     errors: list[str] = []
     paths: list[str] = []
     def fail(message: str, path: str = CATALOG) -> None:
         errors.append(message)
         paths.append(path)
+    def missing(message: str, path: str = CATALOG) -> None:
+        # Missing referenced code or assets are drift. Deletions tolerate them
+        # precisely so they can retire the records that point at them; every
+        # other mutation must still repair the reference first.
+        if not missing_references_ok:
+            fail(message, path)
     def exists(path: str | None, description: str) -> bool:
         if not path or files.get(path) is None:
-            fail(f"{description}: missing {path}", path or CATALOG)
+            missing(f"{description}: missing {path}", path or CATALOG)
             return False
         return True
     def check_assets(notebook: nbformat.NotebookNode, source: str) -> None:
@@ -112,7 +118,7 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
                 return
             if parsed.scheme == "attachment":
                 if parsed.path not in attachments:
-                    fail(f"{source}: missing attachment {parsed.path}", source)
+                    missing(f"{source}: missing attachment {parsed.path}", source)
                 return
             if parsed.scheme:
                 fail(f"{source}: unsupported image scheme {parsed.scheme}", source)
@@ -120,7 +126,7 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
             path = unquote(parsed.path)
             target = posixpath.normpath(path.lstrip("/") if path.startswith("/") else posixpath.join(posixpath.dirname(source), path))
             if path and files.get(target) is None:
-                fail(f"{source}: missing image or media {value}", source)
+                missing(f"{source}: missing image or media {value}", source)
         def body(text: str, attachments: dict[str, Any]) -> None:
             for token in MarkdownIt("commonmark", {"html": True}).parse(text):
                 for child in token.children or []:
@@ -164,9 +170,8 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
         if artifact.cover:
             exists(artifact.cover, f"{artifact.id} cover image")
         if artifact.kind == "project":
-            # Registration requires existing code at creation; code later removed
-            # outside the system is drift and must not block the saves that retire
-            # it. References stay strict: portfolio entries check their project_path.
+            if f"@dir/{artifact.path}" not in files:
+                missing(f"{artifact.id}: project directory missing", str(artifact.path))
             continue
         if artifact.kind == "gallery":
             expected = "published" if any(photo.lifecycle == "published" for photo in state.photos) else "planned"
@@ -181,7 +186,7 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
         value = files.get(source or "")
         if value is None:
             if artifact.lifecycle != "planned":
-                fail(f"{artifact.id}: {artifact.lifecycle} requires authored notebook", source or CATALOG)
+                missing(f"{artifact.id}: {artifact.lifecycle} requires authored notebook", source or CATALOG)
         else:
             try:
                 notebook = nbformat.reads(value.decode(), as_version=4)
@@ -215,7 +220,7 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path)
                 resolved = files.get(key)
                 if resolved is None:
                     if artifact.lifecycle != "planned" or archived:
-                        fail(f"{artifact.id}: missing project directory {detail.project_path}", PORTFOLIO)
+                        missing(f"{artifact.id}: missing project directory {detail.project_path}", PORTFOLIO)
                 elif not Path(resolved.decode()).is_relative_to(root / project_root):
                     fail(f"{artifact.id}: project symlink escapes selected project root", PORTFOLIO)
                 for related in artifact.relations:
@@ -496,7 +501,7 @@ class ContentService:
                 result["errors"] = [error.as_dict()]
             return result
 
-    def _mutate(self, operation: str, callback: Any, expected_revision: str | None) -> dict[str, Any]:
+    def _mutate(self, operation: str, callback: Any, expected_revision: str | None, *, missing_references_ok: bool = False) -> dict[str, Any]:
         with self.store.locked():
             original = self.store.inputs()
             token = revision(original)
@@ -528,7 +533,7 @@ class ContentService:
                 candidate.update(writes)
                 candidate.update(self.store.project_directories(writes))
                 state = parse_state(candidate)
-                validate_state(state, candidate, self.root)
+                validate_state(state, candidate, self.root, missing_references_ok=missing_references_ok)
             except (ValidationError, KeyError, TypeError) as error:
                 raise ServiceError(f"invalid candidate: {error}") from error
             transaction = self.store.commit(writes, original, operation)
@@ -692,7 +697,7 @@ class ContentService:
             for source in plan["archive_files"]:
                 writes[source] = None
             return {"deleted": sorted(ids), "archive_path": archive, "detached_links": plan["detached_links"]}, writes
-        return self._mutate("delete artifact", apply, expected_revision)
+        return self._mutate("delete artifact", apply, expected_revision, missing_references_ok=True)
 
     def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None, *, figure_image: bytes | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:

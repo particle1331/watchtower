@@ -142,8 +142,9 @@ the positional file form remains supported. Supply exactly one file form.
 `new section` and chapter section updates preserve catalog/plan/TOC consistency.
 Record actualized work explicitly. `make project NAME=<name>` scaffolds/registers
 code; `wt register project <path> <title>` registers existing code. Registration
-requires an existing code directory; code removed outside the system is drift
-that never blocks saves, and such a registration is retired with `wt delete`. The CLI
+requires an existing code directory. Missing referenced code or assets leave the
+workspace invalid and block saves, while deletions tolerate them so `wt delete`
+can retire the records that point at them. The CLI
 commands `new`, `import`, `register`, and `kanban add` do not accept custom IDs.
 `new` and `import` derive IDs from names; `register`
 derives IDs from the source filename stem (directory name for courses/projects),

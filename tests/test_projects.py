@@ -151,16 +151,43 @@ def test_make_project_uses_the_shared_scaffold_and_refuses_existing_code(content
     assert {str(item.relative_to(path)): item.read_bytes() for item in path.rglob("*") if item.is_file()} == original
 
 
-def test_project_code_removed_outside_the_system_can_be_retired(content_service):
+def test_missing_project_code_blocks_saves_until_the_repair(content_service):
     service = content_service
     (service.root / "projects/gone").mkdir(parents=True)
     service.create({"id": "project/gone", "kind": "project", "title": "Gone", "path": "projects/gone"})
     shutil.rmtree(service.root / "projects/gone")
-    # Drift never blocks unrelated saves, metadata edits, or the repair itself.
-    planned_portfolio(service)
-    service.update("project/gone", {"title": "Retired"})
+    # The drift stays loud: reads and ordinary saves must repair the reference first.
+    with pytest.raises(ServiceError, match="project directory missing"):
+        service.snapshot()
+    with pytest.raises(ServiceError, match="project directory missing"):
+        planned_portfolio(service)
+    with pytest.raises(ServiceError, match="project directory missing"):
+        service.update("project/gone", {"title": "Retired"})
+    # Deletion tolerates missing references so it can retire the record.
     service.delete("project/gone")
     assert all(artifact["id"] != "project/gone" for artifact in service.list()["artifacts"])
+    planned_portfolio(service)
+
+
+def test_entry_with_vanished_code_is_invalid_until_deleted(content_service):
+    service = content_service
+    (service.root / "projects/gone").mkdir(parents=True)
+    planned_portfolio(service, project_path="projects/gone")
+    service.start("portfolio/future")
+    shutil.rmtree(service.root / "projects/gone")
+    with pytest.raises(ServiceError, match="missing project directory"):
+        service.update("portfolio/future", {"detail": {"abstract": "An abstract."}})
+    with pytest.raises(ServiceError, match="project directory missing"):
+        service.create({"id": "portfolio/other", "kind": "portfolio", "title": "Other",
+                        "detail": {"notebook_path": "content/notebooks/portfolio/other.ipynb", "planned": {}}})
+    # Deleting the entry and the registration it left behind repairs the drift.
+    service.delete("portfolio/future")
+    service.delete("project/gone")
+    ids = [artifact["id"] for artifact in service.list()["artifacts"]]
+    assert "portfolio/future" not in ids and "project/gone" not in ids
+    service.create({"id": "portfolio/healthy", "kind": "portfolio", "title": "Healthy",
+                    "detail": {"notebook_path": "content/notebooks/portfolio/healthy.ipynb", "planned": {}}})
+    assert any(artifact["id"] == "portfolio/healthy" for artifact in service.list()["artifacts"])
 
 
 def test_registering_a_project_requires_existing_code(content_service):
