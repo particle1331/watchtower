@@ -547,15 +547,6 @@ artifacts:
   tags: []
   planned: {}
   route: nb/photos/photos.ipynb
-- id: portfolio/test1123
-  kind: portfolio
-  title: test
-  visibility: private
-  lifecycle: draft
-  relations: []
-  internal_notes: ???
-  tags: []
-  planned: {}
 - id: project/test1123
   kind: project
   title: Test1123
@@ -564,16 +555,6 @@ artifacts:
   lifecycle: draft
   relations: []
   internal_notes: ''
-  tags: []
-  planned: {}
-- id: portfolio/12321
-  kind: portfolio
-  title: testtttt
-  visibility: private
-  lifecycle: draft
-  relations:
-  - course/llms-from-scratch/04-gpt-model
-  internal_notes: '222'
   tags: []
   planned: {}
 - id: project/12321
@@ -589,8 +570,10 @@ artifacts:
 retired_ids:
 - course/test
 - htmx-todo
+- portfolio/12321
 - portfolio/test-portfolio-3
 - portfolio/test1
+- portfolio/test1123
 - portfolio/yeah1
 - post/test-planned-post
 - project/test-portfolio
@@ -599,9 +582,11 @@ retired_ids:
 - test-portfolio
 retired_sources:
 - content/notebooks/courses/test/index.ipynb
+- content/notebooks/portfolio/12321.ipynb
 - content/notebooks/portfolio/test-portfolio-3.ipynb
 - content/notebooks/portfolio/test-portfolio.ipynb
 - content/notebooks/portfolio/test1.ipynb
+- content/notebooks/portfolio/test1123.ipynb
 - content/notebooks/portfolio/yeah1.ipynb
 - content/notebooks/posts/htmx-todo.ipynb
 - content/notebooks/posts/test-planned-post.ipynb
