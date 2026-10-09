@@ -166,6 +166,35 @@ aside a[aria-current] { color: var(--accent); font-weight: 650; }
 .entity-row-heading h2 a { color: var(--ink); }
 .entity-row-heading .actions { margin-left: auto; }
 .entity-row > p { font-size: .85rem; color: var(--muted); margin: .6rem 0 0; }
+/* Course collections: compact cards and a flat chapter list when expanded. */
+main:has(.course-listing-layout) { margin-block: 1.25rem; }
+.course-listing-heading { margin-bottom: .9rem; }
+.course-listing-heading h1 { margin-bottom: .3rem; font-size: 1.75rem; }
+.course-listing-heading p { margin: .3rem 0; font-size: .85rem; }
+.course-listing-layout { gap: 1.25rem; }
+.course-listing-layout .filters { gap: .6rem; }
+.course-listing-layout .filters label { gap: .2rem; font-size: .8rem; }
+.course-listing-layout .filters input, .course-listing-layout .filters select,
+.course-listing-layout .page-choice input, .course-listing-layout .page-choice select { min-height: 34px; padding-top: .35rem; padding-bottom: .35rem; }
+.course-listing-layout .pagination { margin: .65rem 0; }
+.course-listing-layout .entity-row { padding: .65rem .85rem; margin: .5rem 0; }
+.course-listing-layout .entity-row-heading { gap: .4rem; }
+.course-listing-layout .entity-row-heading h2 { font-size: .95rem; }
+.course-listing-layout .entity-row-heading .button { min-height: 32px; padding: .3rem .6rem; font-size: .8rem; }
+.course-listing-layout .entity-row > p { margin-top: .35rem; font-size: .8rem; }
+.course-listing-layout .badge, .course-listing-layout .tag { padding: .1rem .4rem; font-size: .7rem; }
+.course-navigation { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; margin-top: .35rem; font-size: .8rem; }
+.course-chapters { grid-column: 1 / -1; grid-row: 1; margin: 0; padding: 0; border: 0; background: transparent; }
+.course-chapters > summary { width: fit-content; max-width: calc(100% - 15rem); min-height: 32px; padding: .3rem 0; }
+.course-chapters[open] > summary { margin-bottom: .25rem; }
+.course-chapters .chapter-count { margin-left: .2rem; font-size: .75rem; }
+.course-manage { grid-column: 2; grid-row: 1; justify-self: end; padding: .3rem 0; position: relative; }
+.course-chapters section > h3 { margin: .5rem 0 .15rem; font-size: .8rem; color: var(--muted); }
+.course-chapters .chapter { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .5rem; min-height: 36px; padding: .1rem .35rem; margin: 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; font-size: .85rem; }
+.course-chapters .chapter > a { min-width: 0; overflow-wrap: anywhere; }
+.course-chapters .chapter .actions { gap: .5rem; }
+.course-chapters .chapter .actions a { display: inline-flex; align-items: center; min-height: 32px; padding: .15rem .2rem; font-size: .8rem; }
+.course-listing-layout .entity-row { scroll-margin-top: calc(var(--cms-header-height, 8rem) + .75rem); }
 .course-outline { margin: 1rem 0; }
 .course-outline > .author-section-heading { margin-bottom: .75rem; }
 .course-outline > .author-section-heading p { margin: .25rem 0; }
@@ -302,6 +331,12 @@ main:has(.profile-summary-layout) { margin-block: 1rem; }
   main { margin: 1.5rem auto; padding: 0 1rem; }
 }
 @media (max-width: 550px) {
+  .course-navigation { grid-template-columns: minmax(0, 1fr); }
+  .course-manage { grid-column: 1; grid-row: 1; justify-self: start; }
+  .course-chapters { grid-row: 2; }
+  .course-chapters > summary { max-width: 100%; }
+  .course-chapters .chapter { grid-template-columns: minmax(0, 1fr) auto; }
+  .course-chapters .chapter .actions { grid-column: 1 / -1; justify-content: flex-end; }
   .author-basics .entity-group, .kanban-grid { grid-template-columns: minmax(0, 1fr); }
   .outline-chapter { grid-template-columns: minmax(0, 1fr); }
   .chapter-quick-actions { justify-content: flex-end; }
