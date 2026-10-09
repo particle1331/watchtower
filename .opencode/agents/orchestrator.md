@@ -1,7 +1,8 @@
 ---
 description: Coordinates repository work, delegates focused tasks to specialist agents, and verifies their results.
 mode: primary
-model: opencode-go/mimo-v2.6-pro
+model: opencode-go/claude-haiku-5-5
+variant: high
 permission:
   task:
     "*": deny

@@ -1,8 +1,8 @@
 ---
 description: Provides architecture advice, root-cause analysis, and high-confidence read-only technical review.
 mode: subagent
-model: opencode-go/glm-5.3
-variant: max
+model: opencode-go/muse-spark-1.3-contributor
+variant: xhigh
 permission:
   edit: deny
   task: deny

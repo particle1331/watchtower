@@ -1,7 +1,7 @@
 ---
 description: Researches external documentation, libraries, APIs, and current implementation patterns.
 mode: subagent
-model: opencode-go/gpt-6-luna
+model: opencode-go/claude-haiku-5-5
 variant: high
 permission:
   edit: deny
