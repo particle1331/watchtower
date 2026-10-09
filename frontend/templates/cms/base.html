@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ title or 'Author' }} · Watchtower</title><link rel="stylesheet" href="/cms/static/theme.css"><link rel="stylesheet" href="/cms/static/cms.css?v=65"><script src="/cms/static/htmx.min.js" defer></script><script src="/cms/static/cms.js?v=27" defer></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ title or 'Author' }} · Watchtower</title><link rel="stylesheet" href="/cms/static/theme.css"><link rel="stylesheet" href="/cms/static/cms.css?v=66"><script src="/cms/static/htmx.min.js" defer></script><script src="/cms/static/cms.js?v=27" defer></script></head>
 <body><header><a class="brand" href="/cms/home">watchtower <small>author</small></a>
 {% block page_actions %}{% if profile_view|default(false) %}{% import 'editor_actions.html' as toolbar with context %}{{ toolbar.actions('profile-editor-form', '/cms/' + profile_view) }}
 {% elif (section in ['home', 'resume'] and data_name == 'profile') or section == 'personal' or kind %}<div id="cms-page-actions" class="section-tools" aria-label="Page actions">

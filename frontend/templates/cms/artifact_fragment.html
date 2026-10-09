@@ -9,7 +9,6 @@
 {% if record.artifact.lifecycle == 'planned' and record.artifact.kind != 'project' %}{% set publication_actions = [('start', 'Start draft')] %}{% endif %}
 {% if record.artifact.lifecycle != 'planned' %}{% set publication_actions = publication_actions + ([('draft', 'Return to draft')] if record.artifact.lifecycle == 'published' else [('publish', 'Publish')]) %}{% endif %}
 {% endif %}
-<nav class="author-jump" aria-label="On this page"><a href="#basics">Basics</a><a href="#plan">Plan</a><a href="#page">Page</a>{% if artifact.kind == 'course' %}<a href="#outline">Sections and chapters</a>{% endif %}</nav>
 <form id="artifact-editor-form" data-editor data-editing="true" method="post" enctype="multipart/form-data" action="/cms/save/{{ artifact.id | urlpath }}" hx-post="/cms/save/{{ artifact.id | urlpath }}" hx-encoding="multipart/form-data" hx-target="#artifact-editor" hx-swap="outerHTML"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="snapshot" value='{{ form_snapshot | default(artifact) | tojson }}'>
 <span class="visually-hidden" data-edit-status role="status">{{ 'Unsaved changes' if error else 'Editing' }}</span>
 <fieldset class="editor-fields author-form" data-editor-fields id="plan-fields">

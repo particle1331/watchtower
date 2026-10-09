@@ -108,7 +108,6 @@ input[type=file] { font-size: .8rem; padding: .5rem; }
 .author-basics, .author-notes { grid-column: 1 / -1; }
 .author-basics { border: 0; border-bottom: 1px solid var(--line); padding: 0 0 .75rem; background: transparent; }
 .author-basics .entity-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem 1rem; }
-.author-basics .entity-group > .field, .author-basics .entity-group > .relationship-picker { padding: 0 1rem; }
 .author-basics .entity-group > .field:only-of-type { grid-column: 1 / -1; }
 .author-basics input, .author-basics select { padding-top: .45rem; padding-bottom: .45rem; }
 .author-section .entity-group { display: grid; gap: 1rem; padding: 0; border: 0; margin: 0; background: transparent; }
@@ -140,9 +139,6 @@ input[type=file] { font-size: .8rem; padding: .5rem; }
 .artifact-status { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; font-size: .85rem; margin: .6rem 0 1rem; }
 .source-tools { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .8rem; }
 .source-tools .button, .source-tools button { font-size: .8rem; min-height: 34px; }
-.author-jump { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0 .5rem; font-size: .83rem; }
-.author-jump a { color: var(--muted); }
-.author-jump a:hover { color: var(--accent); }
 details { margin: .75rem 0; padding: .8rem 1rem; border: 1px solid var(--line); border-radius: var(--cms-radius); background: #fff; }
 summary { cursor: pointer; font-weight: 550; overflow-wrap: anywhere; }
 details[open] > summary { margin-bottom: .8rem; }
