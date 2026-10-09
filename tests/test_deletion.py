@@ -105,8 +105,8 @@ def test_course_deletion_requires_explicit_cascade_and_preserves_contract(conten
     result = content.delete("course/example", before.revision, cascade=True)
     assert len(result["deleted"]) == 3
     archive = content.root / result["archive_path"]
-    assert not (content.root / "content/data/courses/example.yaml").exists()
-    for name in ["content/data/courses/example.yaml", "content/notebooks/courses/example/index.ipynb", "content/notebooks/courses/example/chapter.ipynb"]:
+    assert not (content.root / "backend/data/courses/example.yaml").exists()
+    for name in ["backend/data/courses/example.yaml", "content/notebooks/courses/example/index.ipynb", "content/notebooks/courses/example/chapter.ipynb"]:
         assert (archive / name).read_bytes() == before.files[name]
         assert not (content.root / name).exists()
     content.validate()
@@ -119,7 +119,7 @@ def test_portfolio_project_and_images_are_retained(content):
     content.start("portfolio/example")
     project = content.root / "projects/example"
     files = {path.relative_to(project): path.read_bytes() for path in project.rglob('*') if path.is_file()}
-    image = content.root / "content/assets/retained.png"
+    image = content.root / "backend/assets/retained.png"
     image.parent.mkdir(parents=True, exist_ok=True)
     image.write_bytes(b"retained asset")
     content.delete("portfolio/example")
@@ -138,7 +138,7 @@ def test_stale_and_malformed_deletions_never_write(content):
         content.delete("post/example", revision)
     assert error.value.status == 412
     assert not (content.root / "archive/deleted").exists()
-    path = content.root / "content/data/kanban.yaml"
+    path = content.root / "backend/data/kanban.yaml"
     path.write_text("version: 1\ncards: []\ncards: []\n")
     saved = path.read_bytes()
     with pytest.raises(ServiceError):
@@ -236,7 +236,7 @@ def test_cli_deletion_uses_review_revision(content, monkeypatch):
 
 
 def test_gallery_remains_available_while_photos_use_existing_removal(content):
-    content.create({"id": "gallery/photos", "kind": "gallery", "title": "Personal", "path": "content/data/photos.yaml"})
+    content.create({"id": "gallery/photos", "kind": "gallery", "title": "Personal", "path": "backend/data/photos.yaml"})
     with pytest.raises(ServiceError, match="individual photos"):
         content.delete("gallery/photos")
     assert content.validate()["valid"]

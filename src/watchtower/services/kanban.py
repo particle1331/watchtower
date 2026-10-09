@@ -6,6 +6,7 @@ from urllib.parse import quote
 from uuid import uuid4
 
 from watchtower.models import KANBAN_COLUMNS, Kanban, KanbanCard, eligible, route_for, source_path
+from watchtower.services.attachments import AttachmentUpload, describe, prepare
 from watchtower.services.build import BuildService
 from watchtower.services.content import KANBAN, ContentService, yaml_bytes
 from watchtower.services.workspace import ServiceError, digest, load_yaml
@@ -64,29 +65,34 @@ class KanbanService:
                 existing = bool(source and (snapshot.files.get(source) is not None or artifact.kind == "project" and (self.root / source).is_dir()))
                 links.append({
                     "id": identifier, "title": artifact.title,
+                    "internal_notes": artifact.internal_notes,
+                    "attachments": [describe(item) for item in artifact.attachments],
                     "cms_url": "/cms/artifact/" + quote(identifier, safe="/"),
                     "frontend_url": base + "/" + quote(str(PurePosixPath(route).with_suffix(".html")), safe="/") if route else None,
                     "source_path": str(self.root / source) if source else None,
                     "editor_url": "vscode://file/" + quote(str(self.root / str(source)), safe="/") if existing else None,
                 })
             data["links"] = links
+            data["attachments"] = [describe(item) for item in card.attachments]
             cards.append(data)
         return {"cards": cards, "columns": [{"id": key, "title": title} for key, title in KANBAN_COLUMNS], "revision": snapshot.revision, "board_revision": self.board_revision(snapshot.files)}
 
-    def create(self, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+    def create(self, data: dict[str, Any], expected_revision: str | None = None, *, attachment_uploads: list[AttachmentUpload] | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
             board = self._board(files)
             if "ref" in data:
                 raise ServiceError("Kanban card references are assigned automatically")
-            card = KanbanCard.model_validate({"id": uuid4().hex, **data, "ref": f"card#{board.next_number}"})
+            items, writes = prepare(data.get("attachments", []), attachment_uploads)
+            card = KanbanCard.model_validate({"id": uuid4().hex, **data, "attachments": items, "ref": f"card#{board.next_number}"})
             if any(existing.id == card.id for existing in board.cards):
                 raise ServiceError("Kanban card ID already exists: " + card.id)
             board.cards.append(card)
             board.next_number += 1
-            return {"card": card.model_dump(mode="json")}, {KANBAN: yaml_bytes(board.model_dump(mode="json"))}
+            writes[KANBAN] = yaml_bytes(board.model_dump(mode="json"))
+            return {"card": card.model_dump(mode="json")}, writes
         return self._mutate("kanban create", apply, expected_revision)
 
-    def update(self, card_id: str, patch: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+    def update(self, card_id: str, patch: dict[str, Any], expected_revision: str | None = None, *, attachment_uploads: list[AttachmentUpload] | None = None, remove_attachments: list[str] | None = None) -> dict[str, Any]:
         if "id" in patch or "ref" in patch:
             raise ServiceError("Kanban card IDs and references cannot be changed")
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -94,9 +100,12 @@ class KanbanService:
             index = self._find_card(board, card_id)
             if index is None:
                 raise ServiceError("Unknown Kanban card: " + card_id, code="not_found", status=404)
-            card = KanbanCard.model_validate({**board.cards[index].model_dump(mode="json"), **patch})
+            data = {**board.cards[index].model_dump(mode="json"), **patch}
+            items, writes = prepare(data.get("attachments", []), attachment_uploads, remove_attachments)
+            card = KanbanCard.model_validate({**data, "attachments": items})
             board.cards[index] = card
-            return {"card": card.model_dump(mode="json")}, {KANBAN: yaml_bytes(board.model_dump(mode="json"))}
+            writes[KANBAN] = yaml_bytes(board.model_dump(mode="json"))
+            return {"card": card.model_dump(mode="json")}, writes
         return self._mutate("kanban update", apply, expected_revision)
 
     def remove(self, card_id: str, expected_revision: str | None = None) -> dict[str, Any]:
@@ -108,3 +117,12 @@ class KanbanService:
             removed = board.cards.pop(index)
             return {"removed": removed.ref or removed.id}, {KANBAN: yaml_bytes(board.model_dump(mode="json"))}
         return self._mutate("kanban remove", apply, expected_revision)
+
+    def context(self, identifier: str) -> dict[str, Any]:
+        """Current saved notes, plans and attachments for an agent picking up work."""
+        with self.content.store.locked():
+            board = self.read()
+            card = next((c for c in board["cards"] if identifier in {c["id"], c["ref"]}), None)
+            if card is None:
+                raise ServiceError("Unknown Kanban card: " + identifier, status=404, code="not_found")
+            return {"card": card, "artifacts": [self.content.read_plan(a) for a in card["artifact_ids"]], "revision": board["revision"], "board_revision": board["board_revision"]}

@@ -3,8 +3,11 @@
 {% block content %}
 <p><a href="/cms/courses">← Back to Courses</a></p>
 
-{% include 'artifact_fragment.html' %}
-<section id="outline" class="course-outline workspace-pane" data-workspace-pane tabindex="-1" aria-labelledby="outline-tab"><div class="scope-heading"><h2>Sections and chapters</h2><p>Use the arrows to reorder. Expand a chapter to move it to another section. Outline actions save immediately.</p></div>
+{% import 'context_attachments.html' as context_files %}
+<div class="course-heading"><div class="editor-heading"><h1>{{ artifact.title }}</h1>{{ context_files.notes_button(artifact) }}</div><p>Organize the outline or edit the course brief.</p></div>
+<nav class="workspace-tabs" data-workspace-tabs data-default-pane="outline" aria-label="Course workspace"><a href="#outline">Sections and chapters</a><a href="#course-brief">Course brief</a></nav>
+<div id="course-brief" class="course-brief" data-workspace-pane>{% with error = none if submitted else error, workspace_course = true %}{% include 'artifact_fragment.html' %}{% endwith %}</div>
+<section id="outline" class="course-outline author-section" data-workspace-pane aria-labelledby="outline-heading"><header class="author-section-heading"><h2 id="outline-heading">Sections and chapters</h2><p>Add, rename and reorder sections here. Chapter arrows and Edit are always visible. Outline actions save immediately.</p></header>
 {% if submitted %}<div role="alert" class="error"><p>{{ error.message or error }}</p><p>The outline action was not saved. Submitted values and their original revision are kept below. <a href="/cms/courses/{{ slug }}">Reload the workspace</a> before reconciling.</p><form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}">{% for key,value in submitted.items() if key != 'revision' %}<label>{{ key | replace('_',' ') | capitalize }}<input name="{{ key }}" value="{{ value }}"></label>{% endfor %}<button>Retry submitted action</button></form></div>{% endif %}
 {% macro arrows(action_prefix, title, first, last) %}
 <button class="icon-button" name="action" value="{{ action_prefix }}-up" aria-label="Move {{ title }} up" title="{{ 'Already first' if first else 'Move up' }}" {% if first %}disabled{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></button>
@@ -13,9 +16,9 @@
 {% for group in record.contract.toc %}
 <section class="outline-section">
 <div class="outline-section-heading"><h3>{{ group.title or ('Chapters' if group.id == 'main' else group.id) }} <span class="chapter-count">{{ group.chapters | length }}</span></h3><a class="button" href="/cms/new?kind=chapter&amp;parent={{ artifact.id | urlencode }}&amp;section={{ group.id | urlencode }}">+ Add chapter</a></div>
-<details class="section-management"><summary>Section settings</summary>
+<div class="section-management">
 <form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="section" value="{{ group.id }}"><label>Section title<input name="title" value="{{ group.title }}"></label><div class="actions"><button name="action" value="rename-section">Rename</button>{{ arrows('section', group.title or group.id, loop.first, loop.last) }}{% if not group.chapters and record.contract.toc | length > 1 %}<button class="danger" name="action" value="remove-section">Remove section</button>{% endif %}</div></form>
-</details>
+</div>
 <div class="outline-chapters">
 {% for chapter_id in group.chapters %}{% for row in record.chapter_rows if row.chapter.id == chapter_id %}
 <article class="outline-chapter">
@@ -30,7 +33,7 @@
 {% endfor %}{% else %}<p class="empty-group">No chapters in this section.</p>{% endfor %}
 </div></section>
 {% endfor %}
-<details class="outline-add"><summary>+ Add section</summary>
+<section class="outline-add"><h3>Add section</h3>
 <form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline" class="entity-group"><input type="hidden" name="revision" value="{{ revision }}"><label>New section title<input name="title" required placeholder="e.g. Foundations"></label><button name="action" value="add-section">Add section</button></form>
-</details><p class="advanced-link"><a href="/cms/data/course/{{ slug }}">Advanced contract editor</a></p>
+</section><p class="advanced-link"><a href="/cms/data/course/{{ slug }}">Advanced contract editor</a></p>
 </section>{% endblock %}

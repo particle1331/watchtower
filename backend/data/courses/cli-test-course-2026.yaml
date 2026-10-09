@@ -2,15 +2,8 @@ id: course/cli-test-course-2026
 purpose: ''
 audience: ''
 planned:
-  summary: ''
   chapters:
-  - references: 'ref1
-
-      ref2
-
-      ref3'
-    summary: summary
-    next_steps: nba
+  - summary: summary
     content: planned content
     lab_and_evidence: planned lab
     chapter_id: course/cli-test-course-2026/ch0-the-start

@@ -13,7 +13,7 @@ def preview_site() -> None:
     if not 1 <= port <= 65535:
         raise ValueError("PORT must be between 1 and 65535")
     print(f"preview: http://localhost:{port}/", flush=True)
-    if (Path.cwd() / "content/data/catalog.yaml").exists():
+    if (Path.cwd() / "backend/data/catalog.yaml").exists():
         from watchtower.services.build import BuildService
         BuildService(Path.cwd()).preview(port)
         return

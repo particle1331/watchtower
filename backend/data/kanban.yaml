@@ -1,0 +1,16 @@
+version: 1
+cards:
+- id: 5cf3ea32a06e4e36853ad185b4e0b198
+  ref: card#5
+  title: Make internal notes modal everywhere in the CMS
+  description: 'Audit every CMS surface showing internal notes, including artifact
+    creation/editing, course brief/chapters, project/gallery editors and advanced
+    structured-data forms. Use a consistent notes icon and popup modal. Keep notes/files
+    in their owning save form, preserve unsaved values/uploads/revisions, and verify
+    opening, Escape, focus restoration and save/conflict behavior through computer
+    use and regression checks. Completed: course and creation dialogs verified in
+    Safari; focused CMS checks and full suite passed.'
+  attachments: []
+  column: done
+  artifact_ids: []
+next_number: 6

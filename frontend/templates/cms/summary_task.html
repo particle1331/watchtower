@@ -1,0 +1,9 @@
+<div class="summary-task">
+{% set task_label = 'abstract' if field.summary_kind == 'portfolio' else 'summary' %}
+{% if artifact is defined and artifact.id %}
+{% if summary_task_result %}<p role="status">{{ task_label | capitalize }} task {{ summary_task_result.ref }} is ready. <a href="/cms/kanban?edit={{ summary_task_result.id | urlencode }}">Open task</a></p>
+{% else %}<button type="submit" form="artifact-summary-task-form" data-summary-task>Add {{ task_label }} task</button>{% endif %}
+<small data-summary-task-hint>Creates a linked Kanban card with the saved brief and instructions for an agent.</small>
+{% if summary_task_error %}<p class="error" role="alert">Task was not created. {{ summary_task_error.message }} <a href="/cms/artifact/{{ artifact.id | urlpath }}">Reload saved values</a>.</p>{% endif %}
+{% else %}<small>Save this plan to add a linked Kanban {{ task_label }} task.</small>{% endif %}
+</div>

@@ -88,7 +88,7 @@ class WorkspaceStore:
 
     def inputs(self) -> dict[str, bytes | None]:
         files: dict[str, bytes | None] = {}
-        for prefix in ("content", "frontend/templates", "frontend/assets"):
+        for prefix in ("content", "backend/data", "backend/assets", "backend/attachments", "frontend/templates", "frontend/assets"):
             base = self.root / prefix
             if base.exists():
                 for path in sorted(base.rglob("*")):
@@ -98,7 +98,7 @@ class WorkspaceStore:
                     self.safe_path(name)
                     if path.is_file():
                         files[name] = path.read_bytes()
-        for name in ("content/data/catalog.yaml", "content/data/portfolio.yaml", "content/data/photos.yaml", "content/data/profile.yaml", "content/data/kanban.yaml", "frontend/site.yaml"):
+        for name in ("backend/data/catalog.yaml", "backend/data/portfolio.yaml", "backend/data/photos.yaml", "backend/data/profile.yaml", "backend/data/kanban.yaml", "frontend/site.yaml"):
             path = self.safe_path(name)
             files[name] = path.read_bytes() if path.exists() else None
         # Directory identity is a dependency, but project code never enters a build snapshot.
@@ -196,10 +196,12 @@ class WorkspaceStore:
                 continue
             manifest = json.loads(path.read_bytes())
             if manifest["status"] in {"committed", "abandoned"}:
+                self._clean_attachment_versions(directory, manifest)
                 continue
             if manifest["status"] == "prepared":
                 manifest["status"] = "abandoned"
                 self._manifest(directory, manifest)
+                self._clean_attachment_versions(directory, manifest)
                 continue
             self._dependencies(manifest)
             for index, item in enumerate(manifest["writes"]):
@@ -218,6 +220,17 @@ class WorkspaceStore:
                 raise ServiceError("transaction verification failed", code="recovery_conflict", status=409)
             manifest["status"] = "committed"
             self._manifest(directory, manifest)
+            self._clean_attachment_versions(directory, manifest)
+
+    @staticmethod
+    def _clean_attachment_versions(directory: Path, manifest: dict[str, Any]) -> None:
+        # Recovery needs these bytes only until completion. The active file or
+        # deleted archive is the sole durable copy afterward; pruning an archive
+        # must not leave hidden attachment copies in completed runtime journals.
+        for index, item in enumerate(manifest["writes"]):
+            if any(item["path"].startswith(prefix) or f"/{prefix}" in item["path"] for prefix in ("backend/attachments/", "content/attachments/")):
+                for prefix in ("preimage", "candidate"):
+                    (directory / f"{prefix}-{index}").unlink(missing_ok=True)
 
     def commit(self, writes: dict[str, bytes | None], expected: dict[str, bytes | None], operation: str) -> str:
         """Called under locked(), after the entire candidate has been validated."""
@@ -266,6 +279,7 @@ class WorkspaceStore:
                     raise ServiceError("result changed before verification", code="conflict", status=412, paths=[item["path"]])
             manifest["status"] = "committed"
             self._manifest(directory, manifest)
+            self._clean_attachment_versions(directory, manifest)
         except Exception as error:
             raise ServiceError(f"transaction {transaction} pending recovery: {error}", code="pending_transaction", status=409, paths=[str(directory.relative_to(self.root))]) from error
         return transaction

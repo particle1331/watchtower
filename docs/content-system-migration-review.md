@@ -1,5 +1,13 @@
 # Content-system migration review
 
+Storage update (2026-10-10): destination paths below document the original
+migration. Managed `content/data/` and `content/assets/` have since moved to
+`backend/data/` and `backend/assets/`; new migrations target those backend
+directories directly. Authored notebooks and sidecars remain in `content/`.
+See the [current repository philosophy](../README.md#repository-philosophy) and
+`wt migrate --layout` for the recoverable storage move. Historical inputs remain
+unchanged, and `archive/deleted/` is safe to prune manually.
+
 The migration service prepares repository-relative candidate files in memory. It
 never changes a legacy notebook, deletes a source, executes code, restores an
 archived project, or infers completed work. Applying candidates is a separate

@@ -207,10 +207,10 @@ def test_portfolio_order_eligibility_and_archived_source_link(workspace):
         entry = artifact(f"portfolio/{name}", kind="portfolio", lifecycle=lifecycle)
         put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("Historical notebook.")])
         snapshot.state.portfolio.append(Record(
-            id=entry.id, abstract=f"Abstract {name}", figure_path=f"content/assets/{name}.svg", figure_caption=f"Figure {name}",
+            id=entry.id, abstract=f"Abstract {name}", figure_path=f"backend/assets/{name}.svg", figure_caption=f"Figure {name}",
             notebook_path=entry.path, project_path=f"archive/2026-09-30/projects/{name}", planned={},
         ))
-        snapshot.files[f"content/assets/{name}.svg"] = b"<svg/>"
+        snapshot.files[f"backend/assets/{name}.svg"] = b"<svg/>"
     stage = BuildService(root).generate("production")
     page = (stage / "portfolio.qmd").read_text()
     assert ".portfolio-layout" in page and ".portfolio-sidebar" in page
@@ -271,7 +271,7 @@ def test_portfolio_page_header_includes_figure_abstract_and_active_source(
         title="Featured project", description=description,
     )
     put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell("Project details.")])
-    figure_path = "content/assets/featured-project.svg"
+    figure_path = "backend/assets/featured-project.svg"
     snapshot.files[figure_path] = b"<svg/>"
     snapshot.state.portfolio.append(Record(
         id=entry.id, abstract=abstract, figure_path=figure_path, figure_caption="Featured figure",
@@ -505,7 +505,7 @@ def test_validation_failure_does_not_promote_and_is_visible_in_record(workspace,
     first = service.build()
     current = (root / "frontend/generated/preview").resolve()
     def invalid_snapshot():
-        raise ValueError("content/data/catalog.yaml: unknown relation post/missing")
+        raise ValueError("backend/data/catalog.yaml: unknown relation post/missing")
     monkeypatch.setattr(build_module, "ContentService", lambda root: SimpleNamespace(snapshot=invalid_snapshot))
     failed = service.build()
     assert failed["status"] == "failed"
@@ -523,8 +523,8 @@ def test_generated_sources_are_byte_identical_for_unchanged_snapshot(workspace):
     put_notebook(snapshot, authored, [nbformat.v4.new_markdown_cell("Saved authored content.")])
     gallery = artifact("photos/gallery", kind="gallery")
     snapshot.state.artifacts.append(gallery)
-    snapshot.state.photos = [Record(heading="A photo", path="content/assets/a-photo.svg", caption="A caption.", lifecycle="published")]
-    snapshot.files["content/assets/a-photo.svg"] = b"<svg/>"
+    snapshot.state.photos = [Record(heading="A photo", path="backend/assets/a-photo.svg", caption="A caption.", lifecycle="published")]
+    snapshot.files["backend/assets/a-photo.svg"] = b"<svg/>"
     service = BuildService(root)
     first, second = service.generate(), service.generate()
     config = yaml.safe_load((first / "_quarto.yml").read_text())
@@ -560,7 +560,7 @@ def test_missing_authored_image_fails_before_quarto_and_keeps_success(workspace,
 def test_personal_renders_once_from_jinja_at_the_gallery_route(workspace):
     from watchtower.models import Artifact, route_for
 
-    legacy = Artifact(id="gallery/photos", kind="gallery", title="Personal", path="content/data/photos.yaml", route="nb/photos/photos.ipynb")
+    legacy = Artifact(id="gallery/photos", kind="gallery", title="Personal", path="backend/data/photos.yaml", route="nb/photos/photos.ipynb")
     assert route_for(legacy) == "nb/photos/photos.qmd"
     root, snapshot = workspace
     template = "frontend/templates/site/personal.qmd.j2"
@@ -569,9 +569,9 @@ def test_personal_renders_once_from_jinja_at_the_gallery_route(workspace):
     snapshot.state.artifacts.append(gallery)
     note = artifact("personal/notes", kind="personal", visibility="private", title="Private prose notebook")
     put_notebook(snapshot, note, [nbformat.v4.new_markdown_cell("Personal prose stays on its direct working page.")])
-    snapshot.state.photos = [Record(heading="First photo", path="content/assets/photos/first photo.svg", caption="A real photo caption.", lifecycle="published"), Record(heading="Unfinished photo", path="content/assets/photos/draft.svg", caption="Draft caption.", lifecycle="draft")]
-    snapshot.files["content/assets/photos/first photo.svg"] = b"<svg/>"
-    snapshot.files["content/assets/photos/draft.svg"] = b"<svg/>"
+    snapshot.state.photos = [Record(heading="First photo", path="backend/assets/photos/first photo.svg", caption="A real photo caption.", lifecycle="published"), Record(heading="Unfinished photo", path="backend/assets/photos/draft.svg", caption="Draft caption.", lifecycle="draft")]
+    snapshot.files["backend/assets/photos/first photo.svg"] = b"<svg/>"
+    snapshot.files["backend/assets/photos/draft.svg"] = b"<svg/>"
     for mode in ["preview", "production"]:
         stage = BuildService(root).generate(mode)
         config = yaml.safe_load((stage / "_quarto.yml").read_text())
@@ -604,9 +604,9 @@ def test_planned_gallery_preview_label_and_production_exclusion(workspace, has_d
     gallery = artifact("gallery/photos", kind="gallery", lifecycle="planned", path="content/notebooks/photos/photos.ipynb", title="Personal")
     snapshot.state.artifacts.append(gallery)
     if has_draft:
-        snapshot.state.photos = [Record(heading="Draft afternoon", path="content/assets/photos/draft.svg", caption="A draft caption.", lifecycle="draft")]
+        snapshot.state.photos = [Record(heading="Draft afternoon", path="backend/assets/photos/draft.svg", caption="A draft caption.", lifecycle="draft")]
         snapshot.state.photos.append(Record(heading="Draft stub", path="", caption="A saved caption.", lifecycle="draft"))
-        snapshot.files["content/assets/photos/draft.svg"] = b"<svg/>"
+        snapshot.files["backend/assets/photos/draft.svg"] = b"<svg/>"
     for mode in ["preview", "production"]:
         stage = BuildService(root).generate(mode)
         page = (stage / "nb/photos/photos.qmd").read_text()

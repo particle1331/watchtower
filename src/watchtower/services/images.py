@@ -31,4 +31,4 @@ def uploaded_image(collection: str, identity: str, data: bytes) -> str:
     slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", identity.split("/")[-1]).strip(".-")[:80] or "image"
     identity_hash = hashlib.sha256(identity.encode()).hexdigest()[:12]
     content = hashlib.sha256(data).hexdigest()
-    return f"content/assets/{collection}/{slug}-{identity_hash}-{content}.{extension}"
+    return f"backend/assets/{collection}/{slug}-{identity_hash}-{content}.{extension}"

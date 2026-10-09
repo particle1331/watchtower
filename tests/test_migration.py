@@ -122,18 +122,18 @@ def test_prepare_has_no_writes_and_preserves_ids_routes_resume_and_toc(tmp_path)
     after = {str(path.relative_to(tmp_path)): path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
     assert before == after
     assert result["report"]["ready"]
-    catalog = load_yaml(result["files"]["content/data/catalog.yaml"].decode())
+    catalog = load_yaml(result["files"]["backend/data/catalog.yaml"].decode())
     chapter = catalog["artifacts"][1]
     assert chapter["id"] == "course/demo/01-first"
     assert chapter["route"] == "nb/courses/demo/01-first.ipynb"
     assert chapter["toc_title"] == "01. First"
     assert chapter["section"] == "foundations"
     assert chapter["lifecycle"] == "draft"
-    course = load_yaml(result["files"]["content/data/courses/demo.yaml"].decode())
+    course = load_yaml(result["files"]["backend/data/courses/demo.yaml"].decode())
     assert course["actualized"] == {"summary": "Checked earlier work"}
     assert course["toc"] == [{"id": "foundations", "title": "Foundations", "chapters": [chapter["id"]]}]
     assert course["planned"]["chapters"] == [{"chapter_id": chapter["id"], "section": "foundations", "summary": "Introduce the first topic"}]
-    profile = load_yaml(result["files"]["content/data/profile.yaml"].decode())
+    profile = load_yaml(result["files"]["backend/data/profile.yaml"].decode())
     assert profile["employment"][0]["bullets"] == ["Fact preserved"]
     assert result["report"]["presentation_exceptions"][0]["field"] == "toc"
 
@@ -155,7 +155,7 @@ def test_explicit_gallery_decision_preserves_body_in_personal_notebook(tmp_path)
     assert personal["visibility"] == "private"
     assert gallery["lifecycle"] == "planned"
     assert gallery["route"] == "nb/photos/photos.ipynb"
-    assert load_yaml(result["files"]["content/data/photos.yaml"].decode())["photos"] == []
+    assert load_yaml(result["files"]["backend/data/photos.yaml"].decode())["photos"] == []
 
 
 def test_reviewed_historical_figures_are_copied_with_original_caption_and_mapping(tmp_path):
@@ -179,7 +179,7 @@ def test_reviewed_historical_figures_are_copied_with_original_caption_and_mappin
     assert len(Migration(tmp_path).inventory()["blockers"]) == 3
     result = Migration(tmp_path, reviewed_portfolio_figures=True).prepare()
     assert result["report"]["ready"]
-    entries = load_yaml(result["files"]["content/data/portfolio.yaml"].decode())["entries"]
+    entries = load_yaml(result["files"]["backend/data/portfolio.yaml"].decode())["entries"]
     for entry in entries:
         name = entry["project_path"].rsplit("/", 1)[-1]
         assert entry["project_path"] == f"archive/2026-09-30/projects/{name}"

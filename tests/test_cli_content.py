@@ -38,7 +38,7 @@ def test_cli_post_plan_file_tags_start_publish_draft(content_service, monkeypatc
     service = content_service
     plan = service.root / ".tmp/post.md"
     plan.parent.mkdir()
-    plan.write_text("## Any heading\n\nInvestigate the question.")
+    plan.write_text("## Outline\n\nInvestigate the question.")
     record = invoke(monkeypatch, service, ["new", "post", "article", "--plan-file", ".tmp/post.md", "--tag", " Test ", "--tag", "test"])
     assert record["artifact"]["lifecycle"] == "planned"
     assert record["artifact"]["tags"] == ["Test"]
@@ -56,7 +56,7 @@ def test_chapter_inline_and_file_plans_match(content_service, monkeypatch):
     invoke(monkeypatch, service, ["new", "chapter", "example", "01", "--title", "One", "--toc-title", "01. One", "--planned-content", "Explain topic.", "--planned-lab-and-evidence", "Check result."])
     plan = service.root / ".tmp/chapter.md"
     plan.parent.mkdir()
-    plan.write_text("## Planned content\n\nExplain topic.\n\n## Planned lab and evidence\n\nCheck result.\n")
+    plan.write_text("## Outline\n\nExplain topic.\n\n## Practice and evidence\n\nCheck result.\n")
     invoke(monkeypatch, service, ["new", "chapter", "example", "02", "--title", "Two", "--plan-file", ".tmp/chapter.md"])
     plans = service.read_data("course/example")["data"]["planned"]["chapters"]
     assert plans[0]["content"] == plans[1]["content"]
@@ -64,7 +64,7 @@ def test_chapter_inline_and_file_plans_match(content_service, monkeypatch):
     assert not (service.root / "content/notebooks/courses/example/01.ipynb").exists()
 
 
-@pytest.mark.parametrize("body", ["## Planned content\n\nTopic", "## Planned content\n\nTopic\n\n## Planned content\n\nDuplicate\n\n## Planned lab and evidence\n\nCheck"])
+@pytest.mark.parametrize("body", ["## Outline\n\nTopic\n\n## Outline\n\nDuplicate\n\n## Practice and evidence\n\nCheck"])
 def test_chapter_bad_plan_never_partially_registers(content_service, monkeypatch, body):
     service = content_service
     invoke(monkeypatch, service, ["new", "course", "example", "Example"])

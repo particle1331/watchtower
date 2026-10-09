@@ -43,7 +43,7 @@ def test_post_and_course_save_and_publish(author, kind, htmx):
     else:
         author.create({"id": "post/idea", "kind": "post", "title": "Idea", "path": "content/notebooks/posts/idea.ipynb", "planned": {"content": "Post content"}})
         identifier, url = "post/idea", "/cms/artifact/post/idea"
-        field = 'field:["planned", "takeaway"]'
+        field = 'field:["planned", "audience"]'
     author.start(identifier)
     with TestClient(create_app(author.root)) as client:
         editor = client.get(url)
@@ -59,10 +59,10 @@ def test_post_and_course_save_and_publish(author, kind, htmx):
         assert record["artifact"]["lifecycle"] == "published"
         assert record["artifact"]["visibility"] == "public"
         if kind == "course":
-            assert result.headers["hx-redirect" if htmx else "location"] == url
+            assert result.headers["hx-redirect" if htmx else "location"] == f"{url}#course-brief"
             assert record["contract"]["planned"]["outcomes"] == "Finished outcome"
         else:
-            assert record["artifact"]["planned"]["takeaway"] == "Finished outcome"
+            assert record["artifact"]["planned"]["audience"] == "Finished outcome"
             assert 'Return to draft' in result.text
 
 
@@ -116,10 +116,10 @@ def test_chapter_save_and_publish_requires_public_published_parent(author, paren
 
 
 @pytest.mark.parametrize("kind", ["post", "portfolio", "course"])
-def test_private_partial_plan_reopens_with_guidance(author, kind):
+def test_private_partial_plan_reopens_with_task_action(author, kind):
     with TestClient(create_app(author.root)) as client:
         page = client.get(f"/cms/new?kind={kind}")
-        response = client.post(f"/cms/new?kind={kind}", data={"revision": token(page), "name": "idea", "title": "An idea", "next_steps": "Investigate an example"}, follow_redirects=False)
+        response = client.post(f"/cms/new?kind={kind}", data={"revision": token(page), 'field:["name"]': "idea", 'field:["title"]': "An idea", 'field:["internal_notes"]': "Investigate an example"}, follow_redirects=False)
         assert response.status_code == 303, response.text
         record = author.inspect(f"{kind}/idea")
         assert record["artifact"]["visibility"] == "private"
@@ -127,8 +127,9 @@ def test_private_partial_plan_reopens_with_guidance(author, kind):
         assert "Investigate an example" in record["build_brief"]
         editor = client.get(response.headers["location"])
         assert 'data-editing="true"' in editor.text
-        assert "Plans appear only in the CMS" in editor.text
-        assert "Copy build brief" in editor.text and "Not on the live site" in editor.text
+        assert "Planning help &amp; saved brief" not in editor.text
+        assert "Create Kanban task" in editor.text and "Not on the live site" in editor.text
+        assert "Copy build brief" not in editor.text and 'id="saved-build-brief"' not in editor.text
         assert "Investigate an example" in editor.text
         started = author.start(f"{kind}/idea")
         assert started["artifact"]["lifecycle"] == "draft"
@@ -136,24 +137,20 @@ def test_private_partial_plan_reopens_with_guidance(author, kind):
         assert not record["editor_url"]
 
 
-def test_course_brief_atomic_save_and_legacy_recovery(author):
-    course(author, planned={"content": "Recovered legacy summary", "old_note": "Keep this"})
-    original = author.inspect("course/demo")
-    contract = original["contract"]
-    contract["planned"]["summary"] = ""
+def test_course_save_is_atomic_and_keeps_unrelated_contract_fields(author):
+    course(author)
+    contract = author.inspect("course/demo")["contract"]
     contract["planned"]["extension"] = "Keep this too"
     author.update_data("course/demo", contract)
     with TestClient(create_app(author.root)) as client:
         page = client.get("/cms/courses/demo")
         revision, snapshot = form_snapshot(page)
-        assert "Recovered legacy summary" in json.loads(snapshot)["contract"]["planned"]["summary"]
         result = client.post("/cms/save/course/demo", data={"revision": revision, "snapshot": snapshot, 'field:["title"]': "Revised title", 'field:["contract", "planned", "outcomes"]': "Can build a tool"}, follow_redirects=False)
         assert result.status_code == 303, result.text
         record = author.inspect("course/demo")
         assert record["artifact"]["title"] == "Revised title"
-        assert record["contract"]["planned"]["summary"] == "Recovered legacy summary"
+        assert record["contract"]["planned"]["outcomes"] == "Can build a tool"
         assert record["contract"]["planned"]["extension"] == "Keep this too"
-        assert record["artifact"]["planned"]["old_note"] == "Keep this"
         assert record["contract"]["actualized"] == {"summary": ""}
         failed = client.post("/cms/save/course/demo", data={"revision": revision, "snapshot": snapshot, 'field:["contract", "planned", "outcomes"]': "Unsaved outcome"})
         assert failed.status_code == 412
@@ -168,15 +165,15 @@ def test_contextual_chapter_partial_save_then_ready_draft(author):
         path = "/cms/new?kind=chapter&parent=course/demo&section=main"
         page = client.get(path)
         assert 'value="course/demo" selected' in page.text
-        result = client.post(path, data={"revision": token(page), "name": "first", "title": "First chapter", "parent": "course/demo", "section": "main", "summary": "A short summary"}, follow_redirects=False)
+        result = client.post(path, data={"revision": token(page), 'field:["name"]': "first", 'field:["title"]': "First chapter", 'field:["parent"]': "course/demo", 'field:["section"]': "main", 'field:["plan", "summary"]': "A short summary"}, follow_redirects=False)
         assert result.status_code == 303, result.text
         assert result.headers["location"] == "/cms/courses/demo#outline"
         record = author.inspect("course/demo/first")
         assert record["chapter_plan"]["summary"] == "A short summary"
-        assert record["missing_plan_fields"] == ["Planned content", "Planned lab and evidence"]
+        assert record["missing_plan_fields"] == ["Outline", "Practice and evidence"]
         page = client.get("/cms/artifact/course/demo/first")
         revision, snapshot = form_snapshot(page)
-        result = client.post("/cms/save/course/demo/first", data={"revision": revision, "snapshot": snapshot, 'field:["plan", "content"]': "Explain the idea", 'field:["plan", "lab_and_evidence"]': "Build and check", 'field:["plan", "references"]': "A useful source"}, follow_redirects=False)
+        result = client.post("/cms/save/course/demo/first", data={"revision": revision, "snapshot": snapshot, 'field:["plan", "content"]': "Explain the idea", 'field:["plan", "lab_and_evidence"]': "Build and check"}, follow_redirects=False)
         assert result.status_code == 303
         record = author.inspect("course/demo/first")
         assert not record["missing_plan_fields"]
@@ -184,9 +181,8 @@ def test_contextual_chapter_partial_save_then_ready_draft(author):
         body = "\n".join(c.source for c in nbformat.read(author.root / record["source_path"], as_version=4).cells)
         assert body.count("# First chapter\n") == 1
         assert "Explain the idea" in body and "Build and check" in body
-        assert "A useful source" in body
         brief = author.inspect("course/demo")["build_brief"]
-        assert "First chapter" in brief and "A useful source" in brief
+        assert "First chapter" in brief
         assert "Python users" in author.inspect("course/demo/first")["build_brief"]
 
 
@@ -230,7 +226,7 @@ def test_lookup_selection_order_and_conflict_preservation(author):
         assert [a["id"] for a in matches] == ["post/prefix", "post/substring", "post/exact"]
         assert client.get("/cms/lookup?q=POST/EXACT").json()["artifacts"][0]["id"] == "post/exact"
         page = client.get("/cms/new?kind=post")
-        result = client.post("/cms/new?kind=post", data={"revision": token(page), "name": "linked", "title": "Linked post", "relationship:relations": "true", "relations": ["", "post/prefix", "post/exact", "post/prefix"]}, follow_redirects=False)
+        result = client.post("/cms/new?kind=post", data={"revision": token(page), 'field:["name"]': "linked", 'field:["title"]': "Linked post", 'relationship:field:["relations"]': "true", 'field:["relations"]': ["", "post/prefix", "post/exact", "post/prefix"]}, follow_redirects=False)
         assert result.status_code == 303
         page = client.get("/cms/artifact/post/linked")
         revision, snapshot = form_snapshot(page)
@@ -339,16 +335,12 @@ def test_single_resume_relationship_native_select_can_clear(author):
 def test_portfolio_abstract_create_start_and_edit(author, abstract):
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/new?kind=portfolio')
-        assert 'name="abstract"' in page.text
-        details_start = page.text.index('<summary>More planning details (optional)</summary>')
-        details_end = page.text.index('</details>', details_start)
-        abstract_field = page.text.index('name="abstract"')
-        assert details_start < abstract_field < details_end
+        assert 'name="field:[&#34;detail&#34;, &#34;abstract&#34;]"' in page.text
         assert 'name="description"' not in page.text
-        assert 'can fill a first draft from Introduction / problem and What it contains' in page.text
+        assert 'can fill a first draft from Problem and What it contains' in page.text
         assert 'Paste the finished abstract here before publishing; publishing requires it.' in page.text
         assert 'portfolio card and entry page' in page.text
-        created = client.post('/cms/new?kind=portfolio', data={'revision': token(page), 'name': 'abstract', 'title': 'Abstract example', 'abstract': abstract, 'introduction': 'Compare models.', 'what_it_contains': 'Reports and checks.'}, follow_redirects=False)
+        created = client.post('/cms/new?kind=portfolio', data={'revision': token(page), 'field:["name"]': 'abstract', 'field:["title"]': 'Abstract example', 'field:["detail", "abstract"]': abstract, 'field:["detail", "planned", "introduction"]': 'Compare models.', 'field:["detail", "planned", "what_it_contains"]': 'Reports and checks.'}, follow_redirects=False)
         assert created.status_code == 303, created.text
         saved = author.inspect('portfolio/abstract')
         assert saved['detail']['abstract'] == (abstract or None)
@@ -359,7 +351,7 @@ def test_portfolio_abstract_create_start_and_edit(author, abstract):
         assert 'Public description' not in page.text
         assert html.unescape(page.text).count('name="field:["detail", "abstract"]"') == 1
         assert 'Shown on the portfolio card and entry page.' in page.text
-        assert 'can fill a first draft from Introduction / problem and What it contains' in page.text
+        assert 'can fill a first draft from Problem and What it contains' in page.text
         assert 'Paste the finished abstract here before publishing; publishing requires it.' in page.text
         revision, snapshot = form_snapshot(page)
         edited = client.post('/cms/save/portfolio/abstract', data={'revision': revision, 'snapshot': snapshot, 'field:["detail", "abstract"]': 'Edited abstract.'}, follow_redirects=False)
@@ -381,18 +373,19 @@ def test_portfolio_legacy_description_is_preserved_as_abstract_on_save(author):
         assert author.inspect('portfolio/legacy')['detail']['abstract'] == 'Existing summary.'
 
 
-def test_editor_scopes_keep_public_summaries_and_internal_fields_separate(author):
+def test_editor_sections_separate_public_summary_plan_and_internal_notes(author):
     course(author)
-    chapter(author, plan={"summary": "Reader summary", "content": "Teaching plan", "next_steps": "Research later"}, internal_notes="Author decisions")
+    chapter(author, plan={"summary": "Reader summary", "content": "Teaching plan"}, internal_notes="Author decisions")
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/artifact/course/demo/first')
         assert page.status_code == 200
-        panes = {scope: re.search(rf'<section id="{scope}-fields".*?</section>', page.text, re.S)[0] for scope in ['site', 'planning', 'internal']}
-        assert 'Reader summary' in panes['site']
-        assert 'Teaching plan' in panes['planning']
-        assert 'Author decisions' in panes['internal'] and 'Research later' in panes['internal']
-        assert 'Author decisions' not in panes['site'] and 'Research later' not in panes['planning']
-        assert 'hidden' not in re.search(r'<section id="site-fields"[^>]*>', page.text)[0]
+        sections = {name: re.search(rf'<section id="{name}" class="author-section.*?</section>', page.text, re.S)[0] for name in ['basics', 'plan', 'page']}
+        sections["notes"] = re.search(r'<dialog id="notes".*?</dialog>', page.text, re.S)[0]
+        assert 'Reader summary' in sections['page']
+        assert 'Teaching plan' in sections['plan']
+        assert 'Author decisions' in sections['notes']
+        assert 'Author decisions' not in sections['page'] and 'Author decisions' not in sections['plan']
+        assert 'Teaching plan' not in sections['page']
         revision, snapshot = form_snapshot(page)
         saved = client.post('/cms/save/course/demo/first', data={
             'revision': revision, 'snapshot': snapshot,
@@ -414,7 +407,7 @@ def test_course_outline_compact_controls_keep_native_actions_and_revisions(autho
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/courses/demo')
         assert page.status_code == 200
-        assert 'data-default-pane="outline"' in page.text
+        assert 'id="outline"' in page.text
         assert page.text.count('class="outline-chapter"') == 2
         assert 'aria-label="Move First down"' in page.text
         assert 'Move First down</button>' not in page.text
@@ -437,7 +430,7 @@ def test_new_portfolio_editor_shows_the_creation_date(author, monkeypatch):
     with TestClient(create_app(author.root)) as client:
         new = client.get('/cms/new?kind=portfolio')
         created = client.post('/cms/new?kind=portfolio', data={
-            'revision': token(new), 'name': 'dated', 'title': 'Dated portfolio',
+            'revision': token(new), 'field:["name"]': 'dated', 'field:["title"]': 'Dated portfolio',
         }, follow_redirects=False)
         assert created.status_code == 303
         editor = client.get(created.headers['location'])

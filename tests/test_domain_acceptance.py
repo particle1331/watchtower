@@ -14,7 +14,7 @@ from watchtower.services.workspace import ServiceError
 
 def course(service, slug="example", published=False):
     key = f"course/{slug}"
-    service.create({"id": key, "kind": "course", "title": f"{slug} course", "path": f"content/notebooks/courses/{slug}", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
+    service.create({"id": key, "kind": "course", "title": f"{slug} course", "path": f"content/notebooks/courses/{slug}", "contract": {"purpose": "Teach", "audience": "Learners"}})
     if published:
         service.start(key)
         author_body(service, key)
@@ -34,10 +34,10 @@ def portfolio_payload(service, name="example"):
     project = service.root / "projects" / name
     project.mkdir(parents=True)
     (project / "code.py").write_text("# Authored executable project code\n")
-    figure = service.root / f"content/assets/portfolio/{name}.svg"
+    figure = service.root / f"backend/assets/portfolio/{name}.svg"
     figure.parent.mkdir(parents=True, exist_ok=True)
     figure.write_text("<svg><title>Authored diagram</title></svg>")
-    return {"id": f"portfolio/{name}", "kind": "portfolio", "title": "Portfolio example", "detail": {"abstract": "A project for a concrete problem.", "figure_path": f"content/assets/portfolio/{name}.svg", "figure_caption": "The intended architecture.", "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "project_path": f"projects/{name}", "planned": {"introduction": "Investigate the concrete problem.", "what_it_contains": "A reproducible implementation and checks.", "scope_notes": "Define the project limits."}}}
+    return {"id": f"portfolio/{name}", "kind": "portfolio", "title": "Portfolio example", "detail": {"abstract": "A project for a concrete problem.", "figure_path": f"backend/assets/portfolio/{name}.svg", "figure_caption": "The intended architecture.", "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "project_path": f"projects/{name}", "planned": {"introduction": "Investigate the concrete problem.", "what_it_contains": "A reproducible implementation and checks.", "success_criteria": "Each check passes."}}}
 
 
 def file_state(service):
@@ -57,8 +57,8 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     text = "\n".join(cell.source for cell in nb.cells)
     assert "Investigate the concrete problem." in text
     assert "A reproducible implementation and checks." in text
-    assert "Define the project limits." not in text
-    assert "Define the project limits." in service.inspect(payload["id"])["build_brief"]
+    assert "Each check passes." in text
+    assert "## Success criteria\n\nEach check passes." in service.inspect(payload["id"])["build_brief"]
     nb.cells.append(nbformat.v4.new_code_cell("#| code-fold: true\nprint(1)", execution_count=3, outputs=[nbformat.v4.new_output("stream", name="stdout", text="1\n")]))
     nbformat.write(nb, source)
     body = source.read_bytes()
@@ -166,7 +166,7 @@ def test_planned_portfolio_related_content_includes_reserved_source_before_code_
     private_id = post(service, visibility="private")["artifact"]["id"]
     detail = {
         "notebook_path": "content/notebooks/portfolio/future.ipynb",
-        "planned": {"introduction": "Introduction", "what_it_contains": "Contents", "scope_notes": "Scope notes",
+        "planned": {"introduction": "Introduction", "what_it_contains": "Contents",
                     "references": "[Prior work](https://example.org/prior)"},
     }
     if project_path is not None:
@@ -178,7 +178,7 @@ def test_planned_portfolio_related_content_includes_reserved_source_before_code_
     assert f"## References and related content\n\n[Prior work](https://example.org/prior)\n\n- [Reserved source code](https://github.com/particle1331/watchtower/tree/main/projects/{source_name})\n- [related course]" in record["plan"]
     assert "[Example]" not in record["plan"]
     assert "nb/posts/example" not in record["plan"]
-    assert "## Scope notes\n\nScope notes\n\n## References and related content" in record["plan"]
+    assert "## Problem\n\nIntroduction\n\n## What it contains\n\nContents\n\n## References and related content" in record["plan"]
     assert "## References\n" not in record["plan"]
     assert "## Explore the project" not in record["plan"]
     assert not (service.root / f"projects/{source_name}").exists()
@@ -196,14 +196,12 @@ def test_planned_archived_source_still_requires_existing_archive_directory(conte
 
 
 @pytest.mark.parametrize("references", ["", "- First reference\n- Second reference"])
-def test_portfolio_resources_do_not_create_empty_scope_section(content_service, references):
+def test_portfolio_preview_merges_references_with_related_content(content_service, references):
     service = content_service
     service.create({"id": "portfolio/resources", "kind": "portfolio", "title": "Resources",
-        "detail": {"planned": {"introduction": "Introduction", "what_it_contains": "Contents",
-                               "references": references, "legacy_note": "Keep this note"}}})
+        "detail": {"planned": {"introduction": "Introduction", "what_it_contains": "Contents", "references": references}}})
     body = service.inspect("portfolio/resources")["plan"]
-    assert "## Scope notes" not in body
-    assert "## Legacy note\n\nKeep this note" in body
+    assert "## References\n" not in body
     assert body.count("## References and related content") == 1
     assert "- [Reserved source code]" in body
     if references:
@@ -212,14 +210,14 @@ def test_portfolio_resources_do_not_create_empty_scope_section(content_service, 
 
 def test_photo_lifecycle_updates_gallery_automatically_and_preserves_images(content_service):
     service = content_service
-    service.create({"id": "gallery/photos", "kind": "gallery", "title": "Photos", "path": "content/data/photos.yaml"})
+    service.create({"id": "gallery/photos", "kind": "gallery", "title": "Photos", "path": "backend/data/photos.yaml"})
     with pytest.raises(ServiceError):
         service.publish("gallery/photos")
-    picture = service.root / "content/assets/photos/one.svg"
+    picture = service.root / "backend/assets/photos/one.svg"
     picture.parent.mkdir(parents=True)
     picture.write_text("<svg><title>Photo</title></svg>")
     before_image = picture.read_bytes()
-    photo = {"heading": "One afternoon", "path": "content/assets/photos/one.svg", "caption": "A reviewed caption", "lifecycle": "draft"}
+    photo = {"heading": "One afternoon", "path": "backend/assets/photos/one.svg", "caption": "A reviewed caption", "lifecycle": "draft"}
     service.update_gallery({"version": 1, "photos": [photo]})
     assert service.inspect("gallery/photos")["artifact"]["lifecycle"] == "planned"
     photo["lifecycle"] = "published"
@@ -232,20 +230,20 @@ def test_photo_lifecycle_updates_gallery_automatically_and_preserves_images(cont
     assert service.read_data("photos")["data"]["photos"][0]["heading"] == "One afternoon"
     assert service.inspect("gallery/photos")["editor_url"] is None
     photo["lifecycle"] = "published"
-    (service.root / "content/data/photos.yaml").write_bytes(yaml_bytes({"version": 1, "photos": [photo]}))
+    (service.root / "backend/data/photos.yaml").write_bytes(yaml_bytes({"version": 1, "photos": [photo]}))
     service.validate()
     assert service.inspect("gallery/photos")["artifact"]["lifecycle"] == "published"
 
 
-@pytest.mark.parametrize("photo", [{"path": "content/assets/photos/missing.svg", "caption": "Missing image"}, {"path": "https://example.org/image.png", "caption": "Remote image"}, {"path": "../escape.png", "caption": "Unsafe image"}, {"path": "content/assets/photos/one.svg"}])
+@pytest.mark.parametrize("photo", [{"path": "backend/assets/photos/missing.svg", "caption": "Missing image"}, {"path": "https://example.org/image.png", "caption": "Remote image"}, {"path": "../escape.png", "caption": "Unsafe image"}, {"path": "backend/assets/photos/one.svg"}])
 def test_invalid_manual_photo_records_block_saved_snapshot(content_service, photo):
     service = content_service
-    (service.root / "content/data/photos.yaml").write_bytes(yaml_bytes({"version": 1, "photos": [photo]}))
+    (service.root / "backend/data/photos.yaml").write_bytes(yaml_bytes({"version": 1, "photos": [photo]}))
     with pytest.raises(ServiceError):
         service.snapshot()
 
 
-@pytest.mark.parametrize("path,bad", [("content/data/catalog.yaml", "version: 1\nversion: 1\nartifacts: []\n"), ("content/data/catalog.yaml", "version: 1\nartifacts: wrong-type\n"), ("content/data/portfolio.yaml", "version: 1\nentries: [\n"), ("content/data/profile.yaml", "version: 1\nname: 42\n"), ("frontend/site.yaml", "version: 9\n")])
+@pytest.mark.parametrize("path,bad", [("backend/data/catalog.yaml", "version: 1\nversion: 1\nartifacts: []\n"), ("backend/data/catalog.yaml", "version: 1\nartifacts: wrong-type\n"), ("backend/data/portfolio.yaml", "version: 1\nentries: [\n"), ("backend/data/profile.yaml", "version: 1\nname: 42\n"), ("frontend/site.yaml", "version: 9\n")])
 def test_malformed_manual_yaml_blocks_snapshot_without_rewriting(content_service, path, bad):
     service = content_service
     target = service.root / path
@@ -326,7 +324,7 @@ def test_manual_course_toc_must_have_each_own_chapter_once(content_service, memb
     chapter_id = chapter(service)
     course(service, "other")
     foreign = chapter(service, "other")
-    path = service.root / "content/data/courses/example.yaml"
+    path = service.root / "backend/data/courses/example.yaml"
     data = yaml.safe_load(path.read_text())
     data["toc"][0]["chapters"] = {"duplicate": [chapter_id, chapter_id], "foreign": [chapter_id, foreign], "missing": []}[membership]
     path.write_bytes(yaml_bytes(data))
@@ -377,13 +375,13 @@ def test_external_nonwrite_dependency_change_blocks_recovery(content_service):
     service.store.fault = crash
     with pytest.raises(ServiceError, match="pending recovery"):
         service.start("post/example")
-    profile = service.root / "content/data/profile.yaml"
+    profile = service.root / "backend/data/profile.yaml"
     content = profile.read_text() + "\n# External profile edit that must survive\n"
     profile.write_text(content)
     with pytest.raises(ServiceError) as conflict:
         ContentService(service.root).snapshot()
     assert conflict.value.code == "recovery_conflict"
-    assert "content/data/profile.yaml" in conflict.value.paths
+    assert "backend/data/profile.yaml" in conflict.value.paths
     assert profile.read_text() == content
     assert not (service.root / "content/notebooks/posts/example.ipynb").exists()
     transactions = service.root / "backend/runtime/transactions"

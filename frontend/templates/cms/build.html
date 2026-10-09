@@ -4,7 +4,7 @@
   {% endif %}
   {% if error or (build and (build.error or build.logs)) %}
   <details class="build-logs" data-build-id="{{ build.id if build else 'request-error' }}" open>
-    <summary><span>Refresh logs</span><span class="logs-show">Show output</span><span class="logs-hide">Hide output</span></summary>
+    <summary><span>Refresh logs</span> <span class="logs-show">Show output</span> <span class="logs-hide">Hide output</span></summary>
     <div class="build-output" role="region" aria-label="Refresh output" tabindex="0">
       {% if error %}<pre class="error">{{ error }}</pre>{% elif build.error %}<pre class="error">{{ build.error }}</pre>{% endif %}
       {% if build and build.logs %}<pre class="build-log-text">{{ build.logs }}</pre>{% endif %}

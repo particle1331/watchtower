@@ -35,7 +35,7 @@ function environment(multiple = true, initiallySelected = []) {
     closest(selector) {
       if (selector.includes('form[')) return this.form || null;
       if (selector === 'label') return this.label;
-      if (selector === '[data-copy-target]' && this.dataset.copyTarget) return this;
+      if (selector === '[data-copy]' && this.dataset.copy) return this;
       return null;
     }
     focus() { this.focused = true; }
@@ -62,14 +62,14 @@ function environment(multiple = true, initiallySelected = []) {
     '[data-relationship-search]': search, '[data-relationship-results]': results,
     '[data-relationship-chips]': chips, '[data-relationship-status]': status};
   const picker = new Element(); picker.dataset.multiple = String(multiple); picker.querySelector = selector => parts[selector] || null;
-  const form = new Element('form'); form.attrs['data-board-editor'] = ''; form.querySelector = () => null; form.querySelectorAll = () => [select];
+  const form = new Element('form'); form.attrs['data-board-editor'] = ''; form.querySelector = () => null; form.querySelectorAll = selector => selector === 'input, textarea, select' ? [select] : [];
   select.form = form; search.form = form;
-  const brief = new Element('textarea'); brief.value = 'The saved build brief';
-  const copy = new Element('button'); copy.dataset.copyTarget = 'saved-build-brief';
+  const copy = new Element('button'); copy.dataset.copy = '/workspace/content/notebooks/posts/idea.ipynb';
+  const prompts = [];
   const document = {
     querySelector: () => null,
     querySelectorAll: selector => selector === '[data-relationship]' ? [picker] : selector.startsWith('form[') ? [form] : [],
-    getElementById: id => id === 'saved-build-brief' ? brief : null,
+    getElementById: () => null,
     createElement: tag => new Element(tag),
     addEventListener: (name, callback) => { const list = handlers.get(name) || []; list.push(callback); handlers.set(name, list); },
   };
@@ -78,7 +78,7 @@ function environment(multiple = true, initiallySelected = []) {
     preventDefault() { this.defaultPrevented = true; }
     stopPropagation() { this.stopped = true; }
   }
-  const window = {addEventListener() {}, alert() {}, confirm: () => true};
+  const window = {addEventListener() {}, alert() {}, confirm: () => true, prompt: (...args) => prompts.push(args)};
   vm.runInNewContext(source, {document, window, navigator: {}, location: {hash: ''}, Option, Event, AbortController,
     setTimeout: callback => { timers.set(++timerId, callback); return timerId; }, clearTimeout: id => timers.delete(id),
     fetch: async url => {
@@ -94,7 +94,7 @@ function environment(multiple = true, initiallySelected = []) {
   }
   async function query(value) { search.value = value; search.dispatchEvent(new Event('input', {bubbles: true})); await flush(); }
   function key(value) { const event = new Event('keydown'); event.key = value; search.dispatchEvent(event); return event; }
-  return {select, search, results, chips, status, enhanced, form, brief, copy, handlers, Event, query, key, flush};
+  return {select, search, results, chips, status, enhanced, form, prompts, copy, handlers, Event, query, key, flush};
 }
 
 test('typing never becomes a link; keyboard selects exact IDs and preserves selection order', async () => {
@@ -115,6 +115,57 @@ test('typing never becomes a link; keyboard selects exact IDs and preserves sele
   assert.equal(env.status.textContent, 'No matching content.');
 });
 
+for (const multiple of [true, false]) {
+  test(`clicking the focused search reopens suggestions after selection (${multiple ? 'multiple' : 'single'} links)`, async () => {
+    const env = environment(multiple);
+    env.search.focus();
+    env.search.dispatchEvent(new env.Event('focus'));
+    await env.flush();
+    env.results.children[0].dispatchEvent(new env.Event('click'));
+    assert.equal(env.search.focused, true);
+    assert.equal(env.results.hidden, true);
+    assert.deepEqual(env.select.selectedOptions.map(option => option.value), ['post/first']);
+
+    // The input is still focused, so this click does not produce another focus event.
+    env.search.dispatchEvent(new env.Event('click'));
+    await env.flush();
+    assert.equal(env.results.hidden, false);
+    assert.equal(env.search.attrs['aria-expanded'], 'true');
+    assert.equal(env.results.children.length, 1);
+    assert.ok(env.results.children[0].textContent.includes('post/second'));
+    assert.deepEqual(env.select.selectedOptions.map(option => option.value), ['post/first']);
+
+    env.key('Escape');
+    env.search.dispatchEvent(new env.Event('click'));
+    await env.flush();
+    assert.equal(env.results.hidden, false);
+    env.key('ArrowDown'); env.key('Enter');
+    assert.deepEqual(env.select.selectedOptions.map(option => option.value), multiple ? ['post/first', 'post/second'] : ['post/second']);
+  });
+}
+
+test('Escape cancels pending suggestions and clicking can reopen them', async () => {
+  const env = environment();
+  env.search.focus();
+  env.search.dispatchEvent(new env.Event('focus'));
+  env.key('Escape');
+  await env.flush();
+  assert.equal(env.results.hidden, true);
+  assert.equal(env.search.attrs['aria-expanded'], 'false');
+  assert.equal(env.status.textContent, '');
+
+  env.search.value = 'Same';
+  env.search.dispatchEvent(new env.Event('input', {bubbles: true}));
+  env.key('Escape');
+  await env.flush();
+  assert.equal(env.results.hidden, true);
+
+  env.search.dispatchEvent(new env.Event('click'));
+  await env.flush();
+  assert.equal(env.results.hidden, false);
+  assert.equal(env.results.children.length, 2);
+});
+
 test('Escape dismisses suggestions without dismissing a dialog; single links replace and clear', async () => {
   const env = environment(false, ['post/first']);
   await env.query('second');
@@ -129,12 +180,11 @@ test('Escape dismisses suggestions without dismissing a dialog; single links rep
   assert.equal(env.chips.children.length, 0);
 });
 
-test('clipboard failure leaves the saved brief selected for manual copying', async () => {
+test('clipboard failure offers the canonical source path for manual copying', async () => {
   const env = environment();
   const event = new env.Event('click'); event.target = env.copy;
   for (const callback of env.handlers.get('click')) await callback(event);
-  assert.equal(env.brief.textSelected, true);
-  assert.equal(env.brief.value, 'The saved build brief');
+  assert.deepEqual(env.prompts, [['Copy canonical source path', env.copy.dataset.copy]]);
 });
 
 test('header controls follow their associated editor through edit and save states', async () => {
@@ -155,6 +205,8 @@ test('header controls follow their associated editor through edit and save state
   const save = {hasAttribute: () => false};
   const savePublish = {hasAttribute: () => false};
   const blockedPublish = {hasAttribute: key => key === 'data-blocked'};
+  const taskHint = {textContent: ''};
+  const task = {closest: () => ({querySelector: () => taskHint})};
   const cancel = {attrs: {}, setAttribute(key, value) { this.attrs[key] = value; }};
   const edit = {form, closest: selector => selector === '[data-begin-edit]' ? edit : null};
   const toolbar = {
@@ -163,7 +215,7 @@ test('header controls follow their associated editor through edit and save state
   };
   const document = {
     querySelector: selector => selector === '[data-editor-toolbar="data-editor-form"]' ? toolbar : null,
-    querySelectorAll: selector => selector.startsWith('form[') ? [form] : [],
+    querySelectorAll: selector => selector === '[data-summary-task]' ? [task] : selector.startsWith('form[') ? [form] : [],
     getElementById: () => null,
     addEventListener: (name, callback) => {
       const list = handlers.get(name) || []; list.push(callback); handlers.set(name, list);
@@ -174,6 +226,7 @@ test('header controls follow their associated editor through edit and save state
   assert.equal(save.hidden, true);
   assert.equal(cancel.hidden, true);
   assert.equal(fields.disabled, true);
+  assert.equal(task.disabled, false);
   for (const callback of handlers.get('click')) await callback({target: edit});
   assert.equal(form.dataset.editing, 'true');
   assert.equal(edit.hidden, true);
@@ -183,6 +236,8 @@ test('header controls follow their associated editor through edit and save state
   input.value = 'Unsaved title';
   for (const callback of handlers.get('input')) callback({target: input});
   assert.equal(form.dataset.dirty, 'true');
+  assert.equal(task.disabled, true);
+  assert.match(taskHint.textContent, /Save your changes first/);
   assert.equal(savePublish.disabled, false);
   assert.equal(blockedPublish.disabled, true);
   for (const callback of handlers.get('htmx:beforeRequest')) callback({detail: {elt: form}});
@@ -196,6 +251,15 @@ test('header controls follow their associated editor through edit and save state
   assert.equal(blockedPublish.disabled, true);
   assert.equal(cancel.attrs['aria-disabled'], 'false');
   assert.equal(fields.disabled, false);
+  input.value = 'Saved title';
+  for (const callback of handlers.get('input')) callback({target: input});
+  assert.equal(task.disabled, false);
+  const taskForm = {closest: () => taskForm, matches: selector => selector.includes('[data-summary-task-form]')};
+  for (const callback of handlers.get('htmx:beforeRequest')) callback({detail: {elt: taskForm}});
+  assert.equal(task.disabled, true);
+  assert.equal(fields.disabled, true);
+  for (const callback of handlers.get('htmx:afterRequest')) callback({detail: {elt: taskForm, failed: false}});
+  assert.equal(task.disabled, false);
 });
 
 function workspaceEnvironment(hash = '') {

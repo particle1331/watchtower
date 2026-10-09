@@ -5,23 +5,11 @@ from typing import Any
 
 from markdown_it import MarkdownIt
 
+from watchtower.planning import BODY_ONLY, PLAN, seed_sections
 from watchtower.services.workspace import ServiceError
 
-SECTIONS = {
-    "post": [("audience", "Who this is for"), ("takeaway", "What you will learn"),
-             ("content", ""), ("evidence", "Examples and evidence"), ("references", "References")],
-    "portfolio": [("introduction", "The problem"), ("intended_users", "Who it is for"),
-                  ("what_it_contains", "What it contains"), ("approach", "Implementation approach"),
-                  ("success_criteria", "How to evaluate it"), ("references", "References")],
-    "course": [("purpose", "About this course"), ("audience", "Who this is for"),
-               ("summary", "Course progression"), ("prerequisites", "Prerequisites"),
-               ("outcomes", "Learning outcomes"), ("running_project", "The running project"),
-               ("constraints", "Tools and requirements"), ("assessment", "Practice and assessment"),
-               ("references", "References")],
-    "chapter": [("content", ""), ("lab_and_evidence", "Practice and evidence"),
-                ("references", "References")],
-    "personal": [("content", "")],
-}
+# Each kind seeds its writing-brief fields in order. An empty heading seeds body text.
+SECTIONS: dict[str, list[tuple[str, str]]] = {kind: seed_sections(kind) for kind in (*PLAN, *BODY_ONLY)}
 
 
 def portfolio_abstract(plan: dict[str, Any]) -> str:

@@ -74,6 +74,8 @@ def _href(route: str) -> str:
 
 
 def _asset_path(source: str) -> str:
+    if source.startswith("backend/assets/"):
+        return source.removeprefix("backend/")
     return source.replace("content/notebooks/", "nb/", 1).removeprefix("content/")
 
 
@@ -108,6 +110,30 @@ def _remove_title_h1s(source: str, title: str) -> tuple[str, bool]:
     if not ignored:
         return source, False
     return "\n".join(line for index, line in enumerate(source.splitlines()) if index not in ignored), True
+
+
+def _insert_chapter_subtitle(source: str, title: str, subtitle: str) -> tuple[str, bool]:
+    """Place the chapter's front-matter subtitle below its authored title H1."""
+    if not subtitle:
+        return source, False
+    tokens = MarkdownIt().parse(source)
+    for index, token in enumerate(tokens):
+        if (
+            token.type == "heading_open"
+            and token.tag == "h1"
+            and index + 1 < len(tokens)
+            and displayed_text(tokens[index + 1]) == title
+            and token.map
+        ):
+            lines = source.splitlines()
+            line_after_heading = token.map[1]
+            lines[line_after_heading:line_after_heading] = [
+                "",
+                f'<p class="chapter-subtitle">{escape(subtitle)}</p>',
+                "",
+            ]
+            return "\n".join(lines), True
+    return source, False
 
 
 class _Generator:
@@ -185,7 +211,7 @@ class _Generator:
             return
         if resolved in self.all_sources:
             return
-        if resolved.startswith(("archive/", "projects/", "content/data/", "frontend/templates/cms/")):
+        if resolved.startswith(("archive/", "projects/", "backend/data/", "backend/attachments/", "frontend/templates/cms/")):
             return
         self.write(destination, self.files[resolved])
 
@@ -263,6 +289,17 @@ class _Generator:
             value.append("No chapters to display yet.")
         return "\n".join(value) + "\n"
 
+    def chapter_summary(self, artifact: Any) -> str:
+        if artifact.kind != "chapter":
+            return ""
+        contract = self.state.courses.get(getattr(artifact, "parent", None))
+        if contract is None:
+            return ""
+        return next(
+            (row["summary"] for row in course_rows(contract, self.entries) if row["chapter"]["id"] == artifact.id),
+            "",
+        )
+
     @staticmethod
     def navigation_title(artifact: Any, title: str) -> str:
         if artifact.lifecycle == "draft":
@@ -270,7 +307,11 @@ class _Generator:
         return title
 
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
-        value: dict[str, Any] = {"title": artifact.title, "toc": True, "lifecycle": artifact.lifecycle}
+        value: dict[str, Any] = {"title": artifact.title}
+        if artifact.kind == "chapter":
+            if summary := self.chapter_summary(artifact):
+                value["subtitle"] = summary
+        value.update({"toc": True, "lifecycle": artifact.lifecycle})
         # Portfolio entry pages show their abstract as body content from portfolio
         # YAML; a front-matter description would render it a second time.
         if artifact.description and artifact.kind != "portfolio":
@@ -320,6 +361,8 @@ class _Generator:
             raise ValueError(f"Missing notebook source for {artifact.id}")
         notebook = copy.deepcopy(nbformat.reads(self.files[source].decode("utf-8"), as_version=4))
         cells = []
+        subtitle = self.chapter_summary(artifact)
+        subtitle_added = False
         for cell in notebook.cells:
             if cell.cell_type == "markdown":
                 if artifact.kind != "chapter":
@@ -327,6 +370,8 @@ class _Generator:
                     if removed_title and not cell.source.strip():
                         continue
                 cell.source = self.rewrite_body(cell.source, source, route)
+                if artifact.kind == "chapter" and not subtitle_added:
+                    cell.source, subtitle_added = _insert_chapter_subtitle(cell.source, artifact.title, subtitle)
             for output in cell.get("outputs", []):
                 for mimetype in ("text/html", "text/markdown"):
                     body = output.get("data", {}).get(mimetype)
@@ -629,7 +674,8 @@ class BuildService:
     def _preview_signature(self) -> str:
         digest = hashlib.sha256()
         for folder in (
-            self.root / "content", self.root / "frontend/templates", self.root / "frontend/assets",
+            self.root / "content", self.root / "backend/data", self.root / "backend/assets", self.root / "backend/attachments",
+            self.root / "frontend/templates", self.root / "frontend/assets",
             self.root / "src/watchtower",
         ):
             for path in sorted(folder.rglob("*")):

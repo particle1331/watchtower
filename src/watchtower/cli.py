@@ -10,11 +10,29 @@ Function-level imports keep commands like `wt map` at
 
 import shlex
 import sys
+from collections.abc import Mapping
 
 import typer
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
+
+from .content_cli import (
+    AbstractFlag,
+    DescriptionFlag,
+    ExpectedRevisionFlag,
+    InternalNotesFlag,
+    IntroductionFlag,
+    PlanFileFlag,
+    PlannedContentFlag,
+    PlannedLabFlag,
+    ScopeNotesFlag,
+    StartFlag,
+    SummaryFlag,
+    TagFlag,
+    WhatItContainsFlag,
+    install,
+)
 
 app = typer.Typer(
     name="wt",
@@ -25,31 +43,42 @@ app = typer.Typer(
 console = Console()
 
 
-new_app = typer.Typer(name="new", help="Scaffold notebooks and courses.", no_args_is_help=True)
+new_app = typer.Typer(name="new", help="Plan posts, courses, chapters and portfolio entries. Without a catalog, scaffold notebooks instead.", no_args_is_help=True)
 app.add_typer(new_app)
+
+
+def _require_catalog(flags: Mapping[str, object]) -> None:
+    """Plan fields need the content catalog; scaffold files cannot hold them, so refuse rather than drop them."""
+    given = [flag for flag, value in flags.items() if value]
+    if given:
+        raise ValueError(f"{', '.join(given)} need an active catalog (backend/data/catalog.yaml); this workspace only scaffolds files")
 
 
 @new_app.command("post")
 def new_post(
-    name: str,
-    title: str | None = typer.Option(
-        None,
-        "--title",
-        "-t",
-        help="display title (default: derived from name)",
-    ),
-    planned_content: str | None = typer.Option(None, "--planned-content"),
-    plan_file: str | None = typer.Option(None, "--plan-file"),
-    tag: list[str] | None = typer.Option(None, "--tag"),
-    description: str | None = typer.Option(None, "--description"),
-    visibility: str = typer.Option("private", "--visibility", help="Plans remain private until started and published."),
-    expected_revision: str | None = typer.Option(None, "--expected-revision"),
+    name: str = typer.Argument(..., help="stable name (letters, digits, hyphens); the ID becomes post/NAME"),
+    title: str | None = typer.Option(None, "--title", "-t", help="display title (default: derived from NAME)"),
+    summary: SummaryFlag = None,
+    tag: TagFlag = None,
+    plan_file: PlanFileFlag = None,
+    internal_notes: InternalNotesFlag = None,
+    start: StartFlag = False,
+    expected_revision: ExpectedRevisionFlag = None,
+    description: DescriptionFlag = None,
+    planned_content: PlannedContentFlag = None,
+    visibility: str = typer.Option("private", "--visibility", hidden=True),
 ) -> None:
-    """Create a planned post; use start to materialize its notebook."""
+    """Plan a post without a notebook; --start also creates its draft notebook.
+
+    Plan file sections (## headings, by label or key, any case): Summary, Outline, Audience, Examples and evidence, References, Internal notes. Text before the first heading is an error. A field may come from a flag or a section, not both.
+    """
     from .content_cli import active, create_post
+
+    options = {"--summary": summary, "--description": description, "--internal-notes": internal_notes, "--planned-content": planned_content}
     if active():
-        create_post(name, title, planned_content, plan_file, tag, description, visibility, expected_revision)
+        create_post(name, title=title, tags=tag, visibility=visibility, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
         return
+    _require_catalog({**options, "--tag": tag, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
     from . import scaffold
 
     path = scaffold.new_post(name, title=title)
@@ -60,14 +89,27 @@ def new_post(
 def new_course(
     name: str = typer.Argument(..., help="course folder name (e.g. llm)"),
     title: str = typer.Argument(..., help='display title (e.g. "Large Language Models")'),
+    summary: SummaryFlag = None,
+    tag: TagFlag = None,
+    plan_file: PlanFileFlag = None,
+    internal_notes: InternalNotesFlag = None,
+    start: StartFlag = False,
+    expected_revision: ExpectedRevisionFlag = None,
+    description: DescriptionFlag = None,
+    planned_content: PlannedContentFlag = None,
+    planned_lab_and_evidence: PlannedLabFlag = None,
 ) -> None:
-    """Register a course contract and planned course home."""
-    from .content_cli import active, emit, slug
+    """Plan a course: its contract and home page. Add chapters with new chapter.
+
+    Plan file sections (## headings, by label or key, any case): Card description, Purpose, Audience and prerequisites, Learning outcomes, Running project, Practice and assessment, References, Internal notes. Chapters are managed in the outline, not in the plan file. Text before the first heading is an error.
+    """
+    from .content_cli import active, create_course
+
+    options = {"--summary": summary, "--description": description, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence}
     if active():
-        from .services.content import ContentService
-        slug(name)
-        emit(ContentService().create({"id": f"course/{name}", "kind": "course", "title": title, "path": f"content/notebooks/courses/{name}"}))
+        create_course(name, title, tags=tag, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
         return
+    _require_catalog({**options, "--tag": tag, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
     from . import scaffold
 
     path = scaffold.new_course(name, title=title)
@@ -78,33 +120,67 @@ def new_course(
 def new_chapter(
     course: str = typer.Argument(..., help="course folder name (e.g. mlops)"),
     name: str = typer.Argument(..., help="chapter stem (e.g. 02-data-validation)"),
-    title: str | None = typer.Option(
-        None, 
-        "--title",
-        "-t",
-        help="display title (default: derived from name)"
-    ),
-    section: str | None = typer.Option(
-        None,
-        "--section",
-        "-s",
-        help="section name to place this chapter under (default: last section)",
-    ),
-    toc_title: str | None = typer.Option(None, "--toc-title"),
-    planned_content: str | None = typer.Option(None, "--planned-content"),
-    planned_lab_and_evidence: str | None = typer.Option(None, "--planned-lab-and-evidence"),
-    plan_file: str | None = typer.Option(None, "--plan-file"),
-    expected_revision: str | None = typer.Option(None, "--expected-revision"),
+    title: str | None = typer.Option(None, "--title", "-t", help="display title (default: derived from NAME)"),
+    section: str | None = typer.Option(None, "--section", "-s", help="section ID or title (default: last section)"),
+    toc_title: str | None = typer.Option(None, "--toc-title", help="short navigation title"),
+    summary: SummaryFlag = None,
+    tag: TagFlag = None,
+    plan_file: PlanFileFlag = None,
+    internal_notes: InternalNotesFlag = None,
+    start: StartFlag = False,
+    expected_revision: ExpectedRevisionFlag = None,
+    description: DescriptionFlag = None,
+    planned_content: PlannedContentFlag = None,
+    planned_lab_and_evidence: PlannedLabFlag = None,
 ) -> None:
-    """Register a chapter plan and TOC entry without a source notebook."""
+    """Plan a chapter in a course section without a notebook; --start also creates it.
+
+    Plan file sections (## headings, by label or key, any case): Course table summary, Outline, Practice and evidence, Internal notes. The course table summary is the one-line row text on the course page.
+    """
     from .content_cli import active, create_chapter
+
+    options = {"--summary": summary, "--description": description, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence}
     if active():
-        create_chapter(course, name, title, toc_title, section, planned_content, planned_lab_and_evidence, plan_file, expected_revision)
+        create_chapter(course, name, title=title, section=section, toc_title=toc_title, tags=tag, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
         return
+    _require_catalog({**options, "--toc-title": toc_title, "--tag": tag, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
     from . import scaffold
 
     path = scaffold.new_course_chapter(course, name, title=title, section=section)
     console.print(f"[green]created {path}[/green]")
+
+
+@new_app.command("portfolio")
+def new_portfolio(
+    name: str = typer.Argument(..., help="stable name (letters, digits, hyphens); the ID becomes portfolio/NAME"),
+    title: str | None = typer.Option(None, "--title", help="display title (default: derived from NAME)"),
+    summary: SummaryFlag = None,
+    tag: TagFlag = None,
+    figure_path: str | None = typer.Option(None, "--figure-path", help="featured image path under backend/assets/"),
+    figure_caption: str | None = typer.Option(None, "--figure-caption", help="caption shown with the featured image"),
+    project_path: str | None = typer.Option(None, "--project-path", help="repository-relative code directory (default: projects/NAME)"),
+    plan_file: PlanFileFlag = None,
+    internal_notes: InternalNotesFlag = None,
+    start: StartFlag = False,
+    expected_revision: ExpectedRevisionFlag = None,
+    description: DescriptionFlag = None,
+    abstract: AbstractFlag = None,
+    planned_content: PlannedContentFlag = None,
+    planned_lab_and_evidence: PlannedLabFlag = None,
+    introduction: IntroductionFlag = None,
+    what_it_contains: WhatItContainsFlag = None,
+    scope_notes: ScopeNotesFlag = None,
+) -> None:
+    """Plan a portfolio entry; --start also creates its notebook and project code.
+
+    Plan file sections (## headings, by label or key, any case): Abstract, Problem, What it contains, Intended users, Implementation approach, Success criteria, References, Internal notes. Publishing needs the abstract, a featured figure and its caption; drafts may omit them.
+    """
+    from .content_cli import active, create_portfolio
+
+    if not active():
+        raise ValueError("portfolio plans need an active catalog (backend/data/catalog.yaml); run wt migrate first")
+    options = {"--summary": summary, "--description": description, "--abstract": abstract, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence, "--introduction": introduction, "--what-it-contains": what_it_contains, "--scope-notes": scope_notes}
+    create_portfolio(name, title=title, tags=tag, figure_path=figure_path, figure_caption=figure_caption, project_path=project_path, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
 
 
 @new_app.command("section")
@@ -727,9 +803,7 @@ def main() -> None:
         raise SystemExit(1) from e
 
 
-from .content_cli import install  # noqa: E402
-
-install(app, new_app)
+install(app)
 
 
 if __name__ == "__main__":  # pragma: no cover

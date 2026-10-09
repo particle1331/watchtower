@@ -1,25 +1,17 @@
 id: course/llms-from-scratch
-purpose: Build and evaluate a small decoder-only GPT in PyTorch, following the
-  core progression of Sebastian Raschka's LLMs-from-scratch repository.
-audience: Python programmers who know basic neural-network training and want to
-  understand the data, attention, training, and fine-tuning pipeline by
-  implementing it.
+purpose: Build and evaluate a small decoder-only GPT in PyTorch, following the core
+  progression of Sebastian Raschka's LLMs-from-scratch repository.
+audience: Python programmers who know basic neural-network training and want to understand
+  the data, attention, training, and fine-tuning pipeline by implementing it.
 planned:
-  summary: Start with the language-model task and an experiment contract, then
-    prepare token sequences, derive causal multi-head attention, assemble GPT,
-    and pretrain it. Branch into classification and instruction fine-tuning,
-    study LoRA as an optional extension, and finish with a reproducible
-    comparison of the stages.
   source: https://github.com/rasbt/LLMs-from-scratch
   chapters:
   - chapter_id: course/llms-from-scratch/00-overview
     section: orientation
-    summary: System map, artifact lineage, execution paths, and evidence
-      standard.
+    summary: System map, artifact lineage, execution paths, and evidence standard.
   - chapter_id: course/llms-from-scratch/01-introduction
     section: foundations
-    summary: Next-token modeling, scope, baselines, and reproducibility
-      contract.
+    summary: Next-token modeling, scope, baselines, and reproducibility contract.
   - chapter_id: course/llms-from-scratch/02-text-data
     section: foundations
     summary: Token IDs, context-target windows, embeddings, and batches.
@@ -43,8 +35,7 @@ planned:
     summary: Optional low-rank adapters and trainable-parameter comparison.
   - chapter_id: course/llms-from-scratch/09-capstone
     section: adaptation-and-synthesis
-    summary: Reproduce and compare the model's major stages with documented
-      limits.
+    summary: Reproduce and compare the model's major stages with documented limits.
 actualized:
   summary: ''
 toc:

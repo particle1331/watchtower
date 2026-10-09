@@ -117,6 +117,13 @@ h2 {
   margin-top: 0.25rem;
 }
 
+.chapter-subtitle {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 1.05rem;
+  margin-top: 0.25rem;
+}
+
 /* --- Learning grid listing cards --- */
 .quarto-grid-item.card {
   border-radius: 0;

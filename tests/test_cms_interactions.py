@@ -17,7 +17,7 @@ from watchtower.services.kanban import KanbanService
 def author(tmp_path):
     content = ContentService(author_workspace(tmp_path))
     content.create_post('example', {'title': 'Example post', 'description': 'Visible description'})
-    content.create({'id': 'gallery/photos', 'kind': 'gallery', 'title': 'Personal', 'path': 'content/data/photos.yaml'})
+    content.create({'id': 'gallery/photos', 'kind': 'gallery', 'title': 'Personal', 'path': 'backend/data/photos.yaml'})
     content.update_gallery({'photos': [{'heading': 'First photo', 'caption': 'First caption', 'lifecycle': 'draft'}, {'heading': 'Second photo', 'caption': 'Second caption', 'lifecycle': 'draft'}]})
     return content
 
@@ -35,6 +35,27 @@ def field_paths(page):
         if name.startswith(("field:", "new:")):
             paths.append(json.loads(name.split(":", 1)[1]))
     return paths
+
+
+def test_home_illustration_serves_only_its_content_asset(author):
+    atlas = author.root / 'backend/assets/atlas.png'
+    with TestClient(create_app(author.root)) as client:
+        assert client.get('/cms/home/atlas.png').status_code == 404
+        payload = portfolio_image_bytes()
+        atlas.parent.mkdir(parents=True, exist_ok=True)
+        atlas.write_bytes(payload)
+        image = client.get('/cms/home/atlas.png')
+        assert image.status_code == 200
+        assert image.headers['content-type'] == 'image/png'
+        assert image.content == payload
+        assert 'src="/cms/home/atlas.png"' in client.get('/cms/home').text
+        assert 'src="/cms/home/atlas.png"' not in client.get('/cms/resume').text
+        assert 'src="/cms/home/atlas.png"' not in client.get('/cms/home?edit=profile').text
+        atlas.unlink()
+        outside = author.root / 'private.png'
+        outside.write_bytes(payload)
+        atlas.symlink_to(outside)
+        assert client.get('/cms/home/atlas.png').status_code == 404
 
 
 @pytest.mark.parametrize('section', ['posts', 'portfolio', 'courses'])
@@ -64,6 +85,8 @@ def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author
         assert 'href="/cms/portfolio">← Back to Portfolio</a>' in editor.text
         assert 'href="/cms/data/portfolio"' not in editor.text
         assert 'Project name' not in editor.text and 'Project source' not in editor.text and 'Archive date' not in editor.text
+        assert 'Source paths' not in editor.text and 'href="#source"' not in editor.text
+        assert ["detail", "notebook_path"] not in field_paths(editor)
         assert not any(path[-1] in {'project_name', 'project_source', 'archive_date'} for path in field_paths(editor))
         for field in ['title', 'detail / abstract', 'detail / figure_path', 'detail / planned / introduction']:
             assert f'title="{field}"' in editor.text
@@ -150,7 +173,7 @@ def test_portfolio_save_and_publish_failure_preserves_draft_and_submitted_values
         assert after['artifact'] == before['artifact']
         assert after['detail'] == before['detail']
         assert after['artifact']['lifecycle'] == 'draft'
-        assert not list((author.root / 'content/assets/portfolio').glob('*.png'))
+        assert not list((author.root / 'backend/assets/portfolio').glob('*.png'))
 
 
 def test_short_overviews_have_visible_actions_and_thumbnails(author):
@@ -315,11 +338,11 @@ def test_photo_direct_upload_is_atomic_and_isolated(author):
 
 
 def test_direct_photo_deletion_removes_selected_entry_and_retains_image(author):
-    image = author.root / 'content/assets/photo.svg'
+    image = author.root / 'backend/assets/photo.svg'
     image.parent.mkdir(parents=True, exist_ok=True)
     image.write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
     data = author.read_data('photos')['data']
-    data['photos'][0].update(path='content/assets/photo.svg', lifecycle='published')
+    data['photos'][0].update(path='backend/assets/photo.svg', lifecycle='published')
     author.update_gallery(data)
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/photos/0/delete')

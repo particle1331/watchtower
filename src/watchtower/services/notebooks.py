@@ -41,7 +41,7 @@ def managed(function: Any) -> Any:
                 from watchtower.inspect import resolve_ipynb
                 check_revision(resolve_ipynb(args[0] if args else kwargs["name"]), expected_revision)
 
-        if not (root / "content/data/catalog.yaml").exists():
+        if not (root / "backend/data/catalog.yaml").exists():
             check()
             return function(*args, **kwargs)
         store = WorkspaceStore(root)
@@ -69,7 +69,7 @@ def execution_source(name: str, *, expected_revision: str | None = None) -> tupl
 
 def write_notebook(notebook: nbformat.NotebookNode, path: Path, *, expected_revision: str | None = None) -> None:
     root = Path.cwd().resolve()
-    if not (root / "content/data/catalog.yaml").exists():
+    if not (root / "backend/data/catalog.yaml").exists():
         check_revision(path, expected_revision)
         nbformat.write(notebook, path)
         return

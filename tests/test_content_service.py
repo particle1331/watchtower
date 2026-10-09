@@ -13,10 +13,10 @@ from watchtower.services.workspace import ServiceError, load_yaml
 @pytest.fixture
 def content_service(tmp_path):
     records = {
-        "content/data/catalog.yaml": {"version": 1, "artifacts": []},
-        "content/data/portfolio.yaml": {"version": 1, "entries": []},
-        "content/data/photos.yaml": {"version": 1, "photos": []},
-        "content/data/profile.yaml": {"version": 1, "name": "Test Author", "contact": {"phone": "123", "email": "a@example.org", "github": "example", "linkedin": "example"}, "summary": "Profile", "homepage_intro": [], "employment": [], "skills": [], "education": []},
+        "backend/data/catalog.yaml": {"version": 1, "artifacts": []},
+        "backend/data/portfolio.yaml": {"version": 1, "entries": []},
+        "backend/data/photos.yaml": {"version": 1, "photos": []},
+        "backend/data/profile.yaml": {"version": 1, "name": "Test Author", "contact": {"phone": "123", "email": "a@example.org", "github": "example", "linkedin": "example"}, "summary": "Profile", "homepage_intro": [], "employment": [], "skills": [], "education": []},
         "frontend/site.yaml": {"version": 1},
     }
     for name, value in records.items():
@@ -114,13 +114,13 @@ def test_manual_planned_content_can_be_repaired(content_service):
 def test_invalid_final_state_never_writes(content_service):
     service = content_service
     post(service)
-    before = (service.root / "content/data/catalog.yaml").read_bytes()
+    before = (service.root / "backend/data/catalog.yaml").read_bytes()
     with pytest.raises(ServiceError):
         service.publish("post/example")
-    assert (service.root / "content/data/catalog.yaml").read_bytes() == before
+    assert (service.root / "backend/data/catalog.yaml").read_bytes() == before
     with pytest.raises(ServiceError):
         service.update("post/example", {"tags": [123]})
-    assert (service.root / "content/data/catalog.yaml").read_bytes() == before
+    assert (service.root / "backend/data/catalog.yaml").read_bytes() == before
 
 
 @pytest.mark.parametrize("stage,index", [("prepared", -1), ("installed", 0), ("installed", 1), ("recorded", 0), ("recorded", 1)])
@@ -149,7 +149,7 @@ def test_external_change_blocks_recovery_and_preserves_versions(content_service)
     service.store.fault = crash
     with pytest.raises(ServiceError):
         service.start("post/example")
-    path = service.root / "content/data/catalog.yaml"
+    path = service.root / "backend/data/catalog.yaml"
     path.write_text("External edit preserved\n")
     with pytest.raises(ServiceError) as error:
         ContentService(service.root).snapshot()
@@ -198,7 +198,7 @@ def test_plan_file_is_persisted_and_confined(content_service):
 
 def test_course_parent_withdrawal_preserves_children(content_service):
     service = content_service
-    service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"summary": "Build a working example.", "chapters": []}}})
+    service.create({"id": "course/example", "kind": "course", "title": "Example course", "path": "content/notebooks/courses/example", "contract": {"purpose": "Teach", "audience": "Learners"}})
     service.start("course/example")
     author_body(service, "course/example")
     service.publish("course/example")

@@ -16,7 +16,7 @@
   </div>
 </section>
 {% endmacro %}
-{% if section == 'resume' %}<div class="profile-summary-layout"><div class="profile-summary-content">{% endif %}
+{% if section == 'resume' %}<div class="profile-summary-layout"><div class="profile-summary-content">{% elif section == 'home' %}<div class="home-profile-layout">{% endif %}
 <section id="profile-general" class="data-group profile-group" aria-label="Profile">
   <p class="group-label">Profile</p><h2>{{ profile.name }}</h2><p>{{ profile.summary }}</p>
   {% if section == 'home' %}<section class="data-group"><h2>Homepage introduction</h2>{% for paragraph in profile.homepage_intro %}<p>{{ paragraph }}</p>{% endfor %}</section>{% endif %}
@@ -27,6 +27,7 @@
   </div></section>
   {% if section == 'resume' %}{% for key, label in [('employment', 'Employment'), ('early_employment', 'Early employment'), ('skills', 'Skills'), ('education', 'Education')] %}{{ records(key, label) }}{% endfor %}{% if profile.projects %}{{ records('projects', 'Projects') }}{% endif %}{% endif %}
 </section>
+{% if section == 'home' %}<figure class="home-illustration"><img src="/cms/home/atlas.png" width="855" height="1047" alt="Atlas kneeling beneath a globe."></figure></div>{% endif %}
 {% if section == 'resume' %}</div>
 <aside class="profile-section-nav" aria-label="Résumé sections">
   <h2>On this page</h2>

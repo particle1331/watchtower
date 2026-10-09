@@ -63,12 +63,12 @@ def repo_map() -> dict:
             "chapters": [a["path"] for a in children if a["path"] != overview],
         })
     return {
-        "catalog": "content/data/catalog.yaml" if Path("content/data/catalog.yaml").exists() else str(knowledge.CATALOG_PATH),
+        "catalog": "backend/data/catalog.yaml" if Path("backend/data/catalog.yaml").exists() else str(knowledge.CATALOG_PATH),
         "posts": [a for a in artifacts if a.get("kind") == "post"],
         "courses": courses,
         "portfolio": [a for a in artifacts if a.get("kind") == "portfolio"],
         "projects": [a for a in artifacts if a.get("kind") == "project"],
-        "personal": [a for a in artifacts if a.get("kind") in {"personal", "gallery"}] if Path("content/data/catalog.yaml").exists() else "nb/photos/photos.ipynb", "rules": "AGENTS.md",
+        "personal": [a for a in artifacts if a.get("kind") in {"personal", "gallery"}] if Path("backend/data/catalog.yaml").exists() else "nb/photos/photos.ipynb", "rules": "AGENTS.md",
     }
 
 
@@ -152,7 +152,7 @@ def resolve_ipynb(name: str) -> Path:
         path = path.with_suffix(".ipynb")
     if path.exists():
         return path.resolve()
-    active = Path("content/notebooks") if Path("content/data/catalog.yaml").exists() else Path("nb")
+    active = Path("content/notebooks") if Path("backend/data/catalog.yaml").exists() else Path("nb")
     if Path(name).parts[:1] in {("posts",), ("courses",), ("personal",), ("portfolio",)}:
         short = active / path
         if short.exists():

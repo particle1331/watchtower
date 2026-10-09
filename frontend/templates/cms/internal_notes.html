@@ -1,0 +1,11 @@
+{% import 'context_attachments.html' as context_files %}
+{% set notes_record = artifact if artifact is defined else values %}
+<dialog id="notes" class="cms-dialog notes-dialog" open data-inline-dialog aria-labelledby="notes-heading">
+<div class="dialog-heading"><h2 id="notes-heading">{{ context_files.notes_icon() }} Internal notes <span class="scope-badge">CMS only</span></h2><button type="button" data-dialog-close aria-label="Close internal notes" hidden>×</button></div>
+<p>Research, decisions and context for you and your agents. Kept off the site.</p>
+{% with groups = [{'title': section.title, 'fields': section.fields, 'fold': false}], hide_group_title = true, inside_notes_dialog = true %}{% include 'fields.html' %}{% endwith %}
+{{ context_files.files(notes_record.get('attachments', []), true, remove_attachments | default([])) }}
+{{ context_files.upload() }}
+{% if artifact is defined and artifact.id %}<p><a href="/cms/kanban?add=1&amp;link={{ artifact.id | urlencode }}">Track a next step on Kanban</a></p>{% endif %}
+<div class="actions"><button type="button" data-dialog-close hidden>Done</button><small>Changes are kept here. Use {{ 'Create plan' if creating | default(false) else 'Save' }} to save them.</small></div>
+</dialog>

@@ -7,7 +7,7 @@ read the pages themselves rather than reload this authoring guidance.
 
 ## Course YAML, home, and overview
 
-`content/data/courses/<slug>.yaml` is the compact, structured course context. Keep purpose and
+`backend/data/courses/<slug>.yaml` is the compact, structured course context. Keep purpose and
 audience there, along with separate `planned.summary` and
 `actualized.summary` fields. The latter records completed work, not an
 inference from chapter files. Purpose, audience, planned fields and artifact

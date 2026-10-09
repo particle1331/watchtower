@@ -9,7 +9,7 @@ from watchtower.services.kanban import KanbanService
 def install(app: typer.Typer) -> None:
     from watchtower.content_cli import emit
 
-    board = typer.Typer(help="Manage task cards linked to validated artifact IDs.", no_args_is_help=True)
+    board = typer.Typer(help="Track tasks and next steps as cards linked to validated artifact IDs.", no_args_is_help=True)
     app.add_typer(board, name="kanban")
 
     @board.command("ls")
@@ -19,9 +19,14 @@ def install(app: typer.Typer) -> None:
 
     @board.command("add")
     def add(title: str = typer.Option(..., "--title"), description: str = "", column: str = "todo", link: list[str] | None = typer.Option(None, "--link"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Add a card with an automatic ID and card#N reference; repeat --link for artifacts."""
+        """Add a task or next step with an automatic ID and card#N reference; repeat --link for each artifact."""
         data: dict[str, Any] = {"title": title, "description": description, "column": column, "artifact_ids": link or []}
         emit(KanbanService().create(data, expected_revision))
+
+    @board.command("show")
+    def show(card_id: str) -> None:
+        """Read a card with current linked plans, internal notes and attachments."""
+        emit(KanbanService().context(card_id))
 
     @board.command("update")
     def update(card_id: str, title: str | None = None, description: str | None = None, column: str | None = None, link: list[str] | None = typer.Option(None, "--link"), clear_links: bool = typer.Option(False, "--clear-links"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:

@@ -1,0 +1,19 @@
+{% macro files(items, removable=false, removed=[]) %}
+{% if items %}<ul class="context-attachments">
+{% for item in items %}<li>
+{% if item.media_type in ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] %}<a href="/api/attachments/{{ item.id }}" target="_blank" rel="noopener"><img src="/api/attachments/{{ item.id }}?inline=true" alt="{{ item.name }}" loading="lazy"></a>{% endif %}
+<div><a href="/api/attachments/{{ item.id }}">{{ item.name }}</a><small>{{ (item.size / 1024) | round(1) }} KB</small>
+{% if removable %}<label class="attachment-remove"><input type="checkbox" name="remove_attachments" value="{{ item.id }}" {% if item.id in removed %}checked{% endif %}> Remove on save</label>{% endif %}</div>
+</li>{% endfor %}</ul>{% endif %}
+{% endmacro %}
+{% macro upload() %}<label class="field context-upload"><span>Attach context</span><input type="file" name="context_files" multiple><small>Images and files · up to 20 MB each. Saved with this form.</small></label>{% endmacro %}
+{% macro notes_icon() %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z"/><path d="M8 4v16M12 9h4M12 13h4"/></svg>{% endmacro %}
+{% macro notes_button(record, target='notes', label='Internal notes') %}<a class="button notes-button" href="#{{ target }}" data-dialog-open="{{ target }}" aria-haspopup="dialog" aria-controls="{{ target }}">{{ notes_icon() }}<span>{{ label }}</span>{% if record.get('internal_notes') or record.get('attachments') %}<span class="notes-indicator" aria-label="Context added" title="Context added"></span>{% endif %}</a>{% endmacro %}
+{% macro readonly_notes(record, target, title) %}
+<dialog id="{{ target }}" class="cms-dialog notes-dialog" open data-inline-dialog aria-labelledby="{{ target }}-heading">
+<div class="dialog-heading"><h2 id="{{ target }}-heading">{{ notes_icon() }} Internal notes <span class="scope-badge">CMS only</span></h2><button type="button" data-dialog-close aria-label="Close internal notes" hidden>×</button></div>
+<p>{{ title }}</p>{% if record.internal_notes %}<div class="notes-text">{{ record.internal_notes }}</div>{% else %}<p>No internal notes yet.</p>{% endif %}
+{{ files(record.attachments | default([])) }}
+<div class="actions">{% if record.cms_url %}<a class="button" href="{{ record.cms_url }}#notes">Edit notes</a>{% endif %}<button type="button" data-dialog-close hidden>Done</button></div>
+</dialog>
+{% endmacro %}

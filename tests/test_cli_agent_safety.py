@@ -215,10 +215,11 @@ def test_planning_flags_update_effective_chapter_and_course_plans(agent_workspac
     assert chapter["chapter_plan"]["lab_and_evidence"] == "New lab"
     assert chapter["chapter_plan"]["summary"] == "Keep summary"
     assert chapter["artifact"]["planned"] == {}
-    content.update("course/example", {"contract": {"purpose": "Purpose", "audience": "Audience", "planned": {"summary": "Old summary"}, "actualized": {"summary": "Checked evidence"}}})
-    invoke(["update", "course/example", "--planned-content", "New course summary"])
+    content.update("course/example", {"contract": {"purpose": "Purpose", "audience": "Audience", "planned": {"outcomes": "Old outcome"}, "actualized": {"summary": "Checked evidence"}}})
+    invoke(["update", "course/example", "--summary", "New course summary"])
     course = content.inspect("course/example")
-    assert course["contract"]["planned"]["summary"] == "New course summary"
+    assert course["artifact"]["description"] == "New course summary"
+    assert course["contract"]["planned"]["outcomes"] == "Old outcome"
     assert course["contract"]["actualized"]["summary"] == "Checked evidence"
     content.start("course/example/one")
     assert "New content" in notebook.cat_notebook("course/example/one")
@@ -231,14 +232,14 @@ def test_plan_file_update_uses_same_sections_as_creation(agent_workspace):
     invoke(["new", "chapter", "example", "one"])
     scratch = content.root / ".tmp"
     scratch.mkdir()
-    (scratch / "chapter.md").write_text("## Planned content\n\nRevised content\n\n## Planned lab and evidence\n\nRevised lab")
+    (scratch / "chapter.md").write_text("## Outline\n\nRevised content\n\n## Practice and evidence\n\nRevised lab")
     invoke(["update", "course/example/one", "--plan-file", ".tmp/chapter.md"])
     assert content.inspect("course/example/one")["chapter_plan"]["content"] == "Revised content"
-    invoke(["new", "portfolio", "example", "--introduction", "Old intro", "--what-it-contains", "Old contents", "--scope-notes", "Keep scope"])
-    (scratch / "portfolio.md").write_text("Revised intro\n\n## What it contains\n\nRevised contents")
+    invoke(["new", "portfolio", "example", "--introduction", "Old intro", "--what-it-contains", "Old contents"])
+    (scratch / "portfolio.md").write_text("## Problem\n\nRevised intro\n\n## What it contains\n\nRevised contents")
     invoke(["update", "portfolio/example", "--plan-file", ".tmp/portfolio.md"])
     plan = content.inspect("portfolio/example")["detail"]["planned"]
-    assert plan == {"introduction": "Revised intro", "what_it_contains": "Revised contents", "scope_notes": "Keep scope"}
+    assert plan == {"introduction": "Revised intro", "what_it_contains": "Revised contents"}
     before = content.list()["revision"]
     failed = runner.invoke(app, ["update", "portfolio/example", "--planned-content", "Ambiguous text"])
     assert isinstance(failed.exception, ServiceError)

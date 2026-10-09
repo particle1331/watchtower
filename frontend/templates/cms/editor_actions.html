@@ -20,7 +20,11 @@
 
 {% macro new_actions() %}
 {% set cancel_url = '/cms/courses/' + values.get('parent', '').split('/')[-1] + '#outline' if contextual and values.kind == 'chapter' else '/cms/' + section %}
-{{ actions('new-editor-form', cancel_url, creating=true) }}
+<div id="cms-page-actions" class="section-tools" role="group" aria-label="Plan actions" data-editor-toolbar="new-editor-form"{% if request.headers.get('HX-Request') %} hx-swap-oob="outerHTML"{% endif %}>
+<a class="button section-tool-cancel" data-cancel href="{{ cancel_url }}" aria-label="Cancel editing" title="Cancel editing"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Cancel</span></a>
+<button class="primary" type="submit" form="new-editor-form" data-save>Create plan</button>
+{% if values.kind in ['post', 'portfolio', 'course', 'chapter'] %}<button type="submit" form="new-editor-form" name="start_draft" value="1" data-save>Create and start draft</button>{% endif %}
+</div>
 {% endmacro %}
 
 {% macro data_actions() %}

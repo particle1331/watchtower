@@ -3,11 +3,12 @@
   const editors = () => [...document.querySelectorAll('form[data-editor], form[data-board-editor], form[data-outline-form]')];
   const values = form => JSON.stringify([...form.querySelectorAll('input, textarea, select')]
     .filter(input => input.name && !['revision', 'snapshot'].includes(input.name))
-    .map(input => [input.name, input.multiple ? [...input.selectedOptions].map(option => option.value) : input.value]));
+    .map(input => [input.name, input.type === 'file' ? [...input.files].map(file => [file.name, file.size, file.lastModified]) : ['checkbox', 'radio'].includes(input.type) ? input.checked : input.multiple ? [...input.selectedOptions].map(option => option.value) : input.value]));
   const dirty = () => editors().some(form => form.dataset.dirty === 'true');
   let leaving = false;
   let refreshing = false;
   let logState = null;
+  let pendingFiles = null;
 
   function initializeWorkspaceTabs() {
     document.querySelectorAll('[data-workspace-tabs]').forEach(nav => {
@@ -19,11 +20,13 @@
       nav.setAttribute('role', 'tablist');
       function select(index, focus = false) {
         links.forEach((link, i) => {
+          link.id = `${panes[i].id}-tab`;
           link.setAttribute('role', 'tab');
           link.setAttribute('aria-controls', panes[i].id);
           link.setAttribute('aria-selected', String(i === index));
           link.tabIndex = i === index ? 0 : -1;
           panes[i].setAttribute('role', 'tabpanel');
+          panes[i].setAttribute('aria-labelledby', link.id);
           panes[i].hidden = i !== index;
         });
         if (focus) links[index].focus({preventScroll: true});
@@ -86,13 +89,13 @@
   function updateGeneratedId(form) {
     const preview = form.querySelector('[data-generated-id]');
     if (!preview) return;
-    const name = form.querySelector('[name="name"]')?.value.trim() || '';
+    const name = form.querySelector('[data-name-input]')?.value.trim() || form.querySelector('input[name=\'field:["title"]\']')?.value.trim() || '';
     const slug = name.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^[-_]+|[-_]+$/g, '').toLowerCase();
     const kind = preview.dataset.kind;
     const prefix = {post: 'post', course: 'course', portfolio: 'portfolio', project: 'project', personal: 'personal'}[kind];
     const parent = form.querySelector('[data-course-select]')?.value || '';
     const generated = kind === 'chapter' ? (parent && slug ? `${parent}/${slug}` : '') : prefix && slug ? `${prefix}/${slug}` : '';
-    preview.querySelector('code').textContent = generated || 'Enter a name to preview';
+    preview.querySelector('code').textContent = generated || 'Enter a title to preview';
 
     const sections = form.querySelector('[data-section-select]');
     if (sections) {
@@ -136,6 +139,12 @@
     document.querySelectorAll('[data-publication-action]').forEach(button => {
       button.disabled = unsaved || editorBusy || button.hasAttribute('data-blocked');
       button.title = unsaved ? 'Save or cancel your changes before changing publication state.' : button.hasAttribute('data-blocked') ? 'Complete the core plan before starting' : '';
+    });
+    document.querySelectorAll('[data-summary-task]').forEach(button => {
+      button.disabled = unsaved || editorBusy;
+      const hint = button.closest('.summary-task')?.querySelector('[data-summary-task-hint]');
+      if (hint) hint.textContent = unsaved ? 'Save your changes first so the task includes the latest brief.' :
+        editorBusy ? 'Creating or saving…' : 'Creates a linked Kanban card with the saved brief and instructions for an agent.';
     });
     const refresh = document.getElementById('refresh-preview');
     const buildStatus = document.getElementById('build-status')?.dataset.buildStatus;
@@ -199,6 +208,10 @@
     document.querySelectorAll('dialog.cms-dialog').forEach(dialog => {
       if (!dialog.dataset.initialized) {
         dialog.dataset.initialized = 'true';
+        if (dialog.hasAttribute('data-inline-dialog')) {
+          dialog.removeAttribute('open');
+          dialog.removeAttribute('data-inline-dialog');
+        }
         dialog.querySelectorAll('button[data-dialog-close]').forEach(button => button.hidden = false);
         dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(dialog); });
         dialog.addEventListener('close', () => {
@@ -207,6 +220,10 @@
             form.reset();
             form.removeAttribute('data-unsaved');
             form.dataset.dirty = 'false';
+          }
+          if (dialog.restorePane) {
+            document.querySelectorAll('[data-workspace-tabs]').forEach(nav => nav.selectPane?.(dialog.restorePane));
+            delete dialog.restorePane;
           }
           dialog.opener?.focus({preventScroll: true});
           sync();
@@ -244,6 +261,9 @@
         results.hidden = true; search.setAttribute('aria-expanded', 'false');
         search.removeAttribute('aria-activedescendant'); active = -1;
       }
+      function dismiss() {
+        clearTimeout(timer); ++requestNumber; controller?.abort(); close(); status.textContent = '';
+      }
       function renderChips() {
         chips.replaceChildren();
         selected().forEach(option => {
@@ -255,7 +275,7 @@
             option.selected = false;
             if (!multiple) select.value = '';
             select.dispatchEvent(new Event('change', {bubbles: true}));
-            renderChips(); close(); search.focus();
+            renderChips(); dismiss(); search.focus();
           });
           chip.append(label, remove); chips.append(chip);
         });
@@ -266,7 +286,7 @@
         if (!option) { option = new Option(`${item.title} · ${item.kind} · ${item.id} · ${item.lifecycle}`, item.id); select.add(option); }
         if (!multiple) [...select.options].forEach(option => option.selected = false);
         select.append(option); option.selected = true;
-        search.value = ''; close(); renderChips(); status.textContent = 'Content selected.';
+        search.value = ''; dismiss(); renderChips(); status.textContent = 'Content selected.';
         select.dispatchEvent(new Event('change', {bubbles: true})); search.focus();
       }
       function highlight() {
@@ -300,11 +320,12 @@
           if (error.name !== 'AbortError') { close(); status.textContent = 'Search unavailable. Reload or use the content selector.'; select.closest('label').hidden = false; }
         }
       }
-      search.addEventListener('input', () => { clearTimeout(timer); ++requestNumber; close(); timer = setTimeout(suggest, 150); });
+      search.addEventListener('input', () => { dismiss(); timer = setTimeout(suggest, 150); });
       search.addEventListener('focus', suggest);
-      search.addEventListener('blur', () => { clearTimeout(timer); ++requestNumber; controller?.abort(); close(); });
+      search.addEventListener('click', () => { if (results.hidden) suggest(); });
+      search.addEventListener('blur', dismiss);
       search.addEventListener('keydown', event => {
-        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return; }
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); dismiss(); return; }
         if (event.key === 'Enter') { event.preventDefault(); if (!results.hidden && active >= 0) choose(active); return; }
         if (['ArrowDown', 'ArrowUp'].includes(event.key) && matches.length && !results.hidden) {
           event.preventDefault(); active = (active + (event.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length; highlight();
@@ -312,7 +333,7 @@
       });
       select.addEventListener('change', renderChips);
       select.form?.addEventListener('reset', () => setTimeout(() => {
-        originalOptions.forEach(option => select.append(option)); search.value = ''; close(); renderChips();
+        originalOptions.forEach(option => select.append(option)); search.value = ''; dismiss(); renderChips();
       }, 0));
       renderChips();
     });
@@ -360,6 +381,14 @@
       const dialog = document.getElementById(dialogLink.dataset.dialogOpen);
       if (dialog) {
         event.preventDefault();
+        const pane = dialog.closest('[data-workspace-pane]');
+        if (pane?.hidden) {
+          const tabs = [...document.querySelectorAll('[data-workspace-tabs]')].find(nav => [...nav.querySelectorAll('a[href^="#"]')].some(link => link.hash === `#${pane.id}`));
+          if (tabs) {
+            dialog.restorePane = tabs.dataset.activePane;
+            tabs.selectPane?.(pane.id);
+          }
+        }
         dialog.opener = dialogLink;
         dialog.showModal();
         return;
@@ -403,20 +432,14 @@
       if (cancel.getAttribute('aria-disabled') === 'true') event.preventDefault();
       else leaving = true;
     }
-    const briefCopy = event.target.closest('[data-copy-target]');
-    if (briefCopy) {
-      const text = document.getElementById(briefCopy.dataset.copyTarget);
-      try { await navigator.clipboard.writeText(text.value); briefCopy.textContent = 'Build brief copied'; }
-      catch { text.focus(); text.select(); briefCopy.textContent = 'Select and copy the brief below'; }
-    }
     const copy = event.target.closest('[data-copy]');
     if (copy) {
       try {
         await navigator.clipboard.writeText(copy.dataset.copy);
-        const originalLabel = copy.dataset.copyLabel || copy.getAttribute('aria-label') || 'Copy ID';
+        const originalLabel = copy.dataset.copyLabel || copy.getAttribute('aria-label') || copy.textContent.trim() || 'Copy';
         copy.dataset.copyLabel = originalLabel;
-        copy.setAttribute('aria-label', 'Card ID copied');
-        copy.setAttribute('title', 'Card ID copied');
+        copy.setAttribute('aria-label', 'Copied');
+        copy.setAttribute('title', 'Copied');
         copy.classList.add('is-copied');
         window.clearTimeout(copy.copyResetTimer);
         copy.copyResetTimer = window.setTimeout(() => {
@@ -432,7 +455,7 @@
     if (dirty() && !leaving) { event.preventDefault(); event.returnValue = ''; }
   });
   document.addEventListener('submit', event => {
-    if (event.target.matches('form[data-publication-form]') && dirty()) {
+    if (event.target.matches('form[data-publication-form], form[data-summary-task-form]') && dirty()) {
       event.preventDefault();
       return;
     }
@@ -447,7 +470,7 @@
   });
   document.addEventListener('htmx:beforeRequest', event => {
     const form = event.detail.elt.closest('form');
-    if (form?.matches('[data-publication-form]')) {
+    if (form?.matches('[data-publication-form], [data-summary-task-form]')) {
       if (dirty()) { event.preventDefault(); return; }
       editors().forEach(editor => editor.dataset.busy = 'true');
     }
@@ -472,6 +495,8 @@
       }
     }
     if ([400, 409, 412, 422, 428].includes(event.detail.xhr.status)) {
+      pendingFiles = [...event.detail.target.querySelectorAll('input[type="file"]')]
+        .filter(input => input.files.length).map(input => ({name: input.name, files: input.files}));
       event.detail.shouldSwap = true;
       event.detail.isError = false;
     }
@@ -495,6 +520,15 @@
       }
     }
     initialize();
+    if (pendingFiles) {
+      const form = document.querySelector('#unsaved-card form, #artifact-editor-form, #new-editor-form');
+      pendingFiles.forEach(({name, files}) => {
+        const input = form?.querySelector(`input[type="file"][name="${name}"]`);
+        if (input) input.files = files;
+      });
+      pendingFiles = null;
+      sync();
+    }
     if (event.detail.target.id !== 'build-status') {
       const error = document.querySelector('main .error');
       if (error) { error.tabIndex = -1; error.focus(); }

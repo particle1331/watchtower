@@ -24,16 +24,17 @@ def author(tmp_path):
 def create(author, kind):
     identifier = f'{kind}/notes'
     values = {'id': identifier, 'kind': kind, 'title': 'Notes example', 'description': 'Public summary', 'internal_notes': 'INTERNAL-NOTES-SENTINEL'}
-    plan = {'content': 'SEED-OUTLINE-SENTINEL', 'next_steps': 'INTERNAL-NEXT-SENTINEL', 'extension': 'INTERNAL-LEGACY-SENTINEL'}
+    # A saved key outside the catalog must never reach generated site output.
+    plan = {'content': 'SEED-OUTLINE-SENTINEL', 'unlisted': 'INTERNAL-UNLISTED-SENTINEL'}
     if kind in {'course', 'chapter'}:
         parent = 'course/notes' if kind == 'course' else 'course/parent'
-        author.create({'id': parent, 'kind': 'course', 'title': 'Course', 'path': f'content/notebooks/courses/{parent.split("/")[-1]}', 'description': 'Public course summary', 'internal_notes': 'INTERNAL-PARENT-SENTINEL', 'contract': {'purpose': 'SEED-PURPOSE-SENTINEL', 'audience': 'SEED-AUDIENCE-SENTINEL', 'planned': {**plan, 'summary': 'SEED-SUMMARY-SENTINEL', 'chapters': []}}})
+        author.create({'id': parent, 'kind': 'course', 'title': 'Course', 'path': f'content/notebooks/courses/{parent.split("/")[-1]}', 'description': 'Public course summary', 'internal_notes': 'INTERNAL-PARENT-SENTINEL', 'contract': {'purpose': 'SEED-PURPOSE-SENTINEL', 'audience': 'SEED-AUDIENCE-SENTINEL', 'planned': {'outcomes': 'SEED-OUTCOMES-SENTINEL', 'unlisted': 'INTERNAL-UNLISTED-SENTINEL', 'chapters': []}}})
         if kind == 'course':
             author.update(parent, {'internal_notes': values['internal_notes'], 'description': values['description']})
             return parent
         values.update(id='course/parent/notes', parent=parent, section='main', toc_title='Notes', path='content/notebooks/courses/parent/notes.ipynb', plan={**plan, 'lab_and_evidence': 'SEED-LAB-SENTINEL', 'summary': 'Public chapter summary'})
     elif kind == 'portfolio':
-        values['detail'] = {'planned': {'introduction': plan['content'], 'what_it_contains': 'SEED-CONTENTS-SENTINEL', 'scope_notes': 'INTERNAL-SCOPE-SENTINEL', 'references': 'SEED-REFERENCES-SENTINEL'}}
+        values['detail'] = {'planned': {'introduction': plan['content'], 'what_it_contains': 'SEED-CONTENTS-SENTINEL', 'unlisted': 'INTERNAL-UNLISTED-SENTINEL', 'references': 'SEED-REFERENCES-SENTINEL'}}
     else:
         values.update(path=f'content/notebooks/{kind}/notes.ipynb', planned=plan)
     author.create(values)
@@ -63,10 +64,10 @@ def test_generated_site_excludes_internal_context_at_every_stage(author, monkeyp
                 author_body(author, 'course/parent')
                 author.publish('course/parent')
             if kind == 'portfolio':
-                figure = author.root / 'content/assets/notes.svg'
+                figure = author.root / 'backend/assets/notes.svg'
                 figure.parent.mkdir(parents=True, exist_ok=True)
                 figure.write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
-                author.update(identifier, {'detail': {'abstract': 'Public abstract', 'figure_path': 'content/assets/notes.svg', 'figure_caption': 'Public figure'}})
+                author.update(identifier, {'detail': {'abstract': 'Public abstract', 'figure_path': 'backend/assets/notes.svg', 'figure_caption': 'Public figure'}})
             author_body(author, identifier)
             author.publish(identifier)
         stage = BuildService(author.root).generate(mode)
@@ -111,7 +112,7 @@ def test_cms_creates_notes_and_cli_edits_them_after_publication(author, monkeypa
         page = client.get('/cms/new?kind=post')
         import re
         revision = re.search(r'name="revision" value="([^"]+)"', page.text)[1]
-        created = client.post('/cms/new?kind=post', data={'revision': revision, 'name': 'new', 'title': 'New', 'visibility': 'public', 'internal_notes': 'Initial notes'}, follow_redirects=False)
+        created = client.post('/cms/new?kind=post', data={'revision': revision, 'kind': 'post', 'field:["name"]': 'new', 'field:["title"]': 'New', 'field:["internal_notes"]': 'Initial notes'}, follow_redirects=False)
         assert created.status_code == 303, created.text
     assert author.inspect('post/new')['artifact']['internal_notes'] == 'Initial notes'
     monkeypatch.chdir(author.root)
@@ -135,7 +136,7 @@ def test_cms_creates_notes_and_cli_edits_them_after_publication(author, monkeypa
 def test_renaming_a_scaffold_does_not_make_it_publishable(author, kind):
     identifier = create(author, kind)
     if kind == 'course':
-        author.update(identifier, {'contract': {'purpose': '', 'audience': '', 'planned': {'summary': '', 'content': ''}}})
+        author.update(identifier, {'contract': {'purpose': '', 'audience': '', 'planned': {'outcomes': ''}}})
     elif kind == 'chapter':
         author.update(identifier, {'plan': {'content': '', 'lab_and_evidence': ''}})
     elif kind == 'portfolio':

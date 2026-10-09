@@ -1,0 +1,8 @@
+{% import 'context_attachments.html' as context_files %}
+<div class="field notes-field-action">{{ context_files.notes_button({'internal_notes': field.value}, notes_id) }}<small>Research and context · CMS only</small></div>
+<dialog id="{{ notes_id }}" class="cms-dialog notes-dialog" open data-inline-dialog aria-labelledby="{{ notes_id }}-heading">
+<div class="dialog-heading"><h2 id="{{ notes_id }}-heading">{{ context_files.notes_icon() }} Internal notes <span class="scope-badge">CMS only</span></h2><button type="button" data-dialog-close aria-label="Close internal notes" hidden>×</button></div>
+<p>{{ group.context }}{% if group.context %} / {% endif %}{{ group.title }}</p>
+<label class="field"><span>Internal notes</span><textarea name="field:{{ field.name }}" rows="8">{{ field.value }}</textarea><small>Markdown context for you and your agents. Kept off the site.</small></label>
+<div class="actions"><button type="button" data-dialog-close hidden>Done</button><small>Changes are kept here. Use Save to save them.</small></div>
+</dialog>

@@ -2,6 +2,6 @@ photos:
 - caption: Taken at Massway Shopping Centre parking lot.
   heading: A small mountain in Tanay, Rizal
   lifecycle: published
-  path: content/assets/photos/tanay.jpg
+  path: backend/assets/photos/tanay.jpg
   width: ''
 version: 1

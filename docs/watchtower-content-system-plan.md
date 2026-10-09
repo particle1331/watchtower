@@ -1,5 +1,12 @@
 # Watchtower notebook publishing system
 
+Storage update (2026-10-10): this implementation plan records the original
+layout. The current [repository philosophy](../README.md#repository-philosophy)
+keeps authored notebooks and sidecars in `content/`; managed data, uploads and
+context attachments now live in `backend/data/`, `backend/assets/` and
+`backend/attachments/`. Deleted archives can be pruned manually. Use README.md
+and AGENTS.md for the current lifecycle and authoring contracts.
+
 Status: implemented and verified locally on 2026-10-01. Updated on 2026-10-03 to remove the MCP server; agents use `.venv/bin/wt` from the repository root. The current contract is documented in README.md and AGENTS.md; migration decisions and verification are recorded in docs/content-system-migration-review.md. GitHub Actions is configured, but external deployment has not been run during implementation.
 
 ## Goal and acceptance criterion

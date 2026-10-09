@@ -6,6 +6,7 @@
 <h2>Entries to remove</h2>
 <ul>{% for artifact in plan.removed %}<li>{{ artifact.title }} — <code>{{ artifact.id }}</code> <span class="badge">{{ artifact.lifecycle }}</span></li>{% endfor %}</ul>
 {% if plan.archive_files %}<details><summary>Files to preserve in the archive</summary><ul>{% for path in plan.archive_files %}<li><code>{{ path }}</code></li>{% endfor %}</ul></details>{% endif %}
+{% if plan.attachment_actions %}<h2>Context attachments</h2><ul>{% for item in plan.attachment_actions %}<li>{{ item.name }} — {{ item.action }}</li>{% endfor %}</ul><p>Unshared attachments move to the same deleted archive. Archived files may be pruned manually.</p>{% endif %}
 {% if plan.detached_links %}<details open><summary>Links to detach</summary><p>The following records will remain; their links to the deleted entries will be removed.</p><ul>{% for link in plan.detached_links %}<li>{{ link.kind }}: {{ link.title or link.id }} — {{ link.artifact_ids | join(', ') }}</li>{% endfor %}</ul></details>{% endif %}
 <form method="post" action="/cms/delete/{{ plan.artifact.id | urlpath }}">
 <input type="hidden" name="revision" value="{{ submitted.revision if submitted else plan.revision }}">

@@ -2,12 +2,14 @@
 
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from watchtower.api.attachments import read_uploads
 from watchtower.api.schemas import (
     ArtifactCreate,
     ArtifactList,
@@ -24,6 +26,7 @@ from watchtower.api.schemas import (
     ServiceResult,
     StructuredUpdate,
 )
+from watchtower.services.attachments import INLINE_IMAGES, AttachmentService
 from watchtower.services.build import BuildService
 from watchtower.services.content import ContentService
 from watchtower.services.kanban import KanbanService
@@ -51,6 +54,7 @@ def create_app(root: Path | None = None) -> FastAPI:
     content = ContentService(root)
     builds = BuildService(root)
     kanban = KanbanService(root)
+    attachments = AttachmentService(root)
     app = FastAPI(title="Watchtower author API", version="1.0.0")
     app.state.root = root
     app.state.content = content
@@ -118,6 +122,30 @@ def create_app(root: Path | None = None) -> FastAPI:
     @app.get("/api/kanban", response_model=ServiceResult)
     def read_kanban(response: Response, column: str | None = None, q: str = "") -> dict[str, Any]:
         return set_etag(response, kanban.read(column=column, query=q))
+
+    @app.get("/api/kanban/{card_id}", response_model=ServiceResult)
+    def card_context(card_id: str, response: Response) -> dict[str, Any]:
+        return set_etag(response, kanban.context(card_id))
+
+    @app.get("/api/attachments/{attachment_id}")
+    def attachment_file(attachment_id: str, inline: bool = False) -> Response:
+        item, value = attachments.file(attachment_id)
+        disposition = "inline" if inline and item.media_type in INLINE_IMAGES else "attachment"
+        return Response(value, media_type=item.media_type, headers={"Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(item.name, safe='')}", "Content-Security-Policy": "default-src 'none'; sandbox"})
+
+    @app.get("/api/context-attachments/{owner:path}")
+    def owner_attachments(owner: str, response: Response) -> dict[str, Any]:
+        return set_etag(response, attachments.read(owner))
+
+    @app.post("/api/context-attachments/{owner:path}")
+    async def upload_attachments(owner: str, request: Request, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:
+        token = require_revision(if_match)
+        form = await request.form()
+        return set_etag(response, attachments.change(owner, uploads=await read_uploads(form), link=str(form.get("link")) if form.get("link") else None, expected_revision=token))
+
+    @app.delete("/api/context-attachments/{owner:path}")
+    def detach_attachment(owner: str, attachment_id: str, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:
+        return set_etag(response, attachments.change(owner, remove=[attachment_id], expected_revision=require_revision(if_match)))
 
     @app.post("/api/kanban", response_model=ServiceResult, status_code=201)
     def create_card(payload: KanbanCreate, response: Response, if_match: str | None = Header(None)) -> dict[str, Any]:

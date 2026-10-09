@@ -4,7 +4,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from watchtower.models import Artifact, CourseContract, KanbanColumn, Photo, PortfolioEntry
+from watchtower.models import (
+    Artifact,
+    Attachment,
+    CourseContract,
+    KanbanColumn,
+    Photo,
+    PortfolioEntry,
+)
 
 Kind = Literal["post", "course", "chapter", "portfolio", "project", "personal", "gallery"]
 
@@ -43,6 +50,7 @@ class ArtifactMetadataPatch(BaseModel):
     title: str | None = None
     description: str | None = None
     internal_notes: str | None = None
+    attachments: list[Attachment] | None = None
     visibility: Literal["public", "private"] | None = None
     lifecycle: Literal["planned", "draft", "published"] | None = None
     tags: list[str] | None = None
@@ -74,6 +82,7 @@ class KanbanCreate(BaseModel):
     description: str = ""
     column: KanbanColumn = "todo"
     artifact_ids: list[str] = Field(default_factory=list)
+    attachments: list[Attachment] = Field(default_factory=list)
 
 
 class KanbanPatch(BaseModel):
@@ -82,6 +91,7 @@ class KanbanPatch(BaseModel):
     description: str | None = None
     column: KanbanColumn | None = None
     artifact_ids: list[str] | None = None
+    attachments: list[Attachment] | None = None
 
 
 class GalleryUpdate(BaseModel):

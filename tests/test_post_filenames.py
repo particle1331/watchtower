@@ -20,8 +20,8 @@ def service(tmp_path):
 def test_post_name_form_infers_identity_and_preserves_metadata(service):
     with TestClient(create_app(service.root)) as client:
         page = client.get('/cms/new?kind=post')
-        assert 'Create a post plan' in page.text
-        assert 'name="name"' in page.text
+        assert 'New post plan' in page.text
+        assert 'name="field:[&#34;name&#34;]"' in page.text
         assert 'data-generated-id data-kind="post"' in page.text
         assert 'Generated stable ID: <code></code>' in page.text
         assert '>Filename<' not in page.text
@@ -29,7 +29,7 @@ def test_post_name_form_infers_identity_and_preserves_metadata(service):
         assert 'name="path"' not in page.text
         assert '<select name="kind">' not in page.text
         token = re.search(r'name="revision" value="([^"]+)"', page.text)[1]
-        response = client.post('/cms/new?kind=post', data={"revision": token, "name": "GLiNER", "title": "GLiNER article", "planned_content": "Article outline", "tags": "NLP, NER", "description": "Description", "visibility": "private", "kind": "portfolio", "id": "wrong", "path": "wrong"}, follow_redirects=False)
+        response = client.post('/cms/new?kind=post', data={"revision": token, "kind": "post", 'field:["name"]': "GLiNER", 'field:["title"]': "GLiNER article", 'field:["planned", "content"]': "Article outline", 'field:["tags"]': "NLP\nNER", 'field:["description"]': "Description", "visibility": "private", "id": "wrong", "path": "wrong"}, follow_redirects=False)
         assert response.status_code == 303, response.text
         assert response.headers['location'] == '/cms/artifact/post/gliner'
     record = service.inspect('post/gliner')['artifact']
@@ -44,15 +44,15 @@ def test_post_name_form_infers_identity_and_preserves_metadata(service):
     assert (service.root / record['path']).exists()
 
 
-@pytest.mark.parametrize('name', ['', '!!!'])
+@pytest.mark.parametrize('name', ['!!!', '..'])
 def test_invalid_name_never_writes_and_preserves_submitted_values(service, name):
     with TestClient(create_app(service.root)) as client:
         token = service.list()['revision']
-        response = client.post('/cms/new?kind=post', data={"revision": token, "name": name, "title": "Saved title", "planned_content": "Saved outline"})
+        response = client.post('/cms/new?kind=post', data={"revision": token, "kind": "post", 'field:["name"]': name, 'field:["title"]': "Saved title", 'field:["planned", "content"]': "Saved outline"})
         assert response.status_code == 422
         assert 'Saved title' in response.text
         assert 'Saved outline' in response.text
-        assert 'name="name"' in response.text
+        assert 'name="field:[&#34;name&#34;]"' in response.text
         assert service.list()['revision'] == token
         assert service.list()['artifacts'] == []
 
@@ -99,7 +99,7 @@ def test_active_id_and_stale_form_fail_without_overwriting(service):
         service.create_post('GLINER', {'title': 'Second'})
     with TestClient(create_app(service.root)) as client:
         service.update('post/gliner', {'description': 'Changed'})
-        response = client.post('/cms/new?kind=post', data={"revision": before, "name": "another", "title": "Unsaved title"})
+        response = client.post('/cms/new?kind=post', data={"revision": before, "kind": "post", 'field:["name"]': "another", 'field:["title"]': "Unsaved title"})
         assert response.status_code == 412
         assert 'value="another"' in response.text
         assert 'Unsaved title' in response.text

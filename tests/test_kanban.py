@@ -41,7 +41,7 @@ def test_task_links_follow_content_without_changing_publication(board):
     assert source.read_bytes() == before
     assert KanbanService(content.root).read(column="done")["cards"][0]["id"] == "edit-article"
     stage = BuildService(content.root).generate()
-    assert not (stage / "content/data/kanban.yaml").exists()
+    assert not (stage / "backend/data/kanban.yaml").exists()
     assert "Edit article" not in (stage / "posts.qmd").read_text()
     service.remove("edit-article")
     assert service.read()["cards"] == []
@@ -61,14 +61,14 @@ def test_invalid_cards_never_write(board, data):
     with pytest.raises(ServiceError):
         service.create(data)
     assert content.list()["revision"] == before
-    assert not (content.root / "content/data/kanban.yaml").exists()
+    assert not (content.root / "backend/data/kanban.yaml").exists()
 
 
 def test_stale_revision_duplicates_and_malformed_data_preserve_bytes(board):
     content, service = board
     first = service.create({"id": "one", "title": "One"})
     service.update("one", {"description": "Saved update"}, first["revision"])
-    source = content.root / "content/data/kanban.yaml"
+    source = content.root / "backend/data/kanban.yaml"
     saved = source.read_bytes()
     with pytest.raises(ServiceError) as stale:
         service.update("one", {"title": "Stale update"}, first["revision"])
@@ -192,10 +192,10 @@ def test_project_and_gallery_links_use_their_canonical_sources(board):
     content, service = board
     content.create_project("kanban-test")
     project = content.inspect("project/kanban-test")["artifact"]
-    content.create({"id": "gallery/photos", "kind": "gallery", "title": "Photos", "path": "content/data/photos.yaml"})
+    content.create({"id": "gallery/photos", "kind": "gallery", "title": "Photos", "path": "backend/data/photos.yaml"})
     service.create({"title": "Check supporting sources", "artifact_ids": [project["id"], "gallery/photos"]})
     project_link, gallery_link = service.read()["cards"][0]["links"]
     assert project_link["frontend_url"] is None
     assert project_link["editor_url"].endswith("projects/kanban-test")
     assert gallery_link["frontend_url"].endswith("gallery.html")
-    assert gallery_link["editor_url"].endswith("content/data/photos.yaml")
+    assert gallery_link["editor_url"].endswith("backend/data/photos.yaml")

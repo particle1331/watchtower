@@ -24,7 +24,7 @@ def render_pdf() -> Path:
     if not name:
         raise ValueError("pass NOTEBOOK=nb/posts/<name>.ipynb to make render")
 
-    if (ROOT_PATH / "content/data/catalog.yaml").exists():
+    if (ROOT_PATH / "backend/data/catalog.yaml").exists():
         from watchtower.models import route_for
         from watchtower.services.build import BuildService
         from watchtower.services.content import ContentService

@@ -20,7 +20,7 @@ def test_plans_are_never_frontend_eligible(kind, visibility, mode):
 
 def test_start_and_publish_defaults_and_later_plan_edits(content_service):
     service = content_service
-    created = service.create_post('flow', {'title': 'Flow', 'visibility': 'public', 'planned': {'content': 'Explain the example.', 'next_steps': 'Private todo'}, 'internal_notes': 'Private notes'})
+    created = service.create_post('flow', {'title': 'Flow', 'visibility': 'public', 'planned': {'content': 'Explain the example.'}, 'internal_notes': 'Private notes'})
     assert created['artifact']['visibility'] == 'private'
     started = service.start('post/flow', created['revision'])
     assert started['artifact']['visibility'] == 'private'

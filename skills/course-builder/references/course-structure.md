@@ -1,8 +1,10 @@
 # Course structure and navigation
 
-A course contract lives in `content/data/courses/<slug>.yaml`; authored home,
+A course contract lives in `backend/data/courses/<slug>.yaml`; authored home,
 overview, and chapters live in `content/notebooks/courses/<slug>/`. Supporting
-assets live under `content/assets/` or preserved notebook-relative sidecars.
+authored assets live beside notebooks as relative sidecars. CMS-managed card
+images live under `backend/assets/`; use the CMS/CLI/API for managed records and
+uploads.
 The contract owns purpose/audience, separate planned/actualized accounts, and
 ordered `toc` sections `{id, title, chapters: [stable chapter IDs]}`. The catalog
 chapter owns `parent`, `section`, full `title`, and short `toc_title`. Do not edit

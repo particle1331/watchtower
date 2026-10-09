@@ -3,18 +3,50 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import typer
-from markdown_it import MarkdownIt
 
+from . import planning
 from .services.content import ContentService
 from .services.workspace import ServiceError, load_yaml
 
+# Option declarations shared by the planning commands, so each spells and describes them alike.
+SummaryFlag = Annotated[str | None, typer.Option("--summary", help="One public sentence: post or course listing, portfolio abstract, or chapter table row.")]
+InternalNotesFlag = Annotated[str | None, typer.Option("--internal-notes", help="CMS-only Markdown, never shown on the site. Next steps belong in Kanban: wt kanban add --link ID.")]
+PlanFileFlag = Annotated[str | None, typer.Option("--plan-file", help="Markdown under .tmp/ with ## sections named by label or key.")]
+TagFlag = Annotated[list[str] | None, typer.Option("--tag", help="Tag; repeat for several.")]
+StartFlag = Annotated[bool, typer.Option("--start", help="Also create the draft notebook; the output reports both results.")]
+ExpectedRevisionFlag = Annotated[str | None, typer.Option("--expected-revision", help="Workspace revision to save against. A stale write fails and is never retried.")]
+# Earlier spellings: still accepted, hidden from help.
+DescriptionFlag = Annotated[str | None, typer.Option("--description", hidden=True)]
+AbstractFlag = Annotated[str | None, typer.Option("--abstract", hidden=True)]
+PlannedContentFlag = Annotated[str | None, typer.Option("--planned-content", hidden=True)]
+PlannedLabFlag = Annotated[str | None, typer.Option("--planned-lab-and-evidence", hidden=True)]
+IntroductionFlag = Annotated[str | None, typer.Option("--introduction", hidden=True)]
+WhatItContainsFlag = Annotated[str | None, typer.Option("--what-it-contains", hidden=True)]
+ScopeNotesFlag = Annotated[str | None, typer.Option("--scope-notes", hidden=True)]
+
+# Flag -> (planning field, kinds it applies to; None means every kind with planning fields).
+PLAN_FLAGS: dict[str, tuple[str, frozenset[str] | None]] = {
+    "--summary": ("summary", None),
+    "--description": ("summary", None),
+    "--abstract": ("summary", frozenset({"portfolio"})),
+    "--internal-notes": ("internal_notes", None),
+    "--planned-content": ("content", frozenset({"post", "chapter"})),
+    "--planned-lab-and-evidence": ("lab_and_evidence", frozenset({"chapter"})),
+    "--introduction": ("introduction", frozenset({"portfolio"})),
+    "--what-it-contains": ("what_it_contains", frozenset({"portfolio"})),
+}
+REMOVED_FLAGS = {
+    "--scope-notes": "--scope-notes was removed: scope now belongs in --internal-notes (CMS-only) or in the ## What it contains section of the plan file.",
+}
+
 
 def active() -> bool:
-    return Path("content/data/catalog.yaml").exists()
+    return Path("backend/data/catalog.yaml").exists()
 
 
 def emit(value: Any) -> None:
@@ -27,57 +59,146 @@ def slug(value: str) -> str:
     return value
 
 
-def split_plan(body: str, headings: list[str], required: list[str]) -> dict[str, str]:
-    """Extract prescribed H2 bodies, ignoring heading examples in code fences."""
-    tokens = MarkdownIt().parse(body)
-    sections: list[tuple[str, int, int]] = []
-    lines = body.splitlines()
-    for i, token in enumerate(tokens):
-        if token.type == "heading_open" and token.tag == "h2" and token.map:
-            heading = tokens[i + 1].content
-            if heading in headings:
-                sections.append((heading, token.map[0], token.map[1]))
-    result: dict[str, str] = {}
-    for i, (heading, _start, end) in enumerate(sections):
-        if heading in result:
-            raise ServiceError(f"duplicate plan section: {heading}")
-        result[heading] = "\n".join(lines[end:sections[i + 1][1] if i + 1 < len(sections) else len(lines)]).strip()
-    if any(not result.get(name) for name in required):
-        raise ServiceError("plan file requires nonempty sections: " + ", ".join(required))
-    result["introduction"] = "\n".join(lines[:sections[0][1] if sections else len(lines)]).strip()
+def merged(base: Mapping[str, Any], patch: Mapping[str, Any]) -> dict[str, Any]:
+    """Overlay a patch; nested objects merge so a partial plan keeps its sibling fields."""
+    result = dict(base)
+    for key, value in patch.items():
+        current = result.get(key)
+        result[key] = merged(current, value) if isinstance(current, dict) and isinstance(value, dict) else value
     return result
 
 
-def create_post(name: str, title: str | None, content: str | None, plan_file: str | None, tags: list[str] | None, description: str | None = None, visibility: str = "private", expected_revision: str | None = None) -> None:
+def section_labels(kind: str) -> str:
+    return ", ".join(item["label"] for item in planning.plan_schema(kind))
+
+
+def plan_sections(service: ContentService, kind: str, path: str) -> dict[str, str]:
+    """Planning fields from the ## sections of a plan file under .tmp/."""
+    text = service.plan_file(path)
+    try:
+        return planning.parse_plan_file(kind, text)
+    except ValueError as error:
+        raise ServiceError(f"{path}: {error}", paths=[path]) from error
+
+
+def planning_patch(service: ContentService, kind: str, options: Mapping[str, str | None], plan_file: str | None) -> dict[str, Any]:
+    """Service patch for planning flags and an optional plan file.
+
+    A field comes from one source only: a flag and a plan-file section that both
+    set it are an error, so neither value is dropped silently.
+    """
+    labels = planning.labels(kind)
+    claimed: dict[str, tuple[str, str]] = {}
+
+    def claim(key: str, origin: str, value: str) -> None:
+        if key in claimed:
+            raise ServiceError(f"{claimed[key][0]} and {origin} both set {labels.get(key, key)}; use one of them")
+        claimed[key] = (origin, value)
+
+    for option, value in options.items():
+        if value is None:
+            continue
+        if option in REMOVED_FLAGS:
+            raise ServiceError(REMOVED_FLAGS[option])
+        field, kinds = PLAN_FLAGS[option]
+        if kinds is not None and kind not in kinds:
+            raise ServiceError(f"{option} does not apply to {kind} plans; use --plan-file with these ## sections: {section_labels(kind)}")
+        claim(field, option, value)
+    if plan_file is not None:
+        for key, value in plan_sections(service, kind, plan_file).items():
+            claim(key, f"{plan_file} ## {labels.get(key, key)}", value)
+    notes = claimed.pop("internal_notes", None)
+    values = {key: value for key, (_origin, value) in claimed.items()}
+    try:
+        patch = planning.plan_patch(kind, values) if values else {}
+    except ValueError as error:
+        raise ServiceError(str(error)) from error
+    if notes is not None:
+        patch["internal_notes"] = notes[1]
+    return patch
+
+
+def emit_created(service: ContentService, created: dict[str, Any], start: bool) -> None:
+    """Print the new plan. With start, also create its draft; a failed start leaves the plan and says so."""
+    if not start:
+        emit(created)
+        return
+    identifier = created["artifact"]["id"]
+    try:
+        started = service.start(identifier, created["revision"])
+    except ServiceError as error:
+        raise ServiceError(f"plan created as {identifier}; start failed: {error}", code=error.code, status=error.status, paths=error.paths) from error
+    emit({"created": created, "started": started})
+
+
+def chapter_section(toc: list[dict[str, Any]], value: str | None) -> str:
+    """Section ID for a chapter: the last section by default, otherwise a section ID or title."""
+    if not toc:
+        raise ServiceError("course has no sections; add one with wt new section")
+    if value is None:
+        return toc[-1]["id"]
+    for section in toc:
+        if value in {section["id"], section["title"]} or value.casefold() == section["title"].casefold():
+            return section["id"]
+    names = [section["title"] or section["id"] for section in toc]
+    raise ServiceError(f"unknown course section {value}; sections: {', '.join(names)}")
+
+
+def create_post(name: str, *, title: str | None, tags: list[str] | None, visibility: str, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
+    service = ContentService()
+    record = {"title": title or name.replace("-", " ").title(), "tags": tags or [], "visibility": visibility}
+    created = service.create_post(name, merged(record, planning_patch(service, "post", options, plan_file)), expected_revision)
+    emit_created(service, created, start)
+
+
+def create_course(name: str, title: str, *, tags: list[str] | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
     service = ContentService()
     slug(name)
-    if plan_file and content is not None:
-        raise ServiceError("choose --plan-file or --planned-content")
-    body = service.plan_file(plan_file) if plan_file else content or ""
-    emit(service.create({"id": f"post/{name}", "kind": "post", "title": title or name.replace("-", " ").title(), "path": f"content/notebooks/posts/{name}.ipynb", "visibility": visibility, "description": description, "tags": tags or [], "planned": {"content": body}}, expected_revision))
+    record = {"id": f"course/{name}", "kind": "course", "title": title, "path": f"content/notebooks/courses/{name}", "tags": tags or []}
+    created = service.create(merged(record, planning_patch(service, "course", options, plan_file)), expected_revision)
+    emit_created(service, created, start)
 
 
-def create_chapter(course: str, name: str, title: str | None, toc_title: str | None, section: str | None, content: str | None, lab: str | None, plan_file: str | None, expected_revision: str | None = None) -> None:
+def create_chapter(course: str, name: str, *, title: str | None, section: str | None, toc_title: str | None, tags: list[str] | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
     service = ContentService()
     slug(name)
     course_slug = slug(course.removeprefix("course/"))
-    contract = service.read_data(f"course/{course_slug}")
-    section = section or contract["data"]["toc"][-1]["id"]
-    if plan_file:
-        if content is not None or lab is not None:
-            raise ServiceError("choose --plan-file or inline plan sections")
-        sections = split_plan(service.plan_file(plan_file), ["Planned content", "Planned lab and evidence"], ["Planned content", "Planned lab and evidence"])
-        content, lab = sections["Planned content"], sections["Planned lab and evidence"]
-    emit(service.create({"id": f"course/{course_slug}/{name}", "kind": "chapter", "parent": f"course/{course_slug}", "section": section, "title": title or name.replace("-", " ").title(), "toc_title": toc_title or title or name, "path": f"content/notebooks/courses/{course_slug}/{name}.ipynb", "planned_content": content, "planned_lab_and_evidence": lab}, expected_revision or contract["revision"]))
+    parent = service.inspect(f"course/{course_slug}")
+    record = {
+        "id": f"course/{course_slug}/{name}",
+        "kind": "chapter",
+        "parent": f"course/{course_slug}",
+        "section": chapter_section(parent["contract"]["toc"], section),
+        "title": title or name.replace("-", " ").title(),
+        "toc_title": toc_title or title or name,
+        "path": f"content/notebooks/courses/{course_slug}/{name}.ipynb",
+        "tags": tags or [],
+    }
+    created = service.create(merged(record, planning_patch(service, "chapter", options, plan_file)), expected_revision or parent["revision"])
+    emit_created(service, created, start)
 
 
-def install(app: typer.Typer, new_app: typer.Typer) -> None:
+def create_portfolio(name: str, *, title: str | None, tags: list[str] | None, figure_path: str | None, figure_caption: str | None, project_path: str | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
+    service = ContentService()
+    slug(name)
+    detail = {"notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "project_path": project_path or f"projects/{name}", "figure_path": figure_path, "figure_caption": figure_caption}
+    record = {"id": f"portfolio/{name}", "kind": "portfolio", "title": title or name.replace("-", " ").title(), "tags": tags or [], "detail": detail}
+    created = service.create(merged(record, planning_patch(service, "portfolio", options, plan_file)), expected_revision)
+    emit_created(service, created, start)
+
+
+def install(app: typer.Typer) -> None:
     from .kanban_cli import install as install_kanban
     install_kanban(app)
+    from .attachments_cli import install as install_attachments
+    install_attachments(app)
 
     @app.command("plan")
     def plan(stable_id: str) -> None:
-        """Return saved planning fields, internal notes and build brief as JSON by stable ID."""
+        """Read the plan for one exact stable ID; writes nothing.
+
+        Output JSON: id, kind, title, lifecycle, source_path, summary (the public sentence), plan (saved planning fields by key), fields (per key: label, prompt, section, seed heading, core), internal_notes, build_brief, and revision.
+        """
         emit(ContentService().read_plan(stable_id))
 
     @app.command("delete")
@@ -97,12 +218,33 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
         emit(ContentService().draft(name, expected_revision))
 
     @app.command("update")
-    def update(name: str, title: str | None = None, description: str | None = None, internal_notes: str | None = typer.Option(None, "--internal-notes", help="Internal Markdown notes, excluded from site rendering."), visibility: str | None = None, lifecycle: str | None = None, toc_title: str | None = typer.Option(None, "--toc-title"), section: str | None = None, tag: list[str] | None = typer.Option(None, "--tag"), add_tag: list[str] | None = typer.Option(None, "--add-tag"), remove_tag: list[str] | None = typer.Option(None, "--remove-tag"), planned_content: str | None = typer.Option(None, "--planned-content", help="Post outline, chapter content, or course summary."), planned_lab_and_evidence: str | None = typer.Option(None, "--planned-lab-and-evidence", help="Chapter lab and evidence."), plan_file: str | None = typer.Option(None, "--plan-file"), patch_file: str | None = typer.Option(None, "--patch-file"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Update metadata through validated services; never edit source headers."""
+    def update(
+        name: str,
+        title: str | None = None,
+        summary: SummaryFlag = None,
+        description: DescriptionFlag = None,
+        internal_notes: InternalNotesFlag = None,
+        visibility: str | None = None,
+        lifecycle: str | None = None,
+        toc_title: str | None = typer.Option(None, "--toc-title"),
+        section: str | None = None,
+        tag: list[str] | None = typer.Option(None, "--tag"),
+        add_tag: list[str] | None = typer.Option(None, "--add-tag"),
+        remove_tag: list[str] | None = typer.Option(None, "--remove-tag"),
+        planned_content: PlannedContentFlag = None,
+        planned_lab_and_evidence: PlannedLabFlag = None,
+        plan_file: PlanFileFlag = None,
+        patch_file: str | None = typer.Option(None, "--patch-file"),
+        expected_revision: ExpectedRevisionFlag = None,
+    ) -> None:
+        """Update metadata or planning fields through the validated service.
+
+        Planning: --summary sets the one public sentence; --internal-notes is CMS-only. --plan-file changes only the ## sections it contains, and an empty section clears that field. Section names differ by kind: see the fields in wt plan ID. --patch-file takes a JSON patch that flags override. Tags: --tag replaces all tags; --add-tag and --remove-tag edit them.
+        """
         service = ContentService()
         inspected = service.inspect(name)
         patch = json.loads(Path(patch_file).read_text()) if patch_file else {}
-        for key, value in {"title": title, "description": description, "internal_notes": internal_notes, "visibility": visibility, "lifecycle": lifecycle, "toc_title": toc_title, "section": section}.items():
+        for key, value in {"title": title, "visibility": visibility, "lifecycle": lifecycle, "toc_title": toc_title, "section": section}.items():
             if value is not None:
                 patch[key] = value
         if tag is not None or add_tag or remove_tag:
@@ -110,42 +252,8 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
             tags.extend(add_tag or [])
             removed = {t.strip().casefold() for t in remove_tag or []}
             patch["tags"] = [t for t in tags if t.strip().casefold() not in removed]
-        kind = inspected["artifact"]["kind"]
-        if plan_file and (planned_content is not None or planned_lab_and_evidence is not None):
-            raise ServiceError("choose --plan-file or inline plan fields")
-        if planned_lab_and_evidence is not None and kind != "chapter":
-            raise ServiceError("--planned-lab-and-evidence is only valid for chapters")
-        if plan_file or planned_content is not None or planned_lab_and_evidence is not None:
-            body = service.plan_file(plan_file) if plan_file else planned_content
-            if kind == "chapter":
-                plan = dict(patch.get("plan") or {})
-                if plan_file:
-                    parts = split_plan(str(body), ["Planned content", "Planned lab and evidence"], ["Planned content", "Planned lab and evidence"])
-                    plan.update(content=parts["Planned content"], lab_and_evidence=parts["Planned lab and evidence"])
-                else:
-                    if body is not None:
-                        plan["content"] = body
-                    if planned_lab_and_evidence is not None:
-                        plan["lab_and_evidence"] = planned_lab_and_evidence
-                patch["plan"] = plan
-            elif kind == "course":
-                contract = dict(patch.get("contract") or {})
-                contract["planned"] = {**(contract.get("planned") or {}), "summary": body}
-                patch["contract"] = contract
-            elif kind == "portfolio":
-                if not plan_file:
-                    raise ServiceError("portfolio plans use --plan-file or a detail patch")
-                parts = split_plan(str(body), ["What it contains", "Explore the project"], ["What it contains"])
-                detail = dict(patch.get("detail") or {})
-                plan = {**(detail.get("planned") or {}), "introduction": parts["introduction"], "what_it_contains": parts["What it contains"]}
-                if "Explore the project" in parts:
-                    plan["scope_notes"] = parts["Explore the project"]
-                detail["planned"] = plan
-                patch["detail"] = detail
-            elif kind in {"post", "personal"}:
-                patch["planned"] = {**(patch.get("planned") or {}), "content": body}
-            else:
-                raise ServiceError(f"{kind} entries do not have notebook planning fields")
+        options = {"--summary": summary, "--description": description, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence}
+        patch = merged(patch, planning_patch(service, inspected["artifact"]["kind"], options, plan_file))
         emit(service.update(name, patch, expected_revision or inspected["revision"]))
 
     @app.command("data")
@@ -178,19 +286,6 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
         else:
             emit(service.read_data("photos"))
 
-    @new_app.command("portfolio")
-    def portfolio(name: str, title: str | None = None, abstract: str | None = None, figure_path: str | None = typer.Option(None, "--figure-path"), figure_caption: str | None = typer.Option(None, "--figure-caption"), project_path: str | None = typer.Option(None, "--project-path", help="Repository-relative project directory."), introduction: str | None = None, what_it_contains: str | None = typer.Option(None, "--what-it-contains"), scope_notes: str | None = typer.Option(None, "--scope-notes"), plan_file: str | None = typer.Option(None, "--plan-file"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Register a portfolio plan without creating its source notebook."""
-        service = ContentService()
-        slug(name)
-        if plan_file:
-            if any(v is not None for v in (introduction, what_it_contains, scope_notes)):
-                raise ServiceError("choose a plan file or inline portfolio plan")
-            parts = split_plan(service.plan_file(plan_file), ["What it contains", "Explore the project"], ["What it contains"])
-            introduction, what_it_contains, scope_notes = parts["introduction"], parts["What it contains"], parts.get("Explore the project", "")
-        detail = {"abstract": abstract, "figure_path": figure_path, "figure_caption": figure_caption, "project_path": project_path or f"projects/{name}", "notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "planned": {"introduction": introduction or "", "what_it_contains": what_it_contains or "", "scope_notes": scope_notes or ""}}
-        emit(service.create({"id": f"portfolio/{name}", "kind": "portfolio", "title": title or name.replace("-", " ").title(), "detail": detail}, expected_revision))
-
     @app.command("build")
     def build(mode: str = "production") -> None:
         """Validate and render; promote only successful output."""
@@ -215,10 +310,16 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
         uvicorn.run(create_app(Path.cwd()), host="127.0.0.1", port=port)
 
     @app.command("migrate")
-    def migrate(apply: bool = False, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:
-        """Inventory legacy inputs; apply only a candidate without review blockers."""
+    def migrate(apply: bool = False, layout: bool = typer.Option(False, "--layout", help="Relocate content/data, content/assets and context files under backend; leave authored notebooks intact."), expected_revision: ExpectedRevisionFlag = None, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:
+        """Review a legacy import or managed-storage move; --apply saves atomically."""
+        if layout:
+            from .services.layout import LayoutMigration
+            if reviewed_figures or preserve_gallery_prose or title_choice:
+                raise ServiceError("--layout cannot be combined with legacy import review options")
+            emit(LayoutMigration(Path.cwd()).run(apply=apply, expected_revision=expected_revision))
+            return
         from .services.migration import Migration
-        if (Path.cwd() / "content/data/catalog.yaml").exists():
+        if any((Path.cwd() / name).exists() for name in ("backend/data/catalog.yaml", "content/data/catalog.yaml")):
             raise ServiceError("This workspace is already migrated. Original inputs are retained under archive/2026-10-01/content-system-inputs; do not reapply migration over active content.", status=409, code="already_migrated")
         choices = dict(item.split("=", 1) for item in title_choice or [])
         candidate = Migration(Path.cwd(), reviewed_portfolio_figures=reviewed_figures, preserve_gallery_as_personal=preserve_gallery_prose, title_choices=choices).prepare()
@@ -226,6 +327,6 @@ def install(app: typer.Typer, new_app: typer.Typer) -> None:
             if not candidate["report"]["ready"]:
                 emit(candidate["report"])
                 raise typer.Exit(1)
-            emit(ContentService().install_migration(candidate["files"]))
+            emit(ContentService().install_migration(candidate["files"], expected_revision))
         else:
             emit(candidate["report"])

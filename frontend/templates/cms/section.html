@@ -24,9 +24,10 @@
 {% endif %}
 {% if profile %}{% include 'profile_summary.html' %}{% endif %}
 {% if kind %}
+<div class="collection-heading"><h1>{{ title }}</h1><p>{{ "Your writing, from first idea to published post." if section == "posts" else "Build the outline, then write one chapter at a time." if section == "courses" else "Projects and the stories behind them." }}</p></div>
 <div class="listing-layout"><section>
   <form method="get" class="filters">
-    {% if section == 'posts' %}<label class="title-search">Search title<input type="search" name="q" value="{{ q }}" placeholder="Full title or a few words"></label>{% endif %}
+    <label class="title-search">Search title<input type="search" name="q" value="{{ q }}" placeholder="Full title or a few words"></label>
     <label>Lifecycle<select name="lifecycle" data-auto-submit><option value="">All states</option>{% for value in ['planned','draft','published'] %}<option {% if lifecycle == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
     <label>Visibility<select name="visibility" data-auto-submit><option value="">All visibility</option>{% for value in ['public','private'] %}<option {% if visibility == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
     {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
@@ -36,7 +37,7 @@
   <div class="collection-scroll" tabindex="0" role="region" aria-label="{{ title }} entries">
   {% for item in artifacts %}
     <article class="card data-group entity-row" id="{{ item.id | replace('/','-') }}">
-      <div class="entity-row-heading"><h2><a href="{{ '/cms/courses/' + item.id.split('/')[-1] if item.kind == 'course' else '/cms/artifact/' + (item.id | urlpath) }}">{{ item.title }}</a></h2><span class="badge">{{ item.lifecycle }}</span><span class="badge">{{ item.visibility }}</span>
+      <div class="entity-row-heading"><h2><a href="{{ '/cms/courses/' + item.id.split('/')[-1] if item.kind == 'course' else '/cms/artifact/' + (item.id | urlpath) }}">{{ item.title }}</a></h2><span class="badge status-{{ item.lifecycle }}">{{ item.lifecycle }}</span><span class="badge">{{ item.visibility }}</span>
       <div class="actions"><a class="button" href="{{ '/cms/courses/' + item.id.split('/')[-1] if item.kind == 'course' else '/cms/artifact/' + (item.id | urlpath) }}">Edit</a><a class="button danger" data-delete-link href="/cms/delete/{{ item.id | urlpath }}">Delete</a></div></div>
       {% if item.description %}<p>{{ item.description }}</p>{% endif %}
       {% if item.tags %}<p>{% for label in item.tags %}<a class="tag" href="/cms/{{ section }}?tag={{ label | urlencode }}">{{ label }}</a>{% endfor %}</p>{% endif %}

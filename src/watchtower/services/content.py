@@ -37,21 +37,24 @@ from watchtower.models import (
     has_content,
     markdown_h1s,
     plan_body,
+    public_summary,
     route_for,
     source_path,
 )
-from watchtower.planning import extra_plan_body, missing_fields
+from watchtower.planning import filled_fields, missing_fields, plan_schema
 from watchtower.starters import draft_notebook_cells, portfolio_abstract, seed_fingerprint
 
+from .attachments import AttachmentUpload, archive_unreferenced, describe, prepare, references
+from .attachments import validate as validate_attachments
 from .images import portfolio_figure, uploaded_image
 from .projects import project_name, scaffold_project
 from .workspace import ServiceError, WorkspaceStore, digest, load_yaml, revision
 
-CATALOG = "content/data/catalog.yaml"
-PORTFOLIO = "content/data/portfolio.yaml"
-PROFILE = "content/data/profile.yaml"
-PHOTOS = "content/data/photos.yaml"
-KANBAN = "content/data/kanban.yaml"
+CATALOG = "backend/data/catalog.yaml"
+PORTFOLIO = "backend/data/portfolio.yaml"
+PROFILE = "backend/data/profile.yaml"
+PHOTOS = "backend/data/photos.yaml"
+KANBAN = "backend/data/kanban.yaml"
 SETTINGS = "frontend/site.yaml"
 
 
@@ -85,7 +88,7 @@ def parse_state(files: dict[str, bytes | None]) -> Workspace:
         courses = {}
         for item in catalog.artifacts:
             if item.kind == "course":
-                name = f"content/data/courses/{item.id.split('/')[-1]}.yaml"
+                name = f"backend/data/courses/{item.id.split('/')[-1]}.yaml"
                 courses[item.id] = CourseContract.model_validate(record(name))
         return Workspace(artifacts=catalog.artifacts, portfolio=portfolio.entries, courses=courses, photos=photos.photos, profile=profile, settings=settings, kanban=kanban.cards)
     except (ValidationError, ValueError) as error:
@@ -95,6 +98,7 @@ def parse_state(files: dict[str, bytes | None]) -> Workspace:
 
 
 def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path, *, missing_references_ok: bool = False) -> None:
+    validate_attachments(state, files, missing_ok=missing_references_ok)
     errors: list[str] = []
     paths: list[str] = []
     def fail(message: str, path: str = CATALOG) -> None:
@@ -107,6 +111,9 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path,
         if not missing_references_ok:
             fail(message, path)
     def exists(path: str | None, description: str) -> bool:
+        if path and path.startswith("backend/attachments/"):
+            fail(f"{description}: context attachments are CMS-only; copy public assets to backend/assets/", path)
+            return False
         if not path or files.get(path) is None:
             missing(f"{description}: missing {path}", path or CATALOG)
             return False
@@ -125,6 +132,8 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path,
                 return
             path = unquote(parsed.path)
             target = posixpath.normpath(path.lstrip("/") if path.startswith("/") else posixpath.join(posixpath.dirname(source), path))
+            if target.startswith("backend/attachments/"):
+                fail(f"{source}: context attachments cannot be used as public notebook images", source)
             if path and files.get(target) is None:
                 missing(f"{source}: missing image or media {value}", source)
         def body(text: str, attachments: dict[str, Any]) -> None:
@@ -232,7 +241,7 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path,
             if parent is None or parent.kind != "course":
                 fail(f"{artifact.id}: parent must reference a course")
     for course_id, course in state.courses.items():
-        name = f"content/data/courses/{course_id.split('/')[-1]}.yaml"
+        name = f"backend/data/courses/{course_id.split('/')[-1]}.yaml"
         if course.id != course_id:
             fail(f"{course_id}: contract ID mismatch", name)
         section_ids = [section.id for section in course.toc]
@@ -332,8 +341,7 @@ class ContentService:
     def _planning(artifact: Artifact, state: Workspace) -> dict[str, Any]:
         if artifact.kind == "course":
             contract = state.courses[artifact.id]
-            return {**contract.planned, "purpose": contract.purpose, "audience": contract.audience,
-                    "summary": contract.planned.get("summary") or artifact.planned.get("content", "")}
+            return {**contract.planned, "purpose": contract.purpose, "audience": contract.audience}
         if artifact.kind == "chapter":
             return next((p for p in state.courses[str(artifact.parent)].planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
         if artifact.kind == "portfolio":
@@ -342,6 +350,7 @@ class ContentService:
 
     @classmethod
     def _build_brief(cls, artifact: Artifact, state: Workspace) -> str:
+        """Agent-facing brief generated only from saved values, in writing order."""
         plan = cls._planning(artifact, state)
         lines = [f"# {artifact.title}", "", f"Stable ID: {artifact.id}", f"Kind: {artifact.kind}",
                  f"State: {artifact.lifecycle} / {artifact.visibility}"]
@@ -351,23 +360,21 @@ class ContentService:
         if artifact.kind == "portfolio":
             detail = next(p for p in state.portfolio if p.id == artifact.id)
             lines.append(f"Project: {detail.project_path or 'projects/' + artifact.id.split('/')[-1]}")
-        if artifact.kind == "portfolio":
-            detail = next(entry for entry in state.portfolio if entry.id == artifact.id)
-            if abstract := detail.abstract or artifact.description:
-                lines.extend(["", "Abstract: " + abstract])
-        elif artifact.description:
-            lines.extend(["", "Description: " + artifact.description])
-        if artifact.internal_notes:
-            lines.extend(["", "## Internal notes", "", artifact.internal_notes])
         if artifact.tags:
             lines.append("Tags: " + ", ".join(artifact.tags))
         if artifact.relations:
             lines.append("Related stable IDs: " + ", ".join(artifact.relations))
-        lines.extend(["", extra_plan_body(artifact.kind, plan, {"chapters", "chapter_id", "section"})])
-        if artifact.planned and artifact.kind in {"course", "portfolio", "chapter"}:
-            lines.extend(["", "## Legacy catalog plan", "", extra_plan_body(artifact.kind, artifact.planned, set())])
+        if summary := public_summary(artifact, state):
+            lines.extend(["", "## Summary", "", summary])
+        for label, text in filled_fields(artifact.kind, plan):
+            lines.extend(["", f"## {label}", "", text])
+        if artifact.internal_notes:
+            lines.extend(["", "## Internal notes", "", artifact.internal_notes])
+        if artifact.attachments:
+            lines.extend(["", "## Context attachments", ""])
+            lines.extend(f"- {item.name}: {item.path} ({item.media_type}, {item.size} bytes; ID {item.id})" for item in artifact.attachments)
         missing = missing_fields(artifact.kind, plan)
-        lines.extend(["", "Suggested planning fields missing (optional): " + (", ".join(missing) if missing else "None")])
+        lines.extend(["", "Missing core fields: " + (", ".join(missing) if missing else "None")])
         if artifact.kind == "course":
             for row in course_rows(state.courses[artifact.id], state.artifacts):
                 child = next(a for a in state.artifacts if a.id == row["chapter"]["id"])
@@ -375,10 +382,14 @@ class ContentService:
         elif artifact.kind == "chapter":
             parent = next(a for a in state.artifacts if a.id == artifact.parent)
             context = cls._planning(parent, state)
-            lines.extend(["", f"## Course context: {parent.title}", "", f"Course ID: {parent.id}",
-                          f"Section: {artifact.section}", "", extra_plan_body("course", context, {"chapters"})])
+            lines.extend(["", f"## Course context: {parent.title}", "", f"Course ID: {parent.id}", f"Section: {artifact.section}"])
+            for label, text in filled_fields("course", context):
+                lines.extend(["", f"### {label}", "", text])
             if parent.internal_notes:
                 lines.extend(["", "### Course internal notes", "", parent.internal_notes])
+            if parent.attachments:
+                lines.extend(["", "### Course context attachments", ""])
+                lines.extend(f"- {item.name}: {item.path} ({item.media_type}, {item.size} bytes)" for item in parent.attachments)
         return "\n".join(lines)
 
     def organize_course(self, artifact_id: str, action: str, values: dict[str, str], expected_revision: str) -> dict[str, Any]:
@@ -388,7 +399,7 @@ class ContentService:
             record = self._find(catalog, artifact_id)
             if record["kind"] != "course":
                 raise ServiceError("Choose a course.")
-            name = f"content/data/courses/{artifact_id.split('/')[-1]}.yaml"
+            name = f"backend/data/courses/{artifact_id.split('/')[-1]}.yaml"
             contract = load_yaml(files[name] or b"", name)
             sections = contract["toc"]
             selected = next((s for s in sections if s["id"] == values.get("section")), None)
@@ -461,8 +472,11 @@ class ContentService:
                 "title": artifact.title,
                 "lifecycle": artifact.lifecycle,
                 "source_path": source_path(artifact, state),
+                "summary": public_summary(artifact, state),
+                "fields": plan_schema(artifact.kind),
                 "plan": self._planning(artifact, state),
                 "internal_notes": artifact.internal_notes,
+                "attachments": [describe(item) for item in artifact.attachments],
                 "build_brief": self._build_brief(artifact, state),
                 "revision": revision(files),
             }
@@ -533,6 +547,8 @@ class ContentService:
                 candidate.update(writes)
                 candidate.update(self.store.project_directories(writes))
                 state = parse_state(candidate)
+                archive_unreferenced(state, original, writes, result, operation)
+                candidate.update(writes)
                 validate_state(state, candidate, self.root, missing_references_ok=missing_references_ok)
             except (ValidationError, KeyError, TypeError) as error:
                 raise ServiceError(f"invalid candidate: {error}") from error
@@ -557,17 +573,21 @@ class ContentService:
             raise ServiceError(f"unknown artifact {artifact_id}", code="not_found", status=404)
         return record
 
-    def create_post(self, name: str, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+    def create_post(self, name: str, data: dict[str, Any], expected_revision: str | None = None, *, attachment_uploads: list[AttachmentUpload] | None = None) -> dict[str, Any]:
         """Create a post plan from a single extension-free name."""
         name = name.strip()
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name):
             raise ServiceError("Name must have no extension or folders; use letters, numbers, hyphens or underscores.")
         payload = {**data, "kind": "post", "id": f"post/{name}", "path": f"content/notebooks/posts/{name}.ipynb"}
-        return self.create(payload, expected_revision)
+        return self.create(payload, expected_revision, attachment_uploads=attachment_uploads)
 
-    def create(self, data: dict[str, Any], expected_revision: str | None = None) -> dict[str, Any]:
+    def create(self, data: dict[str, Any], expected_revision: str | None = None, *, attachment_uploads: list[AttachmentUpload] | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
             payload = copy.deepcopy(data)
+            if attachment_uploads:
+                payload["attachments"], attachment_writes = prepare(payload.get("attachments", []), attachment_uploads)
+            else:
+                attachment_writes = {}
             detail, contract = payload.pop("detail", None), payload.pop("contract", None)
             chapter_plan = payload.pop("plan", None) or {}
             plan_content, plan_lab = payload.pop("planned_content", None), payload.pop("planned_lab_and_evidence", None)
@@ -594,7 +614,7 @@ class ContentService:
             if artifact.kind == "project" and files.get(f"@dir/{artifact.path}") is None:
                 raise ServiceError(f"project code directory missing: {artifact.path}", paths=[str(artifact.path)])
             catalog["artifacts"].append(artifact.model_dump(mode="json", exclude_none=True))
-            writes = {CATALOG: yaml_bytes(catalog)}
+            writes = {CATALOG: yaml_bytes(catalog), **attachment_writes}
             if artifact.kind == "portfolio":
                 portfolio = load_yaml(files[PORTFOLIO] or b"", PORTFOLIO)
                 entry = {"id": artifact.id, **(detail or {})}
@@ -605,12 +625,18 @@ class ContentService:
                 portfolio["entries"].append(entry)
                 writes[PORTFOLIO] = yaml_bytes(portfolio)
             if artifact.kind == "course":
-                name = f"content/data/courses/{artifact.id.split('/')[-1]}.yaml"
+                name = f"backend/data/courses/{artifact.id.split('/')[-1]}.yaml"
                 if files.get(name) is not None:
                     raise ServiceError("course contract already exists", paths=[name])
-                writes[name] = yaml_bytes({"id": artifact.id, "purpose": "", "audience": "", "planned": {"summary": "", "chapters": []}, "actualized": {"summary": ""}, "toc": [{"id": "main", "title": "", "chapters": []}], **(contract or {})})
+                # Supplied planned and actualized values extend the scaffold, so the chapters list always exists.
+                provided: dict[str, Any] = dict(contract or {})
+                record: dict[str, Any] = {"id": artifact.id, "purpose": "", "audience": "", "planned": {"chapters": []}, "actualized": {"summary": ""}, "toc": [{"id": "main", "title": "", "chapters": []}]}
+                for key in ("planned", "actualized"):
+                    if isinstance(provided.get(key), dict):
+                        record[key] = {**record[key], **provided.pop(key)}
+                writes[name] = yaml_bytes({**record, **provided})
             if artifact.kind == "chapter":
-                name = f"content/data/courses/{str(artifact.parent).split('/')[-1]}.yaml"
+                name = f"backend/data/courses/{str(artifact.parent).split('/')[-1]}.yaml"
                 course = load_yaml(files.get(name) or b"", name)
                 section = next((s for s in course["toc"] if s["id"] == artifact.section), None)
                 if section is None:
@@ -631,11 +657,16 @@ class ContentService:
         ids = {a.id for a in removed}
         sources = [path for a in removed if (path := source_path(a, state)) and files.get(path) is not None and a.kind != "project"]
         if record["kind"] == "course":
-            sources.append(f"content/data/courses/{record['id'].split('/')[-1]}.yaml")
+            sources.append(f"backend/data/courses/{record['id'].split('/')[-1]}.yaml")
         links = [{"kind": "relation", "id": a.id, "title": a.title, "artifact_ids": [link for link in a.relations if link in ids]} for a in state.artifacts if a.id not in ids and any(link in ids for link in a.relations)]
         links.extend({"kind": "kanban", "id": card.id, "title": card.title, "artifact_ids": [link for link in card.artifact_ids if link in ids]} for card in state.kanban if any(link in ids for link in card.artifact_ids))
         links.extend({"kind": "profile", "id": project.title, "artifact_ids": [project.artifact_id]} for project in state.profile.projects if project.artifact_id in ids)
-        return {"artifact": record, "removed": [a.model_dump(mode="json") for a in removed], "archive_files": sorted(set(sources)), "detached_links": links}
+        attachment_actions = []
+        for identifier, owners in references(state).items():
+            removed_owners = [owner for owner in owners if owner["owner_kind"] != "kanban" and owner["owner_id"] in ids]
+            if removed_owners:
+                attachment_actions.append({"id": identifier, "name": owners[0]["attachment"]["name"], "action": "keep shared file" if len(removed_owners) < len(owners) else "archive"})
+        return {"artifact": record, "removed": [a.model_dump(mode="json") for a in removed], "archive_files": sorted(set(sources)), "detached_links": links, "attachment_actions": attachment_actions}
 
     def deletion_plan(self, artifact_id: str) -> dict[str, Any]:
         """Review removal, including course children and incoming managed links."""
@@ -668,7 +699,7 @@ class ContentService:
             for course_id in state.courses:
                 if course_id in ids:
                     continue
-                name = f"content/data/courses/{course_id.split('/')[-1]}.yaml"
+                name = f"backend/data/courses/{course_id.split('/')[-1]}.yaml"
                 contract = load_yaml(files[name] or b"", name)
                 before = copy.deepcopy(contract)
                 for section in contract["toc"]:
@@ -693,18 +724,23 @@ class ContentService:
             # Preserve exact authored bytes before removing their active locations.
             for source in plan["archive_files"]:
                 writes[f"{archive}/{source}"] = files[source]
-            writes[f"{archive}/record.json"] = json.dumps({**plan, "saved_data": {name: (files[name] or b"").decode() for name in writes if name.startswith("content/data/")}}, ensure_ascii=False, indent=2).encode()
+            writes[f"{archive}/record.json"] = json.dumps({**plan, "saved_data": {name: (files[name] or b"").decode() for name in writes if name.startswith("backend/data/")}}, ensure_ascii=False, indent=2).encode()
             for source in plan["archive_files"]:
                 writes[source] = None
             return {"deleted": sorted(ids), "archive_path": archive, "detached_links": plan["detached_links"]}, writes
         return self._mutate("delete artifact", apply, expected_revision, missing_references_ok=True)
 
-    def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None, *, figure_image: bytes | None = None) -> dict[str, Any]:
+    def update(self, artifact_id: str, patch: dict[str, Any], expected_revision: str | None = None, *, figure_image: bytes | None = None, attachment_uploads: list[AttachmentUpload] | None = None, remove_attachments: list[str] | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
             catalog = self._catalog(files)
             record = self._find(catalog, artifact_id)
-            before = copy.deepcopy(record)
             updates = copy.deepcopy(patch)
+            if attachment_uploads or remove_attachments:
+                items, attachment_writes = prepare(record.get("attachments", []), attachment_uploads, remove_attachments)
+                updates["attachments"] = items
+            else:
+                attachment_writes = {}
+            before = copy.deepcopy(record)
             if record["kind"] == "gallery" and "lifecycle" in updates:
                 raise ServiceError("Change each photo's lifecycle in Personal; gallery lifecycle is derived automatically", paths=[PHOTOS])
             detail, plan = updates.pop("detail", None), updates.pop("plan", None)
@@ -721,11 +757,11 @@ class ContentService:
                 normalized.visibility = updates.get("visibility", "public")
             record.clear()
             record.update(normalized.model_dump(mode="json", exclude_none=True))
-            writes: dict[str, bytes] = {}
+            writes: dict[str, bytes] = dict(attachment_writes)
             if contract is not None:
                 if record["kind"] != "course":
                     raise ServiceError("Only courses have a course contract.")
-                name = f"content/data/courses/{record['id'].split('/')[-1]}.yaml"
+                name = f"backend/data/courses/{record['id'].split('/')[-1]}.yaml"
                 current = load_yaml(files[name] or b"", name)
                 if contract.get("id", record["id"]) != record["id"]:
                     raise ServiceError("Course contract ID cannot be changed.")
@@ -759,7 +795,7 @@ class ContentService:
             if record["kind"] == "chapter":
                 if record.get("parent") != before.get("parent"):
                     raise ServiceError("moving chapters between courses requires an explicit import")
-                name = f"content/data/courses/{record['parent'].split('/')[-1]}.yaml"
+                name = f"backend/data/courses/{record['parent'].split('/')[-1]}.yaml"
                 course = load_yaml(files[name] or b"", name)
                 section = next((s for s in course["toc"] if s["id"] == record["section"]), None)
                 if section is None:
@@ -921,6 +957,7 @@ class ContentService:
     def publish(
         self, artifact_id: str, expected_revision: str | None = None, *,
         patch: dict[str, Any] | None = None, figure_image: bytes | None = None,
+        attachment_uploads: list[AttachmentUpload] | None = None, remove_attachments: list[str] | None = None,
     ) -> dict[str, Any]:
         with self.store.locked():
             files = self.store.inputs()
@@ -944,6 +981,7 @@ class ContentService:
         return self.update(
             artifact_id, {**(patch or {}), "lifecycle": "published", "visibility": "public"},
             expected_revision or captured, figure_image=figure_image,
+            attachment_uploads=attachment_uploads, remove_attachments=remove_attachments,
         )
 
     def draft(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
@@ -960,7 +998,7 @@ class ContentService:
     def _data_path(self, name: str) -> str:
         names = {"profile": PROFILE, "portfolio": PORTFOLIO, "photos": PHOTOS, "settings": SETTINGS, "kanban": KANBAN}
         if name.startswith("course/") and re.fullmatch(r"[\w-]+", name[7:]):
-            return f"content/data/courses/{name[7:]}.yaml"
+            return f"backend/data/courses/{name[7:]}.yaml"
         if name not in names:
             raise ServiceError("unknown structured record", code="not_found", status=404)
         return names[name]
@@ -1062,7 +1100,7 @@ class ContentService:
             record: dict[str, Any] = {"id": artifact_id, "kind": kind, "title": title, "path": path, "lifecycle": lifecycle, "categories": header.get("categories", []), "tags": header.get("tags", []), "description": header.get("description"), "date": str(header["date"]) if header.get("date") else None}
             writes: dict[str, bytes] = {}
             if kind == "chapter":
-                contract_path = f"content/data/courses/{course}.yaml"
+                contract_path = f"backend/data/courses/{course}.yaml"
                 contract = load_yaml(files.get(contract_path) or b"", contract_path)
                 selected = next((s for s in contract["toc"] if section is None or s["id"] == section), None)
                 if selected is None:

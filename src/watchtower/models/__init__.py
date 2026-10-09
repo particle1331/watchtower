@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Collection, Mapping
 from datetime import date as Date
 from pathlib import Path
 from typing import Any, Literal
@@ -12,7 +13,7 @@ import nbformat
 from markdown_it import MarkdownIt
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from watchtower.planning import extra_plan_body
+from watchtower.planning import filled_fields
 from watchtower.services.projects import project_name as validate_project_name
 
 
@@ -27,6 +28,25 @@ def relative_path(value: str) -> str:
     return path.as_posix()
 
 
+class Attachment(Record):
+    """Private context file, addressed by its exact bytes rather than a title."""
+    id: str = Field(pattern=r"^[a-f0-9]{64}$")
+    name: str = Field(min_length=1, max_length=255)
+    media_type: str = Field(default="application/octet-stream", pattern=r"^[a-z0-9.+-]+/[a-z0-9.+-]+$")
+    size: int = Field(gt=0, le=20 * 1024 * 1024)
+
+    @field_validator("name")
+    @classmethod
+    def filename(cls, value: str) -> str:
+        if "/" in value or "\\" in value or any(ord(c) < 32 for c in value) or value in {".", ".."}:
+            raise ValueError("attachment name must be a filename")
+        return value
+
+    @property
+    def path(self) -> str:
+        return f"backend/attachments/{self.id}"
+
+
 class Artifact(Record):
     id: str = Field(min_length=1)
     kind: Literal["post", "course", "chapter", "portfolio", "project", "personal", "gallery"]
@@ -38,6 +58,7 @@ class Artifact(Record):
     date: Date | None = None
     description: str | None = None
     internal_notes: str = ""
+    attachments: list[Attachment] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     cover: str | None = None
     planned: dict[str, Any] = Field(default_factory=dict)
@@ -93,8 +114,8 @@ class Artifact(Record):
             raise ValueError("course directory must be under content/notebooks/courses/")
         if self.kind == "project" and (not self.path or not self.path.startswith("projects/")):
             raise ValueError("active project path must be under projects/")
-        if self.kind == "gallery" and self.path != "content/data/photos.yaml":
-            raise ValueError("gallery path must be content/data/photos.yaml")
+        if self.kind == "gallery" and self.path != "backend/data/photos.yaml":
+            raise ValueError("gallery path must be backend/data/photos.yaml")
         return self
 
 
@@ -355,6 +376,7 @@ class KanbanCard(Record):
     ref: str | None = Field(default=None, pattern=r"^card#[1-9][0-9]*$")
     title: str = Field(min_length=1)
     description: str = ""
+    attachments: list[Attachment] = Field(default_factory=list)
     column: KanbanColumn = "todo"
     artifact_ids: list[str] = Field(default_factory=list)
 
@@ -502,23 +524,36 @@ def has_content(notebook: nbformat.NotebookNode, chapter_title: str | None = Non
     return False
 
 
+def public_summary(artifact: Artifact, state: Workspace) -> str:
+    """The one reader-facing sentence: catalog description, portfolio abstract, or chapter table summary."""
+    if artifact.kind == "portfolio":
+        detail = next((p for p in state.portfolio if p.id == artifact.id), None)
+        return ((detail.abstract if detail else None) or artifact.description or "").strip()
+    if artifact.kind == "chapter":
+        course = state.courses.get(str(artifact.parent))
+        plans = course.planned.get("chapters", []) if course else []
+        plan = next((p for p in plans if p.get("chapter_id") == artifact.id), {})
+        return str(plan.get("summary") or "").strip()
+    return (artifact.description or "").strip()
+
+
+def _preview_sections(artifact: Artifact, state: Workspace, plan: Mapping[str, Any], exclude: Collection[str] = ()) -> list[str]:
+    sections = []
+    if summary := public_summary(artifact, state):
+        sections.append(f"## Summary\n\n{summary}")
+    sections.extend(f"## {label}\n\n{text}" for label, text in filled_fields(artifact.kind, plan, exclude))
+    return sections
+
+
 def plan_body(artifact: Artifact, state: Workspace) -> str:
     """Internal plan preview for inspection; never use as a public page or starter."""
-    def with_extra(body: str, kind: str, plan: dict[str, Any], exclude: set[str]) -> str:
-        extra = extra_plan_body(kind, plan, exclude)
-        return body + "\n\n" + extra if extra else body
     if artifact.kind == "chapter":
         course = state.courses[str(artifact.parent)]
         plan = next((p for p in course.planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
-        body = f"# {artifact.title}\n\n## Planned content\n\n{plan.get('content', '')}\n\n## Planned lab and evidence\n\n{plan.get('lab_and_evidence', '')}"
-        return with_extra(body, "chapter", plan, {"chapter_id", "section", "content", "lab_and_evidence"})
+        return "\n\n".join([f"# {artifact.title}", *_preview_sections(artifact, state, plan)])
     if artifact.kind == "portfolio":
         detail = next(p for p in state.portfolio if p.id == artifact.id)
-        plan = detail.planned
-        body = f"[← Portfolio](/portfolio.html)\n\n{plan.get('introduction', '')}\n\n## What it contains\n\n{plan.get('what_it_contains', '')}"
-        if plan.get("scope_notes"):
-            body += f"\n\n## Scope notes\n\n{plan['scope_notes']}"
-        body = with_extra(body, "portfolio", plan, {"introduction", "what_it_contains", "scope_notes", "references"})
+        body = ["[← Portfolio](/portfolio.html)", *_preview_sections(artifact, state, detail.planned, exclude={"references"})]
         links = []
         reserved = artifact.lifecycle == "planned" and not (detail.project_path or "").startswith("archive/")
         url = source_url(detail, state.settings, reserved_name=artifact.id.split("/")[-1] if reserved else None)
@@ -528,17 +563,16 @@ def plan_body(artifact: Artifact, state: Workspace) -> str:
         for related in state.artifacts:
             if related.id in artifact.relations and eligible(related, state.artifacts):
                 links.append(f"- [{related.title}](/{Path(route_for(related)).with_suffix('.html').as_posix()})")
-        references = plan.get("references") or ""
+        references = detail.planned.get("references") or ""
         resources = [part for part in (references, "\n".join(links)) if part]
         if resources:
-            body += "\n\n## References and related content\n\n" + "\n\n".join(resources)
-        return body
+            body.append("## References and related content\n\n" + "\n\n".join(resources))
+        return "\n\n".join(body)
     if artifact.kind == "course":
         course = state.courses[artifact.id]
-        body = f"{course.purpose}\n\n{course.audience}\n\n{course.planned.get('summary') or artifact.planned.get('content', '')}"
-        return with_extra(body, "course", course.planned, {"summary", "chapters"})
-    body = str(artifact.planned.get("content", artifact.description or ""))
-    return with_extra(body, artifact.kind, artifact.planned, {"content"})
+        plan = {**course.planned, "purpose": course.purpose, "audience": course.audience}
+        return "\n\n".join(_preview_sections(artifact, state, plan))
+    return "\n\n".join(_preview_sections(artifact, state, artifact.planned))
 
 
 def course_rows(contract: CourseContract, artifacts: list[Artifact]) -> list[dict[str, Any]]:

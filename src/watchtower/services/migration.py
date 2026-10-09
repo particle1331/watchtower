@@ -194,7 +194,7 @@ class Migration:
             if relative.startswith("nb/"):
                 target = "content/notebooks/" + relative.removeprefix("nb/")
             else:
-                target = "content/assets/" + relative.removeprefix("assets/")
+                target = "backend/assets/" + relative.removeprefix("assets/")
             files[target] = source.read_bytes()
             if not any(asset["source"] == relative for asset in report["assets"]):
                 report["assets"].append({"source": relative, "target": target, "sha256": hashlib.sha256(files[target]).hexdigest(), "reason": "preserve sibling asset and relative source references"})
@@ -295,7 +295,7 @@ class Migration:
             overview = by_path.get(f"{source}/00-overview.ipynb")
             if overview:
                 contract["overview"] = overview["id"]
-            target = f"content/data/courses/{slug}.yaml"
+            target = f"backend/data/courses/{slug}.yaml"
             files[target] = yaml_bytes(contract)
             report["courses"].append({"id": course["id"], "source": f"{source}/course.yaml", "target": target, "toc": toc, "actualized": copy.deepcopy(contract.get("actualized"))})
             home = f"{source}/index.ipynb"
@@ -322,7 +322,7 @@ class Migration:
                     report["warnings"].append({"path": source, "message": "review historical figure and caption without adopting archived claims", "suggested_figure": figure if (self.root / figure).is_file() else None})
                     caption = historical_captions.get(f"{name}-flow.svg")
                     if self.reviewed_portfolio_figures and caption and (self.root / figure).is_file():
-                        figure_target = f"content/assets/portfolio/{name}-flow.svg"
+                        figure_target = f"backend/assets/portfolio/{name}-flow.svg"
                         detail.update(figure_path=figure_target, figure_caption=caption)
                         files[figure_target] = (self.root / figure).read_bytes()
                 else:
@@ -361,18 +361,18 @@ class Migration:
                 personal = {"id": "personal/photos-notes", "kind": "personal", "title": header.get("title", "Personal"), "path": "content/notebooks/personal/photos-notes.ipynb", "visibility": "private", "lifecycle": "published", "relations": [], "route": "nb/personal/photos-notes.ipynb"}
                 artifacts.append(personal)
                 migrate_notebook(gallery_source, personal["path"], personal)
-                artifacts.append({"id": "gallery/photos", "kind": "gallery", "title": "Personal", "path": "content/data/photos.yaml", "visibility": "public", "lifecycle": "planned", "relations": [], "route": gallery_source})
-                files["content/data/photos.yaml"] = yaml_bytes({"version": 1, "photos": []})
+                artifacts.append({"id": "gallery/photos", "kind": "gallery", "title": "Personal", "path": "backend/data/photos.yaml", "visibility": "public", "lifecycle": "planned", "relations": [], "route": gallery_source})
+                files["backend/data/photos.yaml"] = yaml_bytes({"version": 1, "photos": []})
                 report["warnings"].append({"path": gallery_source, "message": "explicit preservation decision retains all gallery body/prose/placeholders in a personal notebook and reserves an empty planned gallery"})
             else:
-                artifacts.append({"id": "gallery/photos", "kind": "gallery", "title": header.get("title", "Personal"), "path": "content/data/photos.yaml", "visibility": "public", "lifecycle": "published", "relations": [], "route": gallery_source})
-                files["content/data/photos.yaml"] = yaml_bytes({"version": 1, "photos": photos})
+                artifacts.append({"id": "gallery/photos", "kind": "gallery", "title": header.get("title", "Personal"), "path": "backend/data/photos.yaml", "visibility": "public", "lifecycle": "published", "relations": [], "route": gallery_source})
+                files["backend/data/photos.yaml"] = yaml_bytes({"version": 1, "photos": photos})
 
         profile = self._yaml("assets/resume.yaml")
         report["profile"] = {"source": "assets/resume.yaml", "fields": list(profile), "preserved": True}
-        files["content/data/profile.yaml"] = yaml_bytes({"version": 1, **profile})
-        files["content/data/catalog.yaml"] = yaml_bytes({"version": 1, "artifacts": artifacts})
-        files["content/data/portfolio.yaml"] = yaml_bytes({"version": 1, "entries": portfolio})
+        files["backend/data/profile.yaml"] = yaml_bytes({"version": 1, **profile})
+        files["backend/data/catalog.yaml"] = yaml_bytes({"version": 1, "artifacts": artifacts})
+        files["backend/data/portfolio.yaml"] = yaml_bytes({"version": 1, "entries": portfolio})
         report["artifacts"] = artifacts
         report["ready"] = not report["blockers"]
         report["candidate_paths"] = list(files)

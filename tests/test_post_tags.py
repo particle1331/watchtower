@@ -21,7 +21,7 @@ from watchtower.services.content import ContentService
     ('portfolio', 'content/notebooks/portfolio/example.ipynb'),
     ('project', 'projects/example'),
     ('personal', 'content/notebooks/personal/example.ipynb'),
-    ('gallery', 'content/data/photos.yaml'),
+    ('gallery', 'backend/data/photos.yaml'),
 ])
 def test_legacy_categories_merge_into_tags_and_are_removed_from_the_model(kind, path):
     values = {'id': f'{kind}/example', 'kind': kind, 'title': 'Example', 'path': path, 'tags': [' NLP ', 'meta'], 'categories': ['Meta', 'dev'], 'route': 'legacy/example.ipynb'}
@@ -43,7 +43,7 @@ def test_legacy_categories_merge_into_tags_and_are_removed_from_the_model(kind, 
 def test_legacy_post_labels_are_visible_and_can_be_removed_in_cms(tmp_path):
     content = ContentService(author_workspace(tmp_path))
     content.create_post('example', {'title': 'Example'})
-    catalog_path = content.root / 'content/data/catalog.yaml'
+    catalog_path = content.root / 'backend/data/catalog.yaml'
     catalog = yaml.safe_load(catalog_path.read_text())
     catalog['artifacts'][0].update(tags=['NLP'], categories=['meta', 'dev'])
     catalog_path.write_text(yaml.safe_dump(catalog))
@@ -71,7 +71,7 @@ def test_legacy_post_labels_are_visible_and_can_be_removed_in_cms(tmp_path):
 def test_course_legacy_labels_can_be_removed_without_changing_route(tmp_path):
     content = ContentService(author_workspace(tmp_path))
     content.create({'id': 'course/example', 'kind': 'course', 'title': 'Example course', 'path': 'content/notebooks/courses/example', 'route': 'legacy/course/index.ipynb'})
-    catalog_path = content.root / 'content/data/catalog.yaml'
+    catalog_path = content.root / 'backend/data/catalog.yaml'
     catalog = yaml.safe_load(catalog_path.read_text())
     catalog['artifacts'][0].update(tags=['NLP'], categories=['meta', 'dev'])
     catalog_path.write_text(yaml.safe_dump(catalog))
@@ -95,12 +95,12 @@ def editor_snapshot(editor):
 
 @pytest.mark.parametrize(('field', 'value', 'message'), [
     ('route', 'custom/post.ipynb', 'Route is managed by the site'),
-    ('cover', 'content/assets/example.png', 'Only course card images'),
+    ('cover', 'backend/assets/example.png', 'Only course card images'),
 ])
 def test_cms_cannot_change_hidden_post_metadata(tmp_path, field, value, message):
     content = ContentService(author_workspace(tmp_path))
     content.create_post('example', {'title': 'Example'})
-    catalog_path = content.root / 'content/data/catalog.yaml'
+    catalog_path = content.root / 'backend/data/catalog.yaml'
     original = catalog_path.read_bytes()
     with TestClient(create_app(content.root)) as client:
         revision, snapshot = editor_snapshot(client.get('/cms/artifact/post/example'))
@@ -113,9 +113,9 @@ def test_cms_cannot_change_hidden_post_metadata(tmp_path, field, value, message)
 
 def test_cms_cannot_set_route_when_creating_post(tmp_path):
     content = ContentService(author_workspace(tmp_path))
-    original = (content.root / 'content/data/catalog.yaml').read_bytes()
+    original = (content.root / 'backend/data/catalog.yaml').read_bytes()
     with TestClient(create_app(content.root)) as client:
-        saved = client.post('/cms/new?kind=post', data={'revision': content.list()['revision'], 'name': 'example', 'title': 'Example', 'route': 'custom/post.ipynb'})
+        saved = client.post('/cms/new?kind=post', data={'revision': content.list()['revision'], 'kind': 'post', 'field:["name"]': 'example', 'field:["title"]': 'Example', 'route': 'custom/post.ipynb'})
         assert saved.status_code == 422
         assert 'Route is managed by the site' in saved.text
-        assert (content.root / 'content/data/catalog.yaml').read_bytes() == original
+        assert (content.root / 'backend/data/catalog.yaml').read_bytes() == original
