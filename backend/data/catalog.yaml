@@ -289,8 +289,11 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  description: An end-to-end text classification course using AI-written-text detection
-    as a case study.
+  description: Build and evaluate text classifiers through AI-written-text detection,
+    then train an LLM into a Jev-like decision model with PyTorch.
+  internal_notes: ''
+  attachments: []
+  cover: content/notebooks/courses/text-classification-from-scratch/img/course-cover.svg
   planned: {}
   route: nb/courses/text-classification-from-scratch/index.ipynb
 - id: course/text-classification-from-scratch/01-introduction
@@ -372,6 +375,8 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
+  internal_notes: ''
+  attachments: []
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 06. Fine-tuning
@@ -415,11 +420,13 @@ artifacts:
   route: nb/courses/text-classification-from-scratch/09-deployment.ipynb
 - id: course/text-classification-from-scratch/10-capstone
   kind: chapter
-  title: 'Final Project: Implement a Jev-Like Classifier with ModernBERT'
+  title: 'Final Project: Train an LLM as a Jev-Like Decision Model'
   path: content/notebooks/courses/text-classification-from-scratch/10-capstone.ipynb
   visibility: public
   lifecycle: published
   relations: []
+  internal_notes: ''
+  attachments: []
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 10. Capstone
@@ -638,6 +645,17 @@ artifacts:
   - course/ai-assisted
   - project/ai-assisted
   date: '2026-10-11'
+  internal_notes: ''
+  attachments: []
+  tags: []
+  planned: {}
+- id: project/text-decisions
+  kind: project
+  title: PyTorch Text Decision Models
+  path: projects/text-decisions
+  visibility: public
+  lifecycle: draft
+  relations: []
   internal_notes: ''
   attachments: []
   tags: []

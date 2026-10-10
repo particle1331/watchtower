@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="600" viewBox="0 0 1400 600" role="img" aria-labelledby="title description">
+  <title id="title">Annotated JSON output for text classification</title>
+  <desc id="description">A department classifier selects billing with probability 0.88. Four annotations explain the question ID, selected label, confidence, and class probabilities.</desc>
+  <style>
+    .code { font: 42px Menlo, Consolas, monospace; fill: #171717; }
+    .heading { font: bold 40px Arial, Helvetica, sans-serif; fill: #171717; }
+    .detail { font: 31px Arial, Helvetica, sans-serif; fill: #333; }
+    .number { font: bold 28px Arial, Helvetica, sans-serif; fill: white; text-anchor: middle; }
+    .arrow { fill: none; stroke: #171717; stroke-width: 3; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#171717"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="600" fill="white"/>
+  <rect x="8" y="10" width="844" height="580" rx="18" fill="#f5f5f3"/>
+  <rect x="68" y="45" width="745" height="48" rx="8" fill="#d9edf4"/>
+  <rect x="106" y="122" width="707" height="48" rx="8" fill="#e0f0e2"/>
+  <rect x="106" y="202" width="707" height="48" rx="8" fill="#f9dfc0"/>
+  <rect x="106" y="289" width="707" height="200" rx="10" fill="#e9def3"/>
+  <g class="code" xml:space="preserve">
+    <text x="38" y="42">{</text>
+    <text x="76" y="80">"department": {</text>
+    <text x="114" y="118">"type": "choice",</text>
+    <text x="114" y="156">"choice": "billing",</text>
+    <text x="114" y="236">"confidence": 0.88,</text>
+    <text x="114" y="324">"probabilities": {</text>
+    <text x="152" y="362">"billing": 0.88,</text>
+    <text x="152" y="400">"technical": 0.12,</text>
+    <text x="152" y="438">"sales": 0.00</text>
+    <text x="114" y="476">}</text>
+    <text x="76" y="514">}</text>
+    <text x="38" y="552">}</text>
+  </g>
+  <g>
+    <path class="arrow" d="M 876 80 H 827"/>
+    <circle cx="911" cy="80" r="22" fill="#171717"/>
+    <text class="number" x="911" y="90">1</text>
+    <text class="heading" x="952" y="94">Question ID</text>
+    <text class="detail" x="952" y="137">Names the task:</text>
+    <text class="detail" x="952" y="170">"department"</text>
+  </g>
+  <g>
+    <path class="arrow" d="M 876 195 L 827 148"/>
+    <circle cx="911" cy="195" r="22" fill="#171717"/>
+    <text class="number" x="911" y="205">2</text>
+    <text class="heading" x="952" y="209">Selected label</text>
+    <text class="detail" x="952" y="252">Highest-probability</text>
+    <text class="detail" x="952" y="285">option: billing</text>
+  </g>
+  <g>
+    <path class="arrow" d="M 876 330 L 827 227"/>
+    <circle cx="911" cy="330" r="22" fill="#171717"/>
+    <text class="number" x="911" y="340">3</text>
+    <text class="heading" x="952" y="344">Confidence</text>
+    <text class="detail" x="952" y="387">Probability of the</text>
+    <text class="detail" x="952" y="420">selected label: 88%</text>
+  </g>
+  <g>
+    <path class="arrow" d="M 876 458 L 827 389"/>
+    <circle cx="911" cy="458" r="22" fill="#171717"/>
+    <text class="number" x="911" y="468">4</text>
+    <text class="heading" x="952" y="472">Class probabilities</text>
+    <text class="detail" x="952" y="515">88% billing</text>
+    <text class="detail" x="952" y="548">12% technical</text>
+    <text class="detail" x="952" y="581">0% sales</text>
+  </g>
+</svg>

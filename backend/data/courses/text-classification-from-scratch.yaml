@@ -1,20 +1,75 @@
 id: course/text-classification-from-scratch
 purpose: Teach end-to-end text classification through an AI-written-text detection
-  case study and the history of text-classification architectures, then apply the
-  ideas in a multi-task Jev-like decision model implemented with a pretrained ModernBERT
-  encoder.
+  case study and classifier history, then derive decision heads and use PyTorch to
+  adapt a pretrained LLM into a multi-task Jev-like decision model.
 audience: Python practitioners who know basic supervised learning and want to build,
-  evaluate, and serve text classifiers; GPU training and external APIs are optional
-  extensions.
+  evaluate, and serve text classifiers. The baseline path runs on a CPU; the neural
+  project assumes PyTorch training-loop and attention fundamentals, with a GPU practical
+  for pretrained LLM adaptation.
 planned:
-  chapters: []
+  chapters:
+  - chapter_id: course/text-classification-from-scratch/00-overview
+    section: orientation
+    summary: Understand the course's data, decision-model architecture, adaptation,
+      and evaluation contract.
+  - chapter_id: course/text-classification-from-scratch/01-introduction
+    section: foundations
+    summary: Define inputs, labels, scores, decisions, and intended use.
+  - chapter_id: course/text-classification-from-scratch/02-data
+    section: data-and-baselines
+    summary: Audit label provenance, source licenses, and synthetic-data effects.
+  - chapter_id: course/text-classification-from-scratch/03-splits
+    section: data-and-baselines
+    summary: Keep related source and generated texts in one split.
+  - chapter_id: course/text-classification-from-scratch/04-baseline
+    section: data-and-baselines
+    summary: Establish an interpretable TF–IDF reference point.
+  - chapter_id: course/text-classification-from-scratch/05-transformers
+    section: neural-classifiers
+    summary: Trace classifier families and connect shared candidate scoring to joint
+      LLM decision heads.
+  - chapter_id: course/text-classification-from-scratch/06-finetuning
+    section: neural-classifiers
+    summary: Derive and run PyTorch decision heads, the supervised loss, and full/LoRA
+      adaptation with Qwen and ModernBERT.
+  - chapter_id: course/text-classification-from-scratch/07-evaluation
+    section: evaluation-and-delivery
+    summary: Measure discrimination, calibration, threshold behavior, and subgroup
+      failures.
+  - chapter_id: course/text-classification-from-scratch/08-efficiency
+    section: evaluation-and-delivery
+    summary: Compare data requirements, latency, memory, cost, and task coverage;
+      assess Unsloth as an optional optimized reference.
+  - chapter_id: course/text-classification-from-scratch/09-deployment
+    section: evaluation-and-delivery
+    summary: Package model artifacts behind a repeatable structured decision interface.
+  - chapter_id: course/text-classification-from-scratch/10-capstone
+    section: evaluation-and-delivery
+    summary: Train and evaluate a PyTorch LLM decision model with simple and joint
+      attention heads, Choice/Noul/Score outputs, and held-out task transfer.
+  outcomes: Build a shared candidate scorer and a joint attention head; adapt a pretrained
+    decoder through supervised full fine-tuning or LoRA; expose Choice, Noul, and
+    Score; evaluate calibrated probabilities and held-out task transfer.
+  running_project: Use the AI-written-text detector as the running case study, then
+    build a multi-task pretrained-decoder decision model with an explicit PyTorch
+    training loop. Keep the simpler scorer and ModernBERT as comparisons; use Unsloth
+    as an open architecture reference and optional optimized benchmark.
+  assessment: Audit data and grouped splits; trace serialization, spans, masks, and
+    loss; demonstrate head and backbone/adapter updates; compare simple and joint
+    heads; report calibration, held-out task transfer, errors, and operational cost.
 actualized:
-  summary: Authored the course home, system overview, and ten chapters. Augmented
-    the model-family, evaluation, efficiency, deployment, and capstone chapters with
-    classifier history, structured decision APIs, calibration, and cross-task generalization.
-    The capstone now specifies a multi-task ModernBERT implementation of a Jev-like
-    decision interface, including held-out task transfer and probability calibration.
-    Added exercises and rendered the affected notebooks to HTML for syntax checks.
+  summary: 'Authored the course home, overview, and ten chapters covering classifier
+    history, structured decisions, calibration, task transfer, efficiency, and deployment.
+    Revised the curriculum for pretrained LLM adaptation with PyTorch and optional
+    LoRA. Added the registered text-decisions package with candidate and joint attention
+    heads, semantic target mapping, Choice/Noul/Score inference, an explicit two-stage
+    trainer, fixtures, and checkpoint loading. Chapter 06 displays the implementation
+    with readout, attention, loss-gradient, and LoRA equations and executed examples.
+    Checked four tiny backbone/head combinations and ran a pretrained Qwen2.5-0.5B
+    head warm-up plus LoRA step: 48 adapter tensors and 37 head tensors changed, finite
+    gradients were verified, and saved predictions matched after reload. Reviewed
+    AnyJev''s readout and added a supervised label-token extension. These are implementation
+    and pipeline checks on fixtures, not a completed task-transfer or quality benchmark.'
 toc:
 - id: orientation
   title: ''

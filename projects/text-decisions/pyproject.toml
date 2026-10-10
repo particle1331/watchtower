@@ -1,0 +1,17 @@
+[project]
+name = "text-decisions"
+version = "0.1.0"
+description = "Educational PyTorch fine-tuning for typed text decisions"
+readme = "README.md"
+authors = [
+    { name = "particle", email = "54845098+particle1331@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = ["torch==2.14.1", "transformers==5.19.0", "peft==0.21.2"]
+
+[project.scripts]
+text-decisions = "text_decisions:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
