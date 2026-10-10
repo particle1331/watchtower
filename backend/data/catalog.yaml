@@ -585,58 +585,6 @@ artifacts:
   internal_notes: ''
   tags: []
   planned: {}
-- id: post/cli-test-post-2026
-  kind: post
-  title: CLI Test Post
-  path: content/notebooks/posts/cli-test-post-2026.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-08'
-  description: CLI test post for metadata inspection.
-  internal_notes: "sum notes\r\n"
-  tags:
-  - cli
-  - test
-  planned:
-    content: A small test post used to inspect Watchtower CLI planning fields and
-      query output.
-    audience: audience
-    evidence: example
-    references: "ref1\r\nref2\r\nref3\r\n"
-- id: portfolio/cli-test-portfolio-2026
-  kind: portfolio
-  title: CLI Test Portfolio
-  visibility: private
-  lifecycle: draft
-  relations: []
-  internal_notes: ''
-  tags: []
-  planned: {}
-- id: course/cli-test-course-2026
-  kind: course
-  title: CLI Test Course
-  path: content/notebooks/courses/cli-test-course-2026
-  visibility: private
-  lifecycle: draft
-  relations: []
-  internal_notes: ''
-  tags: []
-  planned: {}
-- id: course/cli-test-course-2026/ch0-the-start
-  kind: chapter
-  title: ch0 ttttt
-  path: content/notebooks/courses/cli-test-course-2026/ch0-the-start.ipynb
-  visibility: private
-  lifecycle: planned
-  relations: []
-  description: public dddd
-  internal_notes: ''
-  tags: []
-  planned: {}
-  parent: course/cli-test-course-2026
-  toc_title: ch0
-  section: main
 - id: project/cli-test-portfolio-2026
   kind: project
   title: Cli Test Portfolio 2026
@@ -649,29 +597,37 @@ artifacts:
   tags: []
   planned: {}
 retired_ids:
+- course/cli-test-course-2026
+- course/cli-test-course-2026/ch0-the-start
 - course/test
 - htmx-todo
 - portfolio/12
 - portfolio/12321
+- portfolio/cli-test-portfolio-2026
 - portfolio/test
 - portfolio/test-portfolio-3
 - portfolio/test1
 - portfolio/test1123
 - portfolio/yeah1
+- post/cli-test-post-2026
 - post/test-planned-post
 - project/test-portfolio
 - project/test-portfolio-3
 - project/yeah1
 - test-portfolio
 retired_sources:
+- content/notebooks/courses/cli-test-course-2026/ch0-the-start.ipynb
+- content/notebooks/courses/cli-test-course-2026/index.ipynb
 - content/notebooks/courses/test/index.ipynb
 - content/notebooks/portfolio/12.ipynb
 - content/notebooks/portfolio/12321.ipynb
+- content/notebooks/portfolio/cli-test-portfolio-2026.ipynb
 - content/notebooks/portfolio/test-portfolio-3.ipynb
 - content/notebooks/portfolio/test-portfolio.ipynb
 - content/notebooks/portfolio/test.ipynb
 - content/notebooks/portfolio/test1.ipynb
 - content/notebooks/portfolio/test1123.ipynb
 - content/notebooks/portfolio/yeah1.ipynb
+- content/notebooks/posts/cli-test-post-2026.ipynb
 - content/notebooks/posts/htmx-todo.ipynb
 - content/notebooks/posts/test-planned-post.ipynb
