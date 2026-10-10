@@ -290,6 +290,17 @@ title, stem or source path. This read works for partial plans and every lifecycl
 it neither creates nor executes a notebook. Course plans include ordered chapter
 plans in the build brief; chapter briefs include parent-course context.
 
+Treat saved plans (`wt plan <stable-id>`) as initial authoring intent that may
+become stale as drafts develop. Before continuing, reviewing, or summarizing
+started content, read the current notebook with `wt cat`. Purpose, audience,
+and scope guide the work; outlines, examples, and technical approaches can
+evolve as understanding improves. Explain discoveries that justify changes.
+Flag changes that materially expand or redirect the purpose, audience, or scope
+before proceeding unless already authorized. Once agreed, update only the
+relevant plan fields through supported commands. Routine drafting does not
+require plan synchronization. Keep public summaries and course navigation
+accurate.
+
 Plans are not rendered directly in preview or production. Internal notes remain
 excluded from pages, generated course context and metadata. Started notebooks own
 their seeded content. Public fields include catalog `description`, portfolio

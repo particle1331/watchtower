@@ -259,6 +259,15 @@ course briefs include chapters in TOC order and chapter briefs include course
 context. Partial plans and published artifacts are readable without creating,
 executing, or changing notebooks. Titles and source paths are not accepted as IDs.
 
+Saved plans (`wt plan <stable-id>`) capture initial authoring intent and may
+become stale as drafts develop. Read current notebooks with `wt cat` before
+continuing, reviewing, or summarizing started content. Purpose, audience, and
+scope guide the work; outlines, examples, and technical approaches can evolve.
+Agents explain discoveries and flag material changes to purpose, audience, or
+scope before proceeding unless already authorized. Once agreed, update only
+the relevant plan fields. Routine drafting does not require keeping the plan
+synchronized. Keep public summaries and course navigation accurate.
+
 Plans are never rendered directly. Started notebooks own their seeded content;
 internal notes remain excluded from preview, production, metadata and course
 context. Use **Public description** for listings, portfolio abstracts for cards,

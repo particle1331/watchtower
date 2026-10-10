@@ -61,12 +61,17 @@ Run `wt context <chapter-id-or-path>` first. The catalog and `course.yaml` give
 the course contract, separating planned work from actualized work. Internal
 notes and structured plans are authoring inputs, not rendered prose. `wt start`
 seeds a private draft from supported plan fields once. Review and develop these
-sections as learner-facing prose; later plan edits do not rewrite the notebook. Keep
+sections as learner-facing prose; plan saves never rewrite hand-edited content. Keep
 notes available after publication and use linked Kanban cards to track work. Then read
 `index.ipynb` (the learner-facing home), `00-overview.ipynb` when present, and
 the target chapter. Read adjacent chapter openings only when a handoff matters;
 do not load all sibling chapters. Return to the course-home authoring reference
 only when the course home, overview, or course-wide contract must change.
+
+Read `wt plan <stable-id>` as initial intent alongside current notebooks through
+`wt cat`. Apply the plan guidance in `AGENTS.md`: routine drafting needs no plan
+synchronization; flag material changes to purpose, audience, or scope unless
+already authorized, and update only the relevant plan fields once agreed.
 
 ## Universal invariants
 
