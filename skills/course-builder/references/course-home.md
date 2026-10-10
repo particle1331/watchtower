@@ -23,9 +23,10 @@ The `index.ipynb` is the learner-facing home page. It should be concise but
 substantive: a learner should understand the promise, scope, path,
 prerequisites, and expected outcome in one sitting.
 
-1. **Metadata:** manage title, public description, tags, and optional cover
+1. **Metadata:** manage title, public description, and optional cover
    through the content service/catalog. Generated copies receive front matter;
-   the authored home body does not repeat the generated title.
+   the authored home body does not repeat the generated title. Courses and
+   chapters have no tags; use the ordered outline to organize their material.
 2. **Short introduction:** one or two paragraphs explaining what the course is
    and who it is for, ending with the governing idea stated once as a bolded
    label in the form `**Design rule:** ...`.

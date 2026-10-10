@@ -64,6 +64,40 @@ def test_chapter_inline_and_file_plans_match(content_service, monkeypatch):
     assert not (service.root / "content/notebooks/courses/example/01.ipynb").exists()
 
 
+def test_course_and_chapter_cli_do_not_accept_tags(content_service, monkeypatch):
+    service = content_service
+    course = invoke(monkeypatch, service, ['new', 'course', 'example', 'Example'])
+    chapter = invoke(monkeypatch, service, ['new', 'chapter', 'example', '01', '--title', 'One'])
+    assert 'tags' not in course['artifact'] and 'tags' not in chapter['artifact']
+    before = service.list()['revision']
+    for args in (['new', 'course', 'another', 'Another'], ['new', 'chapter', 'example', '02']):
+        rejected = runner.invoke(app, [*args, '--tag', 'NLP'])
+        assert rejected.exit_code == 2
+        help_result = runner.invoke(app, [*args[:2], '--help'])
+        assert '--tag' not in help_result.output
+    for identifier in ('course/example', 'course/example/01'):
+        for flag in ('--tag', '--add-tag', '--remove-tag'):
+            rejected = runner.invoke(app, ['update', identifier, flag, 'NLP'])
+            assert rejected.exit_code == 1
+            assert isinstance(rejected.exception, ServiceError)
+            assert 'do not support tags' in str(rejected.exception)
+    assert service.list()['revision'] == before
+
+
+def test_chapter_import_discards_document_labels_and_preserves_cell_tags(content_service, monkeypatch):
+    service = content_service
+    invoke(monkeypatch, service, ['new', 'course', 'example', 'Example'])
+    source = service.root / '.tmp/chapter.ipynb'
+    source.parent.mkdir()
+    code = nbformat.v4.new_code_cell('print(2)', metadata={'tags': ['exercise']}, outputs=[nbformat.v4.new_output('stream', name='stdout', text='2\n')], execution_count=2)
+    nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell('---\ntitle: Imported chapter\ncategories: [original]\ntags: [NLP]\n---\n\nBody'), code]), source)
+    result = invoke(monkeypatch, service, ['import', str(source), 'courses', 'example', 'imported'])
+    assert 'tags' not in result['artifact'] and 'categories' not in result['artifact']
+    notebook = nbformat.read(service.root / result['artifact']['path'], as_version=4)
+    assert [cell for cell in notebook.cells if cell.cell_type == 'code'] == [code]
+    assert notebook.cells[0].source.startswith('# Imported chapter')
+
+
 @pytest.mark.parametrize("body", ["## Outline\n\nTopic\n\n## Outline\n\nDuplicate\n\n## Practice and evidence\n\nCheck"])
 def test_chapter_bad_plan_never_partially_registers(content_service, monkeypatch, body):
     service = content_service

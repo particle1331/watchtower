@@ -308,9 +308,8 @@ class _Generator:
 
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
         value: dict[str, Any] = {"title": artifact.title}
-        if artifact.kind == "chapter":
-            if summary := self.chapter_summary(artifact):
-                value["subtitle"] = summary
+        if artifact.kind == "chapter" and (summary := self.chapter_summary(artifact)):
+            value["subtitle"] = summary
         value.update({"toc": True, "lifecycle": artifact.lifecycle})
         # Portfolio entry pages show their abstract as body content from portfolio
         # YAML; a front-matter description would render it a second time.
@@ -318,7 +317,7 @@ class _Generator:
             value["description"] = artifact.description
         if artifact.date:
             value["date"] = str(artifact.date)
-        if artifact.tags:
+        if artifact.kind not in {"course", "chapter"} and artifact.tags:
             value["categories"] = artifact.tags
         if artifact.kind == "chapter":
             value["format"] = {"html": {"template-partials": ["/templates/title-block.html"]}}

@@ -12,6 +12,7 @@ from watchtower.api import create_app
 from watchtower.api.cms import field_groups, form_fields
 from watchtower.models import Artifact
 from watchtower.services.content import ContentService
+from watchtower.services.workspace import ServiceError
 
 
 @pytest.mark.parametrize(('kind', 'path'), [
@@ -28,14 +29,15 @@ def test_legacy_categories_merge_into_tags_and_are_removed_from_the_model(kind, 
     if kind == 'chapter':
         values.update(parent='course/example', toc_title='Example', section='main')
     artifact = Artifact.model_validate(values)
-    assert artifact.tags == ['NLP', 'meta', 'dev']
+    assert artifact.tags == ([] if kind in {'course', 'chapter'} else ['NLP', 'meta', 'dev'])
     assert not hasattr(artifact, 'categories')
     assert artifact.route == 'legacy/example.ipynb'
     assert values['categories'] == ['Meta', 'dev']
     data = artifact.model_dump(mode='json')
     assert 'categories' not in data
     labels = {field['label'] for group in field_groups(form_fields(data), data) for field in group['fields']}
-    assert 'tags' in labels
+    assert ('tags' in labels) == (kind not in {'course', 'chapter'})
+    assert ('tags' in data) == (kind not in {'course', 'chapter'})
     assert not {'route', 'categories'} & labels
     assert ('cover' in labels) == (kind == 'course')
 
@@ -68,23 +70,69 @@ def test_legacy_post_labels_are_visible_and_can_be_removed_in_cms(tmp_path):
         assert json.loads(snapshot)['tags'] == ['NLP', 'meta', 'dev']
 
 
-def test_course_legacy_labels_can_be_removed_without_changing_route(tmp_path):
+@pytest.mark.parametrize('kind', ['course', 'chapter'])
+def test_course_and_chapter_legacy_labels_are_retired_without_changing_route(tmp_path, kind):
     content = ContentService(author_workspace(tmp_path))
     content.create({'id': 'course/example', 'kind': 'course', 'title': 'Example course', 'path': 'content/notebooks/courses/example', 'route': 'legacy/course/index.ipynb'})
+    identifier = 'course/example'
+    if kind == 'chapter':
+        identifier += '/chapter'
+        content.create({'id': identifier, 'kind': kind, 'title': 'Example chapter', 'path': 'content/notebooks/courses/example/chapter.ipynb', 'parent': 'course/example', 'section': 'main', 'toc_title': 'Example chapter', 'route': 'legacy/course/chapter.ipynb'})
     catalog_path = content.root / 'backend/data/catalog.yaml'
     catalog = yaml.safe_load(catalog_path.read_text())
-    catalog['artifacts'][0].update(tags=['NLP'], categories=['meta', 'dev'])
+    original = next(record for record in catalog['artifacts'] if record['id'] == identifier)
+    route = original['route']
+    original.update(tags=['NLP'], categories=['meta', 'dev'])
     catalog_path.write_text(yaml.safe_dump(catalog))
+    assert 'tags' not in content.inspect(identifier)['artifact']
+    assert 'tags' not in next(record for record in content.list()['artifacts'] if record['id'] == identifier)
+    assert 'Tags:' not in content.read_plan(identifier)['build_brief']
     with TestClient(create_app(content.root)) as client:
-        editor = client.get('/cms/artifact/course/example')
-        assert '>Card image</span>' in editor.text
+        editor = client.get('/cms/artifact/' + identifier)
+        assert ('>Card image</span>' in editor.text) == (kind == 'course')
+        assert '>Tags</span>' not in editor.text
+        assert '>Tags</span>' not in client.get('/cms/new?kind=' + kind).text
         assert '>Categories</span>' not in editor.text and '>Route</span>' not in editor.text
         revision, snapshot = editor_snapshot(editor)
-        saved = client.post('/cms/save/course/example', data={'revision': revision, 'snapshot': snapshot, 'field:["tags"]': 'NLP'})
+        rejected = client.post('/cms/save/' + identifier, data={'revision': revision, 'snapshot': snapshot, 'field:["tags"]': 'NLP'})
+        assert rejected.status_code == 422
+        assert 'Courses and chapters do not support tags.' in rejected.text
+        assert content.list()['revision'] == revision
+        saved = client.post('/cms/save/' + identifier, data={'revision': revision, 'snapshot': snapshot, 'field:["internal_notes"]': 'Keep the outline.'})
         assert saved.status_code == 200, saved.text
-        record = content.inspect('course/example')['artifact']
-        assert record['tags'] == ['NLP'] and 'categories' not in record
-        assert record['route'] == 'legacy/course/index.ipynb'
+        record = content.inspect(identifier)['artifact']
+        assert 'tags' not in record and 'categories' not in record
+        assert record['route'] == route
+        persisted = next(record for record in yaml.safe_load(catalog_path.read_text())['artifacts'] if record['id'] == identifier)
+        assert 'tags' not in persisted and 'categories' not in persisted
+
+
+@pytest.mark.parametrize('kind', ['course', 'chapter'])
+def test_course_and_chapter_tag_writes_are_rejected_atomically(tmp_path, kind):
+    content = ContentService(author_workspace(tmp_path))
+    course = {'id': 'course/example', 'kind': 'course', 'title': 'Example', 'path': 'content/notebooks/courses/example'}
+    content.create(course)
+    payload = course
+    if kind == 'chapter':
+        payload = {'id': 'course/example/chapter', 'kind': kind, 'title': 'Chapter', 'path': 'content/notebooks/courses/example/chapter.ipynb', 'parent': course['id'], 'section': 'main', 'toc_title': 'Chapter'}
+        content.create(payload)
+    before = content.list()['revision']
+    for field in ('tags', 'categories'):
+        with pytest.raises(ServiceError, match='do not support tags'):
+            content.create({**payload, field: ['NLP']})
+        with pytest.raises(ServiceError, match='do not support tags'):
+            content.update(payload['id'], {field: ['NLP'], 'title': 'Unsaved'})
+        with pytest.raises(ServiceError, match='do not support tags'):
+            content.batch([{'id': payload['id'], 'patch': {field: ['NLP']}}], {})
+        assert content.list()['revision'] == before
+    with TestClient(create_app(content.root)) as client:
+        response = client.patch('/api/artifacts/' + payload['id'], headers={'If-Match': before}, json={'tags': ['NLP']})
+        assert response.status_code == 422
+        assert 'do not support tags' in response.text
+        response = client.post('/api/artifacts', headers={'If-Match': before}, json={**payload, 'tags': ['NLP']})
+        assert response.status_code == 422
+        assert 'do not support tags' in response.text
+        assert content.list()['revision'] == before
 
 
 def editor_snapshot(editor):

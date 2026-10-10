@@ -35,7 +35,7 @@ def _dump_yaml(path: Path, data: Any) -> None:
         _yaml.dump(data, f)
 
 
-def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = "") -> None:
+def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = "", *, include_tags: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     nb = nbformat.v4.new_notebook()
     nb.metadata["kernelspec"] = {
@@ -46,7 +46,9 @@ def _write_ipynb(path: Path, title: str, date: str | None = None, body: str = ""
     lines = ["---", f'title: "{title}"']
     if date:
         lines.append(f'date: "{date}"')
-    lines += ["tags: []", "---"]
+    if include_tags:
+        lines.append("tags: []")
+    lines.append("---")
     nb.cells = [nbformat.v4.new_markdown_cell("\n".join(lines) + body)]
     nbformat.write(nb, path)
 
@@ -63,7 +65,7 @@ def new_post(name: str, title: str | None = None) -> Path:
         raise FileExistsError(f"{path} already exists")
     if title is None:
         title = name.replace("-", " ").replace("_", " ").title()
-    _write_ipynb(path, title, date=date)
+    _write_ipynb(path, title, date=date, include_tags=True)
     knowledge.add_artifact(f"post/{name}", "post", path, title)
     return path
 

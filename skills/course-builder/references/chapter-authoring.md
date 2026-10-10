@@ -23,7 +23,8 @@ must change.
 ## Chapter anatomy
 
 - Source contains one full-title H1 matching catalog `title`; generated copies
-  receive document metadata. Manage categories through metadata operations.
+  receive document metadata. Chapters have no tags or categories; their course
+  and section define their place in the learning path.
 - Begin with a lead paragraph, without a heading, that states why the chapter
   exists and how it connects to adjacent chapters.
 - Use prose-first `##` sections. Every code cell must have descriptive

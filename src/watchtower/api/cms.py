@@ -201,6 +201,8 @@ def apply_fields(data: dict[str, Any], form: Any) -> dict[str, Any]:
             path = json.loads(name[6:].replace("%22", '"'))
         if not isinstance(path, list) or not path:
             raise ValueError("Invalid field path")
+        if data.get("kind") in {"course", "chapter"} and path == ["tags"]:
+            raise ValueError("Courses and chapters do not support tags.")
         node: Any = result
         for key in path[:-1]:
             node = node[int(key)] if isinstance(node, list) else node[key]
@@ -470,7 +472,9 @@ def cms_router(root: Path) -> APIRouter:
             slug = creation_slug(str(values.get("name") or "").strip() or str(values.get("title") or ""))
             token = form_revision(form.get("revision"))
             title = str(values.get("title", "")).strip()
-            data: dict[str, Any] = {"kind": selected_kind, "title": title, "tags": authoring.tags_from(values.get("tags")), "relations": list(dict.fromkeys(str(item) for item in values.get("relations") or [] if str(item).strip())), "visibility": "private", "lifecycle": "planned"}
+            data: dict[str, Any] = {"kind": selected_kind, "title": title, "relations": list(dict.fromkeys(str(item) for item in values.get("relations") or [] if str(item).strip())), "visibility": "private", "lifecycle": "planned"}
+            if selected_kind not in {"course", "chapter"}:
+                data["tags"] = authoring.tags_from(values.get("tags"))
             if selected_kind in planning.PLAN:
                 data.update(planning.plan_patch(selected_kind, authoring.creation_plan(selected_kind, values)))
             if selected_kind == "post":

@@ -147,6 +147,23 @@ def test_generated_metadata_maps_tags_to_quarto_categories(workspace, kind):
     assert entry.model_dump()['tags'] == ['Meta', 'NLP', 'dev']
 
 
+@pytest.mark.parametrize('mode', ['preview', 'production'])
+def test_course_and_chapter_pages_omit_legacy_tags(workspace, mode):
+    root, snapshot = workspace
+    course = artifact('courses/example/index', kind='course', tags=['NLP'])
+    chapter = artifact('courses/example/chapter', kind='chapter', parent=course.id, toc_title='Chapter', section='main', tags=['Attention'])
+    put_notebook(snapshot, course, [nbformat.v4.new_markdown_cell('Course introduction.')])
+    put_notebook(snapshot, chapter, [nbformat.v4.new_markdown_cell('# Chapter\n\nChapter content.')])
+    snapshot.state.courses[course.id] = Record(purpose='Learn.', audience='Readers', planned={}, actualized={}, toc=[Record(id='main', title='', chapters=[chapter.id])])
+    before = {entry.path: snapshot.files[entry.path] for entry in (course, chapter)}
+    stage = BuildService(root).generate(mode)
+    for entry in (course, chapter):
+        notebook = nbformat.read(stage / entry.path.replace('content/notebooks/', 'nb/'), as_version=4)
+        metadata = yaml.safe_load(notebook.cells[0].source.split('---', 2)[1])
+        assert 'categories' not in metadata and 'tags' not in metadata
+        assert snapshot.files[entry.path] == before[entry.path]
+
+
 def test_native_posts_listing_preserves_draft_badges_only_in_preview(workspace):
     root, snapshot = workspace
     entry = artifact('posts/draft', lifecycle='draft', tags=['meta', 'dev'], description=None, date=None)

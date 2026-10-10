@@ -26,10 +26,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: A planned path from text data to a small GPT and two fine-tuning tasks.
-  tags:
-  - large-language-models
-  - pytorch
-  - courses
   cover: content/notebooks/courses/llms-from-scratch/img/course-cover.svg
   planned: {}
   route: nb/courses/llms-from-scratch/index.ipynb
@@ -41,9 +37,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: The model and experiment lineage for the complete course.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 00. Overview
@@ -58,9 +51,6 @@ artifacts:
   relations: []
   description: Define next-token prediction and the evidence needed for the course
     build.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 01. Language models
@@ -74,9 +64,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Prepare text for next-token training and verify the target shift.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 02. Text data
@@ -90,9 +77,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Derive attention and test the causal boundary.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 03. Attention
@@ -106,9 +90,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Combine embeddings, decoder blocks, and a language-model head.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 04. GPT
@@ -122,9 +103,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Optimize next-token loss and inspect a checkpoint.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 05. Pretraining
@@ -138,9 +116,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Adapt a pretrained representation to a labeled task.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 06. Classification
@@ -154,9 +129,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Teach GPT to respond to formatted requests and inspect its answers.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 07. Instructions
@@ -170,9 +142,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Compare low-rank adapters with full-parameter updates.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 08. LoRA (optional)
@@ -186,9 +155,6 @@ artifacts:
   lifecycle: published
   relations: []
   description: Assemble run records, evaluations, and limitations.
-  tags:
-  - large-language-models
-  - pytorch
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 09. Capstone
@@ -203,10 +169,6 @@ artifacts:
   relations: []
   description: A planned, hands-on path from pretrained language-model generation
     to inference-time reasoning, reinforcement learning, and distillation.
-  tags:
-  - large-language-models
-  - reasoning
-  - pytorch
   cover: backend/assets/courses/reasoning-from-scratch-94ba70e54d44-e55bd00ad6b5544c8aad6c7902be3fbfdb6f31816b1403318b1a0472bdec6b9b.png
   planned: {}
   route: nb/courses/reasoning-from-scratch/index.ipynb
@@ -219,10 +181,6 @@ artifacts:
   relations: []
   description: A conceptual map of the pretrained model, reasoning methods, and comparisons
     planned for this course.
-  tags:
-  - large-language-models
-  - reasoning
-  - pytorch
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Reasoning Model Pipeline and Evidence Contract
@@ -235,9 +193,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: 01. Introduction
@@ -250,10 +205,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - pytorch
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Generate Text with a Pretrained Reasoning Base Model
@@ -266,10 +217,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - evaluation
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Evaluate Reasoning Models
@@ -282,10 +229,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - evaluation
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Improve Reasoning with Inference-Time Scaling
@@ -298,10 +241,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - evaluation
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Inference-Time Scaling through Self-Refinement
@@ -314,10 +253,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - reinforcement-learning
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Train Reasoning Models with Reinforcement Learning
@@ -330,10 +265,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - reinforcement-learning
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Improve GRPO for Reasoning Reinforcement Learning
@@ -346,10 +277,6 @@ artifacts:
   visibility: public
   lifecycle: draft
   relations: []
-  tags:
-  - large-language-models
-  - reasoning
-  - distillation
   planned: {}
   parent: course/reasoning-from-scratch
   toc_title: Distill Reasoning Models for Efficient Inference
@@ -364,10 +291,6 @@ artifacts:
   relations: []
   description: An end-to-end text classification course using AI-written-text detection
     as a case study.
-  tags:
-  - machine-learning
-  - text-classification
-  - course
   planned: {}
   route: nb/courses/text-classification-from-scratch/index.ipynb
 - id: course/text-classification-from-scratch/01-introduction
@@ -377,9 +300,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 01. Classification
@@ -392,9 +312,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 00. Overview
@@ -407,9 +324,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 02. Dataset
@@ -422,9 +336,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 03. Splits
@@ -437,9 +348,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 04. Logistic regression
@@ -452,9 +360,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 05. Model families
@@ -467,9 +372,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 06. Fine-tuning
@@ -482,9 +384,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 07. Evaluation
@@ -497,9 +396,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 08. Efficiency
@@ -512,9 +408,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 09. Deployment
@@ -527,9 +420,6 @@ artifacts:
   visibility: public
   lifecycle: published
   relations: []
-  tags:
-  - machine-learning
-  - text-classification
   planned: {}
   parent: course/text-classification-from-scratch
   toc_title: 10. Capstone

@@ -444,10 +444,15 @@ Deletion permanently reserves removed IDs and notebook sources in catalog
 `retired_ids` and `retired_sources`, including planned entries without files.
 Do not reuse retired names or clear these reservations when deleting archives.
 Creation rejects case variants and active filenames owned by legacy post IDs.
-All catalog entity kinds use tags as their single taxonomy. Generated frontend
+Courses and chapters have no tags. Their ordered outlines organize the material;
+course briefs and chapter summaries provide agent context. `new course` and
+`new chapter` do not accept `--tag`; metadata updates reject tags for these kinds.
+Legacy course/chapter labels are omitted on reads and removed on catalog saves;
+imports discard their tag/category metadata. Notebook cell tags remain supported.
+Other catalog entity kinds use tags as their single taxonomy. Generated frontend
 metadata maps tags to Quarto categories; the Posts listing uses native Quarto
 category filtering. Keep categories out of the canonical data model. Legacy notebook
-front matter may still contain categories; imports merge them into tags with
+front matter may still contain categories; other notebook imports merge them into tags with
 case-insensitive deduplication and discard the old field. CMS fields show only
 tags; routes are managed site metadata and CMS writes cannot change them.
 Preserve existing legacy routes. Catalog cover controls appear only for courses,

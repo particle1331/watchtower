@@ -11,7 +11,15 @@ from zoneinfo import ZoneInfo
 
 import nbformat
 from markdown_it import MarkdownIt
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 from watchtower.planning import filled_fields
 from watchtower.services.projects import project_name as validate_project_name
@@ -69,12 +77,14 @@ class Artifact(Record):
 
     @staticmethod
     def normalize_labels(value: Any) -> Any:
-        """Import legacy categories into tags, then remove the obsolete field."""
+        """Normalize legacy labels; courses and chapters have no taxonomy."""
         if isinstance(value, dict):
             tags, categories = value.get("tags", []), value.get("categories", [])
             if isinstance(tags, list) and isinstance(categories, list) and all(isinstance(label, str) for label in tags + categories):
                 normalized = {**value, "tags": Artifact.clean_tags(tags + categories)}
                 normalized.pop("categories", None)
+                if value.get("kind") in {"course", "chapter"}:
+                    normalized.pop("tags", None)
                 return normalized
         return value
 
@@ -82,6 +92,13 @@ class Artifact(Record):
     @classmethod
     def categories_are_tags(cls, value: Any) -> Any:
         return cls.normalize_labels(value)
+
+    @model_serializer(mode="wrap")
+    def serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data = handler(self)
+        if self.kind in {"course", "chapter"}:
+            data.pop("tags", None)
+        return data
 
     @field_validator("path", "cover", "route")
     @classmethod

@@ -63,14 +63,19 @@ def test_title_only_creation_and_edit_roundtrip(author, kind, start):
             field(["title"]): "Revised title",
             field(plan_path(kind, key)): "A concrete writing brief.",
             field(summary_path(kind)): "A public summary.",
-            field(["tags"]): "testing\nTesting\nworkflow",
             field(["internal_notes"]): "A private author decision.",
         }
+        if kind not in {"course", "chapter"}:
+            data[field(["tags"])] = "testing\nTesting\nworkflow"
+        assert ('>Tags</span>' in page.text) == (kind not in {"course", "chapter"})
         saved = client.post(f"/cms/save/{identity}", data=data, headers={"HX-Request": "true"})
         assert saved.status_code == 200, re.findall(r"<pre>(.*?)</pre>", saved.text, re.S)
         record = author.inspect(identity)
         assert record["artifact"]["title"] == "Revised title"
-        assert record["artifact"]["tags"] == ["testing", "workflow"]
+        if kind in {"course", "chapter"}:
+            assert "tags" not in record["artifact"]
+        else:
+            assert record["artifact"]["tags"] == ["testing", "workflow"]
         assert record["artifact"]["internal_notes"] == "A private author decision."
         plan = author.read_plan(identity)
         assert plan["summary"] == "A public summary."

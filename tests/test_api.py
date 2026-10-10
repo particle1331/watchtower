@@ -572,7 +572,8 @@ def test_new_plan_fields_follow_entry_kind(client, kind):
     assert ("planned", "content") in enabled or ("plan", "content") in enabled or ("detail", "planned", "introduction") in enabled
     assert ("name",) in enabled
     assert "id" not in names and "path" not in names and "filename" not in names
-    assert ("tags",) in enabled and ("relations",) in enabled
+    assert (("tags",) in enabled) == (kind != "chapter")
+    assert ("relations",) in enabled
     assert "scope_notes" not in names and "next_steps" not in names and "takeaway" not in names
 
 

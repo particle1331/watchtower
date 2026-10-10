@@ -38,6 +38,8 @@ class ArtifactCreate(Artifact):
     @classmethod
     def linked_ids(cls, value: Any) -> Any:
         if isinstance(value, dict):
+            if value.get("kind") in {"course", "chapter"} and {"tags", "categories"}.intersection(value):
+                raise ValueError("Courses and chapters do not support tags.")
             value = dict(value)
             for field in ("detail", "contract"):
                 if isinstance(value.get(field), dict) and not value[field].get("id"):

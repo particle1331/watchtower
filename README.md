@@ -131,7 +131,7 @@ builds committed inputs and publishes successful output to the existing
 | --- | --- |
 | `wt map`, `ls`, `find`, `context` | Catalog-backed discovery and course reading paths. |
 | `wt plan <stable-id>` | Read saved planning fields, internal notes, CMS build brief and workspace revision as JSON, at any lifecycle. Requires an exact stable ID. |
-| `wt new post\|course\|chapter\|portfolio` (`--summary`, `--tag`, `--plan-file`, `--internal-notes`, `--start`), `new section` | Planned records, or drafts with `--start`, and ordered course TOCs. |
+| `wt new post\|course\|chapter\|portfolio` (`--summary`, `--plan-file`, `--internal-notes`, `--start`), `new section` | Planned records, or drafts with `--start`, and ordered course TOCs. Posts and portfolios also accept `--tag`; courses and chapters have no tags. |
 | `wt start`, `publish`, `draft` | Explicit notebook/publication transitions; active portfolio start also scaffolds/registers its project. |
 | `wt delete <id>` | Remove an entry, retaining its files. `--dry-run` reviews affected entries/links; `--cascade` explicitly includes course chapters. |
 | `wt update <id>` (`--summary`, `--internal-notes`, `--plan-file`, `--patch-file`) | Metadata, tags, the public summary, internal notes and plan sections. `--plan-file` changes only the sections it contains. Hidden aliases such as `--description`, `--planned-content` and `--abstract` still work. |
@@ -468,11 +468,16 @@ posts with a different ID but the same filename. Catalog `retired_ids` and
 not cleared by removing archival files. CLI/API creation obeys the same
 retired-name rules.
 
-All catalog entities use **tags** as their single taxonomy. The frontend maps tags
+Courses and chapters have no tags; their ordered outlines organize the material.
+Other catalog entities use **tags** as their single taxonomy. The frontend maps tags
 to Quarto `categories` in generated document metadata and uses native Quarto
 category filtering in the Posts listing. Legacy notebook
 front matter may still contain `categories`; imports merge those values into tags
-and discard the old field, deduplicating without regard to case. CMS editors have
+and discard the old field, deduplicating without regard to case. Course and chapter
+imports discard both tag and category metadata. Existing course and chapter labels
+are omitted on reads and removed on the next catalog save. CLI/API mutations reject
+adding tags to these kinds. Notebook cell tags remain available for cell operations.
+CMS editors have
 no separate category or editable route field;
 legacy routes remain managed site metadata. Only courses expose the catalog image
 as **Card image**; posts have no Cover control. Portfolio figures and photo uploads

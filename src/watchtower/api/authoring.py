@@ -20,7 +20,7 @@ KINDS = ("post", "portfolio", "course", "chapter")
 SECTIONS = {
     "basics": ("Basics", "What it is and where it lives."),
     "plan": ("Plan", "What you will write. Starting a draft turns each filled field into an editable notebook section."),
-    "page": ("Page", "What readers see around the body: the short description, images, tags and related content."),
+    "page": ("Page", "What readers see around the body: the short description, images and related content."),
     "notes": ("Internal notes", "Research, decisions and open questions. Never shown on the site. Track next steps as Kanban cards."),
 }
 
@@ -50,7 +50,10 @@ def ensure_shape(kind: str, record: dict[str, Any]) -> dict[str, Any]:
     """Create every container and leaf the form addresses, so submitted paths always resolve."""
     record = copy.deepcopy(record)
     record.setdefault("title", "")
-    record.setdefault("tags", [])
+    if kind in {"course", "chapter"}:
+        record.pop("tags", None)
+    else:
+        record.setdefault("tags", [])
     record.setdefault("relations", [])
     record.setdefault("internal_notes", "")
     for key in ("name", "parent", "section", "toc_title"):
@@ -148,7 +151,8 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
         page.append(_field(["detail", "figure_path"], value(["detail", "figure_path"]), "Featured image", type="featured", hint="Publishing requires an image."))
         page.append(_field(["detail", "figure_caption"], value(["detail", "figure_caption"]), "Figure caption", hint="Shown beneath the featured image."))
         page.append(_field(["detail", "project_path"], value(["detail", "project_path"]), "Code location", hint="Where the code lives: projects/<name> or archive/<date>/projects/<name>. Defaults to projects/<name>."))
-    page.append(_field(["tags"], value(["tags"]), "Tags", hint="One tag per line."))
+    if kind not in {"course", "chapter"}:
+        page.append(_field(["tags"], value(["tags"]), "Tags", hint="One tag per line."))
     page.append(_field(["relations"], value(["relations"]), "Related content"))
     if not creating:
         page.append(_field(["date"], value(["date"]), "Date", hint="Defaults to the creation day in the site timezone."))

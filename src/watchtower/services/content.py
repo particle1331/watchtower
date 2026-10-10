@@ -62,6 +62,11 @@ def yaml_bytes(data: Any) -> bytes:
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True).encode()
 
 
+def check_tags(kind: str, payload: dict[str, Any]) -> None:
+    if kind in {"course", "chapter"} and {"tags", "categories"}.intersection(payload):
+        raise ServiceError("Courses and chapters do not support tags.")
+
+
 @dataclass(frozen=True)
 class WorkspaceSnapshot:
     state: Workspace
@@ -360,7 +365,7 @@ class ContentService:
         if artifact.kind == "portfolio":
             detail = next(p for p in state.portfolio if p.id == artifact.id)
             lines.append(f"Project: {detail.project_path or 'projects/' + artifact.id.split('/')[-1]}")
-        if artifact.tags:
+        if artifact.kind not in {"course", "chapter"} and artifact.tags:
             lines.append("Tags: " + ", ".join(artifact.tags))
         if artifact.relations:
             lines.append("Related stable IDs: " + ", ".join(artifact.relations))
@@ -584,6 +589,7 @@ class ContentService:
     def create(self, data: dict[str, Any], expected_revision: str | None = None, *, attachment_uploads: list[AttachmentUpload] | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
             payload = copy.deepcopy(data)
+            check_tags(payload.get("kind", ""), payload)
             if attachment_uploads:
                 payload["attachments"], attachment_writes = prepare(payload.get("attachments", []), attachment_uploads)
             else:
@@ -735,6 +741,7 @@ class ContentService:
             catalog = self._catalog(files)
             record = self._find(catalog, artifact_id)
             updates = copy.deepcopy(patch)
+            check_tags(record["kind"], updates)
             if attachment_uploads or remove_attachments:
                 items, attachment_writes = prepare(record.get("attachments", []), attachment_uploads, remove_attachments)
                 updates["attachments"] = items
@@ -1036,6 +1043,7 @@ class ContentService:
             for update in updates:
                 record = self._find(catalog, update["id"])
                 patch = update["patch"]
+                check_tags(record["kind"], patch)
                 if "id" in patch or "kind" in patch:
                     raise ServiceError("batch cannot change stable IDs or kinds")
                 record.update(patch)

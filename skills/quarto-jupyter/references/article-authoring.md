@@ -147,7 +147,7 @@ HTML, PDF, and Typst do not implement every layout feature identically. Prefer n
 
 ## Article workflow
 
-1. **Establish metadata.** In Watchtower, use the content service/catalog for title, date, categories, and tags; source notebooks own their bodies. Generated copies receive front matter. Standalone Quarto projects may use authored front matter.
+1. **Establish metadata.** In Watchtower, use the content service/catalog for title, date, and tags where supported; courses and chapters have no tags. Source notebooks own their bodies. Generated copies receive front matter, mapping supported tags to Quarto categories. Standalone Quarto projects may use authored front matter.
 2. **Build a readable argument.** Start with an introduction, define notation before using it, and organize the body with descriptive headings. Each section should advance the explanation rather than merely group code cells.
 3. **Use Markdown as the default authoring language.** Prefer Markdown, Pandoc Markdown, LaTeX math, Quarto divs, callouts, and spans. Keep raw HTML or format-specific markup for cases where the portable primitives are insufficient.
 4. **Pair prose with computation.** Precede each code cell with its purpose and follow it with interpretation. Split expensive computation from presentation-only plotting or table-formatting cells when that makes the rendered article easier to scan.

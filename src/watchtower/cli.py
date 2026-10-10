@@ -90,7 +90,6 @@ def new_course(
     name: str = typer.Argument(..., help="course folder name (e.g. llm)"),
     title: str = typer.Argument(..., help='display title (e.g. "Large Language Models")'),
     summary: SummaryFlag = None,
-    tag: TagFlag = None,
     plan_file: PlanFileFlag = None,
     internal_notes: InternalNotesFlag = None,
     start: StartFlag = False,
@@ -107,9 +106,9 @@ def new_course(
 
     options = {"--summary": summary, "--description": description, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence}
     if active():
-        create_course(name, title, tags=tag, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
+        create_course(name, title, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
         return
-    _require_catalog({**options, "--tag": tag, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
+    _require_catalog({**options, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
     from . import scaffold
 
     path = scaffold.new_course(name, title=title)
@@ -124,7 +123,6 @@ def new_chapter(
     section: str | None = typer.Option(None, "--section", "-s", help="section ID or title (default: last section)"),
     toc_title: str | None = typer.Option(None, "--toc-title", help="short navigation title"),
     summary: SummaryFlag = None,
-    tag: TagFlag = None,
     plan_file: PlanFileFlag = None,
     internal_notes: InternalNotesFlag = None,
     start: StartFlag = False,
@@ -141,9 +139,9 @@ def new_chapter(
 
     options = {"--summary": summary, "--description": description, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence}
     if active():
-        create_chapter(course, name, title=title, section=section, toc_title=toc_title, tags=tag, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
+        create_chapter(course, name, title=title, section=section, toc_title=toc_title, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
         return
-    _require_catalog({**options, "--toc-title": toc_title, "--tag": tag, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
+    _require_catalog({**options, "--toc-title": toc_title, "--plan-file": plan_file, "--start": start, "--expected-revision": expected_revision})
     from . import scaffold
 
     path = scaffold.new_course_chapter(course, name, title=title, section=section)

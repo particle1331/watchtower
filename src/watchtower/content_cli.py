@@ -151,15 +151,15 @@ def create_post(name: str, *, title: str | None, tags: list[str] | None, visibil
     emit_created(service, created, start)
 
 
-def create_course(name: str, title: str, *, tags: list[str] | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
+def create_course(name: str, title: str, *, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
     service = ContentService()
     slug(name)
-    record = {"id": f"course/{name}", "kind": "course", "title": title, "path": f"content/notebooks/courses/{name}", "tags": tags or []}
+    record = {"id": f"course/{name}", "kind": "course", "title": title, "path": f"content/notebooks/courses/{name}"}
     created = service.create(merged(record, planning_patch(service, "course", options, plan_file)), expected_revision)
     emit_created(service, created, start)
 
 
-def create_chapter(course: str, name: str, *, title: str | None, section: str | None, toc_title: str | None, tags: list[str] | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
+def create_chapter(course: str, name: str, *, title: str | None, section: str | None, toc_title: str | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
     service = ContentService()
     slug(name)
     course_slug = slug(course.removeprefix("course/"))
@@ -172,7 +172,6 @@ def create_chapter(course: str, name: str, *, title: str | None, section: str | 
         "title": title or name.replace("-", " ").title(),
         "toc_title": toc_title or title or name,
         "path": f"content/notebooks/courses/{course_slug}/{name}.ipynb",
-        "tags": tags or [],
     }
     created = service.create(merged(record, planning_patch(service, "chapter", options, plan_file)), expected_revision or parent["revision"])
     emit_created(service, created, start)
@@ -239,7 +238,7 @@ def install(app: typer.Typer) -> None:
     ) -> None:
         """Update metadata or planning fields through the validated service.
 
-        Planning: --summary sets the one public sentence; --internal-notes is CMS-only. --plan-file changes only the ## sections it contains, and an empty section clears that field. Section names differ by kind: see the fields in wt plan ID. --patch-file takes a JSON patch that flags override. Tags: --tag replaces all tags; --add-tag and --remove-tag edit them.
+        Planning: --summary sets the one public sentence; --internal-notes is CMS-only. --plan-file changes only the ## sections it contains, and an empty section clears that field. Section names differ by kind: see the fields in wt plan ID. --patch-file takes a JSON patch that flags override. Tags (except courses and chapters): --tag replaces all tags; --add-tag and --remove-tag edit them.
         """
         service = ContentService()
         inspected = service.inspect(name)
