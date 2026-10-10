@@ -109,8 +109,8 @@ planned:
     content: 'Review the whole repository with someone who did not write it, act on
       the findings, and
 
-      make the whitepaper''s claims match the record. Documentation (the toy README
-      and the
+      make the whitepaper''s claims match the record. Documentation (the Habit Tracker
+      README and the
 
       whitepaper) was written in the same step, and is reviewed here too.'
     lab_and_evidence: 'Choose three findings from the review table: one behaviour
@@ -121,14 +121,15 @@ planned:
   outcomes: Write architecture and agent briefs; scope changes in files; enforce dependency
     and clock rules; test guardrails with deliberate violations; review adapter contracts;
     record findings, evidence, and open decisions honestly.
-  running_project: The original standard-library Habit Tracker CLI in projects/ai-assisted/toy-project,
-    with memory and SQLite adapters, a unittest suite, an AST architecture checker,
-    and a reproducible drift audit.
+  running_project: 'The `habit-tracker` project: a standard-library Habit Tracker
+    CLI with memory and SQLite adapters, a unittest suite, an AST architecture checker,
+    and a reproducible drift audit.'
   assessment: Each journal chapter adds an exercise with a concrete artifact and checks.
     Assess architecture-rule coverage, identical adapter behaviour, deterministic
     dates, bounded feature scope, and evidence tied to actual tests or review findings.
-  references: Original WHITEPAPER.md, toy-project/ARCHITECTURE.md, toy-project/AGENTS.md,
-    seven build journals, and the captured source Git timeline. Original bytes are
+  references: Original WHITEPAPER.md; the Habit Tracker architecture brief and agent
+    rules (`projects/ai-assisted/toy-project/ARCHITECTURE.md` and `projects/ai-assisted/toy-project/AGENTS.md`);
+    seven build journals; and the captured source Git timeline. Original bytes are
     retained in projects/ai-assisted and downloadable course sidecars.
 actualized:
   summary: A complete Habit Tracker case study with seven build journals, chapter
