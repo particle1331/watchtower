@@ -629,6 +629,19 @@ artifacts:
   parent: course/ai-assisted
   toc_title: 07. Review and evidence
   section: audit-and-review
+- id: portfolio/habit-tracker
+  kind: portfolio
+  title: Habit Tracker
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/ai-assisted
+  - project/ai-assisted
+  date: '2026-10-11'
+  internal_notes: ''
+  attachments: []
+  tags: []
+  planned: {}
 retired_ids:
 - course/cli-test-course-2026
 - course/cli-test-course-2026/ch0-the-start

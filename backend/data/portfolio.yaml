@@ -1,2 +1,24 @@
 version: 1
-entries: []
+entries:
+- id: portfolio/habit-tracker
+  abstract: A dependency-free Python habit tracker with SQLite persistence, daily
+    check-ins, streaks, and JSON export, built through a documented AI-assisted workflow.
+  figure_path: null
+  figure_caption: null
+  notebook_path: content/notebooks/portfolio/habit-tracker.ipynb
+  project_path: projects/ai-assisted
+  planned:
+    introduction: Track daily habits and current streaks from the terminal while keeping
+      records between runs. This small application also serves as a case study of
+      AI-assisted development with explicit architectural boundaries and a reviewable
+      build history.
+    what_it_contains: 'The Python CLI supports adding habits, recording dated check-ins,
+      listing current streaks, and exporting a versioned JSON document. SQLite stores
+      the records; an interchangeable in-memory repository supports testing.
+
+
+      The implementation separates domain rules, application services, adapters, and
+      the CLI. Architecture tests check dependency and clock rules. Seven build journals
+      record plans, approvals, verification, and review findings.'
+    references: 'See [AI-Assisted Development: A Process That Scales](../courses/ai-assisted/index.ipynb)
+      for the architecture and seven build journals.'
