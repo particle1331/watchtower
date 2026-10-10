@@ -1,0 +1,174 @@
+commit ed16495bf8b28c2df9c375f8a6b38c4c68eb41b2
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 06:10:38 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 06:10:38 2026 +0800
+
+    Step 00: process scaffold and architecture ground truth
+
+ .gitignore                    |  4 +++
+ README.md                     | 24 +++++++++++++
+ toy-project/AGENTS.md         | 51 ++++++++++++++++++++++++++
+ toy-project/ARCHITECTURE.md   | 83 +++++++++++++++++++++++++++++++++++++++++++
+ toy-project/journal/README.md | 44 +++++++++++++++++++++++
+ 5 files changed, 206 insertions(+)
+
+commit f7bf373fc00031fac94e50224355ec2e823908e8
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 06:14:30 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 06:14:30 2026 +0800
+
+    Step 01: domain core (Habit, CheckIn, streaks) and doc fixes
+
+ toy-project/ARCHITECTURE.md              |   6 +-
+ toy-project/habits/__init__.py           |   1 +
+ toy-project/habits/domain/__init__.py    |   1 +
+ toy-project/habits/domain/errors.py      |  13 ++++
+ toy-project/habits/domain/habit.py       |  44 +++++++++++++
+ toy-project/habits/domain/streaks.py     |  18 ++++++
+ toy-project/journal/01-domain-core.md    | 102 +++++++++++++++++++++++++++++++
+ toy-project/tests/__init__.py            |   1 +
+ toy-project/tests/domain/__init__.py     |   1 +
+ toy-project/tests/domain/test_habit.py   |  75 +++++++++++++++++++++++
+ toy-project/tests/domain/test_streaks.py |  39 ++++++++++++
+ 11 files changed, 300 insertions(+), 1 deletion(-)
+
+commit 941b2dd095aed58896b81647f5495c51acae0728
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 06:27:17 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 06:27:17 2026 +0800
+
+    Step 02: repository port, memory and SQLite adapters, architecture test, review fixes
+
+ toy-project/ARCHITECTURE.md                        |   5 +-
+ toy-project/habits/adapters/__init__.py            |   1 +
+ toy-project/habits/adapters/memory_repository.py   |  37 +++++
+ toy-project/habits/adapters/sqlite_repository.py   |  67 ++++++++
+ toy-project/habits/application/__init__.py         |   1 +
+ toy-project/habits/application/ports.py            |  34 ++++
+ toy-project/habits/domain/habit.py                 |  17 +-
+ .../02-persistence-and-architecture-test.md        | 128 +++++++++++++++
+ toy-project/tests/adapters/__init__.py             |   1 +
+ toy-project/tests/adapters/repository_contract.py  |  89 +++++++++++
+ .../tests/adapters/test_memory_repository.py       |  19 +++
+ .../tests/adapters/test_sqlite_foreign_keys.py     |  27 ++++
+ .../tests/adapters/test_sqlite_repository.py       |  49 ++++++
+ toy-project/tests/application/__init__.py          |   1 +
+ toy-project/tests/domain/test_check_in_day.py      |  22 +++
+ toy-project/tests/domain/test_habit.py             |  24 ++-
+ toy-project/tests/test_architecture.py             | 175 +++++++++++++++++++++
+ 17 files changed, 694 insertions(+), 3 deletions(-)
+
+commit 0e28d73a5d99ad1450350f6fac8e56623a07ba0a
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:21:23 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:21:23 2026 +0800
+
+    Step 03: HabitService use cases and tests
+
+ toy-project/habits/application/habit_service.py    | 44 +++++++++++
+ toy-project/habits/domain/errors.py                |  4 +
+ toy-project/journal/03-use-cases.md                | 87 ++++++++++++++++++++++
+ toy-project/tests/application/__init__.py          |  1 -
+ .../tests/application/test_habit_service.py        | 71 ++++++++++++++++++
+ 5 files changed, 206 insertions(+), 1 deletion(-)
+
+commit 4ecf04e67a15450beb07f936fbab5512c0407104
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:22:06 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:22:06 2026 +0800
+
+    Step 04: CLI, composition root, entry point, architecture allowlist for cli
+
+ toy-project/ARCHITECTURE.md            | 11 ++++-
+ toy-project/habits/__main__.py         |  7 +++
+ toy-project/habits/cli/__init__.py     |  1 +
+ toy-project/habits/cli/commands.py     | 67 +++++++++++++++++++++++++++
+ toy-project/habits/main.py             | 28 ++++++++++++
+ toy-project/journal/04-cli.md          | 78 ++++++++++++++++++++++++++++++++
+ toy-project/tests/cli/__init__.py      |  0
+ toy-project/tests/cli/test_commands.py | 82 ++++++++++++++++++++++++++++++++++
+ toy-project/tests/test_architecture.py |  5 +--
+ toy-project/tests/test_main.py         | 28 ++++++++++++
+ 10 files changed, 302 insertions(+), 5 deletions(-)
+
+commit 69882bcd0ff21cd049b3e4c5f7f706de76dbb888
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:22:25 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:22:25 2026 +0800
+
+    Step 05: JSON export feature (no port change)
+
+ toy-project/habits/application/habit_service.py    | 16 +++++
+ toy-project/habits/cli/commands.py                 | 23 +++++++
+ toy-project/journal/05-export-feature.md           | 72 ++++++++++++++++++++++
+ .../tests/application/test_habit_service.py        | 14 +++++
+ toy-project/tests/cli/test_commands.py             | 24 ++++++++
+ toy-project/tests/test_architecture.py             |  2 +-
+ 6 files changed, 150 insertions(+), 1 deletion(-)
+
+commit 0dec01ba23a31346ae2555f453435781fe771909
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:23:08 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:23:08 2026 +0800
+
+    Step 06: drift experiment; add clock-rule enforcement test
+
+ toy-project/journal/06-drift-audit.md  | 103 +++++++++++++++++++++++++++++++++
+ toy-project/tests/test_architecture.py |  38 ++++++++++++
+ 2 files changed, 141 insertions(+)
+
+commit 91dff4f40a59a7b0d4ffb4e885725455fc481798
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:23:34 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:23:34 2026 +0800
+
+    Docs: toy project README and whitepaper
+
+ WHITEPAPER.md         | 204 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ toy-project/README.md |  35 +++++++++
+ 2 files changed, 239 insertions(+)
+
+commit 1e2449bb19ff5aaa23b4e63e2fa6e276953f41a9
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:33:51 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:33:51 2026 +0800
+
+    Step 07: independent review, duplicate contract, clock rule, audit tool, corrected docs
+
+ WHITEPAPER.md                                      |  28 +++--
+ toy-project/habits/adapters/memory_repository.py   |   3 +
+ toy-project/habits/adapters/sqlite_repository.py   |  20 +++-
+ toy-project/habits/application/ports.py            |   5 +-
+ toy-project/habits/main.py                         |   8 +-
+ toy-project/journal/01-domain-core.md              |   2 +-
+ .../02-persistence-and-architecture-test.md        |   2 +-
+ toy-project/journal/05-export-feature.md           |   8 +-
+ toy-project/journal/06-drift-audit.md              |  15 +--
+ toy-project/journal/07-independent-review.md       | 118 +++++++++++++++++++++
+ toy-project/tests/adapters/repository_contract.py  |  10 ++
+ .../tests/adapters/test_memory_repository.py       |  10 +-
+ .../tests/adapters/test_sqlite_repository.py       |   6 +-
+ toy-project/tests/test_architecture.py             |  29 +++--
+ toy-project/tests/test_main.py                     |   7 ++
+ toy-project/tools/audit.py                         |  50 +++++++++
+ 16 files changed, 267 insertions(+), 54 deletions(-)
+
+commit 1a3fd8487aef10c4894b5fe451ee97e80e989fdf
+Author:     AI-Assisted Process <process@example.local>
+AuthorDate: Fri Oct 9 19:34:01 2026 +0800
+Commit:     AI-Assisted Process <process@example.local>
+CommitDate: Fri Oct 9 19:34:01 2026 +0800
+
+    Whitepaper: accurate step count (scaffold plus seven journaled steps)
+
+ WHITEPAPER.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)

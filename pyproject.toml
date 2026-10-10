@@ -75,6 +75,8 @@ ignore = ["E501", "B008"]
 
 [tool.pyright]
 include = ["src", "projects"]
+# Byte-preserved Python 3.9 case study; its unittest and AST checks run separately.
+exclude = ["projects/ai-assisted/toy-project"]
 venvPath = "."
 venv = ".venv"
 pythonVersion = "3.14"

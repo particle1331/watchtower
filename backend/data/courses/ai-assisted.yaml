@@ -1,0 +1,156 @@
+id: course/ai-assisted
+purpose: Teach a repeatable AI-assisted development process that preserves human architectural
+  control through scoped plans, executable rules, review, and a readable build record.
+audience: Python programmers familiar with functions, classes, imports, exceptions,
+  and basic tests. Python 3.9+, a terminal, and an editor are sufficient; Git diff
+  experience is useful. No ML background, GPU, or paid API is required.
+planned:
+  chapters:
+  - summary: Architecture briefs, scoped plans, executable guardrails, and honest
+      evidence from a small worked example.
+    chapter_id: course/ai-assisted/00-overview
+    section: process-and-architecture
+    content: Explain the architecture-first process, its evidence, adoption checklist,
+      and honest limitations using the original whitepaper.
+    lab_and_evidence: Read the architecture brief, agent rules, and original build
+      timeline before the numbered journal chapters.
+  - summary: Implement pure entities and streak rules, then record ambiguities and
+      correctness gaps for review.
+    chapter_id: course/ai-assisted/01-domain-core
+    section: build-the-habit-tracker
+    content: 'Implement the pure domain layer: the `Habit` and `CheckIn` entities,
+      the
+
+      duplicate-check-in rule, and streak calculation. No storage, no CLI, no clock.'
+    lab_and_evidence: 'Write a small table of expected streaks for: a check-in today,
+      a check-in yesterday, a missing full day, and an empty history. Use fixed dates
+      and justify each expected value from the stated rule. Then locate the matching
+      domain tests. Explain why a `datetime.datetime` value must be rejected even
+      though it is a subclass of `datetime.date`.'
+  - summary: Share a repository contract across memory and SQLite adapters and enforce
+      allowed imports with an AST checker.
+    chapter_id: course/ai-assisted/02-persistence-and-architecture-test
+    section: build-the-habit-tracker
+    content: 'Add the repository port that use cases will depend on, two adapters
+      (in-memory and
+
+      SQLite), the `datetime` guard deferred from Step 01, and the architecture test
+      that
+
+      enforces the dependency rule (ADR-004).'
+    lab_and_evidence: In a scratch copy, add an application-layer import of the SQLite
+      adapter. Run the architecture tests and save the failure message, then remove
+      the violation and confirm a clean run. Identify the shared adapter tests that
+      enforce duplicate rejection in the final code, and explain how Step 07 changed
+      the earlier contract without changing its method signature.
+  - summary: Coordinate domain rules through a repository port while keeping dates
+      explicit and errors meaningful.
+    chapter_id: course/ai-assisted/03-use-cases
+    section: build-the-habit-tracker
+    content: 'Add `HabitService`, the application-layer use cases that the CLI will
+      call: add a habit,
+
+      check a habit in, and list habits with their current streaks. Tested against
+      the
+
+      in-memory adapter.'
+    lab_and_evidence: Trace `HabitService.check_in` from the missing-habit check through
+      duplicate detection to persistence. Name the expected exception for each failure
+      and the state that must remain unchanged. Use a fixed date and the memory adapter
+      to demonstrate one successful check-in and one rejected duplicate; record the
+      relevant existing tests.
+  - summary: Wire SQLite and the service in one place, keep clock reads at the edge,
+      and test observable CLI behaviour.
+    chapter_id: course/ai-assisted/04-cli
+    section: build-the-habit-tracker
+    content: 'Expose the use cases through a command-line interface, and wire the
+      real adapters
+
+      together in the composition root (`habits/main.py`), the only place that reads
+      the clock.'
+    lab_and_evidence: Run `add`, `checkin`, `list`, and an unknown habit ID against
+      a scratch database. Record stdout, stderr, and exit status for each command.
+      Compare the CLI tests with the composition-root test, and explain which can
+      use the memory adapter and which must prove persistence across invocations.
+  - summary: Add versioned JSON export with existing port methods and verify the precise
+      scope of the change.
+    chapter_id: course/ai-assisted/05-export-feature
+    section: build-the-habit-tracker
+    content: 'Add an `export` command that prints every habit and its check-in days
+      as a versioned
+
+      JSON document. The purpose of this step is to test whether the architecture
+      absorbs a new
+
+      feature without structural change.'
+    lab_and_evidence: Export an empty scratch database and one containing a habit
+      with a check-in. Parse both outputs as JSON and identify the version, habit
+      order, and ISO date representation. Write a file-scoped plan for a hypothetical
+      export filter, naming the existing port methods you would reuse and the tests
+      required before accepting the change; implementation is optional.
+  - summary: Inject a layer bypass and hidden clock read, compare detection before
+      and after, and bound audit claims.
+    chapter_id: course/ai-assisted/06-drift-audit
+    section: audit-and-review
+    content: "Test the process against deliberate drift, rather than assume it works.\
+      \ Two questions:\n\n1. Does the mechanical defence (the architecture test) catch\
+      \ the drift we would expect\n   most often?\n2. What does the mechanical defence\
+      \ miss, and what does a human audit have to catch?"
+    lab_and_evidence: Use separate scratch copies to inject a forbidden adapter import
+      and a clock alias such as `now = datetime.datetime.now` outside `main.py`. Run
+      the final architecture suite for each copy and record which test fails. Restore
+      the copies and confirm the clean baseline. Explain why these current results
+      differ from the historical pre-fix clock experiment and name one dynamic-access
+      pattern the checker misses.
+  - summary: Resolve review findings, align duplicate behaviour across adapters, and
+      distinguish fixes from product decisions.
+    chapter_id: course/ai-assisted/07-independent-review
+    section: audit-and-review
+    content: 'Review the whole repository with someone who did not write it, act on
+      the findings, and
+
+      make the whitepaper''s claims match the record. Documentation (the toy README
+      and the
+
+      whitepaper) was written in the same step, and is reviewed here too.'
+    lab_and_evidence: 'Choose three findings from the review table: one behaviour
+      defect, one documentation defect, and one product decision. For each, produce
+      a short review note with evidence, the resolution or owner, and the acceptance
+      check. Run the complete suite and audit, then explain why a passing static audit
+      does not settle future-dated check-ins or prove the process at large scale.'
+  outcomes: Write architecture and agent briefs; scope changes in files; enforce dependency
+    and clock rules; test guardrails with deliberate violations; review adapter contracts;
+    record findings, evidence, and open decisions honestly.
+  running_project: The original standard-library Habit Tracker CLI in projects/ai-assisted/toy-project,
+    with memory and SQLite adapters, a unittest suite, an AST architecture checker,
+    and a reproducible drift audit.
+  assessment: Each journal chapter adds an exercise with a concrete artifact and checks.
+    Assess architecture-rule coverage, identical adapter behaviour, deterministic
+    dates, bounded feature scope, and evidence tied to actual tests or review findings.
+  references: Original WHITEPAPER.md, toy-project/ARCHITECTURE.md, toy-project/AGENTS.md,
+    seven build journals, and the captured source Git timeline. Original bytes are
+    retained in projects/ai-assisted and downloadable course sidecars.
+actualized:
+  summary: A complete Habit Tracker case study with seven build journals, chapter
+    practice tasks, memory and SQLite repositories, versioned JSON export, dependency
+    and clock checks. The final 98-test suite passes and the reproducible drift audit
+    reports clean.
+toc:
+- id: process-and-architecture
+  title: Process and architecture
+  chapters:
+  - course/ai-assisted/00-overview
+- id: build-the-habit-tracker
+  title: Build the Habit Tracker
+  chapters:
+  - course/ai-assisted/01-domain-core
+  - course/ai-assisted/02-persistence-and-architecture-test
+  - course/ai-assisted/03-use-cases
+  - course/ai-assisted/04-cli
+  - course/ai-assisted/05-export-feature
+- id: audit-and-review
+  title: Audit and review
+  chapters:
+  - course/ai-assisted/06-drift-audit
+  - course/ai-assisted/07-independent-review
+overview: course/ai-assisted/00-overview

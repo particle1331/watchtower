@@ -486,10 +486,154 @@ artifacts:
   attachments: []
   tags: []
   planned: {}
+- id: course/ai-assisted
+  kind: course
+  title: 'AI-Assisted Development: A Process That Scales'
+  path: content/notebooks/courses/ai-assisted
+  visibility: private
+  lifecycle: draft
+  relations:
+  - project/ai-assisted
+  date: '2026-10-10'
+  description: Build a Habit Tracker with AI coding agents, explicit architecture,
+    scoped plans, executable checks, and a reviewable journal.
+  internal_notes: 'Ported from ../ai-assisted at source commit 1a3fd84 on 2026-10-10.
+    Source notebooks did not exist: the whitepaper and seven journals were converted
+    with wt notebook commands. Preserve historical approvals, stage test counts, and
+    open decisions; the copied code is the final implementation. Source files remain
+    unchanged. Keep the course private/draft until publication is requested.'
+  attachments: []
+  cover: content/notebooks/courses/ai-assisted/img/course-card-v3.png
+  planned: {}
+- id: project/ai-assisted
+  kind: project
+  title: 'AI-Assisted Development: Habit Tracker'
+  path: projects/ai-assisted
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/ai-assisted
+  internal_notes: ''
+  attachments: []
+  tags: []
+  planned: {}
+- id: course/ai-assisted/00-overview
+  kind: chapter
+  title: Building with AI Agents Without Losing the Architecture
+  path: content/notebooks/courses/ai-assisted/00-overview.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 00. Process overview
+  section: process-and-architecture
+- id: course/ai-assisted/01-domain-core
+  kind: chapter
+  title: 'Domain Core: Entities, Dates, and Streaks'
+  path: content/notebooks/courses/ai-assisted/01-domain-core.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 01. Domain core
+  section: build-the-habit-tracker
+- id: course/ai-assisted/02-persistence-and-architecture-test
+  kind: chapter
+  title: Persistence Ports and Executable Architecture Rules
+  path: content/notebooks/courses/ai-assisted/02-persistence-and-architecture-test.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 02. Ports and guardrails
+  section: build-the-habit-tracker
+- id: course/ai-assisted/03-use-cases
+  kind: chapter
+  title: Application Use Cases with Injected Dates
+  path: content/notebooks/courses/ai-assisted/03-use-cases.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 03. Use cases
+  section: build-the-habit-tracker
+- id: course/ai-assisted/04-cli
+  kind: chapter
+  title: The CLI and Its Composition Root
+  path: content/notebooks/courses/ai-assisted/04-cli.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 04. CLI and wiring
+  section: build-the-habit-tracker
+- id: course/ai-assisted/05-export-feature
+  kind: chapter
+  title: Add JSON Export Within Existing Boundaries
+  path: content/notebooks/courses/ai-assisted/05-export-feature.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 05. Bounded feature work
+  section: build-the-habit-tracker
+- id: course/ai-assisted/06-drift-audit
+  kind: chapter
+  title: Test the Guardrails with Deliberate Drift
+  path: content/notebooks/courses/ai-assisted/06-drift-audit.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 06. Drift experiment
+  section: audit-and-review
+- id: course/ai-assisted/07-independent-review
+  kind: chapter
+  title: Independent Review, Contract Repairs, and Honest Claims
+  path: content/notebooks/courses/ai-assisted/07-independent-review.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-10'
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 07. Review and evidence
+  section: audit-and-review
 retired_ids:
 - course/cli-test-course-2026
 - course/cli-test-course-2026/ch0-the-start
 - course/test
+- course/test123
 - htmx-todo
 - portfolio/12
 - portfolio/12321
@@ -509,6 +653,7 @@ retired_sources:
 - content/notebooks/courses/cli-test-course-2026/ch0-the-start.ipynb
 - content/notebooks/courses/cli-test-course-2026/index.ipynb
 - content/notebooks/courses/test/index.ipynb
+- content/notebooks/courses/test123/index.ipynb
 - content/notebooks/portfolio/12.ipynb
 - content/notebooks/portfolio/12321.ipynb
 - content/notebooks/portfolio/cli-test-portfolio-2026.ipynb
