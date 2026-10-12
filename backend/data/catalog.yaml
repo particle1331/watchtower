@@ -23,20 +23,28 @@ artifacts:
   title: Build a GPT Language Model from Scratch
   path: content/notebooks/courses/llms-from-scratch
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: A planned path from text data to a small GPT and two fine-tuning tasks.
+  internal_notes: '**Design rule:** Keep one traceable model and data lineage, so
+    each new capability can be explained by a specific change to the inputs, architecture,
+    objective, or evaluation.'
+  internal_todos: []
+  attachments: []
   cover: content/notebooks/courses/llms-from-scratch/img/course-cover.svg
   planned: {}
-  route: nb/courses/llms-from-scratch/index.ipynb
+  route: nb/courses/llms-from-scratch/index.qmd
 - id: course/llms-from-scratch/00-overview
   kind: chapter
   title: The GPT Build and Evidence Plan
   path: content/notebooks/courses/llms-from-scratch/00-overview.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: The model and experiment lineage for the complete course.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 00. Overview
@@ -47,10 +55,13 @@ artifacts:
   title: Language Models, Scope, and the Experiment Contract
   path: content/notebooks/courses/llms-from-scratch/01-introduction.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Define next-token prediction and the evidence needed for the course
     build.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 01. Language models
@@ -61,9 +72,12 @@ artifacts:
   title: Tokenization, Context Windows, and Batches
   path: content/notebooks/courses/llms-from-scratch/02-text-data.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Prepare text for next-token training and verify the target shift.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 02. Text data
@@ -74,9 +88,12 @@ artifacts:
   title: Causal Self-Attention and Multi-Head Attention
   path: content/notebooks/courses/llms-from-scratch/03-attention.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Derive attention and test the causal boundary.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 03. Attention
@@ -87,9 +104,12 @@ artifacts:
   title: Assembling a Decoder-Only GPT
   path: content/notebooks/courses/llms-from-scratch/04-gpt-model.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Combine embeddings, decoder blocks, and a language-model head.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 04. GPT
@@ -100,9 +120,12 @@ artifacts:
   title: Pretraining, Validation, and Generation
   path: content/notebooks/courses/llms-from-scratch/05-pretraining.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Optimize next-token loss and inspect a checkpoint.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 05. Pretraining
@@ -113,9 +136,12 @@ artifacts:
   title: Fine-Tuning GPT for Text Classification
   path: content/notebooks/courses/llms-from-scratch/06-classification.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Adapt a pretrained representation to a labeled task.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 06. Classification
@@ -126,9 +152,12 @@ artifacts:
   title: Instruction Fine-Tuning and Response Evaluation
   path: content/notebooks/courses/llms-from-scratch/07-instructions.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Teach GPT to respond to formatted requests and inspect its answers.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 07. Instructions
@@ -139,9 +168,12 @@ artifacts:
   title: 'Optional: Parameter-Efficient Fine-Tuning with LoRA'
   path: content/notebooks/courses/llms-from-scratch/08-lora.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Compare low-rank adapters with full-parameter updates.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 08. LoRA (optional)
@@ -152,9 +184,12 @@ artifacts:
   title: 'Capstone: Reproduce and Compare the GPT Pipeline'
   path: content/notebooks/courses/llms-from-scratch/09-capstone.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   description: Assemble run records, evaluations, and limitations.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
   planned: {}
   parent: course/llms-from-scratch
   toc_title: 09. Capstone
@@ -169,9 +204,14 @@ artifacts:
   relations: []
   description: A planned, hands-on path from pretrained language-model generation
     to inference-time reasoning, reinforcement learning, and distillation.
+  internal_notes: '**Design rule:** Treat improved reasoning as an empirical claim:
+    define correctness, measure quality and cost, and keep the evaluation fixed when
+    comparing methods.'
+  internal_todos: []
+  attachments: []
   cover: backend/assets/courses/reasoning-from-scratch-94ba70e54d44-e55bd00ad6b5544c8aad6c7902be3fbfdb6f31816b1403318b1a0472bdec6b9b.png
   planned: {}
-  route: nb/courses/reasoning-from-scratch/index.ipynb
+  route: nb/courses/reasoning-from-scratch/index.qmd
 - id: course/reasoning-from-scratch/00-overview
   kind: chapter
   title: Reasoning Model Pipeline and Evidence Contract
@@ -291,11 +331,14 @@ artifacts:
   relations: []
   description: Build and evaluate text classifiers through AI-written-text detection,
     then train an LLM into a Jev-like decision model with PyTorch.
-  internal_notes: ''
+  internal_notes: '**Design rule:** treat every score as evidence about a model on
+    a defined data distribution, not as proof about an individual text or a promise
+    of generalization to new tasks.'
+  internal_todos: []
   attachments: []
   cover: content/notebooks/courses/text-classification-from-scratch/img/course-cover.svg
   planned: {}
-  route: nb/courses/text-classification-from-scratch/index.ipynb
+  route: nb/courses/text-classification-from-scratch/index.qmd
 - id: course/text-classification-from-scratch/01-introduction
   kind: chapter
   title: Define the Classification Problem
@@ -508,10 +551,16 @@ artifacts:
     Source notebooks did not exist: the whitepaper and seven journals were converted
     with wt notebook commands. Preserve historical approvals, stage test counts, and
     open decisions; the copied code is the final implementation. Source files remain
-    unchanged. Keep the course private/draft until publication is requested.'
+    unchanged. Keep the course private/draft until publication is requested.
+
+
+    **Design rule:** The human owns the architecture, and the important rules have
+    executable checks.'
+  internal_todos: []
   attachments: []
   cover: content/notebooks/courses/ai-assisted/img/course-card-v3.png
   planned: {}
+  route: nb/courses/ai-assisted/index.qmd
 - id: project/ai-assisted
   kind: project
   title: 'AI-Assisted Development: Habit Tracker'
@@ -660,6 +709,882 @@ artifacts:
   attachments: []
   tags: []
   planned: {}
+- id: course/llm-applications
+  kind: course
+  title: 'Build LLM Applications: Retrieval, Agents, and Evaluation'
+  path: content/notebooks/courses/llm-applications
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/llms-from-scratch
+  - course/text-classification-from-scratch
+  - course/ai-assisted
+  date: '2026-10-12'
+  description: Build and evaluate a document assistant with hybrid retrieval, bounded
+    tool use, structured answers, and verified citations.
+  internal_notes: 'Added as a career-focused companion to the existing Watchtower
+    courses after reviewing ../100-weeks-of-ai. Recommended path: software-service
+    foundations from production-ai-systems, then this course, then deployment and
+    enterprise controls. Preserve the old program''s independent labs; a shared portfolio
+    is optional. Import topics and experiment designs, not promised benchmark wins.
+    Planned chapters are authoring intent, not completed instruction or measured model
+    quality. Multi-agent delegation, a handwritten MCP implementation, multimodal
+    retrieval, and long-term memory are optional later specializations.'
+  attachments: []
+  planned: {}
+  route: nb/courses/llm-applications/index.qmd
+- id: course/llm-applications/00-overview
+  kind: chapter
+  title: The Document Assistant and Evaluation Contract
+  path: content/notebooks/courses/llm-applications/00-overview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46acf1abe819ab7af2cbc1ddfc1859e795d67810ea7c6b29e84ae290d7119619
+    name: foundations-week16-original.qmd
+    media_type: application/octet-stream
+    size: 13503
+  - id: 90347b668f2fa396c7d5ff7aa8bb1a6576822e4f4cbbea7bda27b1e0190c366e
+    name: foundations-week31-original.qmd
+    media_type: application/octet-stream
+    size: 12035
+  - id: 5233d5a5a872b51281ba4eae3e8dcb994d0faf2a00315cab30ace3e60b971f71
+    name: ai-apps-week22-original.qmd
+    media_type: application/octet-stream
+    size: 19296
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 00. Overview
+  section: main
+- id: course/llm-applications/01-tool-calling
+  kind: chapter
+  title: Build a Tool-Calling Loop
+  path: content/notebooks/courses/llm-applications/01-tool-calling.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-12'
+  internal_notes: "Adapted source topics: Foundations 8.\r\n\r\nPrerequisites and\
+    \ handoff: 00-overview; JSON and Python tests.\r\n\r\nThis is a planned lesson.\
+    \ Offline fixtures isolate mechanism checks; substantive model experiments are\
+    \ described separately where relevant. No promised improvement or completed execution\
+    \ is implied.\n\nDetailed source adaptation:\nRestores Foundations 8 text protocol,\
+    \ parser seams, restricted calculator, raw adapter, transcript memory and paired\
+    \ direct-answer comparison. Changes unsafe/reproducibility shortcuts: no hidden\
+    \ chain-of-thought requirement, ambiguous action policy explicit, temperature\
+    \ zero not a determinism guarantee; vault replaces source .env secret workflow.\
+    \ Scripted path verifies mechanics, live model path measures action quality.\n\
+    \nOriginal guides used:\n/Users/ronmedina-guest/code/100-weeks-of-ai/courses/foundations/week08/README.qmd"
+  attachments:
+  - id: b5a2401059fede785f43ecd84e2fc2ee811a25bceb9f354baad7c0777862df2a
+    name: foundations-week08-original.qmd
+    media_type: application/octet-stream
+    size: 16008
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 01. Tool loop
+  section: tool-use
+- id: course/llm-applications/02-agent-harness
+  kind: chapter
+  title: Bound Agent Execution and Connect Tools
+  path: content/notebooks/courses/llm-applications/02-agent-harness.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46d17085df8f513df58cecd3c65859df727d89719cffab3460075b5e80ff3db3
+    name: foundations-week09-original.qmd
+    media_type: application/octet-stream
+    size: 12131
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 02. Agent harness
+  section: tool-use
+- id: course/llm-applications/03-agent-evaluation
+  kind: chapter
+  title: Evaluate Agent Runs and Model Judges
+  path: content/notebooks/courses/llm-applications/03-agent-evaluation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 68eb5c347309575407b585c76e1f1e87a836d0bf31054c57436f3eb7f1e89656
+    name: foundations-week12-original.qmd
+    media_type: application/octet-stream
+    size: 13699
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 03. Agent evaluation
+  section: tool-use
+- id: course/llm-applications/04-lexical-search
+  kind: chapter
+  title: Build and Evaluate Lexical Search
+  path: content/notebooks/courses/llm-applications/04-lexical-search.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 2e797155cd3bc8c79b401351c2cd34bab64427ef93a5ef0c34ee16b0fd29b56d
+    name: foundations-week13-original.qmd
+    media_type: application/octet-stream
+    size: 16240
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 04. Lexical search
+  section: retrieval
+- id: course/llm-applications/05-dense-retrieval
+  kind: chapter
+  title: Build Dense Retrieval and Measure Approximation
+  path: content/notebooks/courses/llm-applications/05-dense-retrieval.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 16622aa641bba78905881681e4e30e0bdad0b562e0541a89edbdd8b3eb2cca7d
+    name: foundations-week14-original.qmd
+    media_type: application/octet-stream
+    size: 19498
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 05. Dense retrieval
+  section: retrieval
+- id: course/llm-applications/06-hybrid-reranking
+  kind: chapter
+  title: Combine Retrieval and Rerank Candidates
+  path: content/notebooks/courses/llm-applications/06-hybrid-reranking.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 815c683044d14488cc2316e7bc67fcf71521c3578c8ee9c28f9b23e7d923fa87
+    name: foundations-week15-original.qmd
+    media_type: application/octet-stream
+    size: 17491
+  - id: 86cd4afdb4825949bd944b7aee9b91000f9d7e8f073dc90d8272bc2c7fe5e8ae
+    name: ai-apps-week06-original.qmd
+    media_type: application/octet-stream
+    size: 16633
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 06. Hybrid search
+  section: retrieval
+- id: course/llm-applications/07-document-ingestion
+  kind: chapter
+  title: Chunk Documents and Maintain a Search Index
+  path: content/notebooks/courses/llm-applications/07-document-ingestion.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: d18f63daa39c2fc410b6fda1223d1a043e78dbb3502f6e0a2f5c2867f59b7377
+    name: ai-apps-week03-original.qmd
+    media_type: application/octet-stream
+    size: 18956
+  - id: fc8c6ba4bf5d819082b9f14aeb6c6c240f7a511c15698d86c6ef85e537e6b2e7
+    name: ai-apps-week20-original.qmd
+    media_type: application/octet-stream
+    size: 22919
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 07. Documents and index
+  section: retrieval
+- id: course/llm-applications/08-rag-evaluation
+  kind: chapter
+  title: Build Retrieval-Augmented Generation with Separate Measures
+  path: content/notebooks/courses/llm-applications/08-rag-evaluation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46acf1abe819ab7af2cbc1ddfc1859e795d67810ea7c6b29e84ae290d7119619
+    name: foundations-week16-original.qmd
+    media_type: application/octet-stream
+    size: 13503
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 08. RAG evaluation
+  section: answer-quality
+- id: course/llm-applications/09-structured-answers
+  kind: chapter
+  title: Validate Structured Answers and Verify Citations
+  path: content/notebooks/courses/llm-applications/09-structured-answers.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 012408db73ac817ae6951daee0c35d922955a54b0a412090bb3c81e8865218d0
+    name: ai-apps-week01-original.qmd
+    media_type: application/octet-stream
+    size: 19993
+  - id: 80e2fef8f00de79bc441826e59fdd47aa5758be3ca7b0d7d1d2b2dc3ec9cfd15
+    name: ai-apps-week15-original.qmd
+    media_type: application/octet-stream
+    size: 20319
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 09. Answers and citations
+  section: answer-quality
+- id: course/llm-applications/10-prompt-experiments
+  kind: chapter
+  title: Version Prompts and Run Defensible Comparisons
+  path: content/notebooks/courses/llm-applications/10-prompt-experiments.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 8c1d8e2959decca1bcd48596801b39404babf4ca5b63bde2735795a6b17308ad
+    name: foundations-week20-original.qmd
+    media_type: application/octet-stream
+    size: 10847
+  - id: 4509af154a6d10c03843387f66f5c728619dc29fb56f0f3b2c23bfa8b940a7cc
+    name: ai-apps-week14-original.qmd
+    media_type: application/octet-stream
+    size: 18159
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 10. Prompt experiments
+  section: answer-quality
+- id: course/llm-applications/11-iterative-retrieval
+  kind: chapter
+  title: Use Iterative Retrieval under an Explicit Budget
+  path: content/notebooks/courses/llm-applications/11-iterative-retrieval.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 98b538b3353af6caa88bd38cc0f993f4599320f545c49f9772a90aea1cac026d
+    name: foundations-week30-original.qmd
+    media_type: application/octet-stream
+    size: 16201
+  - id: fe0d9b8964ac7f6fdb5033b206345cac14457ab92a260f2bba1c1bb15f30917c
+    name: foundations-week27-original.qmd
+    media_type: application/octet-stream
+    size: 11252
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 11. Iterative retrieval
+  section: answer-quality
+- id: course/llm-applications/12-capstone
+  kind: chapter
+  title: Evaluate a Complete Document Assistant
+  path: content/notebooks/courses/llm-applications/12-capstone.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 5233d5a5a872b51281ba4eae3e8dcb994d0faf2a00315cab30ace3e60b971f71
+    name: ai-apps-week22-original.qmd
+    media_type: application/octet-stream
+    size: 19296
+  - id: 90347b668f2fa396c7d5ff7aa8bb1a6576822e4f4cbbea7bda27b1e0190c366e
+    name: foundations-week31-original.qmd
+    media_type: application/octet-stream
+    size: 12035
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 12. Capstone
+  section: answer-quality
+- id: course/production-ai-systems
+  kind: course
+  title: Deploy and Operate AI Systems
+  path: content/notebooks/courses/production-ai-systems
+  visibility: private
+  lifecycle: planned
+  relations:
+  - course/ai-assisted
+  - course/llm-applications
+  - course/text-classification-from-scratch
+  date: '2026-10-12'
+  description: Build a model-backed web service and measure deployment, concurrency,
+    durable jobs, inference capacity, and recovery from failures.
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  route: nb/courses/production-ai-systems/index.qmd
+- id: course/production-ai-systems/00-overview
+  kind: chapter
+  title: The Service Architecture and Operational Evidence
+  path: content/notebooks/courses/production-ai-systems/00-overview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: ad5a6361e11a337cc4585d38b12aa1dfd608cb8fd7ecc606b6f7e7327e99da24
+    name: foundations-week18-original.qmd
+    media_type: application/octet-stream
+    size: 13461
+  - id: 1666242021510ca9721908a821a986f59ce4210d6d9514ef9a3bcd1793ce6dcf
+    name: systems-security-week15-original.qmd
+    media_type: application/octet-stream
+    size: 9858
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 00. Overview
+  section: main
+- id: course/production-ai-systems/01-python-execution
+  kind: chapter
+  title: Understand Python Execution, Concurrency, and Cancellation
+  path: content/notebooks/courses/production-ai-systems/01-python-execution.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 5987a6ec44724fcc14cc8f4e4ee3d093d3ca54356bfbf378a20b437a2ca2d38f
+    name: foundations-week32-original.qmd
+    media_type: application/octet-stream
+    size: 7983
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 01. Python execution
+  section: service-foundations
+- id: course/production-ai-systems/02-http-services
+  kind: chapter
+  title: Trace Networking and HTTP Service Failures
+  path: content/notebooks/courses/production-ai-systems/02-http-services.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 4f3ace0c5679472ed52eccefdede7fcaf703c3d2d30d3ce46bc83b965aa1c975
+    name: foundations-week33-original.qmd
+    media_type: application/octet-stream
+    size: 7552
+  - id: ad5a6361e11a337cc4585d38b12aa1dfd608cb8fd7ecc606b6f7e7327e99da24
+    name: foundations-week18-original.qmd
+    media_type: application/octet-stream
+    size: 13461
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 02. HTTP and networking
+  section: service-foundations
+- id: course/production-ai-systems/03-sql-and-transactions
+  kind: chapter
+  title: Model Relational Data and Protect Concurrent Updates
+  path: content/notebooks/courses/production-ai-systems/03-sql-and-transactions.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 7a5f7998997857b1e7752d47f884b4ac695b5b2b0d6d7c9364ac7499e45d9477
+    name: foundations-week34-original.qmd
+    media_type: application/octet-stream
+    size: 8155
+  - id: 551d231ee23934f788b30a57c9afda8baf0c7b63713512c8ac00dca22dbbc3e8
+    name: systems-security-week11-original.qmd
+    media_type: application/octet-stream
+    size: 7955
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 03. SQL and transactions
+  section: service-foundations
+- id: course/production-ai-systems/04-authenticated-streaming
+  kind: chapter
+  title: Build an Authenticated App with Cancellable Streaming
+  path: content/notebooks/courses/production-ai-systems/04-authenticated-streaming.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 12fd55de7e18ba59d0bc3c8acc43adb6324813760b3b5ae653a0c3c9e870b98b
+    name: foundations-week19-original.qmd
+    media_type: application/octet-stream
+    size: 21711
+  - id: ef4323d952e5c652898a311fbf39f95854972fffec83751430b2c1ed14dace0d
+    name: foundations-week35-original.qmd
+    media_type: application/octet-stream
+    size: 10624
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 04. Auth and streaming
+  section: service-foundations
+- id: course/production-ai-systems/05-deployment
+  kind: chapter
+  title: Deploy One Service with Reproducible Configuration
+  path: content/notebooks/courses/production-ai-systems/05-deployment.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 0e3a26d1a1b48bbc2c8816daaaec2ca05ad95ac0ee7e21e1d1ff7a6b82170cd4
+    name: systems-security-week10-original.qmd
+    media_type: application/octet-stream
+    size: 9603
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 05. Deployment
+  section: state-and-releases
+- id: course/production-ai-systems/06-release-engineering
+  kind: chapter
+  title: Version Releases and Return to a Working Service
+  path: content/notebooks/courses/production-ai-systems/06-release-engineering.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 7ab999611fb91a32e6c4d7ff18cbc8c7b2c860ced7df90494156f941bceaf86e
+    name: systems-security-week01-original.qmd
+    media_type: application/octet-stream
+    size: 7893
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 06. Releases
+  section: state-and-releases
+- id: course/production-ai-systems/07-durable-jobs
+  kind: chapter
+  title: Keep Background Jobs Correct across Retries and Restarts
+  path: content/notebooks/courses/production-ai-systems/07-durable-jobs.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 3c1c875aadba08af43ba4dc51ae9a4dda9134c84aab4d06c2cd1a23e385b1b80
+    name: systems-security-week02-original.qmd
+    media_type: application/octet-stream
+    size: 6527
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 07. Durable jobs
+  section: state-and-releases
+- id: course/production-ai-systems/08-migrations-and-restoration
+  kind: chapter
+  title: Evolve Data and Restore a Verified Backup
+  path: content/notebooks/courses/production-ai-systems/08-migrations-and-restoration.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 7e150c7d3471d9057a54d1440bb9c6c7739ebd1ae4b5cd99a14bb985427376c0
+    name: systems-security-week12-original.qmd
+    media_type: application/octet-stream
+    size: 8628
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 08. Data recovery
+  section: state-and-releases
+- id: course/production-ai-systems/09-cache-consistency
+  kind: chapter
+  title: Keep Cached Answers Consistent with Data and Permissions
+  path: content/notebooks/courses/production-ai-systems/09-cache-consistency.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 1e46e73e974ed31122927d8d5f27af0666496d6c05b5b793a6947cf08f84b554
+    name: systems-security-week13-original.qmd
+    media_type: application/octet-stream
+    size: 7931
+  - id: 56931311378f7ebe51787483ed4eca14e00f4f3751671dcfe147044cf2921510
+    name: ai-apps-week19-original.qmd
+    media_type: application/octet-stream
+    size: 10895
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 09. Cache consistency
+  section: state-and-releases
+- id: course/production-ai-systems/10-observation-and-debugging
+  kind: chapter
+  title: Trace Requests and Diagnose a Running Service
+  path: content/notebooks/courses/production-ai-systems/10-observation-and-debugging.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 3dd8b7afdcef43d8cb28e12745e47746fd6068e252bd403c744097c76b416154
+    name: systems-security-week14-original.qmd
+    media_type: application/octet-stream
+    size: 8609
+  - id: 8c28e8d0b9d02d3946f3786ed795ad1808fec944ca52d48548a0509c201537f4
+    name: foundations-week22-original.qmd
+    media_type: application/octet-stream
+    size: 11340
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 10. Observation and debugging
+  section: operations
+- id: course/production-ai-systems/11-inference-serving
+  kind: chapter
+  title: Measure Production Inference Serving
+  path: content/notebooks/courses/production-ai-systems/11-inference-serving.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46d46efba51579bd93c607f5100b58e82f20440f0c8f041af99ac1ce981a0fd4
+    name: systems-security-week04-original.qmd
+    media_type: application/octet-stream
+    size: 8298
+  - id: cdab32b7f2bf23b6ee40c57edd7e09f9cf2711f3bfc4764aa3e08dc54b36994c
+    name: foundations-week26-original.qmd
+    media_type: application/octet-stream
+    size: 17467
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 11. Inference serving
+  section: operations
+- id: course/production-ai-systems/12-capacity
+  kind: chapter
+  title: Measure Whole-Application Capacity
+  path: content/notebooks/courses/production-ai-systems/12-capacity.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 90e9c1aa06e7dddc8b335117d405f940f6ef68580ce4da8bb08a9c0bd05ebcc9
+    name: systems-security-week05-original.qmd
+    media_type: application/octet-stream
+    size: 9729
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 12. Capacity
+  section: operations
+- id: course/production-ai-systems/13-recovery-exercise
+  kind: chapter
+  title: Practise Recovery from Known Service Failures
+  path: content/notebooks/courses/production-ai-systems/13-recovery-exercise.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: d6e91dec6f3a4a0508b3601240133e5d17c23c3f017a80b62afc760cc01fbdce
+    name: systems-security-week09-original.qmd
+    media_type: application/octet-stream
+    size: 9051
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 13. Recovery practice
+  section: operations
+- id: course/production-ai-systems/14-capstone
+  kind: chapter
+  title: Operate and Review a Complete AI Service
+  path: content/notebooks/courses/production-ai-systems/14-capstone.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 1666242021510ca9721908a821a986f59ce4210d6d9514ef9a3bcd1793ce6dcf
+    name: systems-security-week15-original.qmd
+    media_type: application/octet-stream
+    size: 9858
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 14. Capstone
+  section: operations
+- id: course/enterprise-ai
+  kind: course
+  title: Build Enterprise AI with Permissions and Security
+  path: content/notebooks/courses/enterprise-ai
+  visibility: private
+  lifecycle: planned
+  relations:
+  - course/llm-applications
+  - course/production-ai-systems
+  - course/text-classification-from-scratch
+  date: '2026-10-12'
+  description: Build and test an AI assistant that enforces user permissions, handles
+    data lifecycle, resists injected instructions, and supports auditable decisions.
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  route: nb/courses/enterprise-ai/index.qmd
+- id: course/enterprise-ai/00-overview
+  kind: chapter
+  title: The Organizational Assistant and Control Boundaries
+  path: content/notebooks/courses/enterprise-ai/00-overview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 807ff82ffa2023bfb050c1a73855b0fb3fdc0693c59c31765fb1daf70f59f664
+    name: enterprise-ai-week01-original.qmd
+    media_type: application/octet-stream
+    size: 13339
+  - id: 5a76ca42341210feeea80358b9772bf145b6c10b0747717d65a4980b3136e4a7
+    name: enterprise-ai-week03-original.qmd
+    media_type: application/octet-stream
+    size: 15307
+  - id: 475f57b70bde765f667859cebea21214fc7e5853ae56a763e46db4ba8bc85103
+    name: enterprise-ai-week08-original.qmd
+    media_type: application/octet-stream
+    size: 23671
+  - id: f9c54cd67990c1faacf05decb1d04f16907b43417de01a0b82a1795c7dfaf226
+    name: systems-security-week07-original.qmd
+    media_type: application/octet-stream
+    size: 6216
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 00. Overview
+  section: main
+- id: course/enterprise-ai/01-resource-authorization
+  kind: chapter
+  title: Authorize Every Tool Call and Resource Request
+  path: content/notebooks/courses/enterprise-ai/01-resource-authorization.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 807ff82ffa2023bfb050c1a73855b0fb3fdc0693c59c31765fb1daf70f59f664
+    name: enterprise-ai-week01-original.qmd
+    media_type: application/octet-stream
+    size: 13339
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 01. Authorization
+  section: permissions-and-data
+- id: course/enterprise-ai/02-permission-aware-retrieval
+  kind: chapter
+  title: Synchronize Documents and Permissions for Retrieval
+  path: content/notebooks/courses/enterprise-ai/02-permission-aware-retrieval.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 5a76ca42341210feeea80358b9772bf145b6c10b0747717d65a4980b3136e4a7
+    name: enterprise-ai-week03-original.qmd
+    media_type: application/octet-stream
+    size: 15307
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 02. Permission-aware RAG
+  section: permissions-and-data
+- id: course/enterprise-ai/03-sensitive-data-and-audit
+  kind: chapter
+  title: Handle Sensitive Data and Preserve Useful Audit Records
+  path: content/notebooks/courses/enterprise-ai/03-sensitive-data-and-audit.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 69676c267cd905e4b5941eaa19b362516fedc1b29a40ce1c4ed73cc59391ced4
+    name: enterprise-ai-week02-original.qmd
+    media_type: application/octet-stream
+    size: 22118
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 03. Sensitive data and audit
+  section: permissions-and-data
+- id: course/enterprise-ai/04-decision-traces
+  kind: chapter
+  title: Record Evidence for Reviewable Decisions
+  path: content/notebooks/courses/enterprise-ai/04-decision-traces.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 6130ede46c5766aadea7e007bd8c118dc1855bd3d30e246ca8de083ce9847953
+    name: enterprise-ai-week05-original.qmd
+    media_type: application/octet-stream
+    size: 19093
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 04. Decision evidence
+  section: permissions-and-data
+- id: course/enterprise-ai/05-data-lifecycle
+  kind: chapter
+  title: Expire and Delete Data across Dependent Stores
+  path: content/notebooks/courses/enterprise-ai/05-data-lifecycle.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 475f57b70bde765f667859cebea21214fc7e5853ae56a763e46db4ba8bc85103
+    name: enterprise-ai-week08-original.qmd
+    media_type: application/octet-stream
+    size: 23671
+  - id: 7e150c7d3471d9057a54d1440bb9c6c7739ebd1ae4b5cd99a14bb985427376c0
+    name: systems-security-week12-original.qmd
+    media_type: application/octet-stream
+    size: 8628
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 05. Data lifecycle
+  section: permissions-and-data
+- id: course/enterprise-ai/06-prompt-injection
+  kind: chapter
+  title: Measure Defenses against Indirect Prompt Injection
+  path: content/notebooks/courses/enterprise-ai/06-prompt-injection.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 97499644efe298dfdd85c1343caa2f0804e64fd03af82cb45452394b3b4a5478
+    name: ai-apps-week21-original.qmd
+    media_type: application/octet-stream
+    size: 23832
+  - id: f9c54cd67990c1faacf05decb1d04f16907b43417de01a0b82a1795c7dfaf226
+    name: systems-security-week07-original.qmd
+    media_type: application/octet-stream
+    size: 6216
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 06. Prompt injection
+  section: security
+- id: course/enterprise-ai/07-trusted-data-and-models
+  kind: chapter
+  title: Verify Data, Model, and Dependency Provenance
+  path: content/notebooks/courses/enterprise-ai/07-trusted-data-and-models.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: b32f71dee8344b3f83b1a11a63db63a554c4840e57b37a9abfbb5d473edc8d09
+    name: systems-security-week06-original.qmd
+    media_type: application/octet-stream
+    size: 5686
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 07. Trusted artifacts
+  section: security
+- id: course/enterprise-ai/08-network-isolation
+  kind: chapter
+  title: Define and Test Network Isolation
+  path: content/notebooks/courses/enterprise-ai/08-network-isolation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 9c28e1a1f8a9f6865c9258b711d788c6bc0b035484598f6de98075ff7307939f
+    name: enterprise-ai-week04-original.qmd
+    media_type: application/octet-stream
+    size: 19605
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 08. Network isolation
+  section: security
+- id: course/enterprise-ai/09-security-regressions
+  kind: chapter
+  title: Build a Security Regression Suite
+  path: content/notebooks/courses/enterprise-ai/09-security-regressions.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: e613bd68eb89531df3a6bd7e3d254adea2ae3496b53214ef56e8da198ec13d3a
+    name: systems-security-week08-original.qmd
+    media_type: application/octet-stream
+    size: 6233
+  - id: 97499644efe298dfdd85c1343caa2f0804e64fd03af82cb45452394b3b4a5478
+    name: ai-apps-week21-original.qmd
+    media_type: application/octet-stream
+    size: 23832
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 09. Security evaluation
+  section: security
+- id: course/enterprise-ai/10-costs-and-vendors
+  kind: chapter
+  title: Attribute Costs and Compare Build-versus-Buy Options
+  path: content/notebooks/courses/enterprise-ai/10-costs-and-vendors.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 9ba319dd99995094784c1a67b447f038193eadb2d48dbd6e8bc56d3346c31a78
+    name: enterprise-ai-week07-original.qmd
+    media_type: application/octet-stream
+    size: 18200
+  - id: 5e25b9a117425abf178a082aadd01e1bf6d237d0c799c54c4e013045bdab251e
+    name: enterprise-ai-week09-original.qmd
+    media_type: application/octet-stream
+    size: 23014
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 10. Costs and alternatives
+  section: decisions
+- id: course/enterprise-ai/11-capstone
+  kind: chapter
+  title: Review an Enterprise Assistant and Its Design
+  path: content/notebooks/courses/enterprise-ai/11-capstone.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: aebd023906e00e7c9119d9067a577b930db1848b9816c6d19062a83e5a5ceccb
+    name: enterprise-ai-week10-original.qmd
+    media_type: application/octet-stream
+    size: 24383
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 11. Capstone
+  section: decisions
 retired_ids:
 - course/cli-test-course-2026
 - course/cli-test-course-2026/ch0-the-start

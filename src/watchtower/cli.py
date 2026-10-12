@@ -301,7 +301,7 @@ def find(query: str, archive: bool = typer.Option(False, "--archive", help="sear
 
 @app.command(name="context")
 def context_cmd(name: str) -> None:
-    """Show an artifact's catalog record, course contract, and reading paths."""
+    """Show artifact lifecycle, its active plan, course contract, and reading paths."""
     from . import knowledge
 
     print(knowledge.context_json(name))

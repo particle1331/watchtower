@@ -409,12 +409,41 @@ def context(name: str) -> dict[str, Any]:
     if artifact is None:
         raise FileNotFoundError(f"no active artifact named '{name}'")
     target = str(Path(str(artifact["path"])) / "index.ipynb") if artifact["kind"] == "course" else artifact["path"]
-    result: dict[str, Any] = {"artifact": artifact, "reading_paths": {"target": target}}
+    result: dict[str, Any] = {
+        "artifact": artifact,
+        "lifecycle": artifact.get("lifecycle"),
+        "reading_paths": {"target": target},
+    }
+    managed = Path("backend/data/catalog.yaml").exists()
+    if managed:
+        from .services.content import ContentService
+
+        service = ContentService()
+        inspected = service.inspect(artifact["id"])
+        result["artifact"] = inspected["artifact"]
+        result["lifecycle"] = inspected["artifact"]["lifecycle"]
+        result["revision"] = inspected["revision"]
+        if result["lifecycle"] == "planned":
+            result["plan"] = inspected["authoring_plan"]
+            result["plan_fields"] = inspected["plan_fields"]
+            if artifact["kind"] == "course":
+                ordered_ids = [
+                    chapter_id
+                    for section in inspected["contract"]["toc"]
+                    for chapter_id in section["chapters"]
+                ]
+                chapters = result["plan"].get("chapters", [])
+                by_id = {chapter["chapter_id"]: chapter for chapter in chapters}
+                result["plan"]["chapters"] = [by_id[id_] for id_ in ordered_ids if id_ in by_id]
+        if artifact["kind"] == "course" and inspected["contract"].get("home") is not None:
+            target = f"backend/data/courses/{artifact['id'].split('/')[-1]}.yaml"
     course = artifact if artifact["kind"] == "course" else get_artifact(str(artifact.get("parent", "")))
     if course is not None and course.get("kind") == "course":
         folder = Path(str(course["path"]))
-        result["course"] = load_course(course)
+        result["course"] = service.inspect(course["id"])["contract"] if managed else load_course(course)
         result["reading_paths"] = {"course_home": str(folder / "index.ipynb")}
+        if managed and result["course"].get("home") is not None:
+            result["reading_paths"]["course_home"] = f"backend/data/courses/{course['id'].split('/')[-1]}.yaml"
         overview = next(
             (a for a in load_catalog() if a.get("parent") == course["id"] and Path(str(a.get("path"))).stem.endswith("overview")),
             None,

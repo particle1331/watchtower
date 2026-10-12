@@ -11,6 +11,7 @@ from watchtower.models import (
     KanbanColumn,
     Photo,
     PortfolioEntry,
+    TodoItem,
 )
 
 Kind = Literal["post", "course", "chapter", "portfolio", "project", "personal", "gallery"]
@@ -52,6 +53,7 @@ class ArtifactMetadataPatch(BaseModel):
     title: str | None = None
     description: str | None = None
     internal_notes: str | None = None
+    internal_todos: list[TodoItem] | None = None
     attachments: list[Attachment] | None = None
     visibility: Literal["public", "private"] | None = None
     lifecycle: Literal["planned", "draft", "published"] | None = None
@@ -82,6 +84,8 @@ class KanbanCreate(BaseModel):
     id: str | None = None
     title: str = Field(min_length=1)
     description: str = ""
+    notes: str = ""
+    todos: list[TodoItem] = Field(default_factory=list)
     column: KanbanColumn = "todo"
     artifact_ids: list[str] = Field(default_factory=list)
     attachments: list[Attachment] = Field(default_factory=list)
@@ -91,6 +95,8 @@ class KanbanPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str | None = None
     description: str | None = None
+    notes: str | None = None
+    todos: list[TodoItem] | None = None
     column: KanbanColumn | None = None
     artifact_ids: list[str] | None = None
     attachments: list[Attachment] | None = None

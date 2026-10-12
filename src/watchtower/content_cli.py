@@ -15,10 +15,10 @@ from .services.workspace import ServiceError, load_yaml
 
 # Option declarations shared by the planning commands, so each spells and describes them alike.
 SummaryFlag = Annotated[str | None, typer.Option("--summary", help="One public sentence: post or course listing, portfolio abstract, or chapter table row.")]
-InternalNotesFlag = Annotated[str | None, typer.Option("--internal-notes", help="CMS-only Markdown, never shown on the site. Next steps belong in Kanban: wt kanban add --link ID.")]
+InternalNotesFlag = Annotated[str | None, typer.Option("--internal-notes", help="Draft/Published Markdown notes. The separate internal_todos checklist uses --patch-file. Planned entries require empty notes. Kept off the site.")]
 PlanFileFlag = Annotated[str | None, typer.Option("--plan-file", help="Markdown under .tmp/ with ## sections named by label or key.")]
 TagFlag = Annotated[list[str] | None, typer.Option("--tag", help="Tag; repeat for several.")]
-StartFlag = Annotated[bool, typer.Option("--start", help="Also create the draft notebook; the output reports both results.")]
+StartFlag = Annotated[bool, typer.Option("--start", help="Also start the draft: CMS fields for course homes, notebooks for other content.")]
 ExpectedRevisionFlag = Annotated[str | None, typer.Option("--expected-revision", help="Workspace revision to save against. A stale write fails and is never retried.")]
 # Earlier spellings: still accepted, hidden from help.
 DescriptionFlag = Annotated[str | None, typer.Option("--description", hidden=True)]
@@ -192,14 +192,6 @@ def install(app: typer.Typer) -> None:
     from .attachments_cli import install as install_attachments
     install_attachments(app)
 
-    @app.command("plan")
-    def plan(stable_id: str) -> None:
-        """Read the plan for one exact stable ID; writes nothing.
-
-        Output JSON: id, kind, title, lifecycle, source_path, summary (the public sentence), plan (saved planning fields by key), fields (per key: label, prompt, section, seed heading, core), internal_notes, build_brief, and revision.
-        """
-        emit(ContentService().read_plan(stable_id))
-
     @app.command("delete")
     def delete(name: str, dry_run: bool = typer.Option(False, "--dry-run"), cascade: bool = typer.Option(False, "--cascade"), expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
         """Remove an entry, retaining files; use --cascade to include course chapters."""
@@ -208,7 +200,7 @@ def install(app: typer.Typer) -> None:
 
     @app.command("start")
     def start(name: str, expected_revision: str | None = typer.Option(None, "--expected-revision")) -> None:
-        """Create a private draft seeded from the saved plan; retain internal notes separately."""
+        """Seed a private draft once; its CMS home or notebook owns the content."""
         emit(ContentService().start(name, expected_revision))
 
     @app.command("draft")
@@ -238,7 +230,7 @@ def install(app: typer.Typer) -> None:
     ) -> None:
         """Update metadata or planning fields through the validated service.
 
-        Planning: --summary sets the one public sentence; --internal-notes is CMS-only. --plan-file changes only the ## sections it contains, and an empty section clears that field. Section names differ by kind: see the fields in wt plan ID. --patch-file takes a JSON patch that flags override. Tags (except courses and chapters): --tag replaces all tags; --add-tag and --remove-tag edit them.
+        Planning: --summary sets the one public sentence; --internal-notes is CMS-only. --plan-file changes only the ## sections it contains, and an empty section clears that field. Section names differ by kind: inspect a Planned entry with wt context ID. --patch-file takes a JSON patch that flags override. Tags (except courses and chapters): --tag replaces all tags; --add-tag and --remove-tag edit them.
         """
         service = ContentService()
         inspected = service.inspect(name)
@@ -309,8 +301,14 @@ def install(app: typer.Typer) -> None:
         uvicorn.run(create_app(Path.cwd()), host="127.0.0.1", port=port)
 
     @app.command("migrate")
-    def migrate(apply: bool = False, layout: bool = typer.Option(False, "--layout", help="Relocate content/data, content/assets and context files under backend; leave authored notebooks intact."), expected_revision: ExpectedRevisionFlag = None, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:
+    def migrate(apply: bool = False, layout: bool = typer.Option(False, "--layout", help="Relocate content/data, content/assets and context files under backend; leave authored notebooks intact."), course_homes: bool = typer.Option(False, "--course-homes", help="Move course-home prose into CMS fields, archiving original notebooks byte-for-byte."), expected_revision: ExpectedRevisionFlag = None, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:
         """Review a legacy import or managed-storage move; --apply saves atomically."""
+        if course_homes:
+            from .services.course_homes import CourseHomeMigration
+            if layout or reviewed_figures or preserve_gallery_prose or title_choice:
+                raise ServiceError("--course-homes cannot be combined with other migration options")
+            emit(CourseHomeMigration(Path.cwd()).run(apply=apply, expected_revision=expected_revision))
+            return
         if layout:
             from .services.layout import LayoutMigration
             if reviewed_figures or preserve_gallery_prose or title_choice:

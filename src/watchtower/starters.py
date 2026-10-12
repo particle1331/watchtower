@@ -1,5 +1,4 @@
 """One-time draft sections drawn from explicitly supported planning fields."""
-import hashlib
 import re
 from typing import Any
 
@@ -35,16 +34,6 @@ def portfolio_abstract(plan: dict[str, Any]) -> str:
 def draft_notebook_cells(kind: str, title: str, plan: dict[str, Any]) -> list[str]:
     """Notebook bodies for a fresh draft: the title and the seeded plan sections."""
     return [f"# {title}\n", *draft_sections(kind, plan)]
-
-
-def seed_fingerprint(bodies: list[str]) -> str:
-    """Identity of a draft's seeded sections, excluding the title cell.
-
-    A notebook matching its fingerprint is still exactly its last seed: plan
-    saves may refresh it, and no hand edit can be lost. A single hand edit
-    changes the fingerprint and freezes the draft.
-    """
-    return hashlib.sha256("\x1e".join(bodies[1:]).encode()).hexdigest()
 
 
 def draft_sections(kind: str, plan: dict[str, Any]) -> list[str]:

@@ -14,6 +14,7 @@ import shlex
 from typing import Any
 
 from watchtower import planning
+from watchtower.course_home import HOME_FIELDS, HOME_LIST_FIELDS
 
 KINDS = ("post", "portfolio", "course", "chapter")
 
@@ -21,7 +22,7 @@ SECTIONS = {
     "basics": ("Basics", "What it is and where it lives."),
     "plan": ("Plan", "What you will write. Starting a draft turns each filled field into an editable notebook section."),
     "page": ("Page", "What readers see around the body: the short description, images and related content."),
-    "notes": ("Internal notes", "Research, decisions and open questions. Never shown on the site. Track next steps as Kanban cards."),
+    "notes": ("Internal notes", "This content's unfinished context and to-dos. Linked Kanban cards carry temporary execution context. Never shown on the site."),
 }
 
 def plan_path(kind: str, key: str) -> list[str]:
@@ -31,7 +32,8 @@ def plan_path(kind: str, key: str) -> list[str]:
     if kind == "portfolio":
         return ["detail", "planned", key]
     if kind == "course":
-        return ["contract", key] if key in {"purpose", "audience"} else ["contract", "planned", key]
+        # Planned course fields share the course-home keys; starting copies them into contract.home.
+        return ["contract", "planned", key]
     if kind == "chapter":
         return ["plan", key]
     raise ValueError(f"{kind} has no planning fields")
@@ -56,11 +58,15 @@ def ensure_shape(kind: str, record: dict[str, Any]) -> dict[str, Any]:
         record.setdefault("tags", [])
     record.setdefault("relations", [])
     record.setdefault("internal_notes", "")
+    record.setdefault("internal_todos", [])
     for key in ("name", "parent", "section", "toc_title"):
         record.setdefault(key, "")
     if kind not in KINDS:
         return record
-    for path in [summary_path(kind), *(plan_path(kind, field.key) for field in planning.PLAN[kind])]:
+    paths = [summary_path(kind)]
+    if record.get("lifecycle", "planned") == "planned":
+        paths.extend(plan_path(kind, field.key) for field in planning.PLAN[kind])
+    for path in paths:
         node = record
         for key in path[:-1]:
             node = node.setdefault(key, {})
@@ -71,6 +77,10 @@ def ensure_shape(kind: str, record: dict[str, Any]) -> dict[str, Any]:
             detail.setdefault(key, "")
     if kind == "course":
         record.setdefault("cover", "")
+        if record.get("lifecycle", "planned") != "planned" and record.get("contract", {}).get("home") is not None:
+            home = record["contract"]["home"]
+            for key, _ in HOME_FIELDS:
+                home.setdefault(key, [] if key in HOME_LIST_FIELDS else "")
     return record
 
 
@@ -134,11 +144,14 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
             basics.append(_field(["section"], value(["section"]), "Course section", choices=[(s["id"], s["title"] or s["id"]) for s in course_sections]))
         basics.append(_field(["toc_title"], value(["toc_title"]), "Short TOC title", hint="Optional navigation label. Defaults to the title."))
 
+    planned = creating or record.get("lifecycle", "planned") == "planned"
+    # Non-course plans are the writing brief. Course plans are the course home itself, in every state.
     plan: list[dict[str, Any]] = []
-    for field in planning.PLAN.get(kind, ()):
-        path = plan_path(kind, field.key)
-        plan.append(_field(path, value(path), field.label, long=field.prompt, core=field.core))
-    plan.sort(key=lambda item: not item["core"])
+    if kind != "course":
+        for field in planning.PLAN.get(kind, ()) if planned else ():
+            path = plan_path(kind, field.key)
+            plan.append(_field(path, value(path), field.label, long=field.prompt, core=field.core))
+        plan.sort(key=lambda item: not item["core"])
 
     page: list[dict[str, Any]] = []
     summary = planning.SUMMARY.get(kind)
@@ -153,14 +166,16 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
         page.append(_field(["detail", "project_path"], value(["detail", "project_path"]), "Code location", hint="Where the code lives: projects/<name> or archive/<date>/projects/<name>. Defaults to projects/<name>."))
     if kind not in {"course", "chapter"}:
         page.append(_field(["tags"], value(["tags"]), "Tags", hint="One tag per line."))
-    page.append(_field(["relations"], value(["relations"]), "Related content"))
+    if kind != "course":
+        page.append(_field(["relations"], value(["relations"]), "Related content"))
     if not creating:
         page.append(_field(["date"], value(["date"]), "Date", hint="Defaults to the creation day in the site timezone."))
         page.append(_field(["visibility"], value(["visibility"]), "Visibility", type="visibility", choices=[("public", "Public"), ("private", "Private")]))
         if lifecycle_options:
             page.append(_field(["lifecycle"], value(["lifecycle"]), "Status", type="lifecycle", options=lifecycle_options))
 
-    notes = [_field(["internal_notes"], value(["internal_notes"]), "Internal notes", long=planning.INTERNAL_NOTES.prompt)]
+    # Planned courses keep notes too: notes are the scratch space while the home fields are refined.
+    notes = [] if planned and kind != "course" else [_field(["internal_notes"], value(["internal_notes"]), "Notes", long="Research, decisions and open questions for this content. Kept off the site.")]
 
     result = [
         {"id": "basics", "title": SECTIONS["basics"][0], "explain": SECTIONS["basics"][1], "fields": basics},
@@ -168,9 +183,19 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
         {"id": "page", "title": SECTIONS["page"][0], "explain": SECTIONS["page"][1], "fields": page},
     ]
     if not plan:
-        # Kinds without a writing brief (personal notebooks, projects) keep only the other sections.
+        # Kinds without a writing brief (personal notebooks, projects, courses) keep only the other sections.
         result = [item for item in result if item["id"] != "plan"]
-    result.append({"id": "notes", "title": SECTIONS["notes"][0], "explain": SECTIONS["notes"][1], "fields": notes})
+    if kind == "course" and (planned or record.get("contract", {}).get("home") is not None):
+        # Plan and draft share these fields and labels; only the storage location differs.
+        # Each prompt is the complete guidance for its field; list fields state their own one-item-per-line rule.
+        home_fields: list[dict[str, Any]] = []
+        for field in planning.PLAN["course"]:
+            path = ["contract", "planned", field.key] if planned else ["contract", "home", field.key]
+            home_fields.append(_field(path, value(path), field.label, long=field.prompt))
+            if field.key == "description":
+                home_fields.append(_field(["relations"], value(["relations"]), "Related topics"))
+        result.insert(1, {"id": "home", "title": "Course home", "explain": "Edit the content readers see on the course home page.", "fields": home_fields})
+    result.append({"id": "notes", "title": "Context files" if planned and kind != "course" else SECTIONS["notes"][0], "explain": SECTIONS["notes"][1], "fields": notes})
     return result
 
 
@@ -182,8 +207,21 @@ def creation_plan(kind: str, record: dict[str, Any]) -> dict[str, Any]:
     return values
 
 
+def submitted_todos(form: Any) -> list[dict[str, Any]] | None:
+    """Read the checklist as a whole; unchecked and removed rows have explicit meaning."""
+    if form.get("todos_present") != "1":
+        return None
+    done, removed = set(form.getlist("todo_done")), set(form.getlist("todo_remove"))
+    items = [{"text": str(text), "done": str(index) in done}
+             for index, text in enumerate(form.getlist("todo_text")) if str(index) not in removed]
+    new = str(form.get("todo_new") or "").strip()
+    if new:
+        items.append({"text": new, "done": False})
+    return items
+
+
 def summary_task(plan: dict[str, Any]) -> dict[str, Any]:
-    """A linked task with a saved brief and commands to retrieve current context."""
+    """Scoped execution instructions that reference the entity's current context."""
     kind, identifier = plan["kind"], plan["id"]
     label = "abstract" if kind == "portfolio" else "summary"
     length = "at most 80 words" if kind == "portfolio" else "one or two sentences"
@@ -194,11 +232,17 @@ def summary_task(plan: dict[str, Any]) -> dict[str, Any]:
         "Use only supported facts; ask for missing context instead of inventing details. "
         "Keep internal notes out of the public text.\n\n"
         "Read the latest context from the repository root before writing:\n"
-        f".venv/bin/wt plan {target}\n.venv/bin/wt context {target}\n\n"
-        f"Save the result with .venv/bin/wt update {target} --summary <text> "
-        "--expected-revision <revision from wt plan>, then read the plan again to verify it. "
+        f".venv/bin/wt context {target}\n"
+        + ("Read the CMS-managed course home above; its chapter notebooks remain separate.\n\n" if kind == "course" else f"Read the current notebook after starting: .venv/bin/wt cat {target}\n\n")
+        + f"Save the result with .venv/bin/wt update {target} --summary <text> "
+        "--expected-revision <revision from wt context>, then read context again to verify it. "
         "Keep the artifact's lifecycle and visibility unchanged.\n\n"
-        "Saved brief when this task was created:\n\n" + plan["build_brief"]
+        "Keep instructions, progress and evidence for this execution on the card. "
+        "Before marking it Done, save lasting findings to the linked content: "
+        "accepted content belongs in the notebook or public summary; unresolved decisions "
+        "and follow-up work belong in internal Notes and To-dos after starting. "
+        "While Planned, update the writing brief instead. "
+        "Read current linked entity context with .venv/bin/wt kanban show <card-ref>."
     )
     return {"title": f"Write {label}: {plan['title']}", "description": description,
             "column": "todo", "artifact_ids": [identifier]}

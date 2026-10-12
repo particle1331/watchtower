@@ -54,7 +54,9 @@ class KanbanService:
         for card in board.cards:
             if column and card.column != column:
                 continue
-            if query.casefold() not in " ".join([card.id, card.ref or "", card.title, card.description, *card.artifact_ids]).casefold():
+            searchable = [card.id, card.ref or "", card.title, card.description, card.notes,
+                          *(item.text for item in card.todos), *card.artifact_ids]
+            if query.casefold() not in " ".join(searchable).casefold():
                 continue
             data = card.model_dump(mode="json")
             links = []
@@ -66,6 +68,7 @@ class KanbanService:
                 links.append({
                     "id": identifier, "title": artifact.title,
                     "internal_notes": artifact.internal_notes,
+                    "internal_todos": [item.model_dump(mode="json") for item in artifact.internal_todos],
                     "attachments": [describe(item) for item in artifact.attachments],
                     "cms_url": "/cms/artifact/" + quote(identifier, safe="/"),
                     "frontend_url": base + "/" + quote(str(PurePosixPath(route).with_suffix(".html")), safe="/") if route else None,
@@ -119,7 +122,7 @@ class KanbanService:
         return self._mutate("kanban remove", apply, expected_revision)
 
     def context(self, identifier: str) -> dict[str, Any]:
-        """Current saved notes, plans and attachments for an agent picking up work."""
+        """Current card notes/checklist plus linked plans and attachments for an agent."""
         with self.content.store.locked():
             board = self.read()
             card = next((c for c in board["cards"] if identifier in {c["id"], c["ref"]}), None)

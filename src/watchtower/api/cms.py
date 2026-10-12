@@ -25,6 +25,13 @@ KINDS = {"posts": "post", "courses": "course", "portfolio": "portfolio", "person
 CREATE_SECTIONS = {"post": "posts", "course": "courses", "chapter": "courses", "portfolio": "portfolio", "project": "portfolio", "personal": "personal"}
 DATA_NAMES = {"home": "profile", "resume": "profile", "portfolio": "portfolio", "personal": "photos"}
 PROFILE_FIELD_ORDER = {"contact": ["phone", "email", "github", "linkedin"], "employment": ["title", "company", "dates", "bullets", "tech"], "early_employment": ["title", "company", "dates", "bullets", "tech"], "skills": ["name", "entries"], "education": ["degree", "institution", "dates", "major", "awards", "thesis", "courses", "description"], "projects": ["title", "bullets", "artifact_id"]}
+ANSI_ESCAPE = re.compile(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|(?:\x1b\[|\x9b)[0-?]*[ -/]*[@-~]|\x1b[@-_]")
+
+
+def terminal_text(value: Any) -> str:
+    """Display terminal logs as plain text while retaining HTML autoescaping."""
+    text = ANSI_ESCAPE.sub("", str(value)).replace("\r\n", "\n").replace("\r", "\n")
+    return re.sub(r"[\x00-\x08\x0b-\x1f\x7f]", "", text)
 
 
 def paginate(request: Request, items: list[Any], page: int, page_size: int) -> tuple[list[Any], dict[str, Any]]:
@@ -298,6 +305,7 @@ def cms_router(root: Path) -> APIRouter:
     router = APIRouter(prefix="/cms", include_in_schema=False)
     templates = Jinja2Templates(directory=str(root / "frontend/templates/cms"))
     templates.env.filters["urlpath"] = lambda value: quote(str(value), safe="/")
+    templates.env.filters["terminal_text"] = terminal_text
 
     def render(request: Request, template: str, context: dict[str, Any], status: int = 200) -> HTMLResponse:
         def visible_field(field: dict[str, Any]) -> bool:
@@ -326,10 +334,12 @@ def cms_router(root: Path) -> APIRouter:
                     notes.extend(field for field in group["fields"] if field["label"] == "internal_notes")
                     group["fields"] = [field for field in group["fields"] if field["label"] != "internal_notes"]
                 for field in notes:
-                    field.update(prompt="Markdown notes for research, decisions, and future revisions. Excluded from site pages; included in the build brief.")
+                    field.update(caption="Notes", prompt="Research, decisions and open questions for this content. Kept off the site.")
                 context["groups"] = [group for group in context["groups"] if group["fields"]]
-                if notes:
+                if notes and data.get("lifecycle") != "planned":
                     context["notes_section"] = {"title": "Internal notes", "fields": notes, "fold": False}
+                elif notes:
+                    context["notes_section"] = {"title": "Context files", "fields": [], "fold": False}
         if context.get("name") == "profile":
             sections = []
             for key, label in [(None, "General"), ("contact", "Contact"), ("employment", "Employment"), ("early_employment", "Early employment"), ("skills", "Skills"), ("education", "Education"), ("projects", "Projects")]:
@@ -355,6 +365,7 @@ def cms_router(root: Path) -> APIRouter:
             result = {"artifact": values, "revision": revision, "eligible": False}
         artifact = copy.deepcopy(values if values is not None else result["artifact"])
         artifact.setdefault("internal_notes", "")
+        artifact.setdefault("internal_todos", [])
         kind = artifact.get("kind", "")
         if values is None:
             if kind == "chapter" and result.get("chapter_plan") is not None:
@@ -376,6 +387,10 @@ def cms_router(root: Path) -> APIRouter:
         lifecycle_options = None
         if result.get("has_authored_content") is not None:
             lifecycle_options = ["draft", "published"] if result["has_authored_content"] else ["planned", "draft"] if result.get("has_source") else ["planned"]
+            if result["artifact"].get("lifecycle") != "planned" and lifecycle_options != ["planned"]:
+                lifecycle_options = [value for value in lifecycle_options if value != "planned"]
+        if kind == "course" and artifact.get("lifecycle") != "planned" and artifact.get("contract", {}).get("home") is not None:
+            lifecycle_options = ["draft", "published"]
         context: dict[str, Any] = {"artifact": artifact, "record": result, "revision": revision or result["revision"], "error": error, "source_path": str(root / source) if source else None, "editor_url": editor_url, "section": "courses" if kind in {"course", "chapter"} else "posts" if kind == "post" else "portfolio" if kind == "portfolio" else "personal"}
         if kind in authoring.KINDS:
             courses = None
@@ -391,7 +406,7 @@ def cms_router(root: Path) -> APIRouter:
                 board = request.app.state.kanban.read()
                 context["summary_task_result"] = next((card for card in board["cards"] if card["id"] == task_id and artifact["id"] in card["artifact_ids"]), None)
         else:
-            fields = form_fields(artifact)
+            fields = form_fields({key: value for key, value in artifact.items() if key != "internal_todos"})
             if lifecycle_options is not None:
                 for field in fields:
                     if field["label"] == "lifecycle":
@@ -469,6 +484,11 @@ def cms_router(root: Path) -> APIRouter:
             if form.get("route"):
                 raise ServiceError("Route is managed by the site and cannot be set in the CMS.")
             values = apply_fields(values, form)
+            todos = authoring.submitted_todos(form)
+            if todos is not None:
+                values["internal_todos"] = todos
+            if values.get("internal_todos"):
+                raise ServiceError("Planned entries cannot have internal to-dos; start a draft first.")
             slug = creation_slug(str(values.get("name") or "").strip() or str(values.get("title") or ""))
             token = form_revision(form.get("revision"))
             title = str(values.get("title", "")).strip()
@@ -575,6 +595,9 @@ def cms_router(root: Path) -> APIRouter:
         uploading = isinstance(upload, UploadFile) and bool(upload.filename)
         try:
             values = apply_fields(baseline, form)
+            todos = authoring.submitted_todos(form)
+            if todos is not None:
+                values["internal_todos"] = todos
             patch = {key: value for key, value in values.items() if baseline.get(key) != value}
             if values.get("kind") == "portfolio":
                 saved_detail = request.app.state.content.inspect(artifact_id)["detail"]
@@ -681,9 +704,18 @@ def cms_router(root: Path) -> APIRouter:
         if name == "photos" and request.query_params.get("add") == "photo":
             return RedirectResponse("/cms/photos/new", status_code=303)
         result = request.app.state.content.read_data(name)
+        if name.startswith("course/"):
+            artifact = request.app.state.content.inspect(name)["artifact"]
+            if artifact["lifecycle"] != "planned":
+                return RedirectResponse("/cms/courses/" + name.split("/")[-1], status_code=303)
         if name == "profile":
             return render(request, "profile.html", profile_edit_context(result["data"], result["revision"], request.query_params.get("view", "resume")))
         values = photo_editor_data(result["data"]) if name == "photos" else result["data"]
+        if name == "portfolio":
+            lifecycles = {a["id"]: a["lifecycle"] for a in request.app.state.content.list("portfolio")["artifacts"]}
+            for entry in values.get("entries", []):
+                if lifecycles.get(entry["id"]) != "planned":
+                    entry.pop("planned", None)
         return render(request, "data.html", {"section": "resume" if name == "profile" else "courses" if name.startswith("course/") else "personal" if name == "photos" else "portfolio", "name": name, "data": values, "revision": result["revision"], "fields": form_fields(values), "collections": collections(values)})
 
     @router.post("/data/{name:path}")
@@ -697,6 +729,14 @@ def cms_router(root: Path) -> APIRouter:
         uploading = any(isinstance(value, UploadFile) and bool(value.filename) for value in form.values())
         try:
             values = apply_fields(baseline, form)
+            if name == "portfolio":
+                # Consumed plans remain historical bytes, absent from the editor snapshot.
+                lifecycles = {a["id"]: a["lifecycle"] for a in request.app.state.content.list("portfolio")["artifacts"]}
+                stored = request.app.state.content.read_data(name)["data"]
+                plans = {entry["id"]: entry.get("planned", {}) for entry in stored.get("entries", [])}
+                for entry in values.get("entries", []):
+                    if lifecycles.get(entry["id"]) != "planned":
+                        entry.setdefault("planned", plans.get(entry["id"], {}))
             if name == "photos":
                 images = await photo_uploads(form, len(baseline.get("photos", [])))
                 result = request.app.state.content.update_gallery(values, expected_revision=form_revision(revision), photo_images=images)
@@ -729,6 +769,11 @@ def cms_router(root: Path) -> APIRouter:
                 return RedirectResponse(f"/cms/personal?reorder=1&page={page}&page_size={page_size}&saved=order", status_code=303)
             result = "conflict" if status == 412 else "failed"
             return RedirectResponse(f"/cms/personal?reorder=1&page={page}&page_size={page_size}&save_error={result}", status_code=303)
+        if name == "portfolio":
+            lifecycles = {a["id"]: a["lifecycle"] for a in request.app.state.content.list("portfolio")["artifacts"]}
+            for entry in values.get("entries", []):
+                if lifecycles.get(entry["id"]) != "planned":
+                    entry.pop("planned", None)
         return render(request, "data_fragment.html" if request.headers.get("HX-Request") else "data.html", {"section": "resume" if name == "profile" else "courses" if name.startswith("course/") else "personal" if name == "photos" else "portfolio", "name": name, "data": values, "fields": form_fields(values), "collections": collections(values), "revision": revision, "error": error, "upload_retry": uploading, "saved": not error}, status)
 
     @router.post("/refresh")
@@ -891,20 +936,20 @@ def cms_router(root: Path) -> APIRouter:
         return {"title": "Kanban", "section": "kanban", "board": board, "q": query, "error": error, "submitted": submitted, "all_artifacts": artifacts}
 
     @router.get("/kanban")
-    def kanban_page(request: Request, q: str = "", edit: str | None = None, remove: str | None = None, add: bool = False, link: str = "") -> HTMLResponse:
-        context = kanban_context(request, "" if edit or remove else q)
+    def kanban_page(request: Request, q: str = "", view: str | None = None, edit: str | None = None, remove: str | None = None, add: bool = False, link: str = "") -> HTMLResponse:
+        context = kanban_context(request, "" if view or edit or remove else q)
         # A next step started from an entry opens prefilled with its stable ID.
         context["prefill"] = {"artifact_ids": [link]} if link and add else None
-        target = edit or remove
+        target = edit or remove or view
         if target and not any(card["id"] == target for card in context["board"]["cards"]):
             return HTMLResponse("Unknown card", status_code=404)
-        context["active_dialog"] = "edit-" + edit if edit else "remove-" + remove if remove else "new-card" if add else None
+        context["active_dialog"] = "edit-" + edit if edit else "remove-" + remove if remove else "view-" + view if view else "new-card" if add else None
         return render(request, "kanban.html", context)
 
     @router.post("/kanban/{action}")
     async def kanban_save(request: Request, action: str) -> Response:
         form = await request.form()
-        values: dict[str, Any] = {key: str(form.get(key, "")) for key in ["revision", "card_id", "title", "description", "column", "artifact_ids"]}
+        values: dict[str, Any] = {key: str(form.get(key, "")) for key in ["revision", "card_id", "title", "description", "notes", "column", "artifact_ids"]}
         if form.get("relationship:artifact_ids"):
             values["artifact_ids"] = "\n".join(dict.fromkeys(str(value) for value in form.getlist("artifact_ids") if value))
         values["action"] = action
@@ -916,7 +961,10 @@ def cms_router(root: Path) -> APIRouter:
                     raise ValueError("Expected attachment list")
             except ValueError:
                 raise ServiceError("Invalid card attachment snapshot. Reload the card.") from None
-        payload = {"title": values["title"], "description": values["description"], "column": values["column"], "artifact_ids": [line.strip() for line in values["artifact_ids"].splitlines() if line.strip()]}
+        payload = {"title": values["title"], "description": values["description"], "notes": values["notes"], "column": values["column"], "artifact_ids": [line.strip() for line in values["artifact_ids"].splitlines() if line.strip()]}
+        if (todos := authoring.submitted_todos(form)) is not None:
+            payload["todos"] = todos
+            values["todos"] = todos
         try:
             token = form_revision(values["revision"])
             if action == "create":

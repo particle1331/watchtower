@@ -161,6 +161,9 @@ class _Generator:
             target = route_for(artifact)
             self.all_targets[target] = artifact
             self.all_targets[_href(target)] = artifact
+            if artifact.kind == "course":
+                self.all_targets[f"{artifact.path}/index.ipynb"] = artifact
+                self.all_targets[str(Path(target).with_suffix(".ipynb"))] = artifact
         templates = {
             key.removeprefix("frontend/templates/"): value.decode("utf-8")
             for key, value in self.files.items()
@@ -261,18 +264,7 @@ class _Generator:
 
     def context(self, artifact: Any) -> str:
         contract = self.state.courses[artifact.id]
-        value = ["## Course context"]
-        for label, record in (("Actualized", contract.actualized),):
-            value.extend(["", f"### {label}"])
-            for key, text in record.items():
-                if key == "chapters" or not text:
-                    continue
-                if isinstance(text, str):
-                    value.extend(["", f"**{key.replace('_', ' ').capitalize()}.** {text}"])
-                elif isinstance(text, list):
-                    value.extend(["", f"**{key.replace('_', ' ').capitalize()}**", ""])
-                    value.extend(f"- {item}" for item in text)
-        value.extend(["", "## Course path", ""])
+        value = ["## Course path", ""]
         rows = course_rows(contract, self.entries)
         if rows:
             value.extend(["| Section | Chapter title | Summary |", "| --- | --- | --- |"])
@@ -352,6 +344,29 @@ class _Generator:
                 "width": getattr(photo, "width", None),
             })
         self.write(route, self.template("site/personal.qmd.j2", photos=photos, title=artifact.title), render=True)
+
+    def course_home(self, artifact: Any) -> None:
+        from watchtower.course_home import nested_headings
+
+        route = self.routes[artifact.id]
+        home = getattr(self.state.courses[artifact.id], "home", None)
+        if home is None:
+            self.notebook(artifact)
+            return
+        source = f"{artifact.path}/index.ipynb"
+        body = {}
+        for key, value in home.model_dump().items():
+            if isinstance(value, list):
+                body[key] = [self.rewrite_body(nested_headings(item), source, route) for item in value]
+            else:
+                body[key] = self.rewrite_body(nested_headings(value), source, route)
+        related = [{"title": self.by_id[identifier].title, "href": _relative(self.routes[identifier], route)}
+                   for identifier in artifact.relations if identifier in self.routes]
+        header = _frontmatter(self.metadata(artifact, route))
+        if artifact.lifecycle == "draft":
+            header += "\n" + self.template("site/publication-meta.html.j2", entry=artifact) + "\n"
+        self.write(route, header + "\n" + self.template("site/course-home.md.j2", home=body, related=related,
+                                                      course_content=self.context(artifact).removeprefix("## Course path\n")), render=True)
 
     def notebook(self, artifact: Any) -> None:
         route = self.routes[artifact.id]
@@ -501,6 +516,8 @@ class _Generator:
         for artifact in self.entries:
             if artifact.kind == "gallery":
                 self.gallery(artifact)
+            elif artifact.kind == "course":
+                self.course_home(artifact)
             elif artifact.kind != "project":
                 self.notebook(artifact)
         posts = []

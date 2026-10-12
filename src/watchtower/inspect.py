@@ -42,7 +42,11 @@ def list_tier(tier: str) -> list[str]:
             if course.get("kind") != "course":
                 continue
             lines.append(str(course["path"]))
-            lines.append(str(Path(str(course["path"])) / "index.ipynb"))
+            lines.append(
+                str(knowledge.course_file(course))
+                if Path("backend/data/catalog.yaml").exists()
+                else str(Path(str(course["path"])) / "index.ipynb")
+            )
             lines.extend(str(a["path"]) for a in artifacts if a.get("kind") == "chapter" and a.get("parent") == course.get("id"))
         return lines
     return [str(a["path"]) for a in artifacts if a.get("kind") == kinds[tier]]
@@ -58,7 +62,7 @@ def repo_map() -> dict:
         overview = next((a["path"] for a in children if Path(str(a["path"])).stem.endswith("overview")), None)
         courses.append({
             "id": course["id"], "path": course["path"],
-            "home": str(Path(str(course["path"])) / "index.ipynb"),
+            "home": str(knowledge.course_file(course)) if Path("backend/data/catalog.yaml").exists() else str(Path(str(course["path"])) / "index.ipynb"),
             "overview": overview,
             "chapters": [a["path"] for a in children if a["path"] != overview],
         })
@@ -144,6 +148,11 @@ def resolve_ipynb(name: str) -> Path:
     if artifact is not None:
         path = Path(str(artifact["path"]))
         if artifact.get("kind") == "course":
+            if Path("backend/data/catalog.yaml").exists():
+                from .services.content import ContentService
+
+                if ContentService().inspect(artifact["id"])["contract"].get("home") is not None:
+                    raise ValueError(f"Course homes are CMS-managed. Read wt context {artifact['id']} and edit the course home in /cms/courses/{artifact['id'].split('/')[-1]}.")
             path = path / "index.ipynb"
         if path.suffix == ".ipynb" and path.exists():
             return path.resolve()

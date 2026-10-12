@@ -18,11 +18,13 @@ import yaml
 from markdown_it import MarkdownIt
 from pydantic import ValidationError
 
+from watchtower.course_home import HOME_FIELDS, seeded_home
 from watchtower.models import (
     Artifact,
     Catalog,
     ChapterPlan,
     CourseContract,
+    CourseHome,
     Kanban,
     Photos,
     Portfolio,
@@ -42,7 +44,7 @@ from watchtower.models import (
     source_path,
 )
 from watchtower.planning import filled_fields, missing_fields, plan_schema
-from watchtower.starters import draft_notebook_cells, portfolio_abstract, seed_fingerprint
+from watchtower.starters import draft_notebook_cells, portfolio_abstract
 
 from .attachments import AttachmentUpload, archive_unreferenced, describe, prepare, references
 from .attachments import validate as validate_attachments
@@ -173,11 +175,14 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path,
     routes: set[str] = set()
     sources: set[str] = set()
     for artifact in state.artifacts:
+        # Planned courses keep notes and to-dos while their home fields are refined; other plans wait for a draft.
+        if artifact.lifecycle == "planned" and artifact.kind != "course" and (artifact.internal_notes or artifact.internal_todos):
+            fail(f"{artifact.id}: planned entries cannot have internal notes or to-dos; use the plan until starting a draft")
         for related in artifact.relations:
             if related not in artifacts:
                 fail(f"{artifact.id}: unknown relation {related}")
         if artifact.kind != "project":
-            route = route_for(artifact)
+            route = str(Path(route_for(artifact)).with_suffix(".html"))
             if route in routes:
                 fail(f"duplicate route {route}")
             routes.add(route)
@@ -191,6 +196,17 @@ def validate_state(state: Workspace, files: dict[str, bytes | None], root: Path,
             expected = "published" if any(photo.lifecycle == "published" for photo in state.photos) else "planned"
             if artifact.lifecycle != expected:
                 fail(f"{artifact.id}: gallery lifecycle is derived from photo states; expected {expected}", PHOTOS)
+            continue
+        if artifact.kind == "course" and (home := state.courses[artifact.id].home) is not None:
+            name = f"backend/data/courses/{artifact.id.split('/')[-1]}.yaml"
+            bodies = [home.outcome, home.description, *home.requirements, *home.prerequisites, *home.references]
+            content = any(has_content(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body)]), artifact.title) for body in bodies)
+            if artifact.lifecycle == "planned" and content or artifact.lifecycle == "published" and not content:
+                fail(f"{artifact.id}: planned homes must be empty; published requires course-home content", name)
+            for body in bodies:
+                check_assets(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body)]), f"{artifact.path}/index.ipynb")
+                if re.match(r"\A\s*---\s*\n", body):
+                    fail(f"{artifact.id}: document front matter belongs in generated copies", name)
             continue
         source = source_path(artifact, state)
         if source:
@@ -340,18 +356,65 @@ class ContentService:
         with self.store.locked():
             files = self.store.inputs()
             catalog = self._catalog(files)
-            return {"artifacts": [a for a in catalog["artifacts"] if kind is None or a.get("kind") == kind], "revision": revision(files)}
+            artifacts = [a for a in catalog["artifacts"] if kind is None or a.get("kind") == kind]
+            for artifact in artifacts:
+                if artifact.get("lifecycle") != "planned":
+                    artifact.pop("planned", None)
+            return {"artifacts": artifacts, "revision": revision(files)}
 
     @staticmethod
-    def _planning(artifact: Artifact, state: Workspace) -> dict[str, Any]:
+    def _saved_planning(artifact: Artifact, state: Workspace) -> dict[str, Any]:
         if artifact.kind == "course":
             contract = state.courses[artifact.id]
-            return {**contract.planned, "purpose": contract.purpose, "audience": contract.audience}
+            return dict(contract.planned)
         if artifact.kind == "chapter":
             return next((p for p in state.courses[str(artifact.parent)].planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
         if artifact.kind == "portfolio":
             return next(p.planned for p in state.portfolio if p.id == artifact.id)
         return artifact.planned
+
+    @classmethod
+    def _planning(cls, artifact: Artifact, state: Workspace) -> dict[str, Any]:
+        if artifact.lifecycle != "planned":
+            return {}
+        if artifact.kind == "course":
+            return dict(cls._course_context(artifact, state)["planned"])
+        return cls._saved_planning(artifact, state)
+
+    @staticmethod
+    def _course_context(artifact: Artifact, state: Workspace) -> dict[str, Any]:
+        """Expose navigation and only the plans that have not yet been started."""
+        contract = state.courses[artifact.id].model_dump(mode="json")
+        contract.pop("actualized", None)
+        if artifact.lifecycle != "planned":
+            contract.pop("purpose", None)
+            contract.pop("audience", None)
+            contract["planned"] = {"chapters": contract["planned"].get("chapters", [])}
+        by_id = {a.id: a for a in state.artifacts}
+        contract["planned"]["chapters"] = [
+            plan if by_id.get(plan["chapter_id"]) is None or by_id[plan["chapter_id"]].lifecycle == "planned" else
+            {key: value for key, value in plan.items() if key in {"chapter_id", "section", "summary"}}
+            for plan in contract["planned"].get("chapters", [])
+        ]
+        return contract
+
+    @classmethod
+    def _check_authoring_transition(cls, previous: Workspace, current: Workspace) -> None:
+        """Freeze consumed plans across metadata, API, batch and structured-data saves."""
+        by_id = {a.id: a for a in current.artifacts}
+        for before in previous.artifacts:
+            after = by_id.get(before.id)
+            if after is None or before.lifecycle == "planned" or before.kind in {"project", "gallery"}:
+                continue
+            if after.lifecycle == "planned":
+                raise ServiceError("Started notebooks cannot return to Planned; keep unfinished work in internal notes.")
+            if before.kind == "course" and previous.courses[before.id].home is not None and current.courses[before.id].home is None:
+                raise ServiceError("Course homes are CMS-managed; they cannot return to notebook authoring.")
+            def intent(artifact: Artifact, state: Workspace) -> dict[str, Any]:
+                return {key: value for key, value in cls._saved_planning(artifact, state).items()
+                        if key not in {"summary", "chapters", "chapter_id", "section"}}
+            if intent(before, previous) != intent(after, current):
+                raise ServiceError(f"{before.id}: the plan has been consumed; edit the notebook or internal notes instead.")
 
     @classmethod
     def _build_brief(cls, artifact: Artifact, state: Workspace) -> str:
@@ -373,13 +436,25 @@ class ContentService:
             lines.extend(["", "## Summary", "", summary])
         for label, text in filled_fields(artifact.kind, plan):
             lines.extend(["", f"## {label}", "", text])
+        if artifact.lifecycle != "planned" and path:
+            lines.extend(["", "The notebook is the content source of truth. Read its current cells before working:",
+                          f".venv/bin/wt cat {artifact.id}"])
+        elif artifact.kind == "course" and artifact.lifecycle != "planned":
+            home = state.courses[artifact.id].home
+            lines.extend(["", "## Course home", "", "The CMS-managed course home is the content source of truth.",
+                          f".venv/bin/wt context {artifact.id}", "", yaml.safe_dump(home.model_dump() if home else {}, sort_keys=False).strip()])
         if artifact.internal_notes:
             lines.extend(["", "## Internal notes", "", artifact.internal_notes])
+        if artifact.internal_todos:
+            done = sum(item.done for item in artifact.internal_todos)
+            lines.extend(["", f"## Internal to-dos ({done}/{len(artifact.internal_todos)})", ""])
+            lines.extend(f"- [{'x' if item.done else ' '}] {item.text}" for item in artifact.internal_todos)
         if artifact.attachments:
             lines.extend(["", "## Context attachments", ""])
             lines.extend(f"- {item.name}: {item.path} ({item.media_type}, {item.size} bytes; ID {item.id})" for item in artifact.attachments)
-        missing = missing_fields(artifact.kind, plan)
-        lines.extend(["", "Missing core fields: " + (", ".join(missing) if missing else "None")])
+        if artifact.lifecycle == "planned":
+            missing = missing_fields(artifact.kind, plan)
+            lines.extend(["", "Missing core fields: " + (", ".join(missing) if missing else "None")])
         if artifact.kind == "course":
             for row in course_rows(state.courses[artifact.id], state.artifacts):
                 child = next(a for a in state.artifacts if a.id == row["chapter"]["id"])
@@ -388,10 +463,15 @@ class ContentService:
             parent = next(a for a in state.artifacts if a.id == artifact.parent)
             context = cls._planning(parent, state)
             lines.extend(["", f"## Course context: {parent.title}", "", f"Course ID: {parent.id}", f"Section: {artifact.section}"])
+            if parent.lifecycle != "planned":
+                lines.extend(["", f"Read the course home: .venv/bin/wt context {parent.id}"])
             for label, text in filled_fields("course", context):
                 lines.extend(["", f"### {label}", "", text])
             if parent.internal_notes:
                 lines.extend(["", "### Course internal notes", "", parent.internal_notes])
+            if parent.internal_todos:
+                lines.extend(["", "### Course internal to-dos", ""])
+                lines.extend(f"- [{'x' if item.done else ' '}] {item.text}" for item in parent.internal_todos)
             if parent.attachments:
                 lines.extend(["", "### Course context attachments", ""])
                 lines.extend(f"- {item.name}: {item.path} ({item.media_type}, {item.size} bytes)" for item in parent.attachments)
@@ -471,6 +551,14 @@ class ContentService:
             artifact = next((a for a in state.artifacts if a.id == stable_id), None)
             if artifact is None:
                 raise ServiceError(f"unknown artifact stable ID: {stable_id}", code="not_found", status=404)
+            course_home = state.courses[artifact.id].home if artifact.kind == "course" else None
+            fields = [field for field in plan_schema(artifact.kind)
+                      if field["section"] != ("internal" if artifact.lifecycle == "planned" else "plan")]
+            if artifact.lifecycle != "planned":
+                fields.append({"key": "internal_todos", "label": "To-dos", "section": "internal", "type": "checklist",
+                               "prompt": "Ordered items with text and done fields. Save through an artifact patch; task movement does not update them.", "seed": None, "core": False})
+                if artifact.kind == "course" and state.courses[artifact.id].home is not None:
+                    fields.extend({"key": f"contract.home.{key}", "label": label, "section": "home", "prompt": "Committed course-home Markdown.", "seed": None, "core": False} for key, label in HOME_FIELDS)
             return {
                 "id": artifact.id,
                 "kind": artifact.kind,
@@ -478,9 +566,11 @@ class ContentService:
                 "lifecycle": artifact.lifecycle,
                 "source_path": source_path(artifact, state),
                 "summary": public_summary(artifact, state),
-                "fields": plan_schema(artifact.kind),
+                "fields": fields,
                 "plan": self._planning(artifact, state),
+                **({"course_home": course_home.model_dump()} if course_home is not None else {}),
                 "internal_notes": artifact.internal_notes,
+                "internal_todos": [item.model_dump(mode="json") for item in artifact.internal_todos],
                 "attachments": [describe(item) for item in artifact.attachments],
                 "build_brief": self._build_brief(artifact, state),
                 "revision": revision(files),
@@ -496,6 +586,11 @@ class ContentService:
             path = source_path(artifact, state)
             existing = bool(path and files.get(path) is not None)
             result = {"artifact": artifact.model_dump(mode="json"), "revision": revision(files), "source_path": path, "has_source": existing, "editor_url": "vscode://file/" + quote(str(self.root / str(path)), safe="/") if existing else None, "eligible": eligible(artifact, state.artifacts), "plan": plan_body(artifact, state), "route": route_for(artifact)}
+            if artifact.lifecycle != "planned":
+                result["artifact"].pop("planned", None)
+            else:
+                result["authoring_plan"] = self._planning(artifact, state)
+                result["plan_fields"] = [field for field in plan_schema(artifact.kind) if field["section"] != "internal"]
             if path:
                 try:
                     result["has_authored_content"] = existing and has_content(nbformat.reads((files[path] or b"").decode(), as_version=4), artifact.title)
@@ -504,12 +599,19 @@ class ContentService:
                     result["has_authored_content"] = None
             if artifact.kind == "portfolio":
                 result["detail"] = next(p.model_dump(mode="json") for p in state.portfolio if p.id == artifact.id)
+                if artifact.lifecycle != "planned":
+                    result["detail"].pop("planned", None)
             if artifact.kind == "course":
-                result["contract"] = state.courses[artifact.id].model_dump(mode="json")
+                result["contract"] = self._course_context(artifact, state)
+                if (home := state.courses[artifact.id].home) is not None:
+                    bodies = [home.outcome, home.description, *home.requirements, *home.prerequisites, *home.references]
+                    result["has_authored_content"] = any(value.strip() for value in bodies)
             if artifact.kind == "chapter":
                 result["chapter_plan"] = next((p for p in state.courses[str(artifact.parent)].planned.get("chapters", []) if p.get("chapter_id") == artifact.id), None)
+                if artifact.lifecycle != "planned" and result["chapter_plan"] is not None:
+                    result["chapter_plan"] = {key: value for key, value in result["chapter_plan"].items() if key in {"chapter_id", "section", "summary"}}
             planning = self._planning(artifact, state)
-            result["missing_plan_fields"] = missing_fields(artifact.kind, planning)
+            result["missing_plan_fields"] = missing_fields(artifact.kind, planning) if artifact.lifecycle == "planned" else []
             result["build_brief"] = self._build_brief(artifact, state)
             if artifact.kind == "course":
                 result["chapter_rows"] = course_rows(state.courses[artifact.id], state.artifacts)
@@ -552,6 +654,13 @@ class ContentService:
                 candidate.update(writes)
                 candidate.update(self.store.project_directories(writes))
                 state = parse_state(candidate)
+                try:
+                    previous = parse_state(original)
+                except ServiceError:
+                    # Malformed historical records remain explicitly repairable.
+                    previous = None
+                if previous is not None:
+                    self._check_authoring_transition(previous, state)
                 archive_unreferenced(state, original, writes, result, operation)
                 candidate.update(writes)
                 validate_state(state, candidate, self.root, missing_references_ok=missing_references_ok)
@@ -559,6 +668,10 @@ class ContentService:
                 raise ServiceError(f"invalid candidate: {error}") from error
             transaction = self.store.commit(writes, original, operation)
             result.update(revision=revision(self.store.inputs()), transaction=transaction)
+            records = result.get("artifacts", []) + ([result["artifact"]] if "artifact" in result else [])
+            for record in records:
+                if record.get("lifecycle") != "planned":
+                    record.pop("planned", None)
             if KANBAN in writes:
                 result["board_revision"] = "kanban:" + digest(writes[KANBAN])
             return result
@@ -604,6 +717,8 @@ class ContentService:
             if payload.get("kind") in {"post", "personal", "portfolio", "course", "chapter"}:
                 payload.setdefault("date", datetime.now(ZoneInfo(settings.timezone)).date().isoformat())
             artifact = Artifact.model_validate(payload)
+            if artifact.kind == "course" and (artifact.lifecycle == "planned" or (contract or {}).get("home") is not None):
+                artifact.route = str(Path(route_for(artifact)).with_suffix(".qmd"))
             if artifact.lifecycle == "planned" and artifact.kind not in {"gallery", "project"}:
                 artifact.visibility = "private"
             catalog = self._catalog(files)
@@ -634,12 +749,14 @@ class ContentService:
                 name = f"backend/data/courses/{artifact.id.split('/')[-1]}.yaml"
                 if files.get(name) is not None:
                     raise ServiceError("course contract already exists", paths=[name])
-                # Supplied planned and actualized values extend the scaffold, so the chapters list always exists.
+                # Keep supplied legacy metadata, but new courses do not need an actualized record.
                 provided: dict[str, Any] = dict(contract or {})
-                record: dict[str, Any] = {"id": artifact.id, "purpose": "", "audience": "", "planned": {"chapters": []}, "actualized": {"summary": ""}, "toc": [{"id": "main", "title": "", "chapters": []}]}
+                record: dict[str, Any] = {"id": artifact.id, "purpose": "", "audience": "", "planned": {"chapters": []}, "toc": [{"id": "main", "title": "", "chapters": []}]}
+                if artifact.lifecycle == "planned":
+                    record["home"] = {}
                 for key in ("planned", "actualized"):
                     if isinstance(provided.get(key), dict):
-                        record[key] = {**record[key], **provided.pop(key)}
+                        record[key] = {**record.get(key, {}), **provided.pop(key)}
                 writes[name] = yaml_bytes({**record, **provided})
             if artifact.kind == "chapter":
                 name = f"backend/data/courses/{str(artifact.parent).split('/')[-1]}.yaml"
@@ -772,9 +889,14 @@ class ContentService:
                 current = load_yaml(files[name] or b"", name)
                 if contract.get("id", record["id"]) != record["id"]:
                     raise ServiceError("Course contract ID cannot be changed.")
+                if isinstance(contract.get("planned", {}).get("chapters"), list):
+                    saved_plans = {plan["chapter_id"]: plan for plan in current.get("planned", {}).get("chapters", [])}
+                    contract["planned"]["chapters"] = [{**saved_plans.get(plan["chapter_id"], {}), **plan} for plan in contract["planned"]["chapters"]]
                 for key in ("planned", "actualized"):
                     if isinstance(contract.get(key), dict):
                         contract[key] = {**current.get(key, {}), **contract[key]}
+                if isinstance(contract.get("home"), dict):
+                    contract["home"] = {**(current.get("home") or {}), **contract["home"]}
                 current.update(contract)
                 writes[name] = yaml_bytes(current)
             if figure_image is not None:
@@ -843,52 +965,9 @@ class ContentService:
             candidate = dict(files)
             candidate.update(writes)
             state = parse_state(candidate)
-            plan_touched = any(key in patch for key in ("planned", "plan", "contract")) or isinstance(patch.get("detail"), dict) and "planned" in patch["detail"]
-            if plan_touched:
-                self._reseed_scaffold(files, writes, state, record["id"])
             affected = [{"id": a.id, "eligible": eligible(a, state.artifacts)} for a in state.artifacts if a.parent == record["id"]]
             return {"artifact": record, "affected_children": affected}, writes
         return self._mutate("update", apply, expected_revision)
-
-    def _reseed_scaffold(self, files: dict[str, bytes | None], writes: dict[str, bytes], state: Workspace, artifact_id: str) -> None:
-        """Refresh plan seeding while a started draft is still exactly its last seed.
-
-        A draft that matches its stored seed fingerprint owns no hand-written
-        prose, so plan saves rebuild its sections (and fill a still-blank abstract)
-        instead of leaving the page stale. The first hand edit freezes the draft:
-        authored cells and explicit abstracts are never rewritten.
-        """
-        artifact = next((a for a in state.artifacts if a.id == artifact_id), None)
-        if artifact is None or artifact.lifecycle != "draft" or artifact.kind not in {"post", "chapter", "portfolio", "personal", "course"}:
-            return
-        source = source_path(artifact, state)
-        if not source or files.get(source) is None:
-            return
-        current = (writes.get(source) or files[source] or b"").decode()
-        notebook = nbformat.reads(current, as_version=4)
-        if any(cell.cell_type != "markdown" for cell in notebook.cells):
-            return
-        existing = [cell.source for cell in notebook.cells]
-        seeded = str((notebook.get("metadata") or {}).get("watchtower_seed") or "")
-        # A notebook matching its last seed owns no hand-written prose: the plan
-        # may refresh it. Anything else is authored and never rewritten.
-        pristine = bool(seeded) and seed_fingerprint(existing) == seeded
-        if not pristine and has_content(notebook, artifact.title):
-            return
-        bodies = draft_notebook_cells(artifact.kind, artifact.title, self._planning(artifact, state))
-        if existing != bodies:
-            metadata: dict[str, Any] = dict(notebook.get("metadata") or {"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
-            metadata["watchtower_seed"] = seed_fingerprint(bodies)
-            rebuilt = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in bodies], metadata=metadata)
-            writes[source] = nbformat.writes(rebuilt).encode()
-        if artifact.kind == "portfolio":
-            detail = next((p for p in state.portfolio if p.id == artifact.id), None)
-            if detail is not None and not (detail.abstract or "").strip():
-                portfolio = load_yaml(writes.get(PORTFOLIO) or files[PORTFOLIO] or b"", PORTFOLIO)
-                target = next((p for p in portfolio["entries"] if p["id"] == artifact.id), None)
-                if target is not None:
-                    target["abstract"] = (artifact.description or "").strip() or portfolio_abstract(detail.planned) or None
-                    writes[PORTFOLIO] = yaml_bytes(portfolio)
 
     def start(self, artifact_id: str, expected_revision: str | None = None) -> dict[str, Any]:
         def apply(files: dict[str, bytes | None]) -> tuple[dict[str, Any], dict[str, bytes]]:
@@ -899,6 +978,15 @@ class ContentService:
             state = parse_state(files)
             artifact = next(a for a in state.artifacts if a.id == record["id"])
             writes: dict[str, bytes] = {}
+            if artifact.kind == "course":
+                legacy_source = f"{artifact.path}/index.ipynb"
+                if files.get(legacy_source) is not None:
+                    raise ServiceError("Migrate the existing course home with wt migrate --course-homes before starting.", paths=[legacy_source])
+                name = f"backend/data/courses/{artifact.id.split('/')[-1]}.yaml"
+                contract = load_yaml(files[name] or b"", name)
+                contract["home"] = seeded_home(self._planning(artifact, state)).model_dump()
+                record.update(lifecycle="draft", visibility="private", route=str(Path(route_for(artifact)).with_suffix(".qmd")))
+                return {"artifact": record, "source_path": None, "has_source": False, "editor_url": None}, {CATALOG: yaml_bytes(catalog), name: yaml_bytes(contract)}
             project_path = None
             if artifact.kind == "portfolio":
                 detail = next(p for p in state.portfolio if p.id == artifact.id)
@@ -921,7 +1009,7 @@ class ContentService:
             if self.store.safe_path(path).exists() or files.get(path) is not None:
                 raise ServiceError("start refuses an existing source notebook", code="conflict", status=412, paths=[path])
             bodies = draft_notebook_cells(artifact.kind, artifact.title, self._planning(artifact, state))
-            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in bodies], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}, "watchtower_seed": seed_fingerprint(bodies)})
+            notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell(body) for body in bodies], metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"}})
             record["lifecycle"] = "draft"
             record["visibility"] = "private"
             writes.update({CATALOG: yaml_bytes(catalog), path: nbformat.writes(notebook).encode()})
@@ -972,7 +1060,19 @@ class ContentService:
                 raise ServiceError("stale workspace revision", code="conflict", status=412, paths=[CATALOG])
             catalog = self._catalog(files)
             record = self._find(catalog, artifact_id)
-            if record["kind"] in {"post", "portfolio", "course", "chapter", "personal"}:
+            state = parse_state(files)
+            saved_home = state.courses[record["id"]].home if record["kind"] == "course" else None
+            if saved_home is not None:
+                incoming_home = (patch or {}).get("contract", {}).get("home", {})
+                if not isinstance(incoming_home, dict):
+                    raise ServiceError("Course homes are CMS-managed; provide course-home fields to publish.")
+                home = {**saved_home.model_dump(), **incoming_home}
+                validated_home = CourseHome.model_validate(home)
+                bodies = [validated_home.outcome, validated_home.description, *validated_home.requirements,
+                          *validated_home.prerequisites, *validated_home.references]
+                if not any(value.strip() for value in bodies):
+                    raise ServiceError("Cannot publish: add course-home content in the CMS first.")
+            elif record["kind"] in {"post", "portfolio", "course", "chapter", "personal"}:
                 path = source_path(Artifact.model_validate(record), parse_state(files))
                 notebook = files.get(path) if path else None
                 if notebook is None or not has_content(nbformat.reads(notebook.decode(), as_version=4), record["title"]):

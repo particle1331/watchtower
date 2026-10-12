@@ -55,6 +55,16 @@ class Attachment(Record):
         return f"backend/attachments/{self.id}"
 
 
+class TodoItem(Record):
+    text: str = Field(min_length=1)
+    done: bool = False
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def trim_text(cls, value: Any) -> Any:
+        return value.strip() if isinstance(value, str) else value
+
+
 class Artifact(Record):
     id: str = Field(min_length=1)
     kind: Literal["post", "course", "chapter", "portfolio", "project", "personal", "gallery"]
@@ -66,6 +76,7 @@ class Artifact(Record):
     date: Date | None = None
     description: str | None = None
     internal_notes: str = ""
+    internal_todos: list[TodoItem] = Field(default_factory=list)
     attachments: list[Attachment] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     cover: str | None = None
@@ -74,6 +85,16 @@ class Artifact(Record):
     toc_title: str | None = None
     section: str | None = None
     route: str | None = None
+
+    @field_validator("internal_notes", mode="before")
+    @classmethod
+    def empty_notes(cls, value: Any) -> Any:
+        return "" if value is None else value
+
+    @field_validator("internal_todos", mode="before")
+    @classmethod
+    def empty_todos(cls, value: Any) -> Any:
+        return [] if value is None else value
 
     @staticmethod
     def normalize_labels(value: Any) -> Any:
@@ -252,13 +273,62 @@ class ChapterPlan(Record):
     lab_and_evidence: str = ""
 
 
+class CourseHome(Record):
+    """Committed learner-facing content edited through the CMS, not a notebook."""
+    outcome: str = ""
+    description: str = ""
+    requirements: list[str] = Field(default_factory=list)
+    prerequisites: list[str] = Field(default_factory=list)
+    references: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_fields(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        value = dict(value)
+        if "what_youll_learn" in value:
+            value.setdefault("outcome", value.pop("what_youll_learn"))
+        for previous, current in (("hardware_access", "requirements"),
+                                  ("knowledge", "prerequisites")):
+            if previous in value:
+                value[current] = value.pop(previous)
+        for key in ("requirements", "prerequisites", "references"):
+            raw = value.get(key)
+            if raw is None:
+                value[key] = []
+            elif isinstance(raw, str):
+                value[key] = cls._legacy_items(raw)
+            elif isinstance(raw, list):
+                value[key] = [item.strip() for item in raw if isinstance(item, str) and item.strip()]
+        return value
+
+    @staticmethod
+    def _legacy_items(value: str) -> list[str]:
+        """Read old Markdown fields as one checklist item per non-empty source line."""
+        items = []
+        for line in value.splitlines():
+            item = line.strip()
+            if not item:
+                continue
+            item = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+)", "", item).strip()
+            item = re.sub(
+                r"^\*\*(?:tools|tooling|hardware|access|knowledge)(?:\s+and\s+access\s+requirements|\s+prerequisites)?[.:]?\*\*\s*",
+                "", item, flags=re.I,
+            ).strip()
+            if item:
+                items.append(item)
+        return items
+
+
 class CourseContract(BaseModel):
     model_config = ConfigDict(extra="allow")
     id: str
     purpose: str
     audience: str
     planned: dict[str, Any]
-    actualized: dict[str, Any]
+    actualized: dict[str, Any] = Field(default_factory=dict)
+    home: CourseHome | None = None
     overview: str | None = None
     toc: list[Section]
 
@@ -393,6 +463,8 @@ class KanbanCard(Record):
     ref: str | None = Field(default=None, pattern=r"^card#[1-9][0-9]*$")
     title: str = Field(min_length=1)
     description: str = ""
+    notes: str = ""
+    todos: list[TodoItem] = Field(default_factory=list)
     attachments: list[Attachment] = Field(default_factory=list)
     column: KanbanColumn = "todo"
     artifact_ids: list[str] = Field(default_factory=list)
@@ -483,7 +555,7 @@ def source_path(artifact: Artifact, state: Workspace) -> str | None:
         detail = next((p for p in state.portfolio if p.id == artifact.id), None)
         return detail.notebook_path if detail else None
     if artifact.kind == "course":
-        return f"{artifact.path}/index.ipynb"
+        return f"{artifact.path}/index.ipynb" if state.courses[artifact.id].home is None else None
     if artifact.kind in {"gallery", "project"}:
         return None
     return artifact.path
@@ -564,6 +636,8 @@ def _preview_sections(artifact: Artifact, state: Workspace, plan: Mapping[str, A
 
 def plan_body(artifact: Artifact, state: Workspace) -> str:
     """Internal plan preview for inspection; never use as a public page or starter."""
+    if artifact.lifecycle != "planned":
+        return ""
     if artifact.kind == "chapter":
         course = state.courses[str(artifact.parent)]
         plan = next((p for p in course.planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
@@ -587,8 +661,7 @@ def plan_body(artifact: Artifact, state: Workspace) -> str:
         return "\n\n".join(body)
     if artifact.kind == "course":
         course = state.courses[artifact.id]
-        plan = {**course.planned, "purpose": course.purpose, "audience": course.audience}
-        return "\n\n".join(_preview_sections(artifact, state, plan))
+        return "\n\n".join(_preview_sections(artifact, state, course.planned))
     return "\n\n".join(_preview_sections(artifact, state, artifact.planned))
 
 

@@ -6,8 +6,8 @@ Every planning field is defined once here:
   (``seed`` is the section heading; ``""`` seeds body text without a heading).
 - ``SUMMARY`` is the one public sentence per kind (listing text, course card,
   portfolio abstract or chapter table summary). It is never seeded.
-- ``INTERNAL_NOTES`` is CMS and build-brief only. Next steps are tracked as
-  Kanban cards, not as plan fields.
+- ``INTERNAL_NOTES`` keeps the content entity's unfinished context and to-dos
+  together. Linked Kanban cards carry context for individual executions.
 
 Stored locations are translated by ``plan_patch``; ``parse_plan_file`` reads the
 ``## <label or key>`` sections of a human-written plan file.
@@ -48,13 +48,14 @@ PLAN: dict[str, tuple[Field, ...]] = {
         Field("success_criteria", "Success criteria", "How will you show that it works?", seed="How to evaluate it"),
         Field("references", "References", "Sources, prior work, and related reading.", seed="References"),
     ),
+    # Same fields, labels and prompts as the started course home (course_home.HOME_FIELDS),
+    # so the plan and the draft show one form. Starting copies them into contract.home.
     "course": (
-        Field("purpose", "Purpose", "What will learners be able to do, and why does this course exist?", seed="About this course", core=True),
-        Field("audience", "Audience and prerequisites", "Who it is for, what they should already know, and which tools or hardware they need.", seed="Who this is for", core=True),
-        Field("outcomes", "Learning outcomes", "What will learners be able to do by the end?", seed="Learning outcomes", core=True),
-        Field("running_project", "Running project", "Which artifact develops across the chapters?", seed="The running project"),
-        Field("assessment", "Practice and assessment", "Which exercises and evidence show understanding?", seed="Practice and assessment"),
-        Field("references", "References", "Further reading, datasets, and resources.", seed="References"),
+        Field("outcome", "Course outcome", "Describe the project, skill, or framework the learner will finish with or master. Markdown is supported.", core=True),
+        Field("description", "Course description", "Explain the purpose, intended audience, scope, and what to expect. Keep internal design rules and execution notes in Internal notes. Markdown is supported.", core=True),
+        Field("requirements", "Requirements", "One requirement per line, such as hardware, software, account, data, or access needed to participate. Markdown is supported."),
+        Field("prerequisites", "Prerequisites", "One assumed skill or knowledge prerequisite per line. Markdown is supported.", core=True),
+        Field("references", "References", "One outside reference per line. Markdown links are supported."),
     ),
     "chapter": (
         Field("content", "Outline", "What will this chapter teach? List the explanations, examples, and their order.", seed="", core=True),
@@ -64,7 +65,7 @@ PLAN: dict[str, tuple[Field, ...]] = {
 
 SUMMARY: dict[str, Field] = {
     "post": Field("summary", "Summary", "One or two sentences for the posts list and page description. State the takeaway."),
-    "course": Field("summary", "Card description", "One or two sentences for the courses grid. The purpose below is the longer introduction."),
+    "course": Field("summary", "Card description", "One or two sentences for the courses grid. The course home has the longer description."),
     "portfolio": Field("summary", "Abstract", "Shown on the portfolio card and entry page. Start draft can fill a first draft from Problem and What it contains. Paste the finished abstract here before publishing; publishing requires it."),
     "chapter": Field("summary", "Course table summary", "One reader-facing sentence for the course table and chapter subtitle."),
 }
@@ -72,7 +73,7 @@ SUMMARY: dict[str, Field] = {
 INTERNAL_NOTES = Field(
     "internal_notes",
     "Internal notes",
-    "Research, decisions, open questions, and scope boundaries. Never shown on the site. Track next steps as Kanban cards.",
+    "Markdown notes for research, decisions and open questions. The entity's separate internal_todos checklist tracks unfinished work. Linked Kanban cards execute scoped work and hold temporary task context. Never shown on the site.",
 )
 
 # Personal notebooks have no writing brief. Their saved body still seeds the draft.
@@ -173,12 +174,8 @@ def plan_patch(kind: str, values: Mapping[str, Any]) -> dict[str, Any]:
     if kind == "post":
         if plan:
             patch["planned"] = plan
-    elif kind == "course":
-        contract: dict[str, Any] = {key: plan.pop(key) for key in ("purpose", "audience") if key in plan}
-        if plan:
-            contract["planned"] = plan
-        if contract:
-            patch["contract"] = contract
+    elif kind == "course" and plan:
+        patch["contract"] = {"planned": plan}
     elif kind == "portfolio":
         if plan:
             patch.setdefault("detail", {})["planned"] = plan
