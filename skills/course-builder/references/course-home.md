@@ -1,57 +1,56 @@
 # Course home and Chapter 00
 
-Read this reference only when creating or revising `index.ipynb`,
-`00-overview.ipynb`, the course promise, the learning path, or the whole-course
-technical contract. Once those pages are stable, ordinary chapter work should
-read the pages themselves rather than reload this authoring guidance.
+Read this reference when creating or revising the CMS course home,
+`00-overview.ipynb`, the course promise, learning path, or whole-course technical
+contract. Ordinary chapter work should read the current content first.
 
-## Course YAML, home, and overview
+## Course YAML and the CMS home
 
-`backend/data/courses/<slug>.yaml` is the compact, structured course context. Keep purpose and
-audience there, along with separate `planned.summary` and
-`actualized.summary` fields. The latter records completed work, not an
-inference from chapter files. Purpose, audience, planned fields and artifact
-`internal_notes` are authoring context. Start seeds supported course fields into
-the home once; internal notes remain excluded. Review that draft before publishing.
-The generated include renders explicit actualized facts and the ordered chapter
-table. Use catalog `description` for the public listing summary. Keep teaching narrative, setup steps, links, and other
-reader guidance in the notebook.
+`backend/data/courses/<slug>.yaml` stores the initial writing brief, ordered TOC,
+public chapter summaries, and committed `home` fields. The writing brief applies
+only while Planned. Start consumes it and seeds the home once; later home edits
+never synchronize back to historical plans. Read `wt context course/<slug>` for
+current content and use CMS, CLI, or API supported mutations.
 
-## Index page: the course README
+The CMS Course home tab edits these learner-facing sections in order:
 
-The `index.ipynb` is the learner-facing home page. It should be concise but
-substantive: a learner should understand the promise, scope, path,
-prerequisites, and expected outcome in one sitting.
+1. **Course outcome** — contract `home.outcome`: concrete capabilities
+   and the completed artifact, proof or comparison.
+2. **Course description** — `home.description`: explain the purpose, intended
+   audience, scope and what to expect. Keep internal design rules and execution
+   notes in Internal notes.
+3. **Related topics** — catalog `relations`: selected registered stable IDs,
+   projected as links only when the target is eligible for the current site mode.
+   Omit the generated section when no related links are eligible.
+4. **Course content** — generated from the ordered TOC, chapter full titles and
+   public summaries. Never maintain another chapter table in prose.
+5. **Prerequisites** — the CMS has separate item lists:
+   `home.requirements` for hardware, software, accounts, data or access needed
+   to participate, and `home.prerequisites` for assumed knowledge and skills.
+   Each non-empty list is combined into one enumeration in that order. Omit the
+   generated section when both lists are empty. Keep detailed resource
+   qualification in Chapter 00 when needed.
+6. **References** — `home.references`, one outside source per item. Render these
+   as an enumeration and omit the section when the list is empty.
 
-1. **Metadata:** manage title, public description, and optional cover
-   through the content service/catalog. Generated copies receive front matter;
-   the authored home body does not repeat the generated title. Courses and
-   chapters have no tags; use the ordered outline to organize their material.
-2. **Short introduction:** one or two paragraphs explaining what the course is
-   and who it is for, ending with the governing idea stated once as a bolded
-   label in the form `**Design rule:** ...`.
-3. **Completed-course outcome:** name the artifact, capability, proof, or
-   comparison the learner will finish with. State scope boundaries when the
-   title could otherwise overpromise.
-4. **Learning path:** maintain the ordered contract TOC and each chapter-plan
-   `summary` as explicit public text. The generated chapter table uses those
-   fields; do not duplicate it in the notebook.
-5. **Prerequisites:** separate tooling from assumed knowledge.
-6. **Execution at a glance:** name the default local path and any paid,
-   remote, optional, or accelerated path without reproducing the full setup or
-   resource-qualification procedure.
-7. **Important notes:** link a backing project when one exists and explain its
-   relationship to the notebooks. Add rigid notation or other before-starting
-   conventions here.
+The CMS list fields use one item per line; Markdown links work inside references.
+Markdown is supported in prose fields. Inner headings render beneath these fixed
+sections. Keep the home concise enough to read in one sitting. The public card
+description is catalog `description`, set with `wt update --summary`; it remains
+separate from the home description. Cover images and lifecycle remain Page metadata.
 
-Use only stable, learner-relevant decisions on the index. Detailed
-architecture, artifact lineage, hardware and cost estimates, data-source
-contracts, evaluation gates, equations, and serialization examples belong in
-Chapter 00 when they are important to understanding the course. Migration
-history, authoring status, and rewrite instructions belong in neither page.
+There is no editable `index.ipynb` or sibling README for a CMS course home. The
+build generates the same public home URL from these fields. Legacy homes convert
+through `wt migrate --course-homes`: review first, then apply with the returned
+revision. Exact original notebooks and metadata are archived. Executable or
+attachment-backed material must be explicitly moved to chapters before conversion.
 
-Do not create a sibling `README.md`; `index.ipynb` is the course README.
-Avoid restating the generated YAML summary in independently authored prose.
+Use `wt update course/<slug> --patch-file .tmp/home.json` with a payload such as
+`{"contract":{"home":{"description":"Revised course prose."}}}`. Partial patches
+preserve other home fields; pass the revision from `wt context` or `wt data`.
+Notes and structured To-dos contain localized unfinished work and stay off the
+site. Linked Kanban cards carry task-specific execution context. Commit accepted
+course-level findings to the home and chapter-level findings to their notebook.
 
 ## When to add Chapter 00
 
@@ -107,7 +106,7 @@ Keep this preview accessible at the prerequisite level:
 
 | Reader question | Location |
 |---|---|
-| Should I take this course, what will I build, and where do I start? | `index.ipynb` |
+| Should I take this course, what will I build, and where do I start? | CMS course home |
 | How does the complete system fit together, and what counts as success? | `00-overview.ipynb` |
 | How do I derive, implement, test, and interpret this stage? | The relevant numbered chapter |
 

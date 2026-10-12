@@ -23,14 +23,14 @@ def author(tmp_path):
 
 def create(author, kind):
     identifier = f'{kind}/notes'
-    values = {'id': identifier, 'kind': kind, 'title': 'Notes example', 'description': 'Public summary', 'internal_notes': 'INTERNAL-NOTES-SENTINEL'}
+    values = {'id': identifier, 'kind': kind, 'title': 'Notes example', 'description': 'Public summary'}
     # A saved key outside the catalog must never reach generated site output.
     plan = {'content': 'SEED-OUTLINE-SENTINEL', 'unlisted': 'INTERNAL-UNLISTED-SENTINEL'}
     if kind in {'course', 'chapter'}:
         parent = 'course/notes' if kind == 'course' else 'course/parent'
-        author.create({'id': parent, 'kind': 'course', 'title': 'Course', 'path': f'content/notebooks/courses/{parent.split("/")[-1]}', 'description': 'Public course summary', 'internal_notes': 'INTERNAL-PARENT-SENTINEL', 'contract': {'purpose': 'SEED-PURPOSE-SENTINEL', 'audience': 'SEED-AUDIENCE-SENTINEL', 'planned': {'outcomes': 'SEED-OUTCOMES-SENTINEL', 'unlisted': 'INTERNAL-UNLISTED-SENTINEL', 'chapters': []}}})
+        author.create({'id': parent, 'kind': 'course', 'title': 'Course', 'path': f'content/notebooks/courses/{parent.split("/")[-1]}', 'description': 'Public course summary', 'contract': {'planned': {'description': 'SEED-PURPOSE-SENTINEL', 'prerequisites': 'SEED-AUDIENCE-SENTINEL', 'outcome': 'SEED-OUTCOMES-SENTINEL', 'unlisted': 'INTERNAL-UNLISTED-SENTINEL', 'chapters': []}}})
         if kind == 'course':
-            author.update(parent, {'internal_notes': values['internal_notes'], 'description': values['description']})
+            author.update(parent, {'description': values['description']})
             return parent
         values.update(id='course/parent/notes', parent=parent, section='main', toc_title='Notes', path='content/notebooks/courses/parent/notes.ipynb', plan={**plan, 'lab_and_evidence': 'SEED-LAB-SENTINEL', 'summary': 'Public chapter summary'})
     elif kind == 'portfolio':
@@ -51,11 +51,16 @@ def test_generated_site_excludes_internal_context_at_every_stage(author, monkeyp
             if kind == 'chapter':
                 author.start('course/parent')
             author.start(identifier)
+            author.update(identifier, {'internal_notes': 'INTERNAL-NOTES-SENTINEL'})
             record = author.inspect(identifier)
-            source = author.root / record['source_path']
-            notebook = nbformat.read(source, as_version=4)
-            assert notebook.cells[0].source == f"# {record['artifact']['title']}\n"
-            assert len(notebook.cells) > 1
+            if kind == 'course':
+                assert record['source_path'] is None
+                assert record['contract']['home']['description'] == 'SEED-PURPOSE-SENTINEL'
+            else:
+                source = author.root / record['source_path']
+                notebook = nbformat.read(source, as_version=4)
+                assert notebook.cells[0].source == f"# {record['artifact']['title']}\n"
+                assert len(notebook.cells) > 1
             assert record['artifact']['visibility'] == 'private'
             assert record['artifact']['internal_notes'] == 'INTERNAL-NOTES-SENTINEL'
             assert record['has_authored_content']
@@ -79,14 +84,14 @@ def test_generated_site_excludes_internal_context_at_every_stage(author, monkeyp
         assert generated.exists() == (lifecycle == 'published' or mode == 'preview' and lifecycle == 'draft')
         if generated.exists():
             assert 'SEED-' in generated.read_text()
-        assert 'INTERNAL-NOTES-SENTINEL' in author.inspect(identifier)['build_brief']
+        assert ('INTERNAL-NOTES-SENTINEL' in author.inspect(identifier)['build_brief']) == (lifecycle != 'planned')
 
 
 @pytest.mark.parametrize('kind', ['post', 'portfolio', 'course', 'chapter'])
 def test_notes_cms_create_edit_conflict_and_api_preserve_notebook(author, kind):
     identifier = create(author, kind)
     author.start(identifier)
-    source = author.root / author.inspect(identifier)['source_path']
+    source = author.root / (author.inspect(identifier)['source_path'] or f"backend/data/courses/{identifier.split('/')[-1]}.yaml")
     before = source.read_bytes()
     with TestClient(create_app(author.root)) as client:
         page = client.get(f'/cms/artifact/{identifier}')
@@ -112,9 +117,9 @@ def test_cms_creates_notes_and_cli_edits_them_after_publication(author, monkeypa
         page = client.get('/cms/new?kind=post')
         import re
         revision = re.search(r'name="revision" value="([^"]+)"', page.text)[1]
-        created = client.post('/cms/new?kind=post', data={'revision': revision, 'kind': 'post', 'field:["name"]': 'new', 'field:["title"]': 'New', 'field:["internal_notes"]': 'Initial notes'}, follow_redirects=False)
+        created = client.post('/cms/new?kind=post', data={'revision': revision, 'kind': 'post', 'field:["name"]': 'new', 'field:["title"]': 'New'}, follow_redirects=False)
         assert created.status_code == 303, created.text
-    assert author.inspect('post/new')['artifact']['internal_notes'] == 'Initial notes'
+    assert author.inspect('post/new')['artifact']['internal_notes'] == ''
     monkeypatch.chdir(author.root)
     runner = CliRunner()
     started = runner.invoke(app, ['start', 'post/new'])
@@ -123,12 +128,12 @@ def test_cms_creates_notes_and_cli_edits_them_after_publication(author, monkeypa
     author.publish('post/new')
     source = author.root / author.inspect('post/new')['source_path']
     before = source.read_bytes()
-    updated = runner.invoke(app, ['update', 'post/new', '--internal-notes', 'Future revision', '--planned-content', 'New outline'])
+    updated = runner.invoke(app, ['update', 'post/new', '--internal-notes', 'Future revision'])
     assert updated.exit_code == 0, updated.exception
     record = author.inspect('post/new')
     assert record['artifact']['lifecycle'] == 'published'
     assert record['artifact']['internal_notes'] == 'Future revision'
-    assert record['artifact']['planned']['content'] == 'New outline'
+    assert 'planned' not in record['artifact']
     assert source.read_bytes() == before
 
 
@@ -136,7 +141,7 @@ def test_cms_creates_notes_and_cli_edits_them_after_publication(author, monkeypa
 def test_renaming_a_scaffold_does_not_make_it_publishable(author, kind):
     identifier = create(author, kind)
     if kind == 'course':
-        author.update(identifier, {'contract': {'purpose': '', 'audience': '', 'planned': {'outcomes': ''}}})
+        author.update(identifier, {'contract': {'planned': {'description': '', 'prerequisites': '', 'outcome': ''}}})
     elif kind == 'chapter':
         author.update(identifier, {'plan': {'content': '', 'lab_and_evidence': ''}})
     elif kind == 'portfolio':
@@ -146,8 +151,12 @@ def test_renaming_a_scaffold_does_not_make_it_publishable(author, kind):
     author.start(identifier)
     author.update(identifier, {'title': 'Renamed scaffold'})
     record = author.inspect(identifier)
-    notebook = nbformat.read(author.root / record['source_path'], as_version=4)
-    assert notebook.cells[0].source.strip() == '# Renamed scaffold'
+    if kind == 'course':
+        assert record['source_path'] is None
+        assert not any(record['contract']['home'].values())
+    else:
+        notebook = nbformat.read(author.root / record['source_path'], as_version=4)
+        assert notebook.cells[0].source.strip() == '# Renamed scaffold'
     assert not record['has_authored_content']
     with pytest.raises(ServiceError):
         author.publish(identifier)

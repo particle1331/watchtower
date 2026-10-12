@@ -26,7 +26,7 @@ def token(response):
 
 
 def course(author, **extra):
-    author.create({"id": "course/demo", "kind": "course", "title": "Demo course", "path": "content/notebooks/courses/demo", "contract": {"purpose": "Teach programming", "audience": "Python users", "planned": {"summary": "Build a tool", "chapters": []}}, **extra})
+    author.create({"id": "course/demo", "kind": "course", "title": "Demo course", "path": "content/notebooks/courses/demo", "contract": {"planned": {"outcome": "Build a tool", "description": "Teach programming", "prerequisites": "Python users", "summary": "Build a tool", "chapters": []}}, **extra})
 
 
 def chapter(author, name="first", **extra):
@@ -39,11 +39,9 @@ def test_post_and_course_save_and_publish(author, kind, htmx):
     if kind == "course":
         course(author)
         identifier, url = "course/demo", "/cms/courses/demo"
-        field = 'field:["contract", "planned", "outcomes"]'
     else:
         author.create({"id": "post/idea", "kind": "post", "title": "Idea", "path": "content/notebooks/posts/idea.ipynb", "planned": {"content": "Post content"}})
         identifier, url = "post/idea", "/cms/artifact/post/idea"
-        field = 'field:["planned", "audience"]'
     author.start(identifier)
     with TestClient(create_app(author.root)) as client:
         editor = client.get(url)
@@ -52,7 +50,7 @@ def test_post_and_course_save_and_publish(author, kind, htmx):
         assert 'Save and publish</button>' not in editor.text
         assert 'id="artifact-publish-action"' not in editor.text
         revision, snapshot = form_snapshot(editor)
-        result = client.post(f"/cms/save/{identifier}", data={"revision": revision, "snapshot": snapshot, "save_action": "publish", 'field:["title"]': "Finished title", field: "Finished outcome"}, headers={"HX-Request": "true"} if htmx else {}, follow_redirects=False)
+        result = client.post(f"/cms/save/{identifier}", data={"revision": revision, "snapshot": snapshot, "save_action": "publish", 'field:["title"]': "Finished title", 'field:["internal_notes"]': "Finished outcome"}, headers={"HX-Request": "true"} if htmx else {}, follow_redirects=False)
         assert result.status_code == (303 if kind == "course" and not htmx else 200), result.text
         record = author.inspect(identifier)
         assert record["artifact"]["title"] == "Finished title"
@@ -60,9 +58,9 @@ def test_post_and_course_save_and_publish(author, kind, htmx):
         assert record["artifact"]["visibility"] == "public"
         if kind == "course":
             assert result.headers["hx-redirect" if htmx else "location"] == f"{url}#course-brief"
-            assert record["contract"]["planned"]["outcomes"] == "Finished outcome"
+            assert record["artifact"]["internal_notes"] == "Finished outcome"
         else:
-            assert record["artifact"]["planned"]["audience"] == "Finished outcome"
+            assert record["artifact"]["internal_notes"] == "Finished outcome"
             assert 'Return to draft' in result.text
 
 
@@ -78,7 +76,7 @@ def test_post_and_course_save_and_publish_fail_atomically(author, kind, failure)
         if failure == "content":
             assert 'data-save data-save-publish>Publish</button>' in editor.text
             assert 'data-blocked' not in editor.text
-            assert 'The notebook has no body content yet.' in editor.text
+            assert ('Add course-home content below before publishing.' if kind == 'course' else 'The notebook has no body content yet.') in editor.text
         else:
             author.update(identifier, {"title": "Concurrent title"})
         before = author.inspect(identifier)
@@ -86,7 +84,7 @@ def test_post_and_course_save_and_publish_fail_atomically(author, kind, failure)
         assert result.status_code == (412 if failure == "stale" else 422), result.text
         assert "Unsaved title" in result.text
         if failure == "content":
-            assert "Cannot publish: the notebook has no body content." in result.text
+            assert ("Cannot publish: add course-home content in the CMS first." if kind == "course" else "Cannot publish: the notebook has no body content.") in result.text
         assert token(result) == revision
         assert author.inspect(identifier)["artifact"] == before["artifact"]
         assert author.inspect(identifier)["artifact"]["lifecycle"] == "draft"
@@ -119,18 +117,19 @@ def test_chapter_save_and_publish_requires_public_published_parent(author, paren
 def test_private_partial_plan_reopens_with_task_action(author, kind):
     with TestClient(create_app(author.root)) as client:
         page = client.get(f"/cms/new?kind={kind}")
-        response = client.post(f"/cms/new?kind={kind}", data={"revision": token(page), 'field:["name"]': "idea", 'field:["title"]': "An idea", 'field:["internal_notes"]': "Investigate an example"}, follow_redirects=False)
+        response = client.post(f"/cms/new?kind={kind}", data={"revision": token(page), 'field:["name"]': "idea", 'field:["title"]': "An idea"}, follow_redirects=False)
         assert response.status_code == 303, response.text
         record = author.inspect(f"{kind}/idea")
         assert record["artifact"]["visibility"] == "private"
         assert record["missing_plan_fields"]
-        assert "Investigate an example" in record["build_brief"]
+        assert record["artifact"]["internal_notes"] == ""
         editor = client.get(response.headers["location"])
         assert 'data-editing="true"' in editor.text
         assert "Planning help &amp; saved brief" not in editor.text
         assert "Create Kanban task" in editor.text and "Not on the live site" in editor.text
         assert "Copy build brief" not in editor.text and 'id="saved-build-brief"' not in editor.text
-        assert "Investigate an example" in editor.text
+        # Planned courses keep notes while their home fields are refined; other plans wait for a draft.
+        assert ('name="field:[&#34;internal_notes&#34;]"' in editor.text) == (kind == "course")
         started = author.start(f"{kind}/idea")
         assert started["artifact"]["lifecycle"] == "draft"
         assert not author.inspect(f"{kind}/idea")["has_authored_content"]
@@ -145,18 +144,18 @@ def test_course_save_is_atomic_and_keeps_unrelated_contract_fields(author):
     with TestClient(create_app(author.root)) as client:
         page = client.get("/cms/courses/demo")
         revision, snapshot = form_snapshot(page)
-        result = client.post("/cms/save/course/demo", data={"revision": revision, "snapshot": snapshot, 'field:["title"]': "Revised title", 'field:["contract", "planned", "outcomes"]': "Can build a tool"}, follow_redirects=False)
+        result = client.post("/cms/save/course/demo", data={"revision": revision, "snapshot": snapshot, 'field:["title"]': "Revised title", 'field:["contract", "planned", "outcome"]': "Can build a tool"}, follow_redirects=False)
         assert result.status_code == 303, result.text
         record = author.inspect("course/demo")
         assert record["artifact"]["title"] == "Revised title"
-        assert record["contract"]["planned"]["outcomes"] == "Can build a tool"
+        assert record["contract"]["planned"]["outcome"] == "Can build a tool"
         assert record["contract"]["planned"]["extension"] == "Keep this too"
-        assert record["contract"]["actualized"] == {"summary": ""}
-        failed = client.post("/cms/save/course/demo", data={"revision": revision, "snapshot": snapshot, 'field:["contract", "planned", "outcomes"]': "Unsaved outcome"})
+        assert "actualized" not in record["contract"]
+        failed = client.post("/cms/save/course/demo", data={"revision": revision, "snapshot": snapshot, 'field:["contract", "planned", "outcome"]': "Unsaved outcome"})
         assert failed.status_code == 412
         assert "Unsaved outcome" in failed.text
         assert token(failed) == revision
-        assert author.inspect("course/demo")["contract"]["planned"]["outcomes"] == "Can build a tool"
+        assert author.inspect("course/demo")["contract"]["planned"]["outcome"] == "Can build a tool"
 
 
 def test_contextual_chapter_partial_save_then_ready_draft(author):
@@ -292,8 +291,8 @@ def test_long_plan_seeds_bounded_cells_and_preserves_plan(author):
     seeded = "".join(cell.source for cell in notebook.cells)
     assert body.strip() in seeded
     assert "## References\n\nSource" in seeded
-    assert author.inspect("post/long")["plan"] == record["plan"]
-    assert body in author.inspect("post/long")["build_brief"]
+    assert author.inspect("post/long")["plan"] == ""
+    assert body not in author.inspect("post/long")["build_brief"]
 
 
 def test_api_brief_patch_preserves_unknown_fields_and_toc(author):
@@ -302,7 +301,7 @@ def test_api_brief_patch_preserves_unknown_fields_and_toc(author):
     author.update("course/demo", {"contract": {"planned": {"extension": "Keep the research note"}}})
     with TestClient(create_app(author.root)) as client:
         record = author.inspect("course/demo")
-        changed = client.patch("/api/artifacts/course/demo", headers={"If-Match": record["revision"]}, json={"title": "Changed title", "contract": {"planned": {"outcomes": "An outcome"}}})
+        changed = client.patch("/api/artifacts/course/demo", headers={"If-Match": record["revision"]}, json={"title": "Changed title", "contract": {"planned": {"outcome": "An outcome"}}})
         assert changed.status_code == 200, changed.text
         saved = author.inspect("course/demo")
         assert saved["artifact"]["title"] == "Changed title"
@@ -375,28 +374,30 @@ def test_portfolio_legacy_description_is_preserved_as_abstract_on_save(author):
 
 def test_editor_sections_separate_public_summary_plan_and_internal_notes(author):
     course(author)
-    chapter(author, plan={"summary": "Reader summary", "content": "Teaching plan"}, internal_notes="Author decisions")
+    chapter(author, plan={"summary": "Reader summary", "content": "Teaching plan"})
+    author.start("course/demo/first")
+    author.update("course/demo/first", {"internal_notes": "Author decisions"})
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/artifact/course/demo/first')
         assert page.status_code == 200
-        sections = {name: re.search(rf'<section id="{name}" class="author-section.*?</section>', page.text, re.S)[0] for name in ['basics', 'plan', 'page']}
+        sections = {name: re.search(rf'<section id="{name}" class="author-section.*?</section>', page.text, re.S)[0] for name in ['basics', 'page']}
         sections["notes"] = re.search(r'<dialog id="notes".*?</dialog>', page.text, re.S)[0]
         assert 'Reader summary' in sections['page']
-        assert 'Teaching plan' in sections['plan']
+        assert 'Teaching plan' not in page.text
+        assert 'id="plan" class="author-section' not in page.text
         assert 'Author decisions' in sections['notes']
-        assert 'Author decisions' not in sections['page'] and 'Author decisions' not in sections['plan']
+        assert 'Author decisions' not in sections['page']
         assert 'Teaching plan' not in sections['page']
         revision, snapshot = form_snapshot(page)
         saved = client.post('/cms/save/course/demo/first', data={
             'revision': revision, 'snapshot': snapshot,
             'field:["plan", "summary"]': 'New reader summary',
-            'field:["plan", "content"]': 'New teaching plan',
             'field:["internal_notes"]': 'New author decisions',
         }, follow_redirects=False)
         assert saved.status_code == 303
         record = author.inspect('course/demo/first')
         assert record['chapter_plan']['summary'] == 'New reader summary'
-        assert record['chapter_plan']['content'] == 'New teaching plan'
+        assert 'content' not in record['chapter_plan']
         assert record['artifact']['internal_notes'] == 'New author decisions'
 
 

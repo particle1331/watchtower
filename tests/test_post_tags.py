@@ -98,7 +98,7 @@ def test_course_and_chapter_legacy_labels_are_retired_without_changing_route(tmp
         assert rejected.status_code == 422
         assert 'Courses and chapters do not support tags.' in rejected.text
         assert content.list()['revision'] == revision
-        saved = client.post('/cms/save/' + identifier, data={'revision': revision, 'snapshot': snapshot, 'field:["internal_notes"]': 'Keep the outline.'})
+        saved = client.post('/cms/save/' + identifier, data={'revision': revision, 'snapshot': snapshot, 'field:["title"]': 'Updated title'})
         assert saved.status_code == 200, saved.text
         record = content.inspect(identifier)['artifact']
         assert 'tags' not in record and 'categories' not in record

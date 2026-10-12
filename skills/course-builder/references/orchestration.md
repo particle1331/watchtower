@@ -10,6 +10,7 @@ available.
 The main agent owns:
 
 - the course index and Chapter 00;
+- the saved course brief, ordered TOC, and public chapter summaries;
 - shared terminology, notation, artifact lineage, and chapter handoffs;
 - backing-project interfaces and cross-chapter schemas;
 - sidebar organization;
@@ -44,7 +45,7 @@ integration drift outweigh parallelism when tasks are strongly dependent.
 
 Give each subagent only the context needed for its assignment:
 
-1. the course `index.ipynb` and `00-overview.ipynb`;
+1. the course CMS `home` fields and `00-overview.ipynb`;
 2. the target chapter and relevant adjacent handoff;
 3. the relevant course-builder reference;
 4. frozen project interfaces or schemas it may use;
@@ -75,7 +76,11 @@ successful local check is evidence for integration, not a substitute for it.
 
 ## Suggested course-wide sequence
 
-1. Main agent creates or revises the index and Chapter 00.
+For an outline-only request, finish with validated managed plans and an ordered
+contract; leave notebooks unstarted. The following sequence applies when the
+request includes course authoring.
+
+1. Main agent creates or revises the index and, when warranted, Chapter 00.
 2. Main agent freezes shared project interfaces and artifact schemas.
 3. Delegate independent research, audits, or disjoint implementation work.
 4. Integrate one dependency layer at a time.

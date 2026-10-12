@@ -220,10 +220,11 @@ def test_planning_flags_update_effective_chapter_and_course_plans(agent_workspac
     course = content.inspect("course/example")
     assert course["artifact"]["description"] == "New course summary"
     assert course["contract"]["planned"]["outcomes"] == "Old outcome"
-    assert course["contract"]["actualized"]["summary"] == "Checked evidence"
+    assert "actualized" not in course["contract"]
+    assert content.read_data("course/example")["data"]["actualized"]["summary"] == "Checked evidence"
     content.start("course/example/one")
     assert "New content" in notebook.cat_notebook("course/example/one")
-    assert "New content" in content.inspect("course/example/one")["build_brief"]
+    assert "New content" not in content.inspect("course/example/one")["build_brief"]
 
 
 def test_plan_file_update_uses_same_sections_as_creation(agent_workspace):

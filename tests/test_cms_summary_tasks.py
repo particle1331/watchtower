@@ -19,7 +19,9 @@ def create_entry(author, kind):
     if kind == 'chapter':
         author.create({'id': 'course/parent', 'kind': 'course', 'title': 'Parent course',
                        'path': 'content/notebooks/courses/parent',
-                       'contract': {'purpose': 'Teach a concrete skill'}, 'internal_notes': 'Parent decision'})
+                       'contract': {'purpose': 'Teach a concrete skill'}})
+        author.start('course/parent')
+        author.update('course/parent', {'internal_notes': 'Parent decision'})
         identifier = 'course/parent/idea'
         data = {'parent': 'course/parent', 'section': 'main', 'toc_title': 'Idea', 'plan': {'content': 'Explain a concrete example'}}
     elif kind == 'course':
@@ -34,13 +36,15 @@ def create_entry(author, kind):
     path = {'course': 'content/notebooks/courses/idea', 'chapter': 'content/notebooks/courses/parent/idea.ipynb',
             'post': 'content/notebooks/posts/idea.ipynb', 'portfolio': 'content/notebooks/portfolio/idea.ipynb'}[kind]
     author.create({'id': identifier, 'kind': kind, 'title': 'A useful idea', 'path': path,
-                   'internal_notes': 'Saved author decision', **data})
+                   **data})
+    author.start(identifier)
+    author.update(identifier, {'internal_notes': 'Saved author decision'})
     return identifier
 
 
 @pytest.mark.parametrize('kind', ['post', 'course', 'chapter', 'portfolio'])
 @pytest.mark.parametrize('htmx', [False, True])
-def test_summary_task_contains_saved_brief_and_context_commands(author, kind, htmx):
+def test_summary_task_references_entity_context_without_copying_local_memory(author, kind, htmx):
     identifier = create_entry(author, kind)
     with TestClient(create_app(author.root)) as client:
         page = client.get(f'/cms/artifact/{identifier}')
@@ -57,15 +61,19 @@ def test_summary_task_contains_saved_brief_and_context_commands(author, kind, ht
         assert card['ref'] == 'card#1' and card['column'] == 'todo'
         assert card['artifact_ids'] == [identifier]
         assert card['description'].startswith(f'Summary task for {identifier}.')
-        assert author.read_plan(identifier)['build_brief'] in card['description']
-        assert 'Explain a concrete example' in card['description']
-        assert 'Saved author decision' in card['description']
-        assert f'.venv/bin/wt plan {identifier}' in card['description']
+        assert author.read_plan(identifier)['build_brief'] not in card['description']
+        assert f'.venv/bin/wt {"context" if kind == "course" else "cat"} {identifier}' in card['description']
+        assert 'Explain a concrete example' not in card['description']
+        assert 'Saved author decision' not in card['description']
+        context = client.app.state.kanban.context(card['ref'])
+        assert context['artifacts'][0]['internal_notes'] == 'Saved author decision'
         assert f'.venv/bin/wt context {identifier}' in card['description']
-        assert '--summary <text> --expected-revision' in card['description']
+        assert '--summary <text> --expected-revision <revision from wt context>' in card['description']
+        assert 'read context again to verify it' in card['description']
         assert 'at most 80 words' in card['description'] if kind == 'portfolio' else 'one or two sentences' in card['description']
         if kind == 'chapter':
-            assert 'Parent course' in card['description'] and 'Parent decision' in card['description']
+            assert 'Parent decision' not in card['description']
+            assert 'Parent decision' in context['artifacts'][0]['build_brief']
         target = result.headers['hx-redirect' if htmx else 'location']
         if kind == 'course':
             assert target.startswith('/cms/courses/idea?summary_task=') and target.endswith('#course-brief')
@@ -78,6 +86,11 @@ def test_summary_task_contains_saved_brief_and_context_commands(author, kind, ht
         after = author.snapshot().files
         assert {name: data for name, data in before.items() if name != 'backend/data/kanban.yaml'} == {
             name: data for name, data in after.items() if name != 'backend/data/kanban.yaml'}
+        # Task memory stays fixed while the linked entity supplies fresh near-term memory.
+        author.update(identifier, {'internal_notes': 'A later localized decision'})
+        refreshed = client.app.state.kanban.context(card['ref'])
+        assert refreshed['artifacts'][0]['internal_notes'] == 'A later localized decision'
+        assert refreshed['card']['description'] == card['description']
 
 
 def test_unfinished_task_is_reused_and_completed_task_can_be_replaced(author):

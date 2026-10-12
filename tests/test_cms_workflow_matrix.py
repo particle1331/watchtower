@@ -53,18 +53,18 @@ def test_title_only_creation_and_edit_roundtrip(author, kind, start):
         record = author.inspect(identity)
         assert record["artifact"]["lifecycle"] == ("draft" if start else "planned")
         assert record["artifact"]["visibility"] == "private"
-        assert record["has_source"] == start
+        assert record["has_source"] == (start and kind != "course")
         editor_url = "/cms/courses/minimal-entry" if kind == "course" else f"/cms/artifact/{identity}"
         page = client.get(editor_url)
         revision, snapshot = form_snapshot(page)
-        key = "introduction" if kind == "portfolio" else "purpose" if kind == "course" else "content"
+        key = "introduction" if kind == "portfolio" else "description" if kind == "course" else "content"
         data = {
             "revision": revision, "snapshot": snapshot,
             field(["title"]): "Revised title",
-            field(plan_path(kind, key)): "A concrete writing brief.",
             field(summary_path(kind)): "A public summary.",
-            field(["internal_notes"]): "A private author decision.",
         }
+        data[field(["internal_notes"]) if start else field(plan_path(kind, key))] = "A private author decision." if start else "A concrete writing brief."
+        assert ('id="plan" class="author-section' in page.text) == (not start and kind != "course")
         if kind not in {"course", "chapter"}:
             data[field(["tags"])] = "testing\nTesting\nworkflow"
         assert ('>Tags</span>' in page.text) == (kind not in {"course", "chapter"})
@@ -76,10 +76,10 @@ def test_title_only_creation_and_edit_roundtrip(author, kind, start):
             assert "tags" not in record["artifact"]
         else:
             assert record["artifact"]["tags"] == ["testing", "workflow"]
-        assert record["artifact"]["internal_notes"] == "A private author decision."
+        assert record["artifact"]["internal_notes"] == ("A private author decision." if start else "")
         plan = author.read_plan(identity)
         assert plan["summary"] == "A public summary."
-        assert plan["plan"][key] == "A concrete writing brief."
+        assert plan["plan"] == {} if start else plan["plan"][key] == "A concrete writing brief."
         # A stale form must keep the user's input and must not save it.
         stale = client.post(f"/cms/save/{identity}", data={**data, field(["title"]): "Unsaved title"})
         assert stale.status_code == 412
@@ -105,11 +105,15 @@ def test_cli_changes_surface_in_cms_and_board_tokens_survive_content_edits(autho
             field(['planned', 'content']): 'A CMS-authored outline.',
         })
         assert saved.status_code == 200
-        plan = runner.invoke(app, ['plan', 'post/handoff'])
-        assert plan.exit_code == 0 and 'A CMS-authored outline.' in plan.output
+        context = runner.invoke(app, ['context', 'post/handoff'])
+        assert context.exit_code == 0
+        context_data = json.loads(context.output)
+        assert context_data['lifecycle'] == 'planned'
+        assert context_data['plan']['content'] == 'A CMS-authored outline.'
         board = runner.invoke(app, ['kanban', 'ls'])
         assert board.exit_code == 0
         board_revision = json.loads(board.output)['board_revision']
+        assert runner.invoke(app, ['start', 'post/handoff']).exit_code == 0
         updated = runner.invoke(app, ['update', 'post/handoff', '--internal-notes', 'From CLI'])
         assert updated.exit_code == 0, updated.output
         added = runner.invoke(app, ['kanban', 'add', '--title', 'Write the draft', '--link', 'post/handoff', '--expected-revision', board_revision])
@@ -124,7 +128,7 @@ def test_cli_changes_surface_in_cms_and_board_tokens_survive_content_edits(autho
         assert moved.status_code == 303, moved.text
         board = json.loads(runner.invoke(app, ['kanban', 'ls']).output)
         assert board['cards'][0]['column'] == 'review'
-        assert author.inspect('post/handoff')['artifact']['lifecycle'] == 'planned'
+        assert author.inspect('post/handoff')['artifact']['lifecycle'] == 'draft'
 
 
 def test_course_outline_is_default_and_section_actions_are_open(author):
@@ -137,11 +141,13 @@ def test_course_outline_is_default_and_section_actions_are_open(author):
         assert 'name="action" value="rename-section"' in page.text
         assert 'name="action" value="add-section"' in page.text
         assert 'Create Kanban task' in html.unescape(page.text)
-        assert 'Copy source path' in page.text
+        assert 'Copy source path' not in page.text
+        assert 'Edit in VS Code' not in page.text
 
 
 def test_cms_kanban_form_survives_unrelated_content_edits(author):
     author.create_post('idea', {'title': 'Idea'})
+    author.start('post/idea')
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/kanban?add=1&link=post/idea')
         revision = token(page)

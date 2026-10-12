@@ -11,7 +11,9 @@ section. Give each exercise a clear Markdown heading and a self-contained
 statement. Include any data, assumptions, expected artifact, and checks the
 learner needs to attempt it. Put optional starter code in the next code cell.
 
-Use `wt cat <chapter> --context N` to inspect the surrounding cells. Add or
+Follow the [notebook editing loop](chapter-authoring.md#notebook-editing-loop),
+including revision tokens for shared edits. Use `wt cat <chapter> --context N`
+to inspect the surrounding cells. Add or
 revise prompts with `wt insert-cell`, `wt append-cell`, and `wt edit-cell`; use
 `wt tag` when a stable `problem` tag helps locate an exercise later. Re-read
 indices after inserting or removing cells. Run edited starter code and inspect

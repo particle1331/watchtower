@@ -8,10 +8,11 @@ when the chapter uses Quarto-rendered notebook features.
 
 Before editing an ordinary chapter:
 
-1. Run `wt context <chapter>`; read the catalog record and course YAML, which
-   distinguishes planned work from actualized work.
-2. Read the course `index.ipynb`, `00-overview.ipynb` when present, and target
-   chapter with `wt cat`. Read adjacent chapter openings only for a relevant handoff.
+1. Run `wt context <chapter>`; read the catalog record and course navigation. Writing briefs apply only while Planned; started notebooks own the content.
+2. Read the course CMS `home` fields through `wt context`, `00-overview.ipynb` when present, and target
+   chapter with `wt cat` when they have been started. For a Planned chapter,
+   read the `plan` in `wt context <stable-id>` and start it when notebook authoring is requested.
+   Read adjacent chapter openings only for a relevant handoff.
 3. Read the backing project's `AGENTS.md` when one exists.
 4. Identify the concept taught, reusable artifact added, controlled result,
    and handoff promised by the overview.
@@ -50,18 +51,24 @@ Never inspect or edit raw `.ipynb` JSON.
 
 1. Orient with `.venv/bin/wt map` and `wt ls`.
 2. Locate content with `wt find`, a stable Jupyter tag, or a Quarto label.
-3. Read the target cell with `wt cat --context`.
+3. Read the target cell with `wt cat <chapter> --index N --context 3`.
+   For shared edits add `--with-revision` and retain the `notebook:<hash>` token.
 4. Mutate with `wt edit-cell`, `insert-cell`, `append-cell`, `remove-cell`, or
-   `tag`.
+   `tag`. For shared edits pass the token with `--expected-revision`.
 5. Review the content change with `wt diff`.
-6. Re-execute every edited code cell with `wt run <name> --index N`.
+6. Re-execute every edited code cell with `wt run <chapter> --index N`, using
+   a fresh notebook token with `--expected-revision` for shared execution.
+   Markdown-only edits need no kernel run.
 7. Inspect stored text and image outputs with `wt output` or
    `wt cat --with-outputs`.
 8. Render the affected page and inspect its presentation.
 
 Cell mutations accept exactly one locator. Indices shift after insertions and
-removals, so mutate right-to-left and re-read indices after every structural
-change. `edit-cell` does not shift indices.
+removals, so re-read indices after every structural change. `edit-cell` does
+not shift indices. Notebook tokens cover source, metadata, and outputs; every
+save invalidates the old token. Re-read before another guarded write and after
+a conflict; do not retry stale writes automatically. Preserve existing
+cell-level visibility and folding options.
 
 ## Verification
 

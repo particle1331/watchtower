@@ -26,7 +26,9 @@ def content(tmp_path):
 
 
 def post(content, name="context", uploads=None):
-    return content.create({"id": f"post/{name}", "kind": "post", "title": name, "path": f"content/notebooks/posts/{name}.ipynb", "internal_notes": "Private decision"}, attachment_uploads=uploads)
+    content.create({"id": f"post/{name}", "kind": "post", "title": name, "path": f"content/notebooks/posts/{name}.ipynb"}, attachment_uploads=uploads)
+    content.start(f"post/{name}")
+    return content.update(f"post/{name}", {"internal_notes": "Private decision"})
 
 
 def png():
@@ -127,14 +129,14 @@ def test_creation_and_edit_notes_uploads_share_one_form(content, kind):
         assert 'data-inline-dialog' in page.text  # readable no-JS fallback
         assert page.text.count('<form id="new-editor-form"') == 1
         token = re.search(r'name="revision" value="([^"]+)"', page.text)[1]
-        data = {"revision": token, 'field:["title"]': "Attached", 'field:["internal_notes"]': "Unsaved context"}
+        data = {"revision": token, 'field:["title"]': "Attached"}
         if kind == "chapter":
             data.update({'field:["parent"]': "course/parent", 'field:["section"]': "main"})
         saved = client.post(f"/cms/new?kind={kind}", data=data, files={"context_files": ("diagram.png", png(), "image/png")}, follow_redirects=False)
         assert saved.status_code == 303, saved.text
         identifier = "course/parent/attached" if kind == "chapter" else f"{kind}/attached"
         plan = content.read_plan(identifier)
-        assert plan["internal_notes"] == "Unsaved context"
+        assert plan["internal_notes"] == ""
         assert plan["attachments"][0]["name"] == "diagram.png"
         if kind == "course":
             workspace = client.get("/cms/courses/attached")
@@ -142,6 +144,7 @@ def test_creation_and_edit_notes_uploads_share_one_form(content, kind):
             assert 'class="course-heading"' in workspace.text
             assert 'data-dialog-open="notes"' in workspace.text
             assert 'id="notes" class="cms-dialog notes-dialog"' in workspace.text
+        content.start(identifier)
         editor = client.get("/cms/artifact/" + identifier)
         assert 'class="cms-dialog notes-dialog"' in editor.text
         assert 'data-dialog-open="notes"' in editor.text
@@ -214,7 +217,6 @@ def test_kanban_upload_edit_context_and_cli(content, monkeypatch):
 
 def test_publish_keeps_private_files_out_of_generated_site(content, monkeypatch):
     post(content, uploads=[AttachmentUpload("private.txt", b"PRIVATE-ATTACHMENT-CONTENT")])
-    content.start("post/context")
     author_body(content, "post/context")
     content.publish("post/context", attachment_uploads=[AttachmentUpload("other.txt", b"OTHER-PRIVATE-CONTEXT")])
     monkeypatch.setattr("watchtower.services.build.build_resume_pdf", lambda stage: None)

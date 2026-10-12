@@ -106,7 +106,9 @@ def test_course_deletion_requires_explicit_cascade_and_preserves_contract(conten
     assert len(result["deleted"]) == 3
     archive = content.root / result["archive_path"]
     assert not (content.root / "backend/data/courses/example.yaml").exists()
-    for name in ["backend/data/courses/example.yaml", "content/notebooks/courses/example/index.ipynb", "content/notebooks/courses/example/chapter.ipynb"]:
+    # The started course home is committed in the contract; only chapters own
+    # notebooks now.
+    for name in ["backend/data/courses/example.yaml", "content/notebooks/courses/example/chapter.ipynb"]:
         assert (archive / name).read_bytes() == before.files[name]
         assert not (content.root / name).exists()
     content.validate()

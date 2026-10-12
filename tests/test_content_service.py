@@ -62,6 +62,9 @@ def test_creation_preserves_an_explicit_date(content_service):
 
 def author_body(service, identifier):
     record = service.inspect(identifier)
+    if record['artifact']['kind'] == 'course' and record['contract'].get('home') is not None:
+        service.update(identifier, {'contract': {'home': {'description': record['contract']['home']['description'] + '\n\nAn authored explanation with an example.'}}})
+        return
     path = service.root / record["source_path"]
     notebook = nbformat.read(path, as_version=4)
     notebook.cells.append(nbformat.v4.new_markdown_cell("An authored explanation with an example."))
@@ -190,7 +193,8 @@ def test_plan_file_is_persisted_and_confined(content_service):
     post(service, planned={"content": body})
     plan.unlink()
     service.start("post/example")
-    assert body == service.inspect("post/example")["artifact"]["planned"]["content"]
+    assert body == service.snapshot().state.artifacts[0].planned["content"]
+    assert "planned" not in service.inspect("post/example")["artifact"]
     assert nbformat.read(service.root / "content/notebooks/posts/example.ipynb", as_version=4).cells[0].source == "# Example\n"
     with pytest.raises(ServiceError):
         service.plan_file("frontend/site.yaml")

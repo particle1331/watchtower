@@ -406,3 +406,41 @@ def test_kanban_edit_links_have_modal_and_native_fallback(author):
         assert 'value="Unsaved task"' in invalid.text
         assert 'data-unsaved' in invalid.text
         assert json.loads(json.dumps(board.read()))['cards'][0]['title'] == 'Updated task'
+
+
+def test_kanban_card_view_has_full_details_and_revision_aware_actions(author):
+    board = KanbanService(author.root)
+    description = 'First line with <context>.\n' + 'Full task details. ' * 100
+    board.create({'id': 'task-details', 'title': 'Read the whole task', 'description': description, 'column': 'review', 'artifact_ids': ['post/example']})
+    before = board.read()
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/kanban')
+        assert 'class="kanban-card-open" href="/cms/kanban?view=task-details"' in page.text
+        assert 'data-dialog-open="view-task-details" aria-haspopup="dialog"' in page.text
+        assert '1 linked item' in page.text
+        tile = re.search(r'<article class="data-record kanban-card".*?</article>', page.text, re.S)[0]
+        assert 'card-description' in tile and 'Copy card ID' in tile
+        assert 'Move to' not in tile and 'Open in CMS' not in tile
+        assert '?edit=task-details' in tile and '?remove=task-details' in tile
+
+        view = client.get('/cms/kanban?view=task-details&q=does-not-match')
+        assert view.status_code == 200
+        dialog = re.search(r'<dialog id="view-task-details".*?</dialog>', view.text, re.S)[0]
+        assert re.search(r'<dialog[^>]*\bopen\b', dialog)
+        assert html.escape(description) in dialog
+        assert '<span class="badge">Review</span>' in dialog
+        assert 'href="/cms/artifact/post/example"' in dialog
+        assert 'name="revision" value="' + before['board_revision'] + '"' in dialog
+        assert 'action="/cms/kanban/move"' in dialog
+        assert 'Edit card' in dialog and 'Remove' in dialog
+        assert 'aria-label="Close dialog"' in dialog and '>Close</a>' not in dialog
+        assert '<noscript><a href="/cms/kanban">Back to board</a></noscript>' in dialog
+        assert 'aria-label="Copy card ID"' in dialog and '<svg' in dialog
+        assert '>Copy ID</button>' not in view.text
+        edit_dialog = re.search(r'<dialog id="edit-task-details".*?</dialog>', view.text, re.S)[0]
+        assert 'class="cms-dialog kanban-card-dialog"' in dialog
+        assert 'class="cms-dialog kanban-card-dialog"' in edit_dialog
+        assert 'aria-label="Copy card ID"' in edit_dialog and '<svg' in edit_dialog
+        assert 'data-board-editor' not in dialog
+        assert client.get('/cms/kanban?view=missing').status_code == 404
+    assert board.read() == before

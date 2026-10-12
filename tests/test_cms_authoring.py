@@ -4,6 +4,7 @@ import html
 import json
 import re
 
+import nbformat
 import pytest
 from fastapi.testclient import TestClient
 from test_api import author_workspace, form_snapshot
@@ -12,6 +13,7 @@ from watchtower.api import create_app
 from watchtower.services.content import ContentService
 
 SECTION_ORDER = ["basics", "plan", "page", "notes"]
+COURSE_SECTION_ORDER = ["basics", "home", "page", "notes"]
 RETIRED = {"next_steps", "scope_notes", "takeaway", "prerequisites", "constraints", "summary_progression"}
 
 
@@ -30,7 +32,7 @@ def field_paths(text: str) -> list[list[str]]:
 
 
 def course(author):
-    author.create({"id": "course/demo", "kind": "course", "title": "Demo course", "path": "content/notebooks/courses/demo", "contract": {"purpose": "Teach", "audience": "Learners", "planned": {"outcomes": "Build it", "chapters": []}, "toc": [{"id": "main", "title": "", "chapters": []}]}})
+    author.create({"id": "course/demo", "kind": "course", "title": "Demo course", "path": "content/notebooks/courses/demo", "contract": {"planned": {"outcome": "Build it", "description": "Teach", "prerequisites": "Learners", "chapters": []}, "toc": [{"id": "main", "title": "", "chapters": []}]}})
 
 
 @pytest.mark.parametrize("kind", ["post", "portfolio", "course", "chapter"])
@@ -39,7 +41,7 @@ def test_new_form_has_four_intent_sections_in_order(author, kind):
         course(author)
     with TestClient(create_app(author.root)) as client:
         page = client.get(f"/cms/new?kind={kind}" + ("&parent=course/demo&section=main" if kind == "chapter" else "")).text
-    assert section_ids(page) == SECTION_ORDER
+    assert section_ids(page) == (COURSE_SECTION_ORDER if kind == "course" else SECTION_ORDER)
     paths = field_paths(page)
     assert ["name"] in paths and ["title"] in paths
     assert not {path[-1] for path in paths} & RETIRED
@@ -59,14 +61,14 @@ def test_creation_maps_plan_fields_to_storage_and_starts_a_draft(author):
             'field:["planned", "evidence"]': "A worked example",
             'field:["planned", "references"]': "",
             'field:["tags"]': "ml\nnotes",
-            'field:["internal_notes"]': "Open question about batch size",
             "start_draft": "1",
         }, follow_redirects=False)
     assert response.status_code == 303, response.text[:300]
     record = author.inspect("post/gradient-notes")
     assert record["artifact"]["description"] == "The takeaway in one sentence."
-    assert record["artifact"]["planned"]["content"].startswith("## Ideas")
-    assert record["artifact"]["internal_notes"] == "Open question about batch size"
+    assert "Explain the update rule." in "\n".join(c.source for c in nbformat.read(author.root / record["source_path"], as_version=4).cells)
+    assert "planned" not in record["artifact"]
+    assert record["artifact"]["internal_notes"] == ""
     assert record["artifact"]["tags"] == ["ml", "notes"]
     assert record["artifact"]["lifecycle"] == "draft"
     assert record["artifact"]["visibility"] == "private"
@@ -91,12 +93,12 @@ def test_editor_saves_plan_summary_and_notes_without_touching_legacy_keys(author
         assert 'Recommended to start' in editor.text
         assert 'name="field:[&#34;planned&#34;, &#34;next_steps&#34;]"' not in editor.text
         revision, snapshot = form_snapshot(editor)
-        result = client.post("/cms/save/post/idea", data={"revision": revision, "snapshot": snapshot, 'field:["description"]': "New summary", 'field:["planned", "audience"]': "Readers", 'field:["internal_notes"]': "Decision noted"}, headers={"HX-Request": "true"})
+        result = client.post("/cms/save/post/idea", data={"revision": revision, "snapshot": snapshot, 'field:["description"]': "New summary", 'field:["planned", "audience"]': "Readers"}, headers={"HX-Request": "true"})
     assert result.status_code == 200, result.text[:300]
     record = author.inspect("post/idea")
     assert record["artifact"]["description"] == "New summary"
     assert record["artifact"]["planned"]["audience"] == "Readers"
-    assert record["artifact"]["internal_notes"] == "Decision noted"
+    assert record["artifact"]["internal_notes"] == ""
     assert record["artifact"]["planned"]["next_steps"] == "Retired text stays put"
 
 
@@ -104,14 +106,14 @@ def test_editor_section_order_for_course_includes_outline(author):
     course(author)
     with TestClient(create_app(author.root)) as client:
         page = client.get("/cms/courses/demo").text
-    assert section_ids(page) == SECTION_ORDER
+    assert section_ids(page) == COURSE_SECTION_ORDER
     assert 'id="outline"' in page
     assert 'href="#outline"' in page
 
 
 def test_editor_task_action_creates_a_card_with_current_artifact_context(author):
     author.create({"id": "post/idea", "kind": "post", "title": "Idea", "path": "content/notebooks/posts/idea.ipynb",
-                   "planned": {"content": "Explain a concrete example"}, "internal_notes": "Saved decision"})
+                   "planned": {"content": "Explain a concrete example"}})
     with TestClient(create_app(author.root)) as client:
         editor = client.get("/cms/artifact/post/idea").text
         link = re.search(r'<a class="button" href="([^"]+)">Create Kanban task</a>', editor)[1]
@@ -126,5 +128,5 @@ def test_editor_task_action_creates_a_card_with_current_artifact_context(author)
         context = client.app.state.kanban.context("card#1")
         assert context["card"]["artifact_ids"] == ["post/idea"]
         assert context["artifacts"][0]["plan"]["content"] == "Explain a concrete example"
-        assert context["artifacts"][0]["internal_notes"] == "Saved decision"
+        assert context["artifacts"][0]["internal_notes"] == ""
     assert author.inspect("post/idea")["artifact"]["lifecycle"] == "planned"

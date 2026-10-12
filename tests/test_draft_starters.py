@@ -20,33 +20,25 @@ def test_plans_are_never_frontend_eligible(kind, visibility, mode):
 
 def test_start_and_publish_defaults_and_later_plan_edits(content_service):
     service = content_service
-    created = service.create_post('flow', {'title': 'Flow', 'visibility': 'public', 'planned': {'content': 'Explain the example.'}, 'internal_notes': 'Private notes'})
+    created = service.create_post('flow', {'title': 'Flow', 'visibility': 'public', 'planned': {'content': 'Explain the example.'}})
     assert created['artifact']['visibility'] == 'private'
     started = service.start('post/flow', created['revision'])
     assert started['artifact']['visibility'] == 'private'
     path = service.root / started['source_path']
     before = path.read_bytes()
     assert b'Explain the example.' in before
-    assert b'Private todo' not in before and b'Private notes' not in before
-    # An untouched seed follows the plan; the first hand edit freezes the draft.
-    service.update('post/flow', {'planned': {'content': 'A revised plan'}})
-    refreshed = path.read_bytes()
-    assert b'A revised plan' in refreshed and b'Explain the example.' not in refreshed
-    assert b'Private todo' not in refreshed and b'Private notes' not in refreshed
-    notebook = nbformat.read(path, as_version=4)
-    notebook.cells.append(nbformat.v4.new_markdown_cell('My own prose.'))
-    path.write_bytes(nbformat.writes(notebook).encode())
-    edited = path.read_bytes()
-    service.update('post/flow', {'planned': {'content': 'An ignored plan edit'}})
-    assert path.read_bytes() == edited
+    with pytest.raises(ServiceError, match='plan has been consumed'):
+        service.update('post/flow', {'planned': {'content': 'A revised plan'}})
+    assert path.read_bytes() == before
+    service.update('post/flow', {'internal_notes': '## Notes\n\nPrivate notes\n\n## To-dos\n\n- [ ] Add an example'})
+    assert path.read_bytes() == before
     with pytest.raises(ServiceError):
         service.publish('post/flow', started['revision'])
-    assert service.inspect('post/flow')['artifact']['visibility'] == 'private'
     published = service.publish('post/flow')
     assert published['artifact']['lifecycle'] == 'published'
     assert published['artifact']['visibility'] == 'public'
     assert service.inspect('post/flow')['eligible']
-    assert path.read_bytes() == edited
+    assert path.read_bytes() == before
 
 
 def test_starter_demotes_h1s_and_preserves_fences_and_lists():
@@ -56,7 +48,8 @@ def test_starter_demotes_h1s_and_preserves_fences_and_lists():
     assert '## Topic' in sections[0]
     assert '```markdown\n# Fenced example\n```' in sections[0]
     assert 'SECRET' not in ''.join(sections)
-    assert draft_sections('course', {'outcomes': ['Build it', 'Test it']}) == ['## Learning outcomes\n\n- Build it\n- Test it']
+    # Course plans are the CMS course home; they never seed notebook sections.
+    assert draft_sections('course', {'outcome': 'Build it'}) == []
     assert draft_sections('post', {'content': '  \n '}) == []
 
 
@@ -93,7 +86,8 @@ def test_portfolio_start_seeds_only_missing_abstract(content_service, abstract, 
                     'detail': {'abstract': abstract, 'planned': {'introduction': '## Problem\n\nA **tool** for comparing models.\n\nMore detail.', 'what_it_contains': 'Reports and reproducible evaluations.', 'scope_notes': 'INTERNAL', 'next_steps': 'INTERNAL'}}})
     service.start('portfolio/summary')
     assert service.inspect('portfolio/summary')['detail']['abstract'] == expected
-    service.update('portfolio/summary', {'detail': {'planned': {'introduction': 'Later plan'}}})
+    with pytest.raises(ServiceError, match='plan has been consumed'):
+        service.update('portfolio/summary', {'detail': {'planned': {'introduction': 'Later plan'}}})
     assert service.inspect('portfolio/summary')['detail']['abstract'] == expected
 
 
@@ -136,39 +130,22 @@ def test_portfolio_project_path_defaults_to_the_portfolio_name(content_service):
     assert service.inspect('portfolio/aliased')['detail']['project_path'] == 'projects/shared-code'
 
 
-def test_plan_save_reseeds_only_unedited_scaffolds(content_service):
+@pytest.mark.parametrize('abstract', [None, 'Handwritten.'])
+def test_empty_scaffolds_never_reseed_after_start(content_service, abstract):
     service = content_service
-    created = service.create({'id': 'portfolio/late', 'kind': 'portfolio', 'title': 'Late', 'detail': {'planned': {}}})
-    started = service.start('portfolio/late', created['revision'])
+    service.create({'id': 'portfolio/late', 'kind': 'portfolio', 'title': 'Late', 'detail': {'abstract': abstract, 'planned': {}}})
+    started = service.start('portfolio/late')
     source = service.root / started['source_path']
-    assert [cell.source for cell in nbformat.read(source, as_version=4).cells] == ['# Late\n']
-    service.update('portfolio/late', {'detail': {'planned': {'introduction': 'The problem to solve.', 'what_it_contains': 'A checked pipeline.', 'references': 'ref1\nref2'}}})
-    cells = [cell.source for cell in nbformat.read(source, as_version=4).cells]
-    assert cells[0] == '# Late\n' and 'The problem to solve.' in cells[1]
-    assert cells[-1] == '## References\n\n- ref1\n- ref2'
-    assert service.inspect('portfolio/late')['detail']['abstract'] == 'The problem to solve. A checked pipeline.'
-    # Authored content ends re-seeding; later plan edits never rewrite the notebook.
-    notebook = nbformat.read(source, as_version=4)
-    notebook.cells.append(nbformat.v4.new_markdown_cell('My own prose.'))
-    source.write_bytes(nbformat.writes(notebook).encode())
     before = source.read_bytes()
-    service.update('portfolio/late', {'detail': {'planned': {'introduction': 'A changed problem.'}}})
+    revision = service.snapshot().revision
+    with pytest.raises(ServiceError, match='plan has been consumed'):
+        service.update('portfolio/late', {'detail': {'planned': {'introduction': 'A new problem.'}}})
     assert source.read_bytes() == before
-    assert service.inspect('portfolio/late')['detail']['abstract'] == 'The problem to solve. A checked pipeline.'
+    assert service.snapshot().revision == revision
+    assert service.inspect('portfolio/late')['detail']['abstract'] == abstract
 
 
-def test_reseed_never_overwrites_an_explicit_abstract(content_service):
-    service = content_service
-    service.create({'id': 'portfolio/kept', 'kind': 'portfolio', 'title': 'Kept', 'detail': {'abstract': 'Handwritten.', 'planned': {}}})
-    service.start('portfolio/kept')
-    service.update('portfolio/kept', {'detail': {'planned': {'introduction': 'A problem.'}}})
-    saved = service.inspect('portfolio/kept')
-    assert saved['detail']['abstract'] == 'Handwritten.'
-    cells = [cell.source for cell in nbformat.read(service.root / saved['source_path'], as_version=4).cells]
-    assert any('A problem.' in cell for cell in cells)
-
-
-def test_rename_keeps_scaffold_titles_in_sync_and_reseeds(content_service):
+def test_rename_keeps_scaffold_titles_in_sync_without_reseeding(content_service):
     service = content_service
     created = service.create_post('renamed', {'title': 'Old title', 'planned': {'content': 'Body plan.'}})
     started = service.start('post/renamed', created['revision'])
@@ -177,9 +154,12 @@ def test_rename_keeps_scaffold_titles_in_sync_and_reseeds(content_service):
     service.update('post/renamed', {'title': 'New title'})
     cells = [cell.source for cell in nbformat.read(source, as_version=4).cells]
     assert cells[0].strip() == '# New title' and any('Body plan.' in cell for cell in cells)
-    # A combined rename and plan save still re-seeds a title-only scaffold.
+    # A combined rename and plan write is rejected atomically, even for title-only drafts.
     service.create_post('combined', {'title': 'Old title', 'planned': {}})
     service.start('post/combined')
-    service.update('post/combined', {'title': 'Renamed', 'planned': {'content': 'Seeded body.'}})
-    cells = [cell.source for cell in nbformat.read(service.root / 'content/notebooks/posts/combined.ipynb', as_version=4).cells]
-    assert cells[0] == '# Renamed\n' and any('Seeded body.' in cell for cell in cells)
+    source = service.root / 'content/notebooks/posts/combined.ipynb'
+    before = source.read_bytes()
+    with pytest.raises(ServiceError, match='plan has been consumed'):
+        service.update('post/combined', {'title': 'Renamed', 'planned': {'content': 'Seeded body.'}})
+    assert source.read_bytes() == before
+    assert service.inspect('post/combined')['artifact']['title'] == 'Old title'

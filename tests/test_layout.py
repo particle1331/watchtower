@@ -33,8 +33,9 @@ def legacy_workspace(service):
 
 def test_layout_moves_bytes_and_paths_preserving_notes_cards_sources_and_routes(content_service):
     service = content_service
-    service.create_post("example", {"title": "Example", "internal_notes": "Old prose mentions content/data/catalog.yaml."})
+    service.create_post("example", {"title": "Example"})
     service.start("post/example")
+    service.update("post/example", {"internal_notes": "Old prose mentions content/data/catalog.yaml."})
     service.create({"id": "course/example", "kind": "course", "title": "Course", "path": "content/notebooks/courses/example"})
     service.create({"id": "gallery/photos", "kind": "gallery", "title": "Photos", "path": "backend/data/photos.yaml"})
     image = service.root / "backend/assets/photos/a.svg"
@@ -92,6 +93,7 @@ def test_layout_rolls_forward_interrupted_moves_and_keeps_notebook_bytes(content
     service = content_service
     service.create_post("example", {"title": "Example"})
     service.start("post/example")
+    service.update("post/example", {"internal_notes": "Old prose mentions content/data/catalog.yaml."})
     migration = legacy_workspace(service)
     source = service.root / "content/notebooks/posts/example.ipynb"
     original = source.read_bytes()

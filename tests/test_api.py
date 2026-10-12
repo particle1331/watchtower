@@ -341,6 +341,27 @@ def test_build_status_and_validated_log_ids(client, monkeypatch):
     assert client.get("/api/builds/" + "f" * 32).status_code == 404
 
 
+def test_build_output_is_plain_text_and_html_escaped(client, monkeypatch):
+    record = {
+        "id": "a" * 32, "status": "failed", "finished_at": "2026-10-12",
+        "error": "\x1b[31mCould not render <chapter>\x1b[0m",
+        "logs": (
+            "\x1b[1m\x1b[34m[45/50] nb/courses/example.ipynb\x1b[39m\x1b[22m\r\n"
+            "\x1b]8;;https://example.com\x1b\\Output created\x1b]8;;\x1b\\\n"
+            "\x1b]0;Quarto\x07\x9b32m<script>alert('log')</script>\x9b0m\x08"
+        ),
+    }
+    monkeypatch.setattr(client.app.state.builds, "get", lambda identifier: record)
+    response = client.get("/cms/build/" + record["id"])
+    assert response.status_code == 200
+    assert "[45/50] nb/courses/example.ipynb\nOutput created\n" in response.text
+    assert "Could not render &lt;chapter&gt;" in response.text
+    assert "&lt;script&gt;alert(&#39;log&#39;)&lt;/script&gt;" in response.text
+    assert "<script>" not in response.text
+    assert not any(control in response.text for control in ("\x1b", "\x9b", "\x07", "\x08", "\r"))
+    assert "The previous successful preview remains available." in response.text
+
+
 def test_author_palette_is_scoped_to_cms_static(client):
     response = client.get("/cms/static/theme.css")
     assert response.status_code == 200
@@ -632,7 +653,8 @@ def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(cl
     assert source.exists()
     authored = nbformat.read(source, as_version=4)
     assert authored.cells[0].source == f"# {record['artifact']['title']}\n"
-    assert {key: value for key, value in service.inspect(identifier)["detail"]["planned"].items() if value} == plan
+    assert "planned" not in service.inspect(identifier)["detail"]
+    assert all(value in "\n".join(cell.source for cell in authored.cells) for value in plan.values())
 
 
 def test_portfolio_editor_omits_chapter_fields_and_preserves_routing_on_save(client):
@@ -948,7 +970,6 @@ def test_gallery_api_accepts_draft_with_omitted_path_but_rejects_invalid_paths(c
 
 @pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
 def test_course_upload_is_used_by_card_grid(client, monkeypatch, format, extension):
-    import nbformat
 
     from watchtower.services.build import BuildService
 
@@ -971,8 +992,8 @@ def test_course_upload_is_used_by_card_grid(client, monkeypatch, format, extensi
     author_body(service, "course/image")
     service.publish("course/image")
     generated = BuildService(client.app.state.root).generate("production")
-    page = nbformat.read(generated / "nb/courses/image/index.ipynb", as_version=4)
-    assert yaml.safe_load(page.cells[0].source.split("---")[1])["image"] == "/" + cover.removeprefix("backend/")
+    page = (generated / "nb/courses/image/index.qmd").read_text()
+    assert yaml.safe_load(page.split("---")[1])["image"] == "/" + cover.removeprefix("backend/")
     assert (generated / cover.removeprefix("backend/")).read_bytes() == image
     listing = yaml.safe_load((generated / "courses.qmd").read_text().split("---")[1])["listing"]
     assert listing["contents"][0]["path"] == "nb/courses/image/index.html"

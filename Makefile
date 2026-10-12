@@ -1,14 +1,16 @@
-.PHONY: help bootstrap setup-skills test lint typecheck review resume knowledge docs render project preview build cms
+.PHONY: help bootstrap setup-skills test lint typecheck review resume knowledge docs render project preview build cms dev
 
 .DEFAULT_GOAL := help
 PYTHON := .venv/bin/python
 PORT ?= 4200
+CMS_PORT ?= 5200
 export PORT NAME NOTEBOOK
 
 help:
 	@echo "Notebooks: .venv/bin/wt --help"
 	@echo "Site:      make docs [PORT=4200], make resume, make render NOTEBOOK=<path>"
 	@echo "Publishing: make preview [PORT=4300], make build, make cms"
+	@echo "Authoring: make dev [PORT=4200 CMS_PORT=5200] starts both sites and opens browser tabs"
 	@echo "Projects:  .venv/bin/wt ls projects, make project NAME=my-project"
 	@echo "Secrets:   .venv/bin/wt vault --help"
 	@echo "Dev:       make bootstrap, setup-skills, test, lint, typecheck, review"
@@ -61,4 +63,7 @@ build:
 	@$(PYTHON) -m watchtower.cli build --mode production
 
 cms:
-	@$(PYTHON) -m watchtower.cli serve --port 5200
+	@$(PYTHON) -m watchtower.cli serve --port $(CMS_PORT)
+
+dev:
+	@$(PYTHON) scripts/dev.py --port $(PORT) --cms-port $(CMS_PORT)

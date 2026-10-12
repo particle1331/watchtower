@@ -58,7 +58,7 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     assert "Investigate the concrete problem." in text
     assert "A reproducible implementation and checks." in text
     assert "Each check passes." in text
-    assert "## Success criteria\n\nEach check passes." in service.inspect(payload["id"])["build_brief"]
+    assert "Each check passes." not in service.inspect(payload["id"])["build_brief"]
     nb.cells.append(nbformat.v4.new_code_cell("#| code-fold: true\nprint(1)", execution_count=3, outputs=[nbformat.v4.new_output("stream", name="stdout", text="1\n")]))
     nbformat.write(nb, source)
     body = source.read_bytes()
@@ -68,7 +68,8 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     assert not service.inspect(payload["id"])["eligible"]
     assert source.read_bytes() == body
     assert code.read_bytes() == code_before
-    assert service.inspect(payload["id"])["detail"]["planned"] == payload["detail"]["planned"]
+    assert "planned" not in service.inspect(payload["id"])["detail"]
+    assert service.read_data("portfolio")["data"]["entries"][0]["planned"] == payload["detail"]["planned"]
 
 
 @pytest.mark.parametrize("missing", ["abstract", "figure_path", "figure_caption"])
@@ -334,14 +335,13 @@ def test_manual_course_toc_must_have_each_own_chapter_once(content_service, memb
 
 def test_planned_parent_hides_all_children(content_service):
     service = content_service
-    parent = course(service, published=True)
+    parent = "course/example"
+    service.create({"id": parent, "kind": "course", "title": "Example", "path": "content/notebooks/courses/example"})
     planned = chapter(service, name="01")
     published = chapter(service, name="02", start=True)
     author_body(service, published)
-    service.publish(published)
-    parent_path = service.root / "content/notebooks/courses/example/index.ipynb"
-    nbformat.write(nbformat.v4.new_notebook(), parent_path)
-    service.update(parent, {"lifecycle": "planned"})
+    # Legacy child publication never makes an unstarted parent eligible.
+    service.batch([{"id": published, "patch": {"lifecycle": "published", "visibility": "public"}}], {})
     state = service.snapshot().state
     visibility = {artifact.id: eligible(artifact, state.artifacts) for artifact in state.artifacts}
     assert not visibility[parent]
