@@ -340,3 +340,176 @@ test('native validation exposes a required control in another workspace pane', (
   assert.equal(env.panes[2].hidden, false);
   assert.equal(details.open, true);
 });
+
+function dialogEnvironment() {
+  const handlers = new Map();
+  class Dialog {
+    constructor(id) { this.id = id; this.dataset = {}; this.attrs = {}; this.listeners = {}; this.open = false; }
+    querySelectorAll() { return []; }
+    querySelector(selector) { return selector === 'form[data-board-editor]' ? this.form : null; }
+    hasAttribute(name) { return name in this.attrs; }
+    removeAttribute(name) { delete this.attrs[name]; }
+    addEventListener(name, callback) { this.listeners[name] = callback; }
+    contains(dialog) { return dialog.parent === this; }
+    showModal() { this.open = true; }
+    close() { this.open = false; this.listeners.close?.(); }
+    closest() { return null; }
+  }
+  const view = new Dialog('view'), edit = new Dialog('edit'), notes = new Dialog('notes');
+  notes.parent = view;
+  const dialogs = {view, edit, notes};
+  const document = {
+    querySelector: () => null,
+    querySelectorAll: selector => selector === 'dialog.cms-dialog' ? Object.values(dialogs) : [],
+    getElementById: id => dialogs[id] || null,
+    addEventListener: (name, callback) => { const list = handlers.get(name) || []; list.push(callback); handlers.set(name, list); },
+  };
+  const confirmations = [];
+  const window = {addEventListener() {}, confirm(message) { confirmations.push(message); return window.allowDiscard; }};
+  vm.runInNewContext(source, {document, window, location: {hash: ''}, HTMLDialogElement: Dialog});
+  function link(target, parent = null) {
+    return {
+      dataset: {dialogOpen: target}, focused: false,
+      closest(selector) { return selector === '[data-dialog-open]' ? this : selector === 'dialog' ? parent : null; },
+      focus() { this.focused = true; },
+    };
+  }
+  async function click(target) {
+    const event = {target, preventDefault() { this.defaultPrevented = true; }};
+    for (const callback of handlers.get('click')) await callback(event);
+    return event;
+  }
+  function cancel(dialog) { dialog.listeners.cancel({preventDefault() {}}); }
+  return {view, edit, notes, window, confirmations, link, click, cancel};
+}
+
+test('card details hand off to Edit and restore focus to the board card on Escape', async () => {
+  const env = dialogEnvironment();
+  const tile = env.link('view');
+  assert.equal((await env.click(tile)).defaultPrevented, true);
+  assert.equal(env.view.open, true);
+  await env.click(env.link('edit', env.view));
+  assert.equal(env.view.open, false);
+  assert.equal(env.edit.open, true);
+  assert.equal(env.edit.opener, tile);
+  env.cancel(env.edit);
+  assert.equal(env.edit.open, false);
+  assert.equal(tile.focused, true);
+});
+
+test('linked notes remain above card details and return focus to their opener', async () => {
+  const env = dialogEnvironment();
+  await env.click(env.link('view'));
+  const notesLink = env.link('notes', env.view);
+  await env.click(notesLink);
+  assert.equal(env.view.open, true);
+  assert.equal(env.notes.open, true);
+  env.cancel(env.notes);
+  assert.equal(env.notes.open, false);
+  assert.equal(env.view.open, true);
+  assert.equal(notesLink.focused, true);
+});
+
+test('dialog handoff respects unsaved edits before opening another card dialog', async () => {
+  const env = dialogEnvironment();
+  env.edit.form = {dataset: {dirty: 'true'}, reset() { this.resetCount = (this.resetCount || 0) + 1; }, removeAttribute() {}};
+  await env.click(env.link('edit'));
+  await env.click(env.link('view', env.edit));
+  assert.equal(env.edit.open, true);
+  assert.equal(env.view.open, false);
+  assert.equal(env.edit.form.resetCount, undefined);
+  assert.equal(env.confirmations.length, 1);
+  env.window.allowDiscard = true;
+  await env.click(env.link('view', env.edit));
+  assert.equal(env.edit.open, false);
+  assert.equal(env.edit.form.resetCount, 1);
+  assert.equal(env.view.open, true);
+});
+
+
+function todoEnvironment() {
+  const handlers = new Map();
+  let form;
+  class Event {
+    constructor(type, options = {}) { this.type = type; Object.assign(this, options); }
+    preventDefault() { this.defaultPrevented = true; }
+  }
+  class Element {
+    constructor(name = '', type = 'text') {
+      this.name = name; this.type = type; this.value = ''; this.checked = false;
+      this.hidden = false; this.dataset = {}; this.listeners = {}; this.parts = {};
+    }
+    querySelector(selector) { return this.parts[selector] || null; }
+    querySelectorAll() { return []; }
+    hasAttribute() { return false; }
+    closest(selector) { return selector.includes('form[') ? form : null; }
+    addEventListener(name, callback) { (this.listeners[name] ||= []).push(callback); }
+    dispatchEvent(event) {
+      event.target = this;
+      for (const callback of this.listeners[event.type] || []) callback(event);
+      if (event.bubbles) for (const callback of handlers.get(event.type) || []) callback(event);
+    }
+    focus() { this.focused = true; }
+    remove() { list.children = list.children.filter(row => row !== this); }
+  }
+  function row(text, done) {
+    const item = new Element(), check = new Element('todo_done', 'checkbox');
+    check.checked = done;
+    const content = new Element('todo_text'); content.value = text;
+    const discard = new Element('todo_remove', 'checkbox');
+    item.parts = {'[data-todo-done]': check, '[data-todo-text]': content,
+      '[data-todo-discard]': discard, '[data-todo-remove]': new Element(),
+      '[data-todo-remove-fallback]': new Element()};
+    item.cloneNode = () => row('', false);
+    return item;
+  }
+  const list = new Element(); list.children = Array.from({length: 8}, (_, i) => row(`Item ${i}`, i < 7));
+  list.querySelectorAll = () => list.children;
+  list.append = item => list.children.push(item);
+  const editor = new Element(), count = new Element(), input = new Element('todo_new'), add = new Element(), empty = new Element();
+  const template = {content: {firstElementChild: row('', false)}};
+  editor.parts = {'[data-todo-list]': list, '[data-todo-count]': count, '[data-todo-new]': input,
+    '[data-todo-add]': add, '[data-todo-empty]': empty, '[data-todo-template]': template};
+  form = new Element(); form.dataset.editing = 'true';
+  form.querySelectorAll = selector => selector === 'input, textarea, select' ?
+    [input, ...list.children.flatMap(item => ['[data-todo-done]', '[data-todo-text]', '[data-todo-discard]'].map(key => item.parts[key]))] : [];
+  const document = {
+    querySelector: () => null, getElementById: () => null,
+    querySelectorAll(selector) {
+      if (selector === '[data-todo-editor]') return [editor];
+      if (selector === 'form[data-editor], form[data-board-editor], form[data-outline-form]') return [form];
+      return [];
+    },
+    addEventListener(name, callback) { const list = handlers.get(name) || []; list.push(callback); handlers.set(name, list); },
+  };
+  const window = {addEventListener() {}};
+  vm.runInNewContext(source, {document, window, Event, location: {hash: ''}});
+  return {list, input, add, count, empty, form, Event, initialize: () => handlers.get('htmx:afterSwap')[0]({detail: {target: {id: 'artifact-editor'}}})};
+}
+
+test('entity checklist updates its fraction, rejects blank additions, and marks edits dirty', () => {
+  const env = todoEnvironment();
+  assert.equal(env.count.textContent, '7/8');
+  assert.equal(env.form.dataset.dirty, 'false');
+  env.add.dispatchEvent(new env.Event('click'));
+  assert.equal(env.list.children.length, 8);
+  env.input.value = '  New item  ';
+  const enter = new env.Event('keydown', {key: 'Enter'});
+  env.input.dispatchEvent(enter);
+  assert.equal(enter.defaultPrevented, true);
+  assert.equal(env.count.textContent, '7/9');
+  assert.equal(env.list.children[8].parts['[data-todo-text]'].value, 'New item');
+  assert.equal(env.form.dataset.dirty, 'true');
+  const done = env.list.children[8].parts['[data-todo-done]'];
+  done.checked = true; done.dispatchEvent(new env.Event('change', {bubbles: true}));
+  assert.equal(env.count.textContent, '8/9');
+  env.list.children[0].parts['[data-todo-remove]'].dispatchEvent(new env.Event('click'));
+  assert.equal(env.count.textContent, '7/8');
+  assert.deepEqual(env.list.children.map(item => item.parts['[data-todo-done]'].value), Array.from({length: 8}, (_, i) => String(i)));
+  // Re-initialization after a swap never discards local rows or registers duplicate handlers.
+  env.initialize();
+  assert.equal(env.count.textContent, '7/8');
+  while (env.list.children.length) env.list.children[0].parts['[data-todo-remove]'].dispatchEvent(new env.Event('click'));
+  assert.equal(env.count.textContent, '0/0');
+  assert.equal(env.empty.hidden, false);
+});

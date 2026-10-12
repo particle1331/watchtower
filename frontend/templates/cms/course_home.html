@@ -1,0 +1,8 @@
+<section id="home" class="author-section author-home" aria-labelledby="home-heading">
+<header class="author-section-heading"><h2 id="home-heading">Course home</h2><p>Saved here and rendered on the course home page.</p></header>
+<div class="home-stack">
+{% for index in [0, 1, 2] %}{% with groups = [{'title': section.fields[index].caption, 'fields': [section.fields[index]], 'fold': false}], hide_group_title = true, prompt_first = true %}{% include 'fields.html' %}{% endwith %}{% endfor %}
+<div class="home-generated"><h3>Course content</h3><p>Automatically generated from {% if artifact is defined and artifact.id %}<a href="/cms/courses/{{ artifact.id.split('/')[-1] | urlpath }}#outline">Sections and chapters</a>{% else %}Sections and chapters{% endif %}, in outline order, using the chapter titles and summaries.</p></div>
+{% for index in [3, 4, 5] %}{% with groups = [{'title': section.fields[index].caption, 'fields': [section.fields[index]], 'fold': false}], hide_group_title = true, prompt_first = true %}{% include 'fields.html' %}{% endwith %}{% endfor %}
+</div>
+</section>

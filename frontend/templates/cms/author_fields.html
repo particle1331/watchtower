@@ -1,12 +1,12 @@
 {# One form, intent-based sections. On desktop, Page sits beside the brief; narrow screens keep reading order. #}
 {% for section in sections %}
-{% if section.id == 'notes' %}{% include 'internal_notes.html' %}{% else %}
+{% if section.id == 'notes' %}{% include 'internal_notes.html' %}{% elif section.id == 'home' %}{% include 'course_home.html' %}{% else %}
 <section id="{{ section.id }}" class="author-section author-{{ section.id }}" aria-labelledby="{{ section.id }}-heading">
 <header class="{{ 'visually-hidden' if section.id == 'basics' else 'author-section-heading' }}"><h2 id="{{ section.id }}-heading">{{ section.title }}{% if section.id == 'notes' %} <span class="scope-badge">CMS only</span>{% endif %}</h2><p class="visually-hidden">{{ section.explain }}</p></header>
 {% if section.fold %}<details class="author-fold"><summary>{{ section.title }}</summary>{% endif %}
 {% with groups = [{'title': section.title, 'fields': section.fields, 'fold': false}], hide_group_title = true, creation_basics = section.id == 'basics' and creating | default(false) %}{% include 'fields.html' %}{% endwith %}
 {% if section.fold %}</details>{% endif %}
-{% if section.id == 'notes' and artifact is defined and artifact.id %}<p class="author-next"><a href="/cms/kanban?add=1&amp;link={{ artifact.id | urlencode }}">Track a next step on the Kanban board</a></p>{% endif %}
+{% if section.id == 'notes' and artifact is defined and artifact.id %}<p class="author-next"><a href="/cms/kanban?add=1&amp;link={{ artifact.id | urlencode }}">Create an execution task on Kanban</a></p>{% endif %}
 </section>
 {% endif %}
 {% endfor %}

@@ -143,8 +143,8 @@
     document.querySelectorAll('[data-summary-task]').forEach(button => {
       button.disabled = unsaved || editorBusy;
       const hint = button.closest('.summary-task')?.querySelector('[data-summary-task-hint]');
-      if (hint) hint.textContent = unsaved ? 'Save your changes first so the task includes the latest brief.' :
-        editorBusy ? 'Creating or saving…' : 'Creates a linked Kanban card with the saved brief and instructions for an agent.';
+      if (hint) hint.textContent = unsaved ? 'Save your changes first so the task can read the latest content context.' :
+        editorBusy ? 'Creating or saving…' : 'Creates a linked execution task with instructions to read the content’s current source and internal notes.';
     });
     const refresh = document.getElementById('refresh-preview');
     const buildStatus = document.getElementById('build-status')?.dataset.buildStatus;
@@ -200,8 +200,9 @@
 
   function closeDialog(dialog) {
     const form = dialog.querySelector('form[data-board-editor]');
-    if (form?.dataset.dirty === 'true' && !window.confirm('Discard unsaved card changes?')) return;
+    if (form?.dataset.dirty === 'true' && !window.confirm('Discard unsaved card changes?')) return false;
     dialog.close();
+    return true;
   }
 
   function initializeDialogs() {
@@ -339,10 +340,62 @@
     });
   }
 
+  function initializeTodos() {
+    document.querySelectorAll('[data-todo-editor]').forEach(editor => {
+      if (editor.dataset.initialized) return;
+      editor.dataset.initialized = 'true';
+      const list = editor.querySelector('[data-todo-list]');
+      const input = editor.querySelector('[data-todo-new]');
+      const add = editor.querySelector('[data-todo-add]');
+      const rows = () => [...list.querySelectorAll('[data-todo-row]')];
+      function update() {
+        const items = rows();
+        items.forEach((row, index) => {
+          row.querySelector('[data-todo-done]').value = String(index);
+          row.querySelector('[data-todo-discard]').value = String(index);
+        });
+        editor.querySelector('[data-todo-count]').textContent = `${items.filter(row => row.querySelector('[data-todo-done]').checked).length}/${items.length}`;
+        editor.querySelector('[data-todo-empty]').hidden = items.length > 0;
+      }
+      function bind(row) {
+        const remove = row.querySelector('[data-todo-remove]');
+        remove.hidden = false;
+        row.querySelector('[data-todo-remove-fallback]').hidden = true;
+        remove.addEventListener('click', () => {
+          row.remove();
+          update();
+          list.dispatchEvent(new Event('input', {bubbles: true}));
+          input.focus();
+        });
+        row.querySelector('[data-todo-done]').addEventListener('change', update);
+      }
+      function append() {
+        const text = input.value.trim();
+        if (!text) { input.focus(); return; }
+        const row = editor.querySelector('[data-todo-template]').content.firstElementChild.cloneNode(true);
+        row.querySelector('[data-todo-text]').value = text;
+        bind(row);
+        list.append(row);
+        input.value = '';
+        update();
+        list.dispatchEvent(new Event('input', {bubbles: true}));
+        input.focus();
+      }
+      rows().forEach(bind);
+      add.hidden = false;
+      add.addEventListener('click', append);
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); append(); }
+      });
+      update();
+    });
+  }
+
   function initialize() {
     initializeWorkspaceTabs();
     initializeRelationships();
     initializeLists();
+    initializeTodos();
     editors().forEach(form => {
       if (form.dataset.initialized) return;
       form.dataset.initialized = 'true';
@@ -370,6 +423,8 @@
     if (pane) document.querySelectorAll('[data-workspace-tabs]').forEach(nav => nav.selectPane?.(pane.id));
     const details = event.target.closest('details');
     if (details) details.open = true;
+    const dialog = event.target.closest('dialog.cms-dialog');
+    if (dialog && !dialog.open && typeof dialog.showModal === 'function') dialog.showModal();
   }, true);
   document.addEventListener('change', event => {
     const select = event.target.closest('select[data-auto-submit]');
@@ -389,7 +444,14 @@
             tabs.selectPane?.(pane.id);
           }
         }
-        dialog.opener = dialogLink;
+        const previousDialog = dialogLink.closest('dialog');
+        const opener = previousDialog?.opener || dialogLink;
+        if (previousDialog?.open && previousDialog !== dialog && !previousDialog.contains(dialog)) {
+          if (!closeDialog(previousDialog)) return;
+          dialog.opener = opener;
+        } else {
+          dialog.opener = dialogLink;
+        }
         dialog.showModal();
         return;
       }

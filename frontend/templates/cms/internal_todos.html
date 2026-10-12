@@ -1,0 +1,20 @@
+{% set todo_key = todo_field if todo_field is defined else 'internal_todos' %}
+{% set todo_id = todo_prefix if todo_prefix is defined else 'entity' %}
+{% set todos = notes_record.get(todo_key, []) %}
+<section class="internal-todos" data-todo-editor aria-labelledby="{{ todo_id }}-todo-heading">
+<div class="todo-heading"><h3 id="{{ todo_id }}-todo-heading">To-dos</h3><span class="todo-progress" data-todo-count aria-live="polite" aria-label="Completed to-dos">{{ todos | selectattr('done') | list | length }}/{{ todos | length }}</span></div>
+<input type="hidden" name="todos_present" value="1">
+{% macro todo_row(item, index) %}
+<li class="todo-row" data-todo-row>
+<label class="todo-check"><input type="checkbox" name="todo_done" value="{{ index }}" data-todo-done {% if item.done %}checked{% endif %}><span class="visually-hidden">Completed</span></label>
+<input type="text" name="todo_text" value="{{ item.text }}" data-todo-text aria-label="To-do text" required autocomplete="off">
+<button type="button" class="todo-remove" data-todo-remove hidden aria-label="Remove to-do">Remove</button>
+<label class="todo-remove-fallback" data-todo-remove-fallback><input type="checkbox" name="todo_remove" value="{{ index }}" data-todo-discard> Remove on save</label>
+</li>
+{% endmacro %}
+<ul class="todo-list" data-todo-list>{% for item in todos %}{{ todo_row(item, loop.index0) }}{% endfor %}</ul>
+<p class="todo-empty" data-todo-empty {% if todos %}hidden{% endif %}>{{ todo_empty_text if todo_empty_text is defined else 'No to-dos yet.' }}</p>
+<template data-todo-template>{{ todo_row({'text': '', 'done': false}, 0) }}</template>
+<div class="todo-add"><label class="field"><span class="visually-hidden">New to-do</span><input type="text" name="todo_new" data-todo-new placeholder="Add a to-do" aria-label="New to-do" autocomplete="off"></label><button type="button" data-todo-add hidden>Add</button></div>
+<noscript><small>Save the editor to add the new item, change checkmarks, or remove selected items.</small></noscript>
+</section>

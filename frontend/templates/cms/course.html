@@ -4,8 +4,8 @@
 <p><a href="/cms/courses">← Back to Courses</a></p>
 
 {% import 'context_attachments.html' as context_files %}
-<div class="course-heading"><div class="editor-heading"><h1>{{ artifact.title }}</h1>{{ context_files.notes_button(artifact) }}</div><p>Organize the outline or edit the course brief.</p></div>
-<nav class="workspace-tabs" data-workspace-tabs data-default-pane="outline" aria-label="Course workspace"><a href="#outline">Sections and chapters</a><a href="#course-brief">Course brief</a></nav>
+<div class="course-heading"><div class="editor-heading"><h1>{{ artifact.title }}</h1>{{ context_files.notes_button(artifact) }}</div><p>Organize the outline or edit {{ 'the course plan' if artifact.lifecycle == 'planned' else 'the course home' }}.</p></div>
+<nav class="workspace-tabs" data-workspace-tabs data-default-pane="outline" aria-label="Course workspace"><a href="#outline">Sections and chapters</a><a href="#course-brief">{{ 'Course plan' if artifact.lifecycle == 'planned' else 'Course home' }}</a></nav>
 <div id="course-brief" class="course-brief" data-workspace-pane>{% with error = none if submitted else error, workspace_course = true %}{% include 'artifact_fragment.html' %}{% endwith %}</div>
 <section id="outline" class="course-outline author-section" data-workspace-pane aria-labelledby="outline-heading"><header class="author-section-heading"><h2 id="outline-heading">Sections and chapters</h2><p>Add, rename and reorder sections here. Chapter arrows and Edit are always visible. Outline actions save immediately.</p></header>
 {% if submitted %}<div role="alert" class="error"><p>{{ error.message or error }}</p><p>The outline action was not saved. Submitted values and their original revision are kept below. <a href="/cms/courses/{{ slug }}">Reload the workspace</a> before reconciling.</p><form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}">{% for key,value in submitted.items() if key != 'revision' %}<label>{{ key | replace('_',' ') | capitalize }}<input name="{{ key }}" value="{{ value }}"></label>{% endfor %}<button>Retry submitted action</button></form></div>{% endif %}
@@ -35,5 +35,5 @@
 {% endfor %}
 <section class="outline-add"><h3>Add section</h3>
 <form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline" class="entity-group"><input type="hidden" name="revision" value="{{ revision }}"><label>New section title<input name="title" required placeholder="e.g. Foundations"></label><button name="action" value="add-section">Add section</button></form>
-</section><p class="advanced-link"><a href="/cms/data/course/{{ slug }}">Advanced contract editor</a></p>
+</section>{% if artifact.lifecycle == 'planned' %}<p class="advanced-link"><a href="/cms/data/course/{{ slug }}">Advanced contract editor</a></p>{% endif %}
 </section>{% endblock %}

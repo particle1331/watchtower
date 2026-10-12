@@ -1,22 +1,24 @@
-{% macro relationship(name, selected, multiple=true, label='Related content', kind='', parent='') %}
+{% macro relationship(name, selected, multiple=true, label='Related content', kind='', parent='', hint=none, heading_class='', hint_before=false) %}
+{% set guidance %}{% if hint_before and not hint %}<small class="field-prompt">Select registered content. Titles and stable IDs are searchable.</small>{% endif %}{% endset %}
 {% set selected = selected.split('\n') if selected is string and multiple else selected if multiple else [selected] %}
 {% set relationship_artifacts = relationship_artifacts | selectattr('kind', 'equalto', kind) | list if kind else relationship_artifacts %}
 {% set relationship_artifacts = relationship_artifacts | selectattr('parent', 'equalto', parent) | list if parent else relationship_artifacts %}
 {% set selected = selected | reject('equalto', '') | reject('equalto', none) | list %}
+{% set heading %}{% if heading_class %}<span class="{{ heading_class }}">{{ label }}</span>{% else %}{{ label }}{% endif %}{% if hint %}<small class="card-hint">{{ hint }}</small>{% endif %}{% endset %}
 <div class="relationship-picker" data-relationship data-kind="{{ kind }}" data-parent="{{ parent }}" data-multiple="{{ 'true' if multiple else 'false' }}">
 <input type="hidden" name="relationship:{{ name }}" value="true">
 {% if multiple %}<input type="hidden" name="{{ name }}" value="">{% endif %}
-<label>{{ label }}<select name="{{ name }}" {% if multiple %}multiple{% endif %} data-relationship-select>
+<label>{{ heading }}{{ guidance }}<select name="{{ name }}" {% if multiple %}multiple{% endif %} data-relationship-select>
 {% if not multiple %}<option value="">No linked content</option>{% endif %}
 {% for identifier in selected %}{% set match = relationship_artifacts | selectattr('id', 'equalto', identifier) | first %}<option value="{{ identifier }}" selected>{{ (match.title + ' · ' + match.kind + ' · ' + match.id + ' · ' + match.lifecycle) if match else identifier + ' (missing — remove or replace)' }}</option>{% endfor %}
 {% for item in relationship_artifacts if item.id not in selected %}<option value="{{ item.id }}">{{ item.title }} · {{ item.kind }} · {{ item.id }} · {{ item.lifecycle }}</option>{% endfor %}
 </select></label>
 <div data-relationship-enhanced hidden>
-<label>{{ label }}<input type="search" data-relationship-search role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off" placeholder="Search by title or stable ID"></label>
+<label>{{ heading }}{{ guidance }}<input type="search" data-relationship-search role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off" placeholder="Search by title or stable ID"></label>
 <div data-relationship-results role="listbox" hidden></div>
 <small data-relationship-status role="status"></small>
 <div data-relationship-chips class="relationship-chips" role="region" aria-label="Selected {{ label | lower }}" tabindex="0"></div>
 </div>
-<small>Select registered content. Titles and stable IDs are searchable.</small>
+{% if hint is none and not hint_before %}<small>Select registered content. Titles and stable IDs are searchable.</small>{% endif %}
 </div>
 {% endmacro %}
