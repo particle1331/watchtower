@@ -60,3 +60,39 @@ toc:
   - course/reasoning-from-scratch/07-grpo
   - course/reasoning-from-scratch/08-distillation
 overview: course/reasoning-from-scratch/00-overview
+home:
+  description: 'This course follows the main progression in [Sebastian Raschka''s
+    reasoning-from-scratch repository](https://github.com/rasbt/reasoning-from-scratch).
+    It starts with a pretrained Qwen3 model and adds reasoning methods in stages:
+    first by spending more computation at inference time, then by training with verifiable
+    rewards, and finally by distilling the resulting behavior into a smaller model.
+
+
+    The notebooks will explain the mechanism behind each method and test its effect
+    under a stated evaluation and compute budget. The course does not build or pretrain
+    the base language model itself; that is a separate subject covered by the companion
+    [LLMs-from-scratch repository](https://github.com/rasbt/LLMs-from-scratch).'
+  hardware_access: '**Tools.** A Python environment with PyTorch and access to the
+    model weights and example data used in the source repository. A CPU is enough
+    to explore generation, evaluation, and smaller inference experiments. A GPU is
+    recommended for reproducing the longer self-refinement and reinforcement-learning
+    runs; results depend on the selected model, hardware, and settings.
+
+
+    The default path uses a compact model and small evaluation slices to make the
+    mechanics inspectable. Scale up only after the prompt, scoring, and resource contract
+    are working. The source repository includes optional optimized inference, larger-model,
+    batching, and chat-interface material; those are extensions, not prerequisites
+    for the core path.'
+  knowledge: '**Knowledge.** Python, basic PyTorch, neural-network training concepts,
+    and familiarity with prompts and text generation. The course will introduce reinforcement-learning
+    vocabulary as it is needed.'
+  references: '- [Sebastian Raschka''s reasoning-from-scratch repository](https://github.com/rasbt/reasoning-from-scratch)
+
+
+    - [LLMs-from-scratch repository](https://github.com/rasbt/LLMs-from-scratch)'
+  outcome: Complete a compact experiment report comparing a pretrained baseline with
+    inference-time scaling, self-refinement, reinforcement-learning fine-tuning, and
+    a distilled student. The report will record the model and prompt setup, task set,
+    scoring method, compute used, quality, and latency. It should distinguish a working
+    educational reproduction from claims about frontier-scale training.

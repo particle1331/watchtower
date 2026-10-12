@@ -62,3 +62,33 @@ toc:
   - course/llms-from-scratch/08-lora
   - course/llms-from-scratch/09-capstone
 overview: course/llms-from-scratch/00-overview
+home:
+  description: 'This course follows the core progression of Sebastian Raschka''s [LLMs-from-scratch
+    repository](https://github.com/rasbt/LLMs-from-scratch). It is for Python programmers
+    who want to examine each stage of a decoder-only language model in PyTorch: preparing
+    text, computing causal attention, assembling GPT, training it, and adapting it
+    to downstream tasks.'
+  hardware_access: '**Tools:** A Python and PyTorch environment, local storage for
+    text and checkpoints, and a way to run notebooks. The source [setup guide](https://github.com/rasbt/LLMs-from-scratch/tree/main/setup)
+    is a dependency reference. The default path is a small local experiment. A GPU,
+    downloaded pretrained weights, and external model-based scoring are optional extensions.
+
+
+    The repository supplies reference code and supplementary experiments. These notebooks
+    will develop their own explanations, checks, and comparisons. The [overview](00-overview.html)
+    defines the shared artifact and evaluation plan.'
+  knowledge: '**Knowledge:** Comfortable Python, tensor shapes, gradients, and a basic
+    neural-network training loop. PyTorch experience helps; the source repository
+    offers an [introductory appendix](https://github.com/rasbt/LLMs-from-scratch/tree/main/appendix-A).'
+  references: '- [LLMs-from-scratch repository](https://github.com/rasbt/LLMs-from-scratch)
+
+
+    - [introductory appendix](https://github.com/rasbt/LLMs-from-scratch/tree/main/appendix-A)
+
+
+    - [setup guide](https://github.com/rasbt/LLMs-from-scratch/tree/main/setup)'
+  outcome: 'The completed course will produce a small GPT implementation, a reproducible
+    pretraining run with held-out loss and text samples, and two adaptations: a text
+    classifier and an instruction-following model. A final report will compare the
+    stages and state the limits of a small local run. The goal is to understand the
+    pipeline, not to match a production LLM.'

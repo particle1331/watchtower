@@ -98,3 +98,93 @@ toc:
   - course/text-classification-from-scratch/09-deployment
   - course/text-classification-from-scratch/10-capstone
 overview: course/text-classification-from-scratch/00-overview
+home:
+  description: 'This course builds an end-to-end **text classification system** using
+    AI-written-text detection as its main case study. It follows the [ai-detector-from-scratch
+    repository](https://github.com/rasbt/ai-detector-from-scratch) from data construction
+    through evaluation and local inference, and adds a historical path from bag-of-words
+    models to neural sequence classifiers, transformers, and general-purpose decision
+    APIs.
+
+
+    ## Learning path
+
+
+    Begin with the classification problem, dataset audit, grouped splits, and TF–IDF
+    baseline. The neural chapters connect model families to the decision-head derivation
+    and supervised LLM adaptation. Evaluation and delivery cover calibration, resource
+    use, and inference contracts before the final project combines them. The chapter
+    table on this page follows the course outline.'
+  hardware_access: '**Tooling.** Use the detector repository''s documented Python
+    environment, `uv`, Git, and a notebook environment. The neural project adds PyTorch
+    and Hugging Face Transformers; PEFT supplies LoRA adapters. Pin their versions
+    in the project environment. Start with the lightweight logistic-regression path
+    on a CPU. Adapting a pretrained LLM is most practical on a GPU; a tiny randomly
+    initialized model can check tensor shapes and training logic on a CPU. Recreating
+    the full detector corpus can require external model APIs or a local Ollama service.
+
+
+    For a quick local detector run, use the repository''s published dataset and logistic-regression
+    model artifact. Read each stage README before running it and record the artifact
+    version. The detector''s standard path can fine-tune selected transformer models
+    using the published dataset. The capstone uses public task datasets to adapt a
+    small pretrained decoder and train a decision head with an explicit PyTorch loop.
+    A head-only warm-up checks the pipeline before LoRA or full fine-tuning updates
+    the backbone. It requires no hosted Jev account. Full reproduction of the detector
+    corpus starts with licensed human text and generates AI and AI-assisted text;
+    that path uses substantially more compute and may make external API calls.'
+  knowledge: '### Starting with the baseline
+
+
+    Basic Python, arrays/data frames, train/validation/test splits, and binary classification
+    are assumed. Familiarity with precision, recall, calibration, and logistic regression
+    helps; Chapters 01 and 07 establish the key terms. Start with the TF–IDF/logistic-regression
+    path to learn the data and evaluation workflow.
+
+
+    ### Preparing to train an LLM decision model
+
+
+    Be comfortable reading PyTorch tensor shapes, batching examples, defining an `nn.Module`,
+    and running a training loop with automatic differentiation and an optimizer. Basic
+    vectors, dot products, and matrix multiplication help explain how the model produces
+    scores. Connect logits, softmax probabilities, and cross-entropy loss, and understand
+    how tokenization, padding, and pooling turn variable-length texts into model inputs
+    and representations.
+
+
+    For the attention-based head, prepare with **span pooling**, which combines token
+    representations belonging to a question or option; **cross-attention**, which
+    lets question or option representations retrieve input evidence; and self-attention,
+    residual connections, and layer normalization. The [attention chapter](../llms-from-scratch/03-attention.html)
+    and [LoRA chapter](../llms-from-scratch/08-lora.html) in Build LLMs from Scratch
+    provide companion reading. Chapter 06 connects these concepts to the decision-model
+    objective; Chapter 07 covers held-out calibration.
+
+
+    ### What the implementation uses
+
+
+    The [worked fine-tuning chapter](06-finetuning.html) displays the complete PyTorch
+    candidate scorer, joint attention head, loss, and optimizer loop, with equations
+    and executed checks. The companion `projects/text-decisions` package supplies
+    a runnable trainer for Qwen and ModernBERT, head warm-up, full fine-tuning or
+    LoRA, and saved-model inference. Unsloth and AnyJev provide optional architecture
+    and performance comparisons; their source code is not required reading.'
+  references: '**Reading sources.** The [detector repository](https://github.com/rasbt/ai-detector-from-scratch)
+    supplies the running case study. [Language Models for Text Classification: From
+    Bag-of-Words to Jev](https://magazine.sebastianraschka.com/p/classifier-history-and-jev)
+    motivates the architecture history and simple candidate scorer. [Unsloth''s decision-model
+    guide](https://unsloth.ai/docs/basics/train-your-own-decision-model-with-unsloth)
+    provides an LLM adaptation and joint-head reference; [AnyJev](https://github.com/nokia-applied-research/AnyJev)
+    supplies a label-token readout comparison. Jev''s proprietary internals remain
+    outside the evidence available here. The course model is an independent educational
+    implementation.'
+  outcome: By the end, you will have a reproducible detector report and a local Jev-like
+    decision model built by adapting a small pretrained LLM. Use PyTorch for the decision
+    head and training loop, Hugging Face Transformers for the pretrained backbone
+    and tokenizer, and PEFT for LoRA when useful. Train across text-classification
+    tasks, expose Choice, Noul, and Score operations, and measure transfer to a task
+    excluded from fine-tuning. The capstone develops a simple candidate scorer into
+    an attention-based decision head. Unsloth's open implementation provides a concrete
+    architecture reference and an optional performance comparison.

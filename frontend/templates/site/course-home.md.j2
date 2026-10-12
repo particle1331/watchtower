@@ -1,0 +1,27 @@
+## Course outcome
+
+{{ home.outcome }}
+
+## Course description
+
+{{ home.description }}
+
+{% if related %}## Related topics
+
+{% for topic in related %}- [{{ topic.title }}]({{ topic.href }})
+{% endfor %}{% endif %}
+
+## Course content
+
+{{ course_content }}
+
+{% set requirement_items = home.requirements + home.prerequisites %}
+{% if requirement_items %}## Prerequisites
+
+{% for item in requirement_items %}- {{ item }}
+{% endfor %}{% endif %}
+
+{% if home.references %}## References
+
+{% for reference in home.references %}- {{ reference }}
+{% endfor %}{% endif %}
