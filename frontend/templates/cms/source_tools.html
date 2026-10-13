@@ -1,0 +1,6 @@
+{% if show_stable_id | default(true) %}<p class="stable-id"><code>{{ item.id }}</code></p>{% endif %}
+<div class="source-tools">
+  {% import 'source_action.html' as source_action with context %}{{ source_action.button(item, record.editor_url, true) }}
+  {% if record.source_path %}<button type="button" data-copy="{{ root }}/{{ record.source_path }}">Copy source path</button>{% else %}<button type="button" disabled title="Configure the notebook source path first.">Copy source path</button>{% endif %}
+  <a class="button" href="/cms/kanban?add=1&amp;link={{ item.id | urlencode }}">Create Kanban task</a>
+</div>

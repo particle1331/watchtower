@@ -2,6 +2,7 @@
 
 import copy
 import json
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -35,10 +36,13 @@ def artifact(identifier, kind="post", lifecycle="published", visibility="public"
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
     templates = Path(__file__).resolve().parents[1] / "frontend"
-    files = {
-        str(path.relative_to(templates.parent)): path.read_bytes()
-        for path in templates.rglob("*") if path.is_file() and "generated" not in path.parts
-    }
+    files = {}
+    for directory, folders, names in os.walk(templates):
+        # Skip cached builds before walking them; large local previews are not inputs.
+        folders[:] = [name for name in folders if name != "generated"]
+        for name in names:
+            path = Path(directory) / name
+            files[str(path.relative_to(templates.parent))] = path.read_bytes()
     profile = Record(
         name="A Reader", contact={"github": "reader", "linkedin": "linkedin.com/in/reader", "phone": "123", "email": "reader@example.com"},
         summary="engineer", homepage_intro=["A notebook collection."], employment=[{"title": "Engineer", "company": "Example", "dates": "2026", "bullets": []}],
@@ -142,9 +146,12 @@ def test_generated_metadata_maps_tags_to_quarto_categories(workspace, kind):
     stage = BuildService(root).generate('preview')
     notebook = nbformat.read(stage / f'nb/{kind}/tagged.ipynb', as_version=4)
     metadata = yaml.safe_load(notebook.cells[0].source.split('---')[1])
-    assert metadata['categories'] == ['Meta', 'NLP', 'dev']
+    if kind == 'portfolio':
+        assert 'categories' not in metadata and 'tags' not in entry.model_dump()
+    else:
+        assert metadata['categories'] == ['Meta', 'NLP', 'dev']
+        assert entry.model_dump()['tags'] == ['Meta', 'NLP', 'dev']
     assert 'tags' not in metadata
-    assert entry.model_dump()['tags'] == ['Meta', 'NLP', 'dev']
 
 
 @pytest.mark.parametrize('mode', ['preview', 'production'])
@@ -279,7 +286,7 @@ def test_started_draft_removes_duplicate_title_h1_and_preserves_body(workspace):
         ("", None, "Project description not added yet."),
     ],
 )
-def test_portfolio_page_header_includes_figure_abstract_and_active_source(
+def test_portfolio_listing_owns_figure_abstract_and_page_keeps_active_source(
     workspace, abstract, description, expected_abstract,
 ):
     root, snapshot = workspace
@@ -302,16 +309,95 @@ def test_portfolio_page_header_includes_figure_abstract_and_active_source(
     figure = "![Featured figure](../../assets/featured-project.svg)"
     source = "[Project source](https://github.com/example/site/tree/main/projects/featured-project)"
 
-    assert figure in header
-    assert f"**Abstract.** {expected_abstract}" in header
+    assert figure not in header
+    assert "**Abstract.**" not in header
+    listing = (stage / 'portfolio.qmd').read_text()
+    assert f"**Abstract.** {expected_abstract}" in listing
+    assert '![Featured figure](assets/featured-project.svg)' in listing
     assert f"[← Portfolio](../../portfolio.qmd) | {source}\n" in header
-    # The abstract renders once: as labeled body content, not again in the title block.
+    # The full project page starts directly with its authored notebook body.
     assert "description" not in yaml.safe_load(header.split("---", 2)[1])
     assert header.index('aria-label="Publication status"') < header.index("[← Portfolio]")
-    assert header.index("[← Portfolio]") < header.index(figure)
-    assert header.index(source) < header.index(figure)
-    assert header.index(figure) < header.index(f"**Abstract.** {expected_abstract}")
+    assert generated.cells[1].source == 'Project details.'
     assert (stage / "assets/featured-project.svg").read_bytes() == b"<svg/>"
+    assert snapshot.files[entry.path] == original
+
+
+@pytest.mark.parametrize('mode', ['preview', 'production'])
+@pytest.mark.parametrize('kind', ['portfolio', 'post', 'chapter'])
+def test_notebook_related_content_is_generated_last_and_filters_ineligible_pages(workspace, mode, kind):
+    root, snapshot = workspace
+    related = [artifact('post/live', title='Live post'), artifact('post/draft', title='Draft post', lifecycle='draft'),
+               artifact('post/private', title='Private post', visibility='private'), artifact('post/planned', lifecycle='planned')]
+    for target in related:
+        put_notebook(snapshot, target, [nbformat.v4.new_markdown_cell('Related body.')])
+    project = artifact('project/code', kind='project', path='projects/code')
+    snapshot.state.artifacts.append(project)
+    entry = artifact(f'{kind}/full', kind=kind, relations=['post/draft', 'project/code', 'post/live', 'post/private', 'post/planned'])
+    body_cells = [nbformat.v4.new_markdown_cell(f'## {heading}\n\nBody.')
+                  for heading in ('The problem', 'Planned content', 'Planned evidence')]
+    if kind == 'chapter':
+        parent = artifact('courses/parent/index', kind='course')
+        entry.parent, entry.section, entry.toc_title = parent.id, 'main', 'Full chapter'
+        body_cells.insert(0, nbformat.v4.new_markdown_cell(f'# {entry.title}'))
+        put_notebook(snapshot, parent, [nbformat.v4.new_markdown_cell('Course home.')])
+        snapshot.state.courses[parent.id] = Record(planned={'chapters': [{'chapter_id': entry.id, 'summary': 'Table summary only.'}]},
+                                                  toc=[Record(id='main', title='', chapters=[entry.id])])
+    put_notebook(snapshot, entry, body_cells)
+    if kind == 'portfolio':
+        snapshot.state.portfolio.append(Record(id=entry.id, abstract='Listing.', figure_path=None, figure_caption=None,
+                                              notebook_path=entry.path, project_path='projects/code', planned={}))
+    original = snapshot.files[entry.path]
+    stage = BuildService(root).generate(mode)
+    cells = nbformat.read(stage / f'nb/{kind}/full.ipynb', as_version=4).cells
+    assert [cell.source.splitlines()[0] for cell in cells[2 if kind == 'chapter' else 1:]] == ['## The problem', '## Planned content', '## Planned evidence', '## Related content']
+    if kind == 'chapter':
+        metadata = yaml.safe_load(cells[0].source.split('---', 2)[1])
+        assert not {'description', 'subtitle', 'author'} & metadata.keys()
+        assert cells[1].source == f'# {entry.title}'
+        assert 'Table summary only.' not in '\n\n'.join(cell.source for cell in cells)
+        assert 'Table summary only.' in (stage / parent.path.replace('content/notebooks/', 'nb/')).read_text()
+    footer = cells[-1].source
+    assert f'[Live post]({"live.html" if kind == "post" else "../post/live.html"})' in footer
+    assert ('Draft post' in footer) == (mode == 'preview')
+    assert ('Private post' in footer) == (mode == 'preview')
+    assert 'planned' not in footer and 'project/code' not in footer
+    if mode == 'preview':
+        assert footer.index('Draft post') < footer.index('Live post') < footer.index('Private post')
+    assert snapshot.files[entry.path] == original
+
+
+@pytest.mark.parametrize('mode', ['preview', 'production'])
+@pytest.mark.parametrize('authored_back_link', [False, True])
+def test_full_post_omits_summary_author_and_preserves_post_marker(workspace, mode, authored_back_link):
+    root, snapshot = workspace
+    entry = artifact('posts/full-post', kind='post', title='Full post', tags=['dev'],
+                     lifecycle='draft' if mode == 'preview' else 'published', description='Listing summary only.')
+    body = '## The problem\n\nProblem.\n\n## Planned content\n\nContent.\n\n## Planned evidence\n\nEvidence.'
+    marker = '[← Post](../../posts.html)'
+    if authored_back_link:
+        body = marker + '\n\n' + body
+    put_notebook(snapshot, entry, [nbformat.v4.new_markdown_cell(body)])
+    original = snapshot.files[entry.path]
+    stage = BuildService(root).generate(mode)
+    generated = nbformat.read(stage / 'nb/posts/full-post.ipynb', as_version=4)
+    header = generated.cells[0].source
+    metadata = yaml.safe_load(header.split('---', 2)[1])
+    assert 'author' not in metadata and 'description' not in metadata
+    assert metadata['categories'] == ['dev']
+    joined = '\n\n'.join(cell.source for cell in generated.cells)
+    assert joined.count('[← Post]') == 1
+    assert 'Listing summary only.' not in joined
+    if authored_back_link:
+        assert marker in generated.cells[1].source
+    else:
+        assert '[← Post](../../posts.qmd)' in header
+    if mode == 'preview':
+        assert 'aria-label="Publication status"' in header
+        if not authored_back_link:
+            assert header.index('aria-label="Publication status"') < header.index('[← Post]')
+    listing = yaml.safe_load((stage / 'posts.qmd').read_text().split('---', 2)[1])['listing']
+    assert listing['contents'][0]['description'] == 'Listing summary only.'
     assert snapshot.files[entry.path] == original
 
 

@@ -26,6 +26,8 @@ def chapter(service, slug="example", name="01", start=False):
     key = f"course/{slug}/{name}"
     service.create({"id": key, "kind": "chapter", "title": "Chapter Title", "toc_title": name, "section": "main", "parent": f"course/{slug}", "path": f"content/notebooks/courses/{slug}/{name}.ipynb", "planned_content": "Teach the topic", "planned_lab_and_evidence": "Check a reproducible example"})
     if start:
+        if service.inspect(f"course/{slug}")["artifact"]["lifecycle"] == "planned":
+            service.start(f"course/{slug}")
         service.start(key)
     return key
 
@@ -69,7 +71,7 @@ def test_portfolio_complete_workflow_keeps_project_code_and_notebook_bytes(conte
     assert source.read_bytes() == body
     assert code.read_bytes() == code_before
     assert "planned" not in service.inspect(payload["id"])["detail"]
-    assert service.read_data("portfolio")["data"]["entries"][0]["planned"] == payload["detail"]["planned"]
+    assert "planned" not in service.read_data("portfolio")["data"]["entries"][0]
 
 
 @pytest.mark.parametrize("missing", ["abstract", "figure_path", "figure_caption"])
@@ -176,12 +178,10 @@ def test_planned_portfolio_related_content_includes_reserved_source_before_code_
         "relations": [related_id, private_id], "detail": detail})
     record = service.inspect("portfolio/future")
     source_name = project_path.rsplit("/", 1)[-1] if project_path else "future"
-    assert f"## References and related content\n\n[Prior work](https://example.org/prior)\n\n- [Reserved source code](https://github.com/particle1331/watchtower/tree/main/projects/{source_name})\n- [related course]" in record["plan"]
-    assert "[Example]" not in record["plan"]
-    assert "nb/posts/example" not in record["plan"]
-    assert "## Problem\n\nIntroduction\n\n## What it contains\n\nContents\n\n## References and related content" in record["plan"]
-    assert "## References\n" not in record["plan"]
-    assert "## Explore the project" not in record["plan"]
+    # The plan preview is the draft's body: related links and source navigation are generated separately from the body.
+    assert record["plan"] == "## The problem\n\nIntroduction\n\n## Planned content\n\nContents\n\n## Planned evidence\n\n### References\n\n- [Prior work](https://example.org/prior)"
+    assert "Reserved source code" not in record["plan"]
+    assert "[related course]" not in record["plan"]
     assert not (service.root / f"projects/{source_name}").exists()
     assert not (service.root / "content/notebooks/portfolio/future.ipynb").exists()
     service.validate()
@@ -197,16 +197,16 @@ def test_planned_archived_source_still_requires_existing_archive_directory(conte
 
 
 @pytest.mark.parametrize("references", ["", "- First reference\n- Second reference"])
-def test_portfolio_preview_merges_references_with_related_content(content_service, references):
+def test_portfolio_plan_preview_shows_references_as_the_draft_does(content_service, references):
     service = content_service
     service.create({"id": "portfolio/resources", "kind": "portfolio", "title": "Resources",
         "detail": {"planned": {"introduction": "Introduction", "what_it_contains": "Contents", "references": references}}})
     body = service.inspect("portfolio/resources")["plan"]
-    assert "## References\n" not in body
-    assert body.count("## References and related content") == 1
-    assert "- [Reserved source code]" in body
+    assert "Reserved source code" not in body
     if references:
-        assert "- First reference\n- Second reference\n\n- [Reserved source code]" in body
+        assert body == "## The problem\n\nIntroduction\n\n## Planned content\n\nContents\n\n## Planned evidence\n\n### References\n\n- First reference\n- Second reference"
+    else:
+        assert body == "## The problem\n\nIntroduction\n\n## Planned content\n\nContents"
 
 
 def test_photo_lifecycle_updates_gallery_automatically_and_preserves_images(content_service):
@@ -267,6 +267,19 @@ def test_missing_multiple_mismatched_or_fenced_only_h1_blocks_chapter(content_se
     assert path.read_bytes() == before
 
 
+def test_chapter_cannot_leave_planned_until_its_course_has_started(content_service):
+    service = content_service
+    course(service)
+    chapter(service)
+    with pytest.raises(ServiceError, match="start course/example first"):
+        service.start("course/example/01")
+    assert service.inspect("course/example/01")["artifact"]["lifecycle"] == "planned"
+    assert not (service.root / "content/notebooks/courses/example/01.ipynb").exists()
+    service.start("course/example")
+    service.start("course/example/01")
+    assert service.inspect("course/example/01")["artifact"]["lifecycle"] == "draft"
+
+
 def test_real_h1_with_fake_fenced_and_code_headings_is_valid(content_service):
     service = content_service
     course(service)
@@ -306,7 +319,9 @@ def test_title_only_scaffolds_do_not_count_as_authored_content(content_service):
     path.parent.mkdir(parents=True)
     nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell("# Example")]), path)
     service.validate()
-    service.update("post/example", {"lifecycle": "draft"})
+    repaired = service.update("post/example", {"lifecycle": "draft"})
+    assert repaired['starter_seed_archive']
+    assert not service.snapshot().state.artifacts[0].planned
     assert not service.inspect("post/example")["has_authored_content"]
     with pytest.raises(ServiceError, match="Cannot publish: the notebook has no body content"):
         service.publish("post/example")
@@ -338,21 +353,14 @@ def test_planned_parent_hides_all_children(content_service):
     parent = "course/example"
     service.create({"id": parent, "kind": "course", "title": "Example", "path": "content/notebooks/courses/example"})
     planned = chapter(service, name="01")
-    published = chapter(service, name="02", start=True)
-    author_body(service, published)
-    # Legacy child publication never makes an unstarted parent eligible.
-    service.batch([{"id": published, "patch": {"lifecycle": "published", "visibility": "public"}}], {})
     state = service.snapshot().state
     visibility = {artifact.id: eligible(artifact, state.artifacts) for artifact in state.artifacts}
     assert not visibility[parent]
     assert not visibility[planned]
-    assert not visibility[published]
-    source = service.root / "content/notebooks/courses/example/01.ipynb"
-    service.start(planned)
-    before = source.read_bytes()
-    with pytest.raises(ServiceError, match="parent course"):
-        service.publish(planned)
-    assert source.read_bytes() == before
+    # A chapter cannot leave Planned, so its draft cannot appear under an unstarted course.
+    with pytest.raises(ServiceError, match="start course/example first"):
+        service.start(planned)
+    assert not (service.root / "content/notebooks/courses/example/01.ipynb").exists()
 
 
 @pytest.mark.parametrize("patch", [{"repository_url": "http://github.com/owner/repo"}, {"repository_url": "https://example.org/owner/repo"}, {"repository_url": "https://github.com/owner/repo?other=1"}, {"source_ref": "../main"}, {"source_ref": "main#fragment"}, {"timezone": "Invalid/Timezone"}])

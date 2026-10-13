@@ -52,7 +52,7 @@ def ensure_shape(kind: str, record: dict[str, Any]) -> dict[str, Any]:
     """Create every container and leaf the form addresses, so submitted paths always resolve."""
     record = copy.deepcopy(record)
     record.setdefault("title", "")
-    if kind in {"course", "chapter"}:
+    if kind in {"course", "chapter", "portfolio"}:
         record.pop("tags", None)
     else:
         record.setdefault("tags", [])
@@ -63,6 +63,11 @@ def ensure_shape(kind: str, record: dict[str, Any]) -> dict[str, Any]:
         record.setdefault(key, "")
     if kind not in KINDS:
         return record
+    if kind == "portfolio" and record.get("lifecycle", "planned") == "planned":
+        detail = record.setdefault("detail", {})
+        detail["planned"] = planning.portfolio_plan(detail.get("planned", {}))
+    if kind == "post" and record.get("lifecycle", "planned") == "planned":
+        record["planned"] = planning.post_plan(record.get("planned", {}))
     paths = [summary_path(kind)]
     if record.get("lifecycle", "planned") == "planned":
         paths.extend(plan_path(kind, field.key) for field in planning.PLAN[kind])
@@ -133,6 +138,11 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
     basics: list[dict[str, Any]] = [_field(["title"], value(["title"]), "Title", required=True)]
     if creating:
         basics.append(_field(["name"], value(["name"]), "Name (optional)", attr="data-name-input", hint="Leave blank to use the title. This sets the permanent URL; spaces become hyphens."))
+    elif kind in {"post", "portfolio", "chapter"}:
+        basics.append(_field(["visibility"], value(["visibility"]), "Visibility", type="visibility", choices=[("public", "Public"), ("private", "Private")]))
+        basics.append(_field(["date"], value(["date"]), "Date", hint="Defaults to the creation day in the site timezone."))
+        if lifecycle_options:
+            basics.append(_field(["lifecycle"], value(["lifecycle"]), "Status", type="lifecycle", options=lifecycle_options))
     if kind == "chapter":
         if creating:
             choices = [(course["id"], course["title"]) for course in courses or []]
@@ -160,15 +170,15 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
         page.append({**_field(path, value(path), summary.label, long=summary.prompt, hint="Optional while planning. Add a linked Kanban task to write this later."), "summary_kind": kind})
     if kind == "course" and not creating:
         page.append(_field(["cover"], value(["cover"]), "Card image", type="featured", hint=""))
-    if kind == "portfolio" and not creating:
+    if kind == "portfolio":
         page.append(_field(["detail", "figure_path"], value(["detail", "figure_path"]), "Featured image", type="featured", hint="Publishing requires an image."))
-        page.append(_field(["detail", "figure_caption"], value(["detail", "figure_caption"]), "Figure caption", hint="Shown beneath the featured image."))
+        page.append(_field(["detail", "figure_caption"], value(["detail", "figure_caption"]), "Figure caption", hint="Shown beneath the featured image on the portfolio listing."))
         page.append(_field(["detail", "project_path"], value(["detail", "project_path"]), "Code location", hint="Where the code lives: projects/<name> or archive/<date>/projects/<name>. Defaults to projects/<name>."))
-    if kind not in {"course", "chapter"}:
+    if kind not in {"course", "chapter", "portfolio"}:
         page.append(_field(["tags"], value(["tags"]), "Tags", hint="One tag per line."))
     if kind != "course":
-        page.append(_field(["relations"], value(["relations"]), "Related content"))
-    if not creating:
+        page.append(_field(["relations"], value(["relations"]), "Related content", hint=f"Links are generated at the end of the full {'project' if kind == 'portfolio' else kind} page." if kind in {"portfolio", "post", "chapter"} else ""))
+    if not creating and kind not in {"post", "portfolio", "chapter"}:
         page.append(_field(["date"], value(["date"]), "Date", hint="Defaults to the creation day in the site timezone."))
         page.append(_field(["visibility"], value(["visibility"]), "Visibility", type="visibility", choices=[("public", "Public"), ("private", "Private")]))
         if lifecycle_options:
@@ -185,6 +195,8 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
     if not plan:
         # Kinds without a writing brief (personal notebooks, projects, courses) keep only the other sections.
         result = [item for item in result if item["id"] != "plan"]
+    if kind in {"portfolio", "post", "chapter"} and planned:
+        result[1:3] = [result[2], result[1]]
     if kind == "course" and (planned or record.get("contract", {}).get("home") is not None):
         # Plan and draft share these fields and labels; only the storage location differs.
         # Each prompt is the complete guidance for its field; list fields state their own one-item-per-line rule.
@@ -195,7 +207,7 @@ def sections(kind: str, record: dict[str, Any], *, creating: bool = False, cours
             if field.key == "description":
                 home_fields.append(_field(["relations"], value(["relations"]), "Related topics"))
         result.insert(1, {"id": "home", "title": "Course home", "explain": "Edit the content readers see on the course home page.", "fields": home_fields})
-    result.append({"id": "notes", "title": "Context files" if planned and kind != "course" else SECTIONS["notes"][0], "explain": SECTIONS["notes"][1], "fields": notes})
+    result.append({"id": "notes", "title": SECTIONS["notes"][0], "explain": SECTIONS["notes"][1], "fields": notes})
     return result
 
 

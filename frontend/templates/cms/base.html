@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ title or 'Author' }} · Watchtower</title><link rel="stylesheet" href="/cms/static/theme.css"><link rel="stylesheet" href="/cms/static/cms.css?v=75"><script src="/cms/static/htmx.min.js" defer></script><script src="/cms/static/cms.js?v=29" defer></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ title or 'Author' }} · Watchtower</title><link rel="stylesheet" href="/cms/static/theme.css"><link rel="stylesheet" href="/cms/static/cms.css?v=87"><script src="/cms/static/htmx.min.js" defer></script><script src="/cms/static/cms.js?v=31" defer></script><script src="/cms/static/plan.js?v=1" defer></script></head>
 <body><header><a class="brand" href="/cms/home">watchtower <small>author</small></a>
 {% block page_actions %}{% if profile_view|default(false) %}{% import 'editor_actions.html' as toolbar with context %}{{ toolbar.actions('profile-editor-form', '/cms/' + profile_view) }}
 {% elif (section in ['home', 'resume'] and data_name == 'profile') or section == 'personal' or kind %}<div id="cms-page-actions" class="section-tools" aria-label="Page actions">
@@ -11,4 +11,5 @@
 <nav aria-label="Author sections">{% for slug,label in navigation %}<a href="/cms/{{ slug }}" {% if section == slug %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
 </header>
 {% if build %}{% include 'build.html' %}{% else %}<div id="build-status" aria-live="polite">{% if last_build %}Last successful refresh: {{ last_build.finished_at }}{% endif %}</div>{% endif %}
-<main>{% block content %}{% endblock %}</main><footer>Saved publication state is shown here. The live website updates after committed changes reach main and GitHub Actions completes.</footer></body></html>
+<main>{% block content %}{% endblock %}</main><dialog id="plan-viewer" class="cms-dialog plan-dialog" aria-labelledby="plan-viewer-heading"><div class="dialog-heading"><h2 id="plan-viewer-heading">View plan</h2><button type="button" data-dialog-close aria-label="Close plan">×</button></div><div data-plan-content aria-live="polite"></div></dialog>
+<footer>Saved publication state is shown here. The live website updates after committed changes reach main and GitHub Actions completes.</footer></body></html>

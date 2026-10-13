@@ -144,6 +144,8 @@ def test_creation_and_edit_notes_uploads_share_one_form(content, kind):
             assert 'class="course-heading"' in workspace.text
             assert 'data-dialog-open="notes"' in workspace.text
             assert 'id="notes" class="cms-dialog notes-dialog"' in workspace.text
+        if kind == "chapter":
+            content.start("course/parent")
         content.start(identifier)
         editor = client.get("/cms/artifact/" + identifier)
         assert 'class="cms-dialog notes-dialog"' in editor.text

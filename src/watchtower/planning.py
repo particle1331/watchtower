@@ -9,6 +9,10 @@ Every planning field is defined once here:
 - ``INTERNAL_NOTES`` keeps the content entity's unfinished context and to-dos
   together. Linked Kanban cards carry context for individual executions.
 
+Post, portfolio and chapter fields are temporary starter inputs. They are saved
+only while Planned, then consumed into notebook cells and removed from metadata.
+Their labels and keys describe the authoring form, not permanent domain fields.
+
 Stored locations are translated by ``plan_patch``; ``parse_plan_file`` reads the
 ``## <label or key>`` sections of a human-written plan file.
 """
@@ -31,22 +35,23 @@ class Field:
     seed: str | None = None
     # Needed for a useful first draft; reported as missing until written.
     core: bool = False
+    # Earlier labels still accepted in plan files; the label above is the draft heading.
+    aliases: tuple[str, ...] = ()
 
 
 PLAN: dict[str, tuple[Field, ...]] = {
+    # Labels equal the draft headings (seed), so the plan and the started draft show one form.
+    # The draft is definitive: change a heading there and here together. Body-only fields
+    # (seed "") have no heading in the draft, so their label names the form field only.
     "post": (
-        Field("content", "Outline", "What will you explain? List the sections and their main points.", seed="", core=True),
-        Field("audience", "Audience", "Who will read this, and what should they already know?", seed="Who this is for"),
-        Field("evidence", "Examples and evidence", "Which examples, experiments, or sources support the argument?", seed="Examples and evidence"),
-        Field("references", "References", "Links and sources to cite.", seed="References"),
+        Field("introduction", "The problem", "What question or problem will this post address, and why does it matter?", seed="The problem", core=True, aliases=("Problem",)),
+        Field("content", "Planned content", "What will you explain? Describe the intended readers, sections, examples, and their main points.", seed="Planned content", core=True, aliases=("Outline",)),
+        Field("evidence", "Planned evidence", "Which examples, experiments, results, or sources will support the post?", seed="Planned evidence", core=True, aliases=("Examples and evidence",)),
     ),
     "portfolio": (
-        Field("introduction", "Problem", "What problem does this solve, and why does it matter?", seed="The problem", core=True),
-        Field("what_it_contains", "What it contains", "The components, deliverables, and what you will build.", seed="What it contains", core=True),
-        Field("intended_users", "Intended users", "Who will use this, and for which tasks?", seed="Who it is for"),
-        Field("approach", "Implementation approach", "Main design decisions, tools, and build sequence.", seed="Implementation approach"),
-        Field("success_criteria", "Success criteria", "How will you show that it works?", seed="How to evaluate it"),
-        Field("references", "References", "Sources, prior work, and related reading.", seed="References"),
+        Field("introduction", "The problem", "What problem does this solve, and why does it matter?", seed="The problem", core=True, aliases=("Problem",)),
+        Field("content", "Planned content", "What will the project page contain? Describe the components, intended users, deliverables, and implementation approach.", seed="Planned content", core=True, aliases=("What it contains", "what_it_contains")),
+        Field("evidence", "Planned evidence", "Which tests, results, demonstrations, or sources will show that the project works?", seed="Planned evidence", core=True, aliases=("How to evaluate it", "Success criteria", "success_criteria")),
     ),
     # Same fields, labels and prompts as the started course home (course_home.HOME_FIELDS),
     # so the plan and the draft show one form. Starting copies them into contract.home.
@@ -58,16 +63,17 @@ PLAN: dict[str, tuple[Field, ...]] = {
         Field("references", "References", "One outside reference per line. Markdown links are supported."),
     ),
     "chapter": (
-        Field("content", "Outline", "What will this chapter teach? List the explanations, examples, and their order.", seed="", core=True),
-        Field("lab_and_evidence", "Practice and evidence", "What will the learner do, and what result shows understanding?", seed="Practice and evidence", core=True),
+        Field("introduction", "The problem", "What question or problem will this chapter address, and why does it matter to the learner?", seed="The problem", core=True, aliases=("Problem",)),
+        Field("content", "Planned content", "What will this chapter teach? Describe the explanations, examples, and their order.", seed="Planned content", core=True, aliases=("Outline",)),
+        Field("lab_and_evidence", "Planned evidence", "What will the learner do, and which examples, experiments, results, or sources will show understanding?", seed="Planned evidence", core=True, aliases=("Practice and evidence", "evidence")),
     ),
 }
 
 SUMMARY: dict[str, Field] = {
-    "post": Field("summary", "Summary", "One or two sentences for the posts list and page description. State the takeaway."),
+    "post": Field("summary", "Summary", "One or two sentences for the Posts listing. State the takeaway. Kept outside the full post notebook page."),
     "course": Field("summary", "Card description", "One or two sentences for the courses grid. The course home has the longer description."),
-    "portfolio": Field("summary", "Abstract", "Shown on the portfolio card and entry page. Start draft can fill a first draft from Problem and What it contains. Paste the finished abstract here before publishing; publishing requires it."),
-    "chapter": Field("summary", "Course table summary", "One reader-facing sentence for the course table and chapter subtitle."),
+    "portfolio": Field("summary", "Abstract", "Shown on the portfolio listing. Start draft can fill a first draft from The problem and Planned content. Paste the finished abstract here before publishing; publishing requires it."),
+    "chapter": Field("summary", "Course table summary", "One reader-facing sentence for the course table. Kept outside the full chapter notebook page."),
 }
 
 INTERNAL_NOTES = Field(
@@ -116,8 +122,56 @@ def _markdown(value: Any) -> str:
     return "" if value is None else str(value).strip()
 
 
+def portfolio_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
+    """Read older briefs through the three-section form, preserving their saved keys.
+
+    Explicit content/evidence values, including blanks, take precedence. Legacy
+    supporting material stays inside those sections until the author revises it.
+    """
+    result = dict(plan)
+    for key, opening, supporting in (
+        ("content", "what_it_contains", (("intended_users", "Who it is for"), ("approach", "Implementation approach"))),
+        ("evidence", "success_criteria", (("references", "References"),)),
+    ):
+        if key in result:
+            continue
+        parts = [_markdown(plan.get(opening))]
+        for legacy, heading in supporting:
+            body = _markdown(plan.get(legacy))
+            if legacy == "references" and body and "\n\n" not in body and not re.search(r"(?m)^\s{0,3}(?:[-*+] |\d+[.)] |#{1,6} |>|\|)", body):
+                body = "\n".join(f"- {line.strip()}" for line in body.splitlines() if line.strip())
+            if body:
+                parts.append(f"### {heading}\n\n{body}")
+        result[key] = "\n\n".join(part for part in parts if part)
+    return result
+
+
+def post_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
+    """Fold older audience/reference fields into the three-section post brief.
+
+    Saved legacy keys remain intact. The new introduction key marks an already
+    normalized brief, so later edits and explicit blanks never re-add old text.
+    """
+    result = dict(plan)
+    if "introduction" in result:
+        return result
+    for key, legacy, heading in (("content", "audience", "Who this is for"), ("evidence", "references", "References")):
+        body = _markdown(plan.get(legacy))
+        if not body:
+            continue
+        if legacy == "references" and "\n\n" not in body and not re.search(r"(?m)^\s{0,3}(?:[-*+] |\d+[.)] |#{1,6} |>|\|)", body):
+            body = "\n".join(f"- {line.strip()}" for line in body.splitlines() if line.strip())
+        result[key] = "\n\n".join(part for part in (_markdown(plan.get(key)), f"### {heading}\n\n{body}") if part)
+        result["introduction"] = ""
+    return result
+
+
 def filled_fields(kind: str, plan: Mapping[str, Any], exclude: Collection[str] = ()) -> list[tuple[str, str]]:
     """(label, Markdown) for each non-empty catalog field, in writing order; saved keys outside the catalog are ignored."""
+    if kind == "portfolio":
+        plan = portfolio_plan(plan)
+    elif kind == "post":
+        plan = post_plan(plan)
     fields = []
     for field in plan_fields(kind):
         if field.key in exclude:
@@ -196,6 +250,9 @@ def parse_plan_file(kind: str, text: str) -> dict[str, str]:
     for item in plan_schema(kind):
         names.setdefault(_normal(item["label"]), item["key"])
         names.setdefault(_normal(item["key"]), item["key"])
+    for field in plan_fields(kind):
+        for alias in field.aliases:
+            names.setdefault(_normal(alias), field.key)
     tokens = MarkdownIt().parse(text)
     if any(token.type == "heading_open" and token.tag == "h1" for token in tokens):
         raise ValueError("plan files use ## section headings; remove the # title line")

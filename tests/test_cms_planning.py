@@ -169,20 +169,30 @@ def test_contextual_chapter_partial_save_then_ready_draft(author):
         assert result.headers["location"] == "/cms/courses/demo#outline"
         record = author.inspect("course/demo/first")
         assert record["chapter_plan"]["summary"] == "A short summary"
-        assert record["missing_plan_fields"] == ["Outline", "Practice and evidence"]
+        assert record["missing_plan_fields"] == ["The problem", "Planned content", "Planned evidence"]
         page = client.get("/cms/artifact/course/demo/first")
         revision, snapshot = form_snapshot(page)
-        result = client.post("/cms/save/course/demo/first", data={"revision": revision, "snapshot": snapshot, 'field:["plan", "content"]': "Explain the idea", 'field:["plan", "lab_and_evidence"]': "Build and check"}, follow_redirects=False)
+        result = client.post("/cms/save/course/demo/first", data={"revision": revision, "snapshot": snapshot, 'field:["plan", "introduction"]': "Understand the idea", 'field:["plan", "content"]': "Explain the idea", 'field:["plan", "lab_and_evidence"]': "Build and check"}, follow_redirects=False)
         assert result.status_code == 303
         record = author.inspect("course/demo/first")
         assert not record["missing_plan_fields"]
-        author.start("course/demo/first", record["revision"])
+        author.start("course/demo")
+        author.start("course/demo/first", author.inspect("course/demo/first")["revision"])
         body = "\n".join(c.source for c in nbformat.read(author.root / record["source_path"], as_version=4).cells)
         assert body.count("# First chapter\n") == 1
         assert "Explain the idea" in body and "Build and check" in body
+        cells = nbformat.read(author.root / record["source_path"], as_version=4).cells
+        assert [cell.source.splitlines()[0] for cell in cells] == ['# First chapter', '## The problem', '## Planned content', '## Planned evidence']
+        assert 'A short summary' not in body
+        draft = client.get('/cms/artifact/course/demo/first')
+        paths = [json.loads(html.unescape(name)) for name in re.findall(r'name="field:([^"]+)"', draft.text)]
+        assert paths[:4] == [['title'], ['visibility'], ['date'], ['lifecycle']]
+        assert ['plan', 'summary'] in paths and ['relations'] in paths
+        assert not any(path[:1] == ['plan'] and path != ['plan', 'summary'] for path in paths)
         brief = author.inspect("course/demo")["build_brief"]
         assert "First chapter" in brief
-        assert "Python users" in author.inspect("course/demo/first")["build_brief"]
+        # Once the course has started, its home is the source of truth and the chapter brief points to it.
+        assert "Read the course home: .venv/bin/wt context course/demo" in author.inspect("course/demo/first")["build_brief"]
 
 
 def test_outline_operations_are_atomic_and_preserve_ids(author):
@@ -290,7 +300,7 @@ def test_long_plan_seeds_bounded_cells_and_preserves_plan(author):
     assert all(len(cell.source) <= 20_000 for cell in notebook.cells)
     seeded = "".join(cell.source for cell in notebook.cells)
     assert body.strip() in seeded
-    assert "## References\n\nSource" in seeded
+    assert "### References\n\n- Source" in seeded
     assert author.inspect("post/long")["plan"] == ""
     assert body not in author.inspect("post/long")["build_brief"]
 
@@ -336,10 +346,10 @@ def test_portfolio_abstract_create_start_and_edit(author, abstract):
         page = client.get('/cms/new?kind=portfolio')
         assert 'name="field:[&#34;detail&#34;, &#34;abstract&#34;]"' in page.text
         assert 'name="description"' not in page.text
-        assert 'can fill a first draft from Problem and What it contains' in page.text
+        assert 'can fill a first draft from The problem and Planned content' in page.text
         assert 'Paste the finished abstract here before publishing; publishing requires it.' in page.text
-        assert 'portfolio card and entry page' in page.text
-        created = client.post('/cms/new?kind=portfolio', data={'revision': token(page), 'field:["name"]': 'abstract', 'field:["title"]': 'Abstract example', 'field:["detail", "abstract"]': abstract, 'field:["detail", "planned", "introduction"]': 'Compare models.', 'field:["detail", "planned", "what_it_contains"]': 'Reports and checks.'}, follow_redirects=False)
+        assert 'portfolio listing' in page.text
+        created = client.post('/cms/new?kind=portfolio', data={'revision': token(page), 'field:["name"]': 'abstract', 'field:["title"]': 'Abstract example', 'field:["detail", "abstract"]': abstract, 'field:["detail", "planned", "introduction"]': 'Compare models.', 'field:["detail", "planned", "content"]': 'Reports and checks.'}, follow_redirects=False)
         assert created.status_code == 303, created.text
         saved = author.inspect('portfolio/abstract')
         assert saved['detail']['abstract'] == (abstract or None)
@@ -349,8 +359,8 @@ def test_portfolio_abstract_create_start_and_edit(author, abstract):
         page = client.get('/cms/artifact/portfolio/abstract')
         assert 'Public description' not in page.text
         assert html.unescape(page.text).count('name="field:["detail", "abstract"]"') == 1
-        assert 'Shown on the portfolio card and entry page.' in page.text
-        assert 'can fill a first draft from Problem and What it contains' in page.text
+        assert 'Shown on the portfolio listing.' in page.text
+        assert 'can fill a first draft from The problem and Planned content' in page.text
         assert 'Paste the finished abstract here before publishing; publishing requires it.' in page.text
         revision, snapshot = form_snapshot(page)
         edited = client.post('/cms/save/portfolio/abstract', data={'revision': revision, 'snapshot': snapshot, 'field:["detail", "abstract"]': 'Edited abstract.'}, follow_redirects=False)
@@ -375,6 +385,7 @@ def test_portfolio_legacy_description_is_preserved_as_abstract_on_save(author):
 def test_editor_sections_separate_public_summary_plan_and_internal_notes(author):
     course(author)
     chapter(author, plan={"summary": "Reader summary", "content": "Teaching plan"})
+    author.start("course/demo")
     author.start("course/demo/first")
     author.update("course/demo/first", {"internal_notes": "Author decisions"})
     with TestClient(create_app(author.root)) as client:
@@ -403,7 +414,7 @@ def test_editor_sections_separate_public_summary_plan_and_internal_notes(author)
 
 def test_course_outline_compact_controls_keep_native_actions_and_revisions(author):
     course(author)
-    chapter(author)
+    chapter(author, toc_title='01. First')
     chapter(author, 'second')
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/courses/demo')
@@ -413,12 +424,65 @@ def test_course_outline_compact_controls_keep_native_actions_and_revisions(autho
         assert 'aria-label="Move First down"' in page.text
         assert 'Move First down</button>' not in page.text
         assert '<details class="chapter-details">' in page.text
+        row = re.search(r'<article class="outline-chapter">(.*?)</article>', page.text, re.S)[1]
+        assert '<span class="chapter-title">01. First / First</span>' in row
+        assert '<span class="badge status-planned">planned</span><span class="badge">private</span>' in row
+        assert '<label>Short title<input name="toc_title" value="01. First" required>' in row
+        assert 'value="update-short-title"' in row
+        details, actions = row.split('</details>')
+        assert 'data-delete-link' not in details
+        assert 'href="/cms/artifact/course/demo/first">Edit</a><a data-delete-link' in actions
+        assert 'aria-label="Delete First" title="Delete chapter"><svg' in actions
         revision = token(page)
         moved = client.post('/cms/courses/demo/outline', data={
             'revision': revision, 'action': 'chapter-down', 'chapter': 'course/demo/first',
         }, follow_redirects=False)
         assert moved.status_code == 303
         assert author.inspect('course/demo')['contract']['toc'][0]['chapters'] == ['course/demo/second', 'course/demo/first']
+
+
+@pytest.mark.parametrize('lifecycle', ['planned', 'draft', 'published'])
+def test_outline_short_title_save_preserves_chapter_content_and_rejects_stale_writes(author, lifecycle):
+    course(author)
+    chapter(author, plan={'summary': 'Reader summary', 'content': 'Accepted content.'})
+    chapter(author, 'second')
+    if lifecycle != 'planned':
+        author.start('course/demo')
+        author.start('course/demo/first')
+    if lifecycle == 'published':
+        author.publish('course/demo')
+        author.publish('course/demo/first')
+    before = author.inspect('course/demo/first')
+    notebook = author.root / before['source_path']
+    source = notebook.read_bytes() if notebook.exists() else None
+    contract = author.inspect('course/demo')['contract']
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/courses/demo')
+        revision = token(page)
+        payload = {'revision': revision, 'action': 'update-short-title', 'chapter': 'course/demo/first', 'toc_title': '  01. Overview  '}
+        saved = client.post('/cms/courses/demo/outline', data=payload, follow_redirects=False)
+        assert saved.status_code == 303, saved.text
+        assert saved.headers['location'] == '/cms/courses/demo#outline'
+        after = author.inspect('course/demo/first')
+        assert after['artifact'] == {**before['artifact'], 'toc_title': '01. Overview'}
+        assert after['chapter_plan'] == before['chapter_plan']
+        assert author.inspect('course/demo')['contract'] == contract
+        assert (notebook.read_bytes() if notebook.exists() else None) == source
+        row = re.search(r'<article class="outline-chapter">(.*?)</article>', client.get('/cms/courses/demo').text, re.S)[1]
+        assert '<span class="chapter-title">01. Overview / First</span>' in row
+        assert f'<span class="badge status-{lifecycle}">{lifecycle}</span><span class="badge">{after["artifact"]["visibility"]}</span>' in row
+        stale = client.post('/cms/courses/demo/outline', data={**payload, 'toc_title': 'Unsaved short title'})
+        assert stale.status_code == 412
+        assert 'Unsaved short title' in stale.text and token(stale) == revision
+        assert author.inspect('course/demo/first')['artifact'] == after['artifact']
+        current = author.snapshot().revision
+        blank = client.post('/cms/courses/demo/outline', data={**payload, 'revision': current, 'toc_title': '  '})
+        assert blank.status_code == 422
+        assert 'Enter a short title.' in blank.text
+        assert author.snapshot().revision == current
+        wrong_kind = client.post('/cms/courses/demo/outline', data={**payload, 'revision': current, 'chapter': 'course/demo'})
+        assert wrong_kind.status_code == 422
+        assert author.snapshot().revision == current
 
 
 def test_new_portfolio_editor_shows_the_creation_date(author, monkeypatch):

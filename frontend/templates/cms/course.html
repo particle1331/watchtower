@@ -22,13 +22,14 @@
 <div class="outline-chapters">
 {% for chapter_id in group.chapters %}{% for row in record.chapter_rows if row.chapter.id == chapter_id %}
 <article class="outline-chapter">
-<details class="chapter-details"><summary><span class="chapter-title">{{ row.chapter.title }}</span><span class="badge status-{{ row.chapter.lifecycle }}">{{ row.chapter.lifecycle }}{% if row.chapter.visibility == 'private' %} · private{% endif %}</span></summary>
+<details class="chapter-details"><summary><span class="chapter-title">{{ row.chapter.toc_title }} / {{ row.chapter.title }}</span><span class="chapter-badges"><span class="badge status-{{ row.chapter.lifecycle }}">{{ row.chapter.lifecycle }}</span><span class="badge">{{ row.chapter.visibility }}</span></span></summary>
 <div class="chapter-expanded">
+{% with item = row.chapter, record = chapter_records[chapter_id] %}{% include 'source_tools.html' %}{% endwith %}
 <p class="chapter-summary">{{ row.summary or 'No reader-facing summary yet.' }}</p>
+<form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="chapter" value="{{ chapter_id }}"><div class="chapter-short-title"><label>Short title<input name="toc_title" value="{{ row.chapter.toc_title }}" required></label><button name="action" value="update-short-title">Save</button></div></form>
 <form data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="chapter" value="{{ chapter_id }}"><div class="chapter-transfer"><label>Move to section<select name="section">{% for target in record.contract.toc %}<option value="{{ target.id }}" {% if target.id == group.id %}selected{% endif %}>{{ target.title or ('Chapters' if target.id == 'main' else target.id) }}</option>{% endfor %}</select></label><button name="action" value="move-chapter">Move</button></div></form>
-<a data-delete-link class="danger" href="/cms/delete/{{ chapter_id | urlpath }}">Delete chapter</a>
 </div></details>
-<div class="chapter-quick-actions"><form class="reorder-controls" data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="chapter" value="{{ chapter_id }}">{{ arrows('chapter', row.chapter.title, chapter_id == group.chapters[0], chapter_id == group.chapters[-1]) }}</form><a class="button" href="/cms/artifact/{{ chapter_id | urlpath }}">Edit</a></div>
+<div class="chapter-quick-actions"><form class="reorder-controls" data-outline-form method="post" action="/cms/courses/{{ slug }}/outline"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="chapter" value="{{ chapter_id }}">{{ arrows('chapter', row.chapter.title, chapter_id == group.chapters[0], chapter_id == group.chapters[-1]) }}</form><a class="button" href="/cms/artifact/{{ chapter_id | urlpath }}">Edit</a><a data-delete-link class="button icon-button danger" href="/cms/delete/{{ chapter_id | urlpath }}" aria-label="Delete {{ row.chapter.title }}" title="Delete chapter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></a></div>
 </article>
 {% endfor %}{% else %}<p class="empty-group">No chapters in this section.</p>{% endfor %}
 </div></section>

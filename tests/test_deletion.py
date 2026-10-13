@@ -83,6 +83,7 @@ def test_delete_detaches_links_without_removing_other_records(content):
 
 def test_chapter_deletion_repairs_plan_toc_and_overview(content):
     course(content)
+    content.start("course/example")
     content.start("course/example/overview")
     result = content.delete("course/example/overview")
     contract = content.read_data("course/example")["data"]

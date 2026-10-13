@@ -15,7 +15,7 @@ from .services.workspace import ServiceError, load_yaml
 
 # Option declarations shared by the planning commands, so each spells and describes them alike.
 SummaryFlag = Annotated[str | None, typer.Option("--summary", help="One public sentence: post or course listing, portfolio abstract, or chapter table row.")]
-InternalNotesFlag = Annotated[str | None, typer.Option("--internal-notes", help="Draft/Published Markdown notes. The separate internal_todos checklist uses --patch-file. Planned entries require empty notes. Kept off the site.")]
+InternalNotesFlag = Annotated[str | None, typer.Option("--internal-notes", help="Draft/Published Markdown notes. The separate internal_todos checklist uses --patch-file. Planned entries other than courses require empty notes. Kept off the site.")]
 PlanFileFlag = Annotated[str | None, typer.Option("--plan-file", help="Markdown under .tmp/ with ## sections named by label or key.")]
 TagFlag = Annotated[list[str] | None, typer.Option("--tag", help="Tag; repeat for several.")]
 StartFlag = Annotated[bool, typer.Option("--start", help="Also start the draft: CMS fields for course homes, notebooks for other content.")]
@@ -35,10 +35,10 @@ PLAN_FLAGS: dict[str, tuple[str, frozenset[str] | None]] = {
     "--description": ("summary", None),
     "--abstract": ("summary", frozenset({"portfolio"})),
     "--internal-notes": ("internal_notes", None),
-    "--planned-content": ("content", frozenset({"post", "chapter"})),
+    "--planned-content": ("content", frozenset({"post", "chapter", "portfolio"})),
     "--planned-lab-and-evidence": ("lab_and_evidence", frozenset({"chapter"})),
     "--introduction": ("introduction", frozenset({"portfolio"})),
-    "--what-it-contains": ("what_it_contains", frozenset({"portfolio"})),
+    "--what-it-contains": ("content", frozenset({"portfolio"})),
 }
 REMOVED_FLAGS = {
     "--scope-notes": "--scope-notes was removed: scope now belongs in --internal-notes (CMS-only) or in the ## What it contains section of the plan file.",
@@ -177,11 +177,11 @@ def create_chapter(course: str, name: str, *, title: str | None, section: str | 
     emit_created(service, created, start)
 
 
-def create_portfolio(name: str, *, title: str | None, tags: list[str] | None, figure_path: str | None, figure_caption: str | None, project_path: str | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
+def create_portfolio(name: str, *, title: str | None, figure_path: str | None, figure_caption: str | None, project_path: str | None, options: Mapping[str, str | None], plan_file: str | None, start: bool, expected_revision: str | None) -> None:
     service = ContentService()
     slug(name)
     detail = {"notebook_path": f"content/notebooks/portfolio/{name}.ipynb", "project_path": project_path or f"projects/{name}", "figure_path": figure_path, "figure_caption": figure_caption}
-    record = {"id": f"portfolio/{name}", "kind": "portfolio", "title": title or name.replace("-", " ").title(), "tags": tags or [], "detail": detail}
+    record = {"id": f"portfolio/{name}", "kind": "portfolio", "title": title or name.replace("-", " ").title(), "detail": detail}
     created = service.create(merged(record, planning_patch(service, "portfolio", options, plan_file)), expected_revision)
     emit_created(service, created, start)
 
@@ -301,8 +301,14 @@ def install(app: typer.Typer) -> None:
         uvicorn.run(create_app(Path.cwd()), host="127.0.0.1", port=port)
 
     @app.command("migrate")
-    def migrate(apply: bool = False, layout: bool = typer.Option(False, "--layout", help="Relocate content/data, content/assets and context files under backend; leave authored notebooks intact."), course_homes: bool = typer.Option(False, "--course-homes", help="Move course-home prose into CMS fields, archiving original notebooks byte-for-byte."), expected_revision: ExpectedRevisionFlag = None, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:
+    def migrate(apply: bool = False, layout: bool = typer.Option(False, "--layout", help="Relocate content/data, content/assets and context files under backend; leave authored notebooks intact."), course_homes: bool = typer.Option(False, "--course-homes", help="Move course-home prose into CMS fields, archiving original notebooks byte-for-byte."), starter_seeds: bool = typer.Option(False, "--starter-seeds", help="Archive and remove consumed post, portfolio and chapter starter inputs; preserve notebooks and Planned inputs."), expected_revision: ExpectedRevisionFlag = None, reviewed_figures: bool = typer.Option(False, "--reviewed-figures"), preserve_gallery_prose: bool = typer.Option(False, "--preserve-gallery-prose"), title_choice: list[str] | None = typer.Option(None, "--title-choice")) -> None:
         """Review a legacy import or managed-storage move; --apply saves atomically."""
+        if starter_seeds:
+            from .services.starter_seeds import StarterSeedMigration
+            if course_homes or layout or reviewed_figures or preserve_gallery_prose or title_choice:
+                raise ServiceError("--starter-seeds cannot be combined with other migration options")
+            emit(StarterSeedMigration(Path.cwd()).run(apply=apply, expected_revision=expected_revision))
+            return
         if course_homes:
             from .services.course_homes import CourseHomeMigration
             if layout or reviewed_figures or preserve_gallery_prose or title_choice:

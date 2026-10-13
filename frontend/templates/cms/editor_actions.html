@@ -14,7 +14,7 @@
 {% if record.artifact.lifecycle == 'planned' and record.artifact.kind != 'project' %}{% set publication_actions = [('start', 'Start draft')] %}{% endif %}
 {% if record.artifact.lifecycle != 'planned' %}{% set publication_actions = [('draft', 'Return to draft')] if record.artifact.lifecycle == 'published' else [('publish', 'Publish')] %}{% endif %}
 {% endif %}
-{% set cancel_url = '/cms/portfolio' if artifact.kind == 'portfolio' else '/cms/posts' if artifact.kind == 'post' else '/cms/courses' if artifact.kind == 'course' else '/cms/courses/' + artifact.parent.split('/')[-1] + '#outline' if artifact.kind == 'chapter' else '/cms/artifact/' + (artifact.id | urlpath) %}
+{% set cancel_url = '/cms/portfolio' if artifact.kind == 'portfolio' else '/cms/posts' if artifact.kind == 'post' else '/cms/courses' if artifact.kind == 'course' else return_url if artifact.kind == 'chapter' else '/cms/artifact/' + (artifact.id | urlpath) %}
 {{ actions('artifact-editor-form', cancel_url, publication_actions=publication_actions) }}
 {% endmacro %}
 

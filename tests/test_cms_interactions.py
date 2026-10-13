@@ -71,6 +71,34 @@ def test_list_lifecycle_and_visibility_dropdowns_auto_submit(author, section):
             assert 'name="q"' in page.text
 
 
+@pytest.mark.parametrize('started', [False, True])
+def test_expanded_course_chapters_have_stable_ids_and_developer_controls(author, started):
+    author.create({'id': 'course/demo', 'kind': 'course', 'title': 'Demo', 'path': 'content/notebooks/courses/demo',
+                   'contract': {'planned': {'description': 'Course home.', 'chapters': []}}})
+    author.start('course/demo')
+    author.create({'id': 'course/demo/first', 'kind': 'chapter', 'title': 'First chapter', 'toc_title': '01. First',
+                   'parent': 'course/demo', 'section': 'main', 'path': 'content/notebooks/courses/demo/first.ipynb',
+                   'plan': {'content': 'Explain it.'}})
+    if started:
+        author.start('course/demo/first')
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/courses').text
+    chapters = re.search(r'<details class="data-record course-chapters">(.*?)</details>', page, re.S)[1]
+    assert '<code>course/demo/first</code>' in chapters
+    assert re.search(r'href="/cms/artifact/course/demo/first\?return_to=[^"]+">01\. First</a>', chapters)
+    assert re.search(r'href="/cms/artifact/course/demo/first\?return_to=[^"]+">Edit</a>', chapters)
+    assert 'href="/cms/delete/course/demo/first" data-delete-link>Delete</a>' in chapters
+    assert f'<span class="badge status-{"draft" if started else "planned"}">' in chapters
+    source = author.root / 'content/notebooks/courses/demo/first.ipynb'
+    assert f'data-copy="{source}">Copy source path</button>' in chapters
+    assert 'href="/cms/kanban?add=1&amp;link=course/demo/first">Create Kanban task</a>' in chapters
+    if started:
+        assert f'href="vscode://file/{source}">Edit in VS Code ↗</a>' in chapters
+    else:
+        assert 'href="/cms/plan/course/demo/first" data-plan-open aria-haspopup="dialog">View plan</a>' in chapters
+        assert 'Edit in VS Code' not in chapters
+
+
 @pytest.mark.parametrize('htmx', [False, True])
 def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author, htmx):
     (author.root / 'archive/2026-09-30/projects/legacy-example').mkdir(parents=True)
@@ -79,6 +107,13 @@ def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author
         overview = client.get('/cms/portfolio')
         assert 'href="/cms/artifact/portfolio/example">Edit</a>' in overview.text
         assert 'href="/cms/data/portfolio"' not in overview.text
+        assert '<code>portfolio/example</code>' in overview.text
+        assert '<span class="badge status-planned">planned</span><span class="badge">private</span>' in overview.text
+        assert 'data-delete-link href="/cms/delete/portfolio/example">Delete</a>' in overview.text
+        assert 'href="/cms/plan/portfolio/example" data-plan-open aria-haspopup="dialog">View plan</a>' in overview.text
+        assert f'data-copy="{author.root / "content/notebooks/portfolio/example.ipynb"}"' in overview.text
+        assert 'href="/cms/kanban?add=1&amp;link=portfolio/example">Create Kanban task</a>' in overview.text
+        assert 'Project details' not in overview.text
         editor = client.get('/cms/artifact/portfolio/example')
         assert 'data-editing="true"' in editor.text
         assert 'data-cancel href="/cms/portfolio"' in editor.text
@@ -103,7 +138,14 @@ def test_portfolio_row_opens_combined_editor_and_save_returns_to_overview(author
         assert record['detail']['project_path'] == 'archive/2026-09-30/projects/legacy-example'
         restored = client.get(target)
         assert 'Portfolio entry saved.' in restored.text
-        assert 'Updated project' in restored.text and 'Updated abstract' in restored.text
+        assert 'Updated project' in restored.text and 'Updated abstract' not in restored.text
+        author.start('portfolio/example')
+        draft = client.get('/cms/portfolio')
+        record = author.inspect('portfolio/example')
+        assert f'href="{record["editor_url"]}">Edit in VS Code ↗</a>' in draft.text
+        assert '<span class="badge status-draft">draft</span><span class="badge">private</span>' in draft.text
+        assert 'href="/cms/artifact/portfolio/example">Edit</a>' in draft.text
+        assert 'data-delete-link href="/cms/delete/portfolio/example">Delete</a>' in draft.text
 
 
 def test_portfolio_conflict_keeps_combined_editor_and_submitted_values(author):
@@ -188,6 +230,18 @@ def test_short_overviews_have_visible_actions_and_thumbnails(author):
         assert 'Visible description' in posts.text
         assert 'href="/cms/artifact/post/example">Edit</a>' in posts.text
         assert '<summary>' not in posts.text
+        assert '<code>post/example</code>' in posts.text
+        assert f'data-copy="{author.root / "content/notebooks/posts/example.ipynb"}"' in posts.text
+        assert 'href="/cms/kanban?add=1&amp;link=post/example">Create Kanban task</a>' in posts.text
+        assert 'href="/cms/plan/post/example" data-plan-open aria-haspopup="dialog">View plan</a>' in posts.text
+        author.start('post/example')
+        started_posts = client.get('/cms/posts')
+        post = author.inspect('post/example')
+        assert f'href="{post["editor_url"]}">Edit in VS Code ↗</a>' in started_posts.text
+        assert 'Visible description' in started_posts.text
+        assert '<span class="badge status-draft">draft</span><span class="badge">private</span>' in started_posts.text
+        assert 'href="/cms/artifact/post/example">Edit</a>' in started_posts.text
+        assert 'data-delete-link href="/cms/delete/post/example">Delete</a>' in started_posts.text
         personal = client.get('/cms/personal')
         assert 'photo-list-row' in personal.text
         assert 'photo-thumbnail' in personal.text
@@ -419,6 +473,9 @@ def test_kanban_card_view_has_full_details_and_revision_aware_actions(author):
         assert 'data-dialog-open="view-task-details" aria-haspopup="dialog"' in page.text
         assert '1 linked item' in page.text
         tile = re.search(r'<article class="data-record kanban-card".*?</article>', page.text, re.S)[0]
+        assert 'data-kanban-board' in page.text
+        assert page.text.count('data-kanban-column=') == 4
+        assert 'data-kanban-card="task-details"' in tile
         assert 'card-description' in tile and 'Copy card ID' in tile
         assert 'Move to' not in tile and 'Open in CMS' not in tile
         assert '?edit=task-details' in tile and '?remove=task-details' in tile
@@ -428,10 +485,11 @@ def test_kanban_card_view_has_full_details_and_revision_aware_actions(author):
         dialog = re.search(r'<dialog id="view-task-details".*?</dialog>', view.text, re.S)[0]
         assert re.search(r'<dialog[^>]*\bopen\b', dialog)
         assert html.escape(description) in dialog
-        assert '<span class="badge">Review</span>' in dialog
+        assert '<span class="badge" data-kanban-card-column>Review</span>' in dialog
         assert 'href="/cms/artifact/post/example"' in dialog
         assert 'name="revision" value="' + before['board_revision'] + '"' in dialog
         assert 'action="/cms/kanban/move"' in dialog
+        assert 'data-kanban-move' in dialog
         assert 'Edit card' in dialog and 'Remove' in dialog
         assert 'aria-label="Close dialog"' in dialog and '>Close</a>' not in dialog
         assert '<noscript><a href="/cms/kanban">Back to board</a></noscript>' in dialog
@@ -444,3 +502,43 @@ def test_kanban_card_view_has_full_details_and_revision_aware_actions(author):
         assert 'data-board-editor' not in dialog
         assert client.get('/cms/kanban?view=missing').status_code == 404
     assert board.read() == before
+
+
+def test_kanban_drop_move_preserves_card_data_and_conflict_destination(author):
+    board = KanbanService(author.root)
+    board.create({'id': 'drag-task', 'title': 'Drag this task', 'description': 'Keep the objective.',
+                  'notes': 'Keep these notes.', 'todos': [{'text': 'Check it', 'done': True}],
+                  'artifact_ids': ['post/example']})
+    before = board.read()
+    with TestClient(create_app(author.root)) as client:
+        payload = {'revision': before['board_revision'], 'card_id': 'drag-task', 'column': 'review'}
+        moved = client.post('/cms/kanban/move', data=payload, follow_redirects=False)
+        assert moved.status_code == 303
+        after = board.read()
+        assert after['cards'] == [{**before['cards'][0], 'column': 'review'}]
+        stale = client.post('/cms/kanban/move', data={**payload, 'column': 'done'})
+        assert stale.status_code == 412
+        assert 'Card: drag-task · Column: done' in stale.text
+        assert 'Reload the board before retrying this action.' in stale.text
+        assert board.read() == after
+
+
+def test_kanban_background_move_returns_a_token_for_the_next_move_without_redirect(author):
+    board = KanbanService(author.root)
+    board.create({'id': 'background-task', 'title': 'Background move', 'notes': 'Keep these notes.',
+                  'todos': [{'text': 'Check it', 'done': True}], 'artifact_ids': ['post/example']})
+    before = board.read()
+    with TestClient(create_app(author.root)) as client:
+        page = client.get('/cms/kanban')
+        assert 'data-kanban-move-status role="status" aria-live="polite"' in page.text
+        assert 'data-kanban-order="0"' in page.text
+        for destination in ['review', 'done']:
+            response = client.patch('/api/kanban/background-task',
+                                    headers={'If-Match': before['board_revision']}, json={'column': destination})
+            assert response.status_code == 200
+            assert 'location' not in response.headers and 'hx-redirect' not in response.headers
+            result = response.json()
+            after = board.read()
+            assert result['board_revision'] == after['board_revision'] != before['board_revision']
+            assert after['cards'] == [{**before['cards'][0], 'column': destination}]
+            before = after

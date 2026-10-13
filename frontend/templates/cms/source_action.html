@@ -1,0 +1,5 @@
+{% macro button(item, editor_url, show_missing=false) -%}
+{% if item.lifecycle == 'planned' and item.kind in ['post', 'portfolio', 'chapter', 'course', 'personal'] %}<a class="button plan-button" href="/cms/plan/{{ item.id | urlpath }}" data-plan-open aria-haspopup="dialog">View plan</a>
+{% elif editor_url %}<a class="button vscode-button" href="{{ editor_url }}">Edit in VS Code ↗</a>
+{% elif show_missing %}<button type="button" class="vscode-button" disabled title="Start draft to create the notebook.">Edit in VS Code ↗</button>{% endif %}
+{%- endmacro %}

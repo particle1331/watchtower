@@ -169,8 +169,7 @@
     document.querySelectorAll('[data-client-list]').forEach(list => {
       if (list.dataset.paged) return;
       list.dataset.paged = 'true';
-      const items = [...list.children].filter(item => item.hasAttribute('data-list-item'));
-      if (items.length <= 10) return;
+      const items = () => [...list.children].filter(item => item.hasAttribute('data-list-item'));
       let page = 1;
       let size = 10;
       const toolbar = document.createElement('nav');
@@ -180,17 +179,24 @@
       list.before(toolbar);
       const previous = toolbar.querySelector('[data-previous]');
       const next = toolbar.querySelector('[data-next]');
-      function show() {
-        const pages = Math.ceil(items.length / size);
+      function show(resetScroll = true) {
+        const current = items();
+        const pages = Math.max(1, Math.ceil(current.length / size));
         page = Math.min(page, pages);
         const start = (page - 1) * size;
-        items.forEach((item, index) => item.hidden = index < start || index >= start + size);
-        toolbar.querySelector('[data-count]').textContent = `${start + 1}–${Math.min(start + size, items.length)} of ${items.length}`;
+        current.forEach((item, index) => item.hidden = index < start || index >= start + size);
+        toolbar.hidden = current.length <= 10;
+        toolbar.querySelector('[data-count]').textContent = `${current.length ? start + 1 : 0}–${Math.min(start + size, current.length)} of ${current.length}`;
         toolbar.querySelector('[data-page]').textContent = `Page ${page} of ${pages}`;
         previous.disabled = page === 1;
         next.disabled = page === pages;
-        list.scrollTop = 0;
+        if (resetScroll) list.scrollTop = 0;
       }
+      list.refreshList = revealed => {
+        const index = items().indexOf(revealed);
+        if (index >= 0) page = Math.floor(index / size) + 1;
+        show(false);
+      };
       previous.addEventListener('click', () => { page--; show(); });
       next.addEventListener('click', () => { page++; show(); });
       toolbar.querySelector('select').addEventListener('change', event => { size = Number(event.target.value); page = 1; show(); });
@@ -391,11 +397,149 @@
     });
   }
 
+  function initializeKanbanDragDrop() {
+    document.querySelectorAll('[data-kanban-board]').forEach(board => {
+      if (board.dataset.dragInitialized) return;
+      board.dataset.dragInitialized = 'true';
+      let dragged = null;
+      let blocked = false;
+      let saving = false;
+      let needsReload = false;
+      const columns = [...board.querySelectorAll('[data-kanban-column]')];
+      const status = board.querySelector('[data-kanban-move-status]');
+      const reload = board.querySelector('[data-kanban-reload]');
+      const refreshColumn = (column, revealed) => {
+        column.querySelector('[data-kanban-count]').textContent = column.querySelectorAll('[data-kanban-card]').length;
+        const list = column.querySelector('[data-client-list]');
+        list.querySelector('[data-kanban-empty]').hidden = !!list.querySelector('[data-kanban-card]');
+        list.refreshList?.(revealed);
+      };
+      async function moveCard(card, column) {
+        if (!card || !column || saving || needsReload) return;
+        if (dirty()) { window.alert('Save or cancel your changes before moving a card.'); return; }
+        const origin = card.closest('[data-kanban-column]');
+        if (origin === column) return;
+        const id = card.dataset.kanbanCard;
+        const view = document.getElementById(`view-${id}`);
+        const form = view?.querySelector('form[data-kanban-move]');
+        const revision = form?.querySelector('input[name="revision"]')?.value;
+        if (!revision) return;
+        const originalList = card.parentElement;
+        const nextSibling = card.nextSibling;
+        const list = column.querySelector('[data-client-list]');
+        const before = [...list.querySelectorAll('[data-kanban-card]')].find(item => Number(item.dataset.kanbanOrder) > Number(card.dataset.kanbanOrder));
+        const controls = [...board.querySelectorAll('form input, form textarea, form select, form button')].map(control => [control, control.disabled]);
+        const label = column.getAttribute('aria-label');
+        saving = true;
+        board.dataset.moving = 'true';
+        controls.forEach(([control]) => control.disabled = true);
+        card.classList.add('is-saving');
+        list.insertBefore(card, before || null);
+        refreshColumn(origin);
+        refreshColumn(column, card);
+        status.hidden = false;
+        status.textContent = `Saving move to ${label}…`;
+        try {
+          const response = await fetch(`/api/kanban/${encodeURIComponent(id)}`, {
+            method: 'PATCH', headers: {'Content-Type': 'application/json', 'If-Match': revision},
+            body: JSON.stringify({column: column.dataset.kanbanColumn}),
+          });
+          const result = await response.json();
+          if (!response.ok || !result.board_revision) {
+            throw new Error(response.status === 412 ? 'The board changed. Reload the saved board before moving again.' : result.error?.message || 'The save could not be confirmed. Reload the saved board.');
+          }
+          board.querySelectorAll('input[name="revision"]').forEach(input => input.value = result.board_revision);
+          const edit = document.getElementById(`edit-${id}`)?.querySelector('form[data-board-editor]');
+          [form, edit].filter(Boolean).forEach(editor => {
+            const select = editor.querySelector('select[name="column"]');
+            select.value = column.dataset.kanbanColumn;
+            [...select.options].forEach(option => option.defaultSelected = option.value === select.value);
+            if (editor === edit) editor.savedValues = values(editor);
+          });
+          view.querySelector('[data-kanban-card-column]').textContent = label;
+          status.textContent = `Moved to ${label}.`;
+        } catch (error) {
+          originalList.insertBefore(card, nextSibling?.parentNode === originalList ? nextSibling : null);
+          refreshColumn(origin, card);
+          refreshColumn(column);
+          needsReload = true;
+          reload.hidden = false;
+          status.textContent = `Move to ${label} was not confirmed. ${error.message || 'Reload the saved board before moving again.'}`;
+        } finally {
+          saving = false;
+          delete board.dataset.moving;
+          controls.forEach(([control, disabled]) => control.disabled = disabled);
+          card.classList.remove('is-saving');
+        }
+      }
+      const clearTargets = () => columns.forEach(column => column.classList.remove('is-drop-target'));
+      const finish = () => {
+        dragged?.classList.remove('is-dragging');
+        dragged = null;
+        clearTargets();
+      };
+      board.querySelectorAll('[data-kanban-card]').forEach(card => {
+        card.draggable = true;
+        card.querySelectorAll('a').forEach(link => link.draggable = false);
+      });
+      const hint = board.querySelector('[data-kanban-drag-hint]');
+      if (hint) hint.hidden = false;
+      board.addEventListener('pointerdown', event => {
+        blocked = !!event.target.closest('button, input, textarea, select, .kanban-card-footer');
+      });
+      board.addEventListener('dragstart', event => {
+        const card = event.target.closest('[data-kanban-card]');
+        if (!card) return;
+        if (blocked || saving || needsReload || !event.dataTransfer) { event.preventDefault(); return; }
+        if (dirty()) {
+          event.preventDefault();
+          window.alert('Save or cancel your changes before moving a card.');
+          return;
+        }
+        dragged = card;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', card.dataset.kanbanCard);
+        card.classList.add('is-dragging');
+      });
+      board.addEventListener('dragover', event => {
+        const column = event.target.closest('[data-kanban-column]');
+        if (!dragged || !columns.includes(column)) return;
+        event.preventDefault();
+        clearTargets();
+        const sameColumn = column === dragged.closest('[data-kanban-column]');
+        if (event.dataTransfer) event.dataTransfer.dropEffect = sameColumn ? 'none' : 'move';
+        if (!sameColumn) column.classList.add('is-drop-target');
+      });
+      board.addEventListener('dragleave', event => {
+        const column = event.target.closest('[data-kanban-column]');
+        if (column && !column.contains(event.relatedTarget)) column.classList.remove('is-drop-target');
+      });
+      board.addEventListener('drop', event => {
+        const column = event.target.closest('[data-kanban-column]');
+        if (!dragged || !columns.includes(column)) return;
+        event.preventDefault();
+        const card = dragged;
+        finish();
+        return moveCard(card, column);
+      });
+      board.addEventListener('dragend', finish);
+      board.addEventListener('submit', event => {
+        if (!event.target.matches('form[data-kanban-move]')) return;
+        event.preventDefault();
+        const id = event.target.querySelector('input[name="card_id"]').value;
+        const destination = event.target.querySelector('select[name="column"]').value;
+        const card = [...board.querySelectorAll('[data-kanban-card]')].find(item => item.dataset.kanbanCard === id);
+        return moveCard(card, columns.find(column => column.dataset.kanbanColumn === destination));
+      });
+    });
+  }
+
   function initialize() {
     initializeWorkspaceTabs();
     initializeRelationships();
     initializeLists();
     initializeTodos();
+    initializeKanbanDragDrop();
     editors().forEach(form => {
       if (form.dataset.initialized) return;
       form.dataset.initialized = 'true';
@@ -517,6 +661,15 @@
     if (dirty() && !leaving) { event.preventDefault(); event.returnValue = ''; }
   });
   document.addEventListener('submit', event => {
+    if (event.target.matches('form[data-kanban-move]')) {
+      if (event.defaultPrevented) return;
+      if (dirty()) {
+        event.preventDefault();
+        window.alert('Save or cancel your changes before moving a card.');
+        return;
+      }
+      leaving = true;
+    }
     if (event.target.matches('form[data-publication-form], form[data-summary-task-form]') && dirty()) {
       event.preventDefault();
       return;

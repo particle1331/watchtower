@@ -90,6 +90,8 @@ def test_generated_site_excludes_internal_context_at_every_stage(author, monkeyp
 @pytest.mark.parametrize('kind', ['post', 'portfolio', 'course', 'chapter'])
 def test_notes_cms_create_edit_conflict_and_api_preserve_notebook(author, kind):
     identifier = create(author, kind)
+    if kind == 'chapter':
+        author.start('course/parent')  # Chapters may leave Planned only after their course has started.
     author.start(identifier)
     source = author.root / (author.inspect(identifier)['source_path'] or f"backend/data/courses/{identifier.split('/')[-1]}.yaml")
     before = source.read_bytes()
@@ -148,6 +150,8 @@ def test_renaming_a_scaffold_does_not_make_it_publishable(author, kind):
         author.update(identifier, {'detail': {'planned': {'introduction': '', 'what_it_contains': '', 'references': ''}}})
     else:
         author.update(identifier, {'planned': {'content': ''}})
+    if kind == 'chapter':
+        author.start('course/parent')
     author.start(identifier)
     author.update(identifier, {'title': 'Renamed scaffold'})
     record = author.inspect(identifier)

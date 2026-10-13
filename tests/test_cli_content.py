@@ -64,18 +64,19 @@ def test_chapter_inline_and_file_plans_match(content_service, monkeypatch):
     assert not (service.root / "content/notebooks/courses/example/01.ipynb").exists()
 
 
-def test_course_and_chapter_cli_do_not_accept_tags(content_service, monkeypatch):
+def test_course_chapter_and_portfolio_cli_do_not_accept_tags(content_service, monkeypatch):
     service = content_service
     course = invoke(monkeypatch, service, ['new', 'course', 'example', 'Example'])
     chapter = invoke(monkeypatch, service, ['new', 'chapter', 'example', '01', '--title', 'One'])
-    assert 'tags' not in course['artifact'] and 'tags' not in chapter['artifact']
+    portfolio = invoke(monkeypatch, service, ['new', 'portfolio', 'example'])
+    assert all('tags' not in record['artifact'] for record in (course, chapter, portfolio))
     before = service.list()['revision']
-    for args in (['new', 'course', 'another', 'Another'], ['new', 'chapter', 'example', '02']):
+    for args in (['new', 'course', 'another', 'Another'], ['new', 'chapter', 'example', '02'], ['new', 'portfolio', 'another']):
         rejected = runner.invoke(app, [*args, '--tag', 'NLP'])
         assert rejected.exit_code == 2
         help_result = runner.invoke(app, [*args[:2], '--help'])
         assert '--tag' not in help_result.output
-    for identifier in ('course/example', 'course/example/01'):
+    for identifier in ('course/example', 'course/example/01', 'portfolio/example'):
         for flag in ('--tag', '--add-tag', '--remove-tag'):
             rejected = runner.invoke(app, ['update', identifier, flag, 'NLP'])
             assert rejected.exit_code == 1
@@ -87,6 +88,7 @@ def test_course_and_chapter_cli_do_not_accept_tags(content_service, monkeypatch)
 def test_chapter_import_discards_document_labels_and_preserves_cell_tags(content_service, monkeypatch):
     service = content_service
     invoke(monkeypatch, service, ['new', 'course', 'example', 'Example'])
+    service.start('course/example')  # Imported chapters are drafts, so their course must have started.
     source = service.root / '.tmp/chapter.ipynb'
     source.parent.mkdir()
     code = nbformat.v4.new_code_cell('print(2)', metadata={'tags': ['exercise']}, outputs=[nbformat.v4.new_output('stream', name='stdout', text='2\n')], execution_count=2)

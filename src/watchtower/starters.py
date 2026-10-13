@@ -4,7 +4,7 @@ from typing import Any
 
 from markdown_it import MarkdownIt
 
-from watchtower.planning import BODY_ONLY, PLAN, seed_sections
+from watchtower.planning import BODY_ONLY, PLAN, portfolio_plan, post_plan, seed_sections
 from watchtower.services.workspace import ServiceError
 
 # Each kind seeds its writing-brief fields in order. An empty heading seeds body text.
@@ -13,8 +13,9 @@ SECTIONS: dict[str, list[tuple[str, str]]] = {kind: seed_sections(kind) for kind
 
 def portfolio_abstract(plan: dict[str, Any]) -> str:
     """Seed a short, editable abstract from the opening prose, without inventing claims."""
+    plan = portfolio_plan(plan)
     paragraphs = []
-    for key in ("introduction", "what_it_contains"):
+    for key in ("introduction", "content"):
         tokens = MarkdownIt().parse(str(plan.get(key) or ""))
         for index, token in enumerate(tokens):
             if token.type != "inline" or index == 0 or tokens[index - 1].type != "paragraph_open":
@@ -37,7 +38,35 @@ def draft_notebook_cells(kind: str, title: str, plan: dict[str, Any]) -> list[st
 
 
 def draft_sections(kind: str, plan: dict[str, Any]) -> list[str]:
-    """Preserve Markdown and fences; keep notes and unknown plan fields internal."""
+    """Notebook cells for the seeded sections, split only at Markdown block boundaries."""
+    cells = []
+    for key, section in section_texts(kind, plan):
+        lines = section.splitlines(keepends=True)
+        boundaries = sorted({0, len(lines), *(token.map[0] for token in MarkdownIt().parse(section) if token.level == 0 and token.map)})
+        chunk = ""
+        for start, end in zip(boundaries, boundaries[1:], strict=False):
+            block = "".join(lines[start:end])
+            if len(block) > 20_000:
+                raise ServiceError(f"Plan field {key} contains a Markdown block over 20,000 characters; split it before starting.")
+            if len(chunk) + len(block) > 20_000:
+                cells.append(chunk)
+                chunk = ""
+            chunk += block
+        if chunk:
+            cells.append(chunk)
+    return cells
+
+
+def section_texts(kind: str, plan: dict[str, Any]) -> list[tuple[str, str]]:
+    """(plan key, Markdown) for each seeded section, in draft order.
+
+    Drafts and plan previews both use this text, so the plan shows the draft
+    exactly. Unlike ``draft_sections`` it never splits or rejects long blocks.
+    """
+    if kind == "portfolio":
+        plan = portfolio_plan(plan)
+    elif kind == "post":
+        plan = post_plan(plan)
     sections = []
     for key, heading in SECTIONS.get(kind, []):
         value = plan.get(key)
@@ -66,18 +95,5 @@ def draft_sections(kind: str, plan: dict[str, Any]) -> list[str]:
                 else:
                     lines[end - 1] = "---"
         body = "\n".join(lines)
-        section = f"## {heading}\n\n{body}" if heading else body
-        lines = section.splitlines(keepends=True)
-        boundaries = sorted({0, len(lines), *(token.map[0] for token in MarkdownIt().parse(section) if token.level == 0 and token.map)})
-        chunk = ""
-        for start, end in zip(boundaries, boundaries[1:], strict=False):
-            block = "".join(lines[start:end])
-            if len(block) > 20_000:
-                raise ServiceError(f"Plan field {key} contains a Markdown block over 20,000 characters; split it before starting.")
-            if len(chunk) + len(block) > 20_000:
-                sections.append(chunk)
-                chunk = ""
-            chunk += block
-        if chunk:
-            sections.append(chunk)
+        sections.append((key, f"## {heading}\n\n{body}" if heading else body))
     return sections

@@ -8,15 +8,15 @@ artifacts:
   lifecycle: published
   relations: []
   date: '2026-09-30'
+  description: 'A guide to the `wt` command-line tool: how the catalog, notebook cells,
+    course contracts, revisions and Kanban cards fit together, and how to plan, author
+    and publish content from the terminal.'
   internal_notes: ''
+  internal_todos: []
+  attachments: []
   tags:
   - meta
   - dev
-  planned:
-    audience: ''
-    content: ''
-    evidence: ''
-    references: ''
   route: nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
 - id: course/llms-from-scratch
   kind: course

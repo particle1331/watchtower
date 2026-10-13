@@ -112,30 +112,6 @@ def _remove_title_h1s(source: str, title: str) -> tuple[str, bool]:
     return "\n".join(line for index, line in enumerate(source.splitlines()) if index not in ignored), True
 
 
-def _insert_chapter_subtitle(source: str, title: str, subtitle: str) -> tuple[str, bool]:
-    """Place the chapter's front-matter subtitle below its authored title H1."""
-    if not subtitle:
-        return source, False
-    tokens = MarkdownIt().parse(source)
-    for index, token in enumerate(tokens):
-        if (
-            token.type == "heading_open"
-            and token.tag == "h1"
-            and index + 1 < len(tokens)
-            and displayed_text(tokens[index + 1]) == title
-            and token.map
-        ):
-            lines = source.splitlines()
-            line_after_heading = token.map[1]
-            lines[line_after_heading:line_after_heading] = [
-                "",
-                f'<p class="chapter-subtitle">{escape(subtitle)}</p>',
-                "",
-            ]
-            return "\n".join(lines), True
-    return source, False
-
-
 class _Generator:
     """A renderer over one immutable snapshot; no workspace reads occur here."""
 
@@ -281,17 +257,6 @@ class _Generator:
             value.append("No chapters to display yet.")
         return "\n".join(value) + "\n"
 
-    def chapter_summary(self, artifact: Any) -> str:
-        if artifact.kind != "chapter":
-            return ""
-        contract = self.state.courses.get(getattr(artifact, "parent", None))
-        if contract is None:
-            return ""
-        return next(
-            (row["summary"] for row in course_rows(contract, self.entries) if row["chapter"]["id"] == artifact.id),
-            "",
-        )
-
     @staticmethod
     def navigation_title(artifact: Any, title: str) -> str:
         if artifact.lifecycle == "draft":
@@ -300,20 +265,17 @@ class _Generator:
 
     def metadata(self, artifact: Any, route: str) -> dict[str, Any]:
         value: dict[str, Any] = {"title": artifact.title}
-        if artifact.kind == "chapter" and (summary := self.chapter_summary(artifact)):
-            value["subtitle"] = summary
         value.update({"toc": True, "lifecycle": artifact.lifecycle})
-        # Portfolio entry pages show their abstract as body content from portfolio
-        # YAML; a front-matter description would render it a second time.
-        if artifact.description and artifact.kind != "portfolio":
+        # Public summaries and portfolio abstracts belong on their listings/tables.
+        if artifact.description and artifact.kind not in {"portfolio", "post", "chapter"}:
             value["description"] = artifact.description
         if artifact.date:
             value["date"] = str(artifact.date)
-        if artifact.kind not in {"course", "chapter"} and artifact.tags:
+        if artifact.kind not in {"course", "chapter", "portfolio"} and artifact.tags:
             value["categories"] = artifact.tags
         if artifact.kind == "chapter":
             value["format"] = {"html": {"template-partials": ["/templates/title-block.html"]}}
-        if artifact.kind in {"post", "personal"}:
+        if artifact.kind == "personal":
             value["author"] = self.state.profile.name
         if artifact.kind == "course":
             value["sidebar"] = artifact.id.replace("/", "-")
@@ -375,8 +337,6 @@ class _Generator:
             raise ValueError(f"Missing notebook source for {artifact.id}")
         notebook = copy.deepcopy(nbformat.reads(self.files[source].decode("utf-8"), as_version=4))
         cells = []
-        subtitle = self.chapter_summary(artifact)
-        subtitle_added = False
         for cell in notebook.cells:
             if cell.cell_type == "markdown":
                 if artifact.kind != "chapter":
@@ -384,8 +344,6 @@ class _Generator:
                     if removed_title and not cell.source.strip():
                         continue
                 cell.source = self.rewrite_body(cell.source, source, route)
-                if artifact.kind == "chapter" and not subtitle_added:
-                    cell.source, subtitle_added = _insert_chapter_subtitle(cell.source, artifact.title, subtitle)
             for output in cell.get("outputs", []):
                 for mimetype in ("text/html", "text/markdown"):
                     body = output.get("data", {}).get(mimetype)
@@ -412,19 +370,18 @@ class _Generator:
             )
             if artifact.kind == "portfolio":
                 detail = self.details.get(artifact.id)
-                figure_url = None
-                if detail and detail.figure_path:
-                    destination = _asset_path(detail.figure_path)
-                    self.write(destination, self.files[detail.figure_path])
-                    figure_url = _relative(destination, route)
                 header += "\n" + self.template(
-                    "site/portfolio-page-header.md.j2", back_url=back_url, detail=detail,
+                    "site/portfolio-page-header.md.j2", back_url=back_url,
                     source_url=_source_url(detail, self.state.settings) if detail else None,
-                    figure_url=figure_url, description=artifact.description,
                 ) + "\n"
             elif back_url:
                 header += f"\n[← {artifact.kind.capitalize()}]({back_url})\n"
         notebook.cells.insert(0, _generated_cell(artifact.id, "header", header))
+        if artifact.kind in {"portfolio", "post", "chapter"}:
+            related = [{"title": re.sub(r"([\\`*_{}\[\]()#!|])", r"\\\1", escape(self.by_id[identifier].title)), "href": _relative(_href(self.routes[identifier]), route)}
+                       for identifier in artifact.relations if identifier in self.routes and identifier != artifact.id]
+            if related:
+                notebook.cells.append(_generated_cell(artifact.id, "related-content", self.template("site/related-content.md.j2", related=related)))
         if artifact.kind == "course":
             context = self.context(artifact)
             # Old generated include directives resolve to the new immutable context.

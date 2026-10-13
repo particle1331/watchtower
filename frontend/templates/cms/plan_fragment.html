@@ -1,0 +1,8 @@
+<article class="plan-document" aria-label="Saved plan">
+  <h1>{{ artifact.title }}</h1>
+  <p class="plan-meta"><code>{{ artifact.id }}</code> <span class="badge status-planned">planned</span> <span>Saved plan · Read only</span></p>
+  <p class="plan-hint">Save edits in the editor to update this view.</p>
+  {% for label, body in plan_sections %}
+  <section class="plan-section"><h2>{{ label }}</h2><div class="plan-markdown">{{ body | safe }}</div></section>
+  {% else %}<p class="plan-empty">No plan text yet. Add your plan in the editor and save.</p>{% endfor %}
+</article>

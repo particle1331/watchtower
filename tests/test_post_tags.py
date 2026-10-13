@@ -29,15 +29,15 @@ def test_legacy_categories_merge_into_tags_and_are_removed_from_the_model(kind, 
     if kind == 'chapter':
         values.update(parent='course/example', toc_title='Example', section='main')
     artifact = Artifact.model_validate(values)
-    assert artifact.tags == ([] if kind in {'course', 'chapter'} else ['NLP', 'meta', 'dev'])
+    assert artifact.tags == ([] if kind in {'course', 'chapter', 'portfolio'} else ['NLP', 'meta', 'dev'])
     assert not hasattr(artifact, 'categories')
     assert artifact.route == 'legacy/example.ipynb'
     assert values['categories'] == ['Meta', 'dev']
     data = artifact.model_dump(mode='json')
     assert 'categories' not in data
     labels = {field['label'] for group in field_groups(form_fields(data), data) for field in group['fields']}
-    assert ('tags' in labels) == (kind not in {'course', 'chapter'})
-    assert ('tags' in data) == (kind not in {'course', 'chapter'})
+    assert ('tags' in labels) == (kind not in {'course', 'chapter', 'portfolio'})
+    assert ('tags' in data) == (kind not in {'course', 'chapter', 'portfolio'})
     assert not {'route', 'categories'} & labels
     assert ('cover' in labels) == (kind == 'course')
 

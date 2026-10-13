@@ -61,11 +61,17 @@ def test_cms_saves_six_sections_publishes_and_preserves_notes_and_drafts(author)
     author.update(identifier, {'internal_notes': 'SECRET-NOTES', 'internal_todos': [{'text': 'SECRET-TODO', 'done': True}]})
     with TestClient(create_app(author.root)) as client:
         page = client.get('/cms/courses/example')
-        assert 'Edit in VS Code' not in page.text and 'Copy source path' not in page.text
+        # The CMS-owned home has no notebook; outline chapters have their own source tools.
+        home_tools = re.search(r'<div class="source-tools">(.*?)</div>', page.text, re.S)[1]
+        assert 'Edit in VS Code' not in home_tools and 'Copy source path' not in home_tools
         assert 'purpose, intended audience, scope, and what to expect' in html.unescape(page.text)
-        for label in ("Course outcome", 'Course description', 'Related topics', 'Course content',
+        for label in ("Course outcome", 'Course description', 'Related topics',
                       'Requirements', 'Prerequisites', 'References'):
             assert label in html.unescape(page.text)
+        assert 'Automatically generated from' not in page.text  # CMS editor no longer shows the generated-content note
+        rendered = html.unescape(page.text)
+        description = rendered.index('name="field:["contract", "home", "description"]"')
+        assert rendered.index('</textarea>', description) < rendered.index('Explain the purpose', description)  # hints follow their input
         revision, snapshot = form_snapshot(page)
         result = client.post('/cms/save/' + identifier, data={'revision': revision, 'snapshot': snapshot,
             'field:["contract", "home", "outcome"]': '- Build a useful thing.',

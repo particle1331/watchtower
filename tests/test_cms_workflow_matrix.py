@@ -33,6 +33,8 @@ def field(path):
 def test_title_only_creation_and_edit_roundtrip(author, kind, start):
     if kind == "chapter":
         author.create({"id": "course/parent", "kind": "course", "title": "Parent", "path": "content/notebooks/courses/parent"})
+        if start:
+            author.start("course/parent")  # Started chapters require a started course.
     with TestClient(create_app(author.root)) as client:
         url = f"/cms/new?kind={kind}"
         page = client.get(url)
@@ -41,7 +43,7 @@ def test_title_only_creation_and_edit_roundtrip(author, kind, start):
         assert " required" not in name_control
         assert 'Save this plan to add a linked Kanban' in page.text
         assert 'data-summary-prompt=' not in page.text
-        assert 'featured_image' not in page.text  # Add uploads after an entry exists.
+        assert ('name="featured_image"' in page.text) == (kind == 'portfolio')
         data = {"revision": token(page), "kind": kind, field(["title"]): "Minimal entry"}
         if kind == "chapter":
             data.update({field(["parent"]): "course/parent", field(["section"]): "main"})
@@ -65,14 +67,14 @@ def test_title_only_creation_and_edit_roundtrip(author, kind, start):
         }
         data[field(["internal_notes"]) if start else field(plan_path(kind, key))] = "A private author decision." if start else "A concrete writing brief."
         assert ('id="plan" class="author-section' in page.text) == (not start and kind != "course")
-        if kind not in {"course", "chapter"}:
+        if kind not in {"course", "chapter", "portfolio"}:
             data[field(["tags"])] = "testing\nTesting\nworkflow"
-        assert ('>Tags</span>' in page.text) == (kind not in {"course", "chapter"})
+        assert ('>Tags</span>' in page.text) == (kind not in {"course", "chapter", "portfolio"})
         saved = client.post(f"/cms/save/{identity}", data=data, headers={"HX-Request": "true"})
         assert saved.status_code == 200, re.findall(r"<pre>(.*?)</pre>", saved.text, re.S)
         record = author.inspect(identity)
         assert record["artifact"]["title"] == "Revised title"
-        if kind in {"course", "chapter"}:
+        if kind in {"course", "chapter", "portfolio"}:
             assert "tags" not in record["artifact"]
         else:
             assert record["artifact"]["tags"] == ["testing", "workflow"]
@@ -86,6 +88,8 @@ def test_title_only_creation_and_edit_roundtrip(author, kind, start):
         assert "Unsaved title" in stale.text
         assert author.inspect(identity)["artifact"]["title"] == "Revised title"
         if not start:
+            if kind == "chapter":
+                author.start("course/parent")  # The chapter's draft start needs its course to be started first.
             fresh = client.get(editor_url)
             started = client.post(f"/cms/action/start/{identity}", data={"revision": token(fresh)})
             assert started.status_code == 200, started.text
@@ -168,6 +172,7 @@ def test_cms_kanban_form_survives_unrelated_content_edits(author):
 def test_failed_publish_then_save_keeps_metadata_edits(author, kind):
     if kind == 'chapter':
         author.create({'id': 'course/parent', 'kind': 'course', 'title': 'Parent', 'path': 'content/notebooks/courses/parent'})
+        author.start('course/parent')  # Drafts under this chapter need a started course.
     with TestClient(create_app(author.root)) as client:
         url = f'/cms/new?kind={kind}'
         data = {'revision': token(client.get(url)), 'kind': kind, field(['title']): 'Retry entry', 'start_draft': '1'}

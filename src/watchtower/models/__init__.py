@@ -23,6 +23,7 @@ from pydantic import (
 
 from watchtower.planning import filled_fields
 from watchtower.services.projects import project_name as validate_project_name
+from watchtower.starters import section_texts
 
 
 class Record(BaseModel):
@@ -98,13 +99,13 @@ class Artifact(Record):
 
     @staticmethod
     def normalize_labels(value: Any) -> Any:
-        """Normalize legacy labels; courses and chapters have no taxonomy."""
+        """Normalize legacy labels; courses, chapters and portfolios have no taxonomy."""
         if isinstance(value, dict):
             tags, categories = value.get("tags", []), value.get("categories", [])
             if isinstance(tags, list) and isinstance(categories, list) and all(isinstance(label, str) for label in tags + categories):
                 normalized = {**value, "tags": Artifact.clean_tags(tags + categories)}
                 normalized.pop("categories", None)
-                if value.get("kind") in {"course", "chapter"}:
+                if value.get("kind") in {"course", "chapter", "portfolio"}:
                     normalized.pop("tags", None)
                 return normalized
         return value
@@ -117,8 +118,10 @@ class Artifact(Record):
     @model_serializer(mode="wrap")
     def serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
         data = handler(self)
-        if self.kind in {"course", "chapter"}:
+        if self.kind in {"course", "chapter", "portfolio"}:
             data.pop("tags", None)
+        if self.kind in {"post", "chapter", "portfolio"} and self.lifecycle != "planned" and not self.planned:
+            data.pop("planned", None)
         return data
 
     @field_validator("path", "cover", "route")
@@ -183,6 +186,13 @@ class PortfolioEntry(Record):
     notebook_path: str | None = None
     project_path: str | None = None
     planned: dict[str, str] = Field(default_factory=dict)
+
+    @model_serializer(mode="wrap")
+    def serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data = handler(self)
+        if not self.planned:
+            data.pop("planned", None)
+        return data
 
     @model_validator(mode="before")
     @classmethod
@@ -265,12 +275,11 @@ class Section(Record):
 
 
 class ChapterPlan(Record):
+    """Chapter identity, placement and table metadata; starter inputs are temporary."""
     model_config = ConfigDict(extra="allow")
     chapter_id: str
     section: str
     summary: str | None = None
-    content: str = ""
-    lab_and_evidence: str = ""
 
 
 class CourseHome(Record):
@@ -635,30 +644,23 @@ def _preview_sections(artifact: Artifact, state: Workspace, plan: Mapping[str, A
 
 
 def plan_body(artifact: Artifact, state: Workspace) -> str:
-    """Internal plan preview for inspection; never use as a public page or starter."""
+    """Internal plan preview for inspection; never use as a public page or starter.
+
+    Posts, portfolio entries and chapters preview exactly the Markdown their draft
+    notebook will hold (the draft is definitive). Courses preview their plan fields.
+    """
     if artifact.lifecycle != "planned":
         return ""
     if artifact.kind == "chapter":
         course = state.courses[str(artifact.parent)]
         plan = next((p for p in course.planned.get("chapters", []) if p.get("chapter_id") == artifact.id), {})
-        return "\n\n".join([f"# {artifact.title}", *_preview_sections(artifact, state, plan)])
+        # Chapter drafts keep their H1; post and portfolio drafts drop the title H1 when generated.
+        return "\n\n".join([f"# {artifact.title}", *(text for _, text in section_texts("chapter", plan))])
     if artifact.kind == "portfolio":
         detail = next(p for p in state.portfolio if p.id == artifact.id)
-        body = ["[← Portfolio](/portfolio.html)", *_preview_sections(artifact, state, detail.planned, exclude={"references"})]
-        links = []
-        reserved = artifact.lifecycle == "planned" and not (detail.project_path or "").startswith("archive/")
-        url = source_url(detail, state.settings, reserved_name=artifact.id.split("/")[-1] if reserved else None)
-        if url:
-            source_label = "Reserved source code" if reserved else "Source"
-            links.append(f"- [{source_label}]({url})")
-        for related in state.artifacts:
-            if related.id in artifact.relations and eligible(related, state.artifacts):
-                links.append(f"- [{related.title}](/{Path(route_for(related)).with_suffix('.html').as_posix()})")
-        references = detail.planned.get("references") or ""
-        resources = [part for part in (references, "\n".join(links)) if part]
-        if resources:
-            body.append("## References and related content\n\n" + "\n\n".join(resources))
-        return "\n\n".join(body)
+        return "\n\n".join(text for _, text in section_texts("portfolio", detail.planned))
+    if artifact.kind == "post":
+        return "\n\n".join(text for _, text in section_texts("post", artifact.planned))
     if artifact.kind == "course":
         course = state.courses[artifact.id]
         return "\n\n".join(_preview_sections(artifact, state, course.planned))

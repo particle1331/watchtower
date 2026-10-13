@@ -513,3 +513,275 @@ test('entity checklist updates its fraction, rejects blank additions, and marks 
   assert.equal(env.count.textContent, '0/0');
   assert.equal(env.empty.hidden, false);
 });
+
+function kanbanEnvironment() {
+  const handlers = new Map(), alerts = [], requests = [];
+  let resolveRequest, rejectRequest;
+  class Element {
+    constructor(dataset = {}, parent = null) {
+      this.dataset = dataset; this.listeners = {}; this.hidden = false; this.children = []; this.parts = {}; this.attrs = {};
+      const classes = new Set();
+      this.classList = {add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name)};
+      if (parent) parent.insertBefore(this, null);
+    }
+    get parentElement() { return this.parent; }
+    get parentNode() { return this.parent; }
+    get nextSibling() { return this.parent?.children[this.parent.children.indexOf(this) + 1] || null; }
+    insertBefore(child, before) {
+      if (child.parent) child.parent.children.splice(child.parent.children.indexOf(child), 1);
+      const index = before ? this.children.indexOf(before) : this.children.length;
+      this.children.splice(index, 0, child); child.parent = this;
+    }
+    getAttribute(name) { return this.attrs[name]; }
+    closest(selector) {
+      if (selector === '[data-kanban-card]' && this.dataset.kanbanCard) return this;
+      if (selector === '[data-kanban-column]' && this.dataset.kanbanColumn) return this;
+      if (selector === 'button, input, textarea, select, .kanban-card-footer') return this.interactive ? this : null;
+      return this.parent?.closest(selector) || null;
+    }
+    contains(element) { return element === this || !!element?.parent && this.contains(element.parent); }
+    addEventListener(name, callback) { (this.listeners[name] ||= []).push(callback); }
+    querySelector(selector) { return this.parts[selector] || this.querySelectorAll(selector)[0] || null; }
+    querySelectorAll(selector) {
+      const descendants = this.children.flatMap(child => [child, ...child.querySelectorAll('*')]);
+      if (selector === '*') return descendants;
+      if (selector === '[data-kanban-card]') return descendants.filter(child => child.dataset.kanbanCard);
+      return [];
+    }
+    hasAttribute(name) { return name in this.attrs; }
+  }
+  const board = new Element(), hint = new Element(), status = new Element(), reload = new Element();
+  hint.hidden = status.hidden = reload.hidden = true;
+  const columns = ['todo', 'in-progress', 'review', 'done'].map(id => new Element({kanbanColumn: id}, board));
+  const titles = ['To do', 'In progress', 'Review', 'Done'];
+  const lists = columns.map((column, index) => {
+    const list = new Element({}, column), empty = new Element({}, list), count = new Element();
+    column.attrs['aria-label'] = titles[index];
+    column.parts = {'[data-client-list]': list, '[data-kanban-count]': count};
+    list.parts = {'[data-kanban-empty]': empty};
+    list.refreshList = revealed => list.revealed = revealed;
+    return list;
+  });
+  const card = new Element({kanbanCard: 'task-one', kanbanOrder: '1'}, lists[0]), link = new Element({}, card), footer = new Element({}, card);
+  footer.interactive = true;
+  card.querySelectorAll = selector => selector === 'a' ? [link] : [];
+  board.parts = {'[data-kanban-drag-hint]': hint, '[data-kanban-move-status]': status, '[data-kanban-reload]': reload};
+  function columnSelect() {
+    return {name: 'column', type: 'select-one', value: 'todo', disabled: false,
+      options: columns.map(column => ({value: column.dataset.kanbanColumn, defaultSelected: column === columns[0]}))};
+  }
+  const select = columnSelect(), editSelect = columnSelect(), revision = {value: 'kanban:saved-board', disabled: false}, editRevision = {value: revision.value, disabled: false};
+  const controls = [select, editSelect, revision, editRevision];
+  const queryAll = board.querySelectorAll.bind(board);
+  board.querySelectorAll = selector => selector === '[data-kanban-column]' ? columns :
+    selector === 'input[name="revision"]' ? [revision, editRevision] :
+      selector === 'form input, form textarea, form select, form button' ? controls : queryAll(selector);
+  const editor = new Element(); editor.attrs['data-board-editor'] = '';
+  editor.parts = {'select[name="column"]': editSelect};
+  editor.querySelectorAll = selector => selector === 'input, textarea, select' ? [editSelect] : [];
+  const submissions = [];
+  const form = {
+    querySelector: selector => selector === 'select[name="column"]' ? select : selector === 'input[name="revision"]' ? revision : selector === 'input[name="card_id"]' ? {value: card.dataset.kanbanCard} : null,
+    matches: selector => selector === 'form[data-kanban-move]',
+    requestSubmit() {
+      const event = {target: form, preventDefault() { this.defaultPrevented = true; }};
+      const pending = (board.listeners.submit || []).map(callback => callback(event));
+      for (const callback of handlers.get('submit') || []) callback(event);
+      if (!event.defaultPrevented) submissions.push({card_id: card.dataset.kanbanCard, column: select.value, revision: revision.value});
+      return Promise.all(pending);
+    },
+  };
+  const badge = new Element(), view = new Element(), edit = new Element();
+  view.parts = {'form[data-kanban-move]': form, '[data-kanban-card-column]': badge};
+  edit.parts = {'form[data-board-editor]': editor};
+  const document = {
+    querySelector: () => null,
+    querySelectorAll(selector) {
+      if (selector === '[data-kanban-board]') return [board];
+      if (selector === 'form[data-editor], form[data-board-editor], form[data-outline-form]') return [editor];
+      return [];
+    },
+    getElementById: id => id === 'view-task-one' ? view : id === 'edit-task-one' ? edit : null,
+    addEventListener(name, callback) { const list = handlers.get(name) || []; list.push(callback); handlers.set(name, list); },
+  };
+  const window = {addEventListener() {}, alert: message => alerts.push(message)};
+  vm.runInNewContext(source, {document, window, location: {hash: ''}, fetch: (url, options) => {
+    requests.push({url, method: options.method, revision: options.headers['If-Match'], patch: JSON.parse(options.body)});
+    return new Promise((resolve, reject) => { resolveRequest = resolve; rejectRequest = reject; });
+  }});
+  const transfer = {setData(type, value) { this[type] = value; }};
+  function fire(type, target, extra = {}) {
+    const event = {target, dataTransfer: transfer, preventDefault() { this.defaultPrevented = true; }, ...extra};
+    event.completion = Promise.all((board.listeners[type] || []).map(callback => callback(event)));
+    return event;
+  }
+  return {board, hint, status, reload, card, link, footer, columns, lists, editor, form, select, editSelect, revision, editRevision, badge, controls, transfer, submissions, requests, alerts, fire,
+    respond: (code = 200, result = {board_revision: 'kanban:next-board'}) => resolveRequest({ok: code === 200, status: code, json: async () => result}),
+    fail: () => rejectRequest(new Error('Network disconnected')),
+    addCard: (id, order, column) => new Element({kanbanCard: id, kanbanOrder: String(order)}, lists[column]),
+    initialize: () => handlers.get('htmx:afterSwap')[0]({detail: {target: {id: 'kanban-board'}}})};
+}
+
+test('a drop moves the card immediately and saves in the background without navigation', async () => {
+  const env = kanbanEnvironment();
+  assert.equal(env.card.draggable, true);
+  assert.equal(env.link.draggable, false);
+  assert.equal(env.hint.hidden, false);
+  env.fire('pointerdown', env.link);
+  assert.equal(env.fire('dragstart', env.card).defaultPrevented, undefined);
+  assert.equal(env.transfer.effectAllowed, 'move');
+  assert.equal(env.transfer['text/plain'], 'task-one');
+  assert.equal(env.card.classList.contains('is-dragging'), true);
+  assert.equal(env.fire('dragover', env.columns[2]).defaultPrevented, true);
+  assert.equal(env.transfer.dropEffect, 'move');
+  assert.equal(env.columns[2].classList.contains('is-drop-target'), true);
+  const drop = env.fire('drop', env.columns[2]);
+  assert.deepEqual(env.submissions, []);
+  assert.deepEqual(env.requests, [{url: '/api/kanban/task-one', method: 'PATCH', revision: 'kanban:saved-board', patch: {column: 'review'}}]);
+  assert.equal(env.card.parent, env.lists[2]);
+  assert.equal(env.columns[0].parts['[data-kanban-count]'].textContent, 0);
+  assert.equal(env.columns[2].parts['[data-kanban-count]'].textContent, 1);
+  assert.equal(env.lists[0].parts['[data-kanban-empty]'].hidden, false);
+  assert.equal(env.lists[2].parts['[data-kanban-empty]'].hidden, true);
+  assert.equal(env.card.classList.contains('is-saving'), true);
+  assert.equal(env.revision.value, 'kanban:saved-board');
+  assert.equal(env.controls.every(control => control.disabled), true);
+  assert.equal(env.card.classList.contains('is-dragging'), false);
+  assert.equal(env.columns[2].classList.contains('is-drop-target'), false);
+  assert.equal(env.fire('dragstart', env.card).defaultPrevented, true);
+  env.respond(); await drop.completion;
+  assert.equal(env.revision.value, 'kanban:next-board');
+  assert.equal(env.editRevision.value, env.revision.value);
+  assert.equal(env.select.value, 'review');
+  assert.equal(env.editSelect.value, 'review');
+  assert.equal(env.editSelect.options.find(option => option.defaultSelected).value, 'review');
+  assert.equal(env.badge.textContent, 'Review');
+  assert.equal(env.status.textContent, 'Moved to Review.');
+  assert.equal(env.controls.every(control => !control.disabled), true);
+  assert.equal(env.card.classList.contains('is-saving'), false);
+  assert.equal(env.editor.dataset.dirty, 'false');
+  env.fire('dragstart', env.card);
+  const again = env.fire('drop', env.columns[1]);
+  assert.equal(env.requests[1].revision, 'kanban:next-board');
+  env.respond(200, {board_revision: 'kanban:third-board'}); await again.completion;
+  assert.equal(env.card.parent, env.lists[1]);
+});
+
+test('same-column, cancelled, and external drops never save a move', () => {
+  const env = kanbanEnvironment();
+  assert.equal(env.fire('dragover', env.columns[2]).defaultPrevented, undefined);
+  env.fire('drop', env.columns[2]);
+  env.fire('dragstart', env.card);
+  env.fire('dragover', env.columns[0]);
+  assert.equal(env.transfer.dropEffect, 'none');
+  env.fire('drop', env.columns[0]);
+  env.fire('dragstart', env.card);
+  env.fire('dragover', env.columns[3]);
+  env.fire('dragleave', env.columns[3], {relatedTarget: null});
+  assert.equal(env.columns[3].classList.contains('is-drop-target'), false);
+  env.fire('dragend', env.card);
+  env.fire('drop', env.columns[3]);
+  assert.deepEqual(env.submissions, []);
+  assert.deepEqual(env.requests, []);
+  assert.equal(env.card.classList.contains('is-dragging'), false);
+});
+
+test('unsaved card edits block both dragging and Move without losing the edits', async () => {
+  const env = kanbanEnvironment();
+  env.editor.dataset.dirty = 'true';
+  assert.equal(env.fire('dragstart', env.card).defaultPrevented, true);
+  await env.form.requestSubmit();
+  assert.equal(env.editor.dataset.dirty, 'true');
+  assert.deepEqual(env.submissions, []);
+  assert.equal(env.alerts.length, 2);
+  env.editor.dataset.dirty = 'false';
+  env.fire('dragstart', env.card);
+  env.editor.dataset.dirty = 'true';
+  env.fire('drop', env.columns[2]);
+  assert.deepEqual(env.submissions, []);
+  assert.equal(env.card.classList.contains('is-dragging'), false);
+});
+
+test('card footer actions do not start drags and swapped boards initialize only once', async () => {
+  const env = kanbanEnvironment();
+  env.fire('pointerdown', env.footer);
+  assert.equal(env.fire('dragstart', env.card).defaultPrevented, true);
+  env.fire('pointerdown', env.link);
+  env.initialize();
+  env.fire('dragstart', env.card);
+  const drop = env.fire('drop', env.columns[1]);
+  assert.equal(env.requests.length, 1);
+  env.respond(); await drop.completion;
+  assert.deepEqual(env.submissions, []);
+});
+
+for (const failure of [412, 500, 'network']) {
+  test(`failed background move restores the exact position and requires reconciliation (${failure})`, async () => {
+    const env = kanbanEnvironment();
+    const neighbor = env.addCard('neighbor', 2, 0);
+    env.controls[3].disabled = true;
+    env.fire('dragstart', env.card);
+    const drop = env.fire('drop', env.columns[3]);
+    assert.equal(env.card.parent, env.lists[3]);
+    if (failure === 'network') env.fail();
+    else env.respond(failure, {error: {message: 'Save failed'}});
+    await drop.completion;
+    assert.equal(env.card.parent, env.lists[0]);
+    assert.equal(env.card.nextSibling, neighbor);
+    assert.equal(env.columns[0].parts['[data-kanban-count]'].textContent, 2);
+    assert.equal(env.columns[3].parts['[data-kanban-count]'].textContent, 0);
+    assert.equal(env.lists[3].parts['[data-kanban-empty]'].hidden, false);
+    assert.equal(env.revision.value, 'kanban:saved-board');
+    assert.equal(env.reload.hidden, false);
+    assert.match(env.status.textContent, /Move to Done was not confirmed/);
+    if (failure === 412) assert.match(env.status.textContent, /board changed/);
+    assert.equal(env.controls[3].disabled, true);
+    assert.equal(env.fire('dragstart', env.card).defaultPrevented, true);
+    assert.equal(env.requests.length, 1);
+  });
+}
+
+test('background moves preserve saved card ordering and keep the dialog Move control in place', async () => {
+  const env = kanbanEnvironment();
+  const older = env.addCard('older', 0, 2), newer = env.addCard('newer', 2, 2);
+  env.select.value = 'review';
+  const submitted = env.form.requestSubmit();
+  assert.deepEqual(env.lists[2].querySelectorAll('[data-kanban-card]'), [older, env.card, newer]);
+  assert.equal(env.lists[2].revealed, env.card);
+  env.respond(); await submitted;
+  assert.deepEqual(env.submissions, []);
+  assert.equal(env.requests.length, 1);
+});
+
+test('column pagination updates after moving cards and preserves scroll position', () => {
+  const handlers = new Map();
+  const control = () => ({listeners: {}, addEventListener(name, callback) { this.listeners[name] = callback; }});
+  const parts = Object.fromEntries(['[data-count]', '[data-page]', '[data-previous]', '[data-next]', 'select'].map(key => [key, control()]));
+  const toolbar = {setAttribute() {}, querySelector: selector => parts[selector]};
+  const list = {dataset: {}, scrollTop: 99,
+    children: Array.from({length: 11}, () => ({hasAttribute: name => name === 'data-list-item'})),
+    before(element) { this.toolbar = element; },
+  };
+  const document = {querySelector: () => null, getElementById: () => null,
+    querySelectorAll: selector => selector === '[data-client-list]' ? [list] : [],
+    createElement: () => toolbar,
+    addEventListener(name, callback) { handlers.set(name, callback); },
+  };
+  vm.runInNewContext(source, {document, window: {addEventListener() {}}, location: {hash: ''}});
+  assert.equal(toolbar.hidden, false);
+  assert.equal(list.children[10].hidden, true);
+  const added = {hasAttribute: name => name === 'data-list-item'};
+  list.children.push(added);
+  list.scrollTop = 99;
+  list.refreshList(added);
+  assert.equal(added.hidden, false);
+  assert.equal(parts['[data-count]'].textContent, '11–12 of 12');
+  assert.equal(parts['[data-page]'].textContent, 'Page 2 of 2');
+  assert.equal(list.scrollTop, 99);
+  list.children.splice(0, 10);
+  list.refreshList();
+  assert.equal(toolbar.hidden, true);
+  assert.equal(parts['[data-count]'].textContent, '1–2 of 2');
+  assert.equal(list.children.every(item => !item.hidden), true);
+  assert.equal(list.scrollTop, 99);
+});

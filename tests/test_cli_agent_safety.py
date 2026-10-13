@@ -222,6 +222,7 @@ def test_planning_flags_update_effective_chapter_and_course_plans(agent_workspac
     assert course["contract"]["planned"]["outcomes"] == "Old outcome"
     assert "actualized" not in course["contract"]
     assert content.read_data("course/example")["data"]["actualized"]["summary"] == "Checked evidence"
+    content.start("course/example")
     content.start("course/example/one")
     assert "New content" in notebook.cat_notebook("course/example/one")
     assert "New content" not in content.inspect("course/example/one")["build_brief"]
@@ -240,11 +241,11 @@ def test_plan_file_update_uses_same_sections_as_creation(agent_workspace):
     (scratch / "portfolio.md").write_text("## Problem\n\nRevised intro\n\n## What it contains\n\nRevised contents")
     invoke(["update", "portfolio/example", "--plan-file", ".tmp/portfolio.md"])
     plan = content.inspect("portfolio/example")["detail"]["planned"]
-    assert plan == {"introduction": "Revised intro", "what_it_contains": "Revised contents"}
+    assert plan == {"introduction": "Revised intro", "content": "Revised contents"}
     before = content.list()["revision"]
-    failed = runner.invoke(app, ["update", "portfolio/example", "--planned-content", "Ambiguous text"])
-    assert isinstance(failed.exception, ServiceError)
-    assert content.list()["revision"] == before
+    invoke(["update", "portfolio/example", "--planned-content", "Updated content"])
+    assert content.inspect("portfolio/example")["detail"]["planned"]["content"] == "Updated content"
+    assert content.list()["revision"] != before
 
 
 @pytest.mark.parametrize("file_args", [["--file", ".tmp/batch.json"], [".tmp/batch.json"]])

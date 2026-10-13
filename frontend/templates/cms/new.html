@@ -3,7 +3,7 @@
 {% block content %}
 {% set kind_labels = {'post': 'post', 'portfolio': 'portfolio entry', 'course': 'course', 'chapter': 'chapter', 'project': 'project', 'personal': 'personal notebook'} %}
 {% import 'context_attachments.html' as context_files %}
-<article id="new-editor"><div class="editor-heading"><h1>New {{ kind_labels.get(values.kind, values.kind) }} plan</h1>{{ context_files.notes_button(values, label='Context files') }}</div>
+<article id="new-editor"><div class="editor-heading"><h1>New {{ kind_labels.get(values.kind, values.kind) }} plan</h1>{{ context_files.notes_button(values) }}</div>
 <p class="new-intro">Start with a title. The rest is optional; plans stay private until published.</p>
 {% if error %}<div class="error" role="alert"><p>{{ error.message or error }}</p>Your submitted values are preserved. Reload this form before reconciling a conflict.</div>{% endif %}
 {% set contextual = contextual and values.kind == 'chapter' %}

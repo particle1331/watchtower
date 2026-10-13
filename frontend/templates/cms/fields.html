@@ -15,17 +15,17 @@
 {% if field.label.split(' / ')[-1] == 'internal_notes' and not inside_notes_dialog | default(false) %}
 {% with notes_id = 'notes-field-' ~ notes_group_index ~ '-' ~ loop.index %}{% include 'notes_field.html' %}{% endwith %}
 {% else %}
-{% set featured_image = artifact is defined and ((artifact.kind == 'portfolio' and field.label == 'detail / figure_path') or (artifact.kind == 'course' and field.label == 'cover')) %}
+{% set featured_image = field.type == 'featured' %}
 {% if field.label == 'relations' or field.label.endswith(' / artifact_ids') or field.label.endswith(' / artifact_id') or field.label == 'artifact_ids' or field.label == 'artifact_id' or field.relationship_kind is defined %}
 {{ relationship('field:' + field.name, field.value, field.type == 'lines', field.caption, field.relationship_kind | default(''), field.relationship_parent | default(''), hint_before=prompt_first | default(false)) }}
-{% else %}<label class="field{% if field.label in ['visibility', 'lifecycle'] %} field--{{ field.label }}{% endif %}"><span title="{{ field.label }}">{{ 'Card image' if featured_image and artifact.kind == 'course' else 'Featured image' if featured_image else 'Photo' if field.type == 'photo_image' else field.caption }}{% if field.core %} <em class="core-badge">Recommended to start</em>{% endif %}</span>
+{% else %}<label class="field{% if field.label in ['title', 'visibility', 'lifecycle', 'date'] %} field--{{ field.label }}{% endif %}"><span title="{{ field.label }}">{{ 'Photo' if field.type == 'photo_image' else field.caption }}{% if field.core %} <em class="core-badge">Recommended to start</em>{% endif %}</span>
 {% if field.prompt is defined and prompt_first | default(false) %}<small class="field-prompt">{{ field.prompt }}</small>{% endif %}
 {% if featured_image %}
 <input type="hidden" name="field:{{ field.name }}" value="{{ field.value }}">
-{% if field.value %}<img class="featured-figure-preview" src="/cms/figure/{{ artifact.id | urlpath }}" alt="{{ artifact.detail.figure_caption or 'Featured image' if artifact.kind == 'portfolio' else artifact.title }}"><small>Saved image: <code>{{ field.value }}</code></small>{% endif %}
+{% if field.value and artifact is defined %}<img class="featured-figure-preview" src="/cms/figure/{{ artifact.id | urlpath }}" alt="{{ artifact.detail.figure_caption or 'Featured image' if artifact.kind == 'portfolio' else artifact.title }}"><small>Saved image: <code>{{ field.value }}</code></small>{% endif %}
 <input type="file" name="featured_image" accept="image/png,image/jpeg,image/webp,image/gif">
 <small>PNG, JPEG, WebP, or GIF, up to 20 MB. Saved with your changes. Leave empty to keep the current image.</small>
-{% if artifact.kind == 'course' %}<small>Used in the Courses card grid.</small>{% endif %}
+{% if artifact is defined and artifact.kind == 'course' %}<small>Used in the Courses card grid.</small>{% else %}<small>Used on the portfolio listing.</small>{% endif %}
 {% elif field.type == 'photo_image' %}
 <input type="hidden" name="field:{{ field.name }}" value="{{ field.value }}">
 {% if field.value %}<img class="photo-thumbnail" width="120" height="120" src="/cms/photo/{{ field.photo_index }}" alt="Saved photo"><small>Saved image: <code>{{ field.value }}</code></small>{% else %}<div class="photo-placeholder photo-thumbnail" role="img" aria-label="No Photo">No Photo</div>{% endif %}

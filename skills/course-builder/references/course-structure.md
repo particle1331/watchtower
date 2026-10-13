@@ -27,8 +27,8 @@ Remove only empty sections and retain at least one.
 1. `wt new course <slug> "<Title>" [--plan-file .tmp/<slug>.md]` registers a
    private Planned course and its contract without a source notebook.
 2. Save the course brief with `wt update course/<slug> --plan-file ...`.
-   Supported H2 labels are Card description, Purpose, Audience and prerequisites,
-   Learning outcomes, Running project, Practice and assessment, and References. Planned internal notes must be empty. Canonical field keys work too; inspect `wt context <stable-id>` for the plan and valid fields.
+   Supported H2 labels are Card description, Course outcome, Course description,
+   Requirements, Prerequisites, and References. These are the same fields as the course home, so the plan is the home before starting. Planned courses may keep internal notes and to-dos while the fields are refined. Canonical field keys work too; inspect `wt context <stable-id>` for the plan and valid fields.
 3. Use the initial `main` section or add sections with
    `wt new section <slug> "<Section>"`.
 4. Register chapter plans with full title, short TOC title, section, public
@@ -44,10 +44,13 @@ Remove only empty sections and retain at least one.
    The chapter plan file uses these sections; Course table summary is also supported. Internal notes are reserved for started drafts:
 
    ```markdown
-   ## Outline
+   ## The problem
+   Explain why the learner needs this topic.
+
+   ## Planned content
    Explain the topic through a small worked example.
 
-   ## Practice and evidence
+   ## Planned evidence
    Reproduce the example and explain the result.
    ```
 
@@ -75,8 +78,14 @@ with `wt validate` and inspect the Planned brief through `wt context` and the or
 `wt start <stable-id>` creates a private Draft and consumes its plan. Chapters get notebooks;
 courses get CMS home fields without an editable home notebook. `new course` and `new chapter` also support
 `--start`. Partial plans can start; empty plans produce title-only drafts.
-Courses seed their home description, prerequisite items, learning outcomes and references once from the plan; Requirements can be added separately in the CMS. The running project and assessment become description subsections. Chapters seed the Outline body and Practice and evidence below
-their full-title H1. Public summaries and internal notes never seed.
+Courses seed their home description, prerequisite items, learning outcomes and references once from the plan; Requirements can be added separately in the CMS. The running project and assessment become description subsections. Chapters seed The problem, Planned content and Planned evidence below
+their full-title H1. Outline and Practice and evidence remain plan-file aliases;
+the stored evidence key remains `lab_and_evidence`. Public summaries stay in the
+course table, and internal notes never seed. Generated chapter pages append eligible
+Related content links and omit the summary subtitle and author. Existing authored
+chapters are never reseeded. These are temporary starter inputs, not chapter metadata
+fields. Start removes them from the active chapter row, preserves their history
+under `archive/starter-seeds/`, and keeps only chapter identity, section and public summary.
 
 Starting seeds content once and consumes the plan. The CMS home or chapter notebook is then the content authority; plan fields disappear from the CMS and active agent context, and plan writes are rejected. Read current home content with `wt context` and chapter cells with `wt cat`. Keep unfinished draft work in the internal-notes modal’s separate Notes and To-dos fields. Notes are Markdown; `internal_todos` is an ordered array of `{text, done}` objects. Save the checklist through the CMS controls or `wt update --patch-file`, carrying the revision. The completed/total count is derived from the list. Linked Kanban cards execute scoped work and hold temporary context. Read current entity memory through `wt kanban show`; return lasting findings and follow-up work to the notebook or internal notes before marking the task Done. Review and develop the seeded prose before publishing.
 

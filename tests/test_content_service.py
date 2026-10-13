@@ -192,10 +192,12 @@ def test_plan_file_is_persisted_and_confined(content_service):
     body = service.plan_file(".tmp/plan.md")
     post(service, planned={"content": body})
     plan.unlink()
-    service.start("post/example")
     assert body == service.snapshot().state.artifacts[0].planned["content"]
+    service.start("post/example")
+    assert not service.snapshot().state.artifacts[0].planned
     assert "planned" not in service.inspect("post/example")["artifact"]
-    assert nbformat.read(service.root / "content/notebooks/posts/example.ipynb", as_version=4).cells[0].source == "# Example\n"
+    cells = nbformat.read(service.root / "content/notebooks/posts/example.ipynb", as_version=4).cells
+    assert cells[0].source == "# Example\n" and body in cells[1].source
     with pytest.raises(ServiceError):
         service.plan_file("frontend/site.yaml")
 
@@ -222,6 +224,7 @@ def test_chapter_move_and_title_update_preserve_outputs(content_service):
     service = content_service
     service.create({"id": "course/example", "kind": "course", "title": "Course", "path": "content/notebooks/courses/example", "contract": {"toc": [{"id": "a", "title": "A", "chapters": []}, {"id": "b", "title": "B", "chapters": []}]}})
     service.create({"id": "course/example/01", "kind": "chapter", "title": "Chapter", "toc_title": "01", "section": "a", "parent": "course/example", "path": "content/notebooks/courses/example/01.ipynb", "planned_content": "Body", "planned_lab_and_evidence": "Check"})
+    service.start("course/example")
     service.start("course/example/01")
     service.update("course/example/01", {"section": "b", "title": "New title"})
     result = service.read_data("course/example")["data"]

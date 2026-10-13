@@ -7,8 +7,8 @@ Use the CLI for agent work; Watchtower has no MCP server. Every `wt` command
 below is shorthand for `.venv/bin/wt`, run from the repository root. Discover
 commands with `.venv/bin/wt --help` and inspect arguments with
 `.venv/bin/wt <command> --help` (nested commands have their own help).
-Use `wt context <id>` for artifact metadata, `wt plan <stable-id>` for saved
-authoring plans and internal notes, and `wt data <name>`
+Use `wt context <id>` for artifact metadata, lifecycle, and the saved plan while
+Planned, and `wt data <name>`
 for structured records, `wt gallery` for photos, and `wt kanban ls` for tasks.
 Use their supported mutation commands. Data/gallery/Kanban reads expose the
 workspace revision; pass it with `--expected-revision` where available.
@@ -53,15 +53,14 @@ link archived code without making it an active project or workspace member.
 Read course context in this order:
 
 1. `wt context <id-or-path>` for the record, contract, and reading paths.
-2. Its contract YAML: purpose/audience, planned intent, actualized facts, TOC.
-3. `index.ipynb`, the learner-facing course home.
+2. Its course context: ordered TOC and public summaries; writing briefs only for Planned entries.
+3. The CMS-managed `home` fields in that course contract, also exposed by `wt context`.
 4. Optional `00-overview.ipynb` for whole-course technical design.
 5. The target chapter; adjacent openings only for a relevant handoff.
 
-A plan is not completion evidence. Update `actualized` only after completed,
-checked work. Shared concise facts/navigation belong in course YAML; teaching
-belongs in notebooks. Generated context includes appear only in the Quarto build.
-Do not load all sibling notebooks by default.
+Planned entries use the writing brief and have empty internal notes. Starting seeds the content once and consumes the plan. Course homes are committed CMS-managed content in contract `home`; posts, chapters and full portfolio project pages use notebooks. Portfolio listing entries use portfolio YAML. Consumed plans are hidden from the CMS and active agent context and cannot be changed. Keep unfinished questions and decisions in the modal’s Notes field (`internal_notes`), and checklist items in its separate To-dos field (`internal_todos`). Shared navigation and public summaries remain in course YAML. Generated includes contain the chapter table without an Actualized section. Do not load all sibling notebooks by default.
+
+After starting, the content entity localizes its memory. The notebook is **committed memory**: accepted content and checked results, even while Draft. Internal notes are **localized near-term memory**: questions, decisions, experiments and the authoritative To-dos checklist. Linked Kanban cards are **execution memory**: a scoped objective, card Notes, card To-dos, progress and evidence for that execution. Card Notes and To-dos belong to the task and are editable in its CMS dialog or through `wt kanban update`; `wt kanban show <card-ref>` returns them with the current linked entity context. Do not copy the whole notebook or entity internal notes into a task. Before marking a task Done, write accepted results to the notebook or public metadata, preserve unresolved lasting context in the entity’s internal notes, and update its entity To-do item when verification establishes completion. Card checklist changes never automatically alter entity To-dos, and task movement never proves content readiness. Keep lasting reference files attached to the entity; use `wt attachments link <entity-id> <attachment-id>` to promote a task file without duplicating its bytes.
 
 ## Notebook operations
 
@@ -101,13 +100,12 @@ current source rather than blindly copying them over it.
 
 `wt new post`, `new course`, `new chapter`, and `new portfolio` register plans
 as private CMS-only entries without creating source notebooks. `wt start <id>`
-creates a private draft seeded from supported plan fields, retains the plan and
-internal notes, and refuses existing source files.
+creates a private draft seeded once from supported plan fields, consumes the plan, and refuses existing source files. Planned internal notes must be empty for posts, portfolios, chapters and personal entries; planned courses keep notes and to-dos while their course home is refined.
 Planning fields are optional for starting across CMS, CLI and API. No generation
 flag is implemented; use the saved build brief to author content explicitly.
-Plans take `##` sections named by catalog field (`wt plan <id>` lists them). Chapter
-plans may be partial. Portfolio plans need the problem and what it contains; scope
-boundaries belong in those fields or in internal notes, not in a separate field.
+Plans take `##` sections named by catalog field (`wt context <id>` lists them while Planned). Chapter
+plans may be partial. Portfolio plans recommend The problem, Planned content and Planned evidence; scope
+boundaries belong in those fields while planning, and in internal notes after starting.
 Starting an active portfolio also initializes and registers the code directory
 behind its `project_path` using the same package scaffold as `make project`.
 Each entry stores one `project_path`: `projects/<name>`, or
@@ -120,29 +118,19 @@ the abstract, featured figure, and caption. Portfolio CMS forms use one visible
 Abstract field in the Page section: creation may leave it blank, and the entry
 editor is where a finished abstract is pasted. Start seeds a blank abstract
 from the problem and contents (opening prose, capped at 80 words), preserving
-explicit abstracts or legacy descriptions. A still-blank abstract is seeded again
-while the draft still matches its last seed; plan edits never overwrite an
-existing abstract. CMS editing preserves
+explicit abstracts or legacy descriptions. Abstract seeding happens only at Start; later abstract revisions use Page metadata. CMS editing preserves
 legacy description fallbacks as abstracts on explicit save.
 Planned portfolios have no frontend pages or cards.
-Start seeds one notebook section per filled plan field: posts get the outline body,
-audience, examples and evidence, and references; portfolios get the problem, what it
-contains, intended users, implementation approach, success criteria, and references;
-courses get purpose, audience and prerequisites, learning outcomes, running project,
-practice and assessment, and references; chapters get the outline body and practice
-and evidence. Summaries are never seeded. Internal notes never leave the CMS, and
-next steps are Kanban cards linked to the entry, not plan fields.
-Seeding never rewrites hand-edited cells. While a started draft still matches
-its last seed exactly (a stored fingerprint of the seeded section cells; the
-title cell is excluded so coordinated renames do not count as edits), saving the
-plan re-seeds its sections and fills a still-blank abstract. The first hand edit
-freezes the draft, and notebooks without a stored fingerprint are treated as
-edited. Empty plans
-create title-only drafts. Review seeded prose before publication. Course chapter
-tables remain generated, not copied into notebooks. Draft portfolio cards and pages
-show yellow diagnostic panels with monospace publication metadata in preview.
-Portfolio entry pages project the abstract, featured figure and source link from
-portfolio YAML in the generated copy; the notebook keeps only its own content.
+Start seeds one notebook section per filled plan field: posts, portfolios and chapters
+get The problem, Planned content and Planned evidence. Chapter evidence stays in
+`lab_and_evidence`; Outline and Practice and evidence remain plan-file aliases.
+Summaries are never seeded. Internal notes never leave the CMS, and
+unfinished work belongs in the started entity’s internal Notes and To-dos. Linked Kanban cards execute scoped work and add temporary task context.
+Courses start without an editable home notebook. Start seeds contract `home` fields once from the course plan; the CMS then owns Course outcome, Course description, separate Requirements and Prerequisites item lists, and References. Requirements and Prerequisites render together as bullets under **Prerequisites**; References render as bullets. Skip either generated section when its list is empty. Each CMS list uses one item per line, and reference items support Markdown links. Related topics use catalog `relations` stable IDs and disappear from generated pages when no linked page is eligible. Course content is generated from ordered TOC and chapter summaries. Save home fields through `wt update --patch-file` with `{"contract":{"home":{"description":"..."}}}`; partial home patches preserve other fields. Read `wt context course/<slug>` for current committed content. Review `wt migrate --course-homes`, then apply with `--course-homes --apply --expected-revision <revision>` to convert legacy homes, preserving original notebook bytes and metadata under `archive/course-homes/<operation-id>/`. Public HTML URLs stay intact; executable homes must first move executable material into chapters.
+Seeding happens only at Start. A title-only draft already owns its notebook; subsequent plan changes are rejected across CMS, CLI, API and structured-data saves. For posts, portfolios and chapters, The problem, Planned content and Planned evidence are temporary starter inputs, not permanent domain fields. Start removes their payloads from active metadata and preserves the old inputs in `archive/starter-seeds/`; the notebook cells own the content. Other consumed briefs remain hidden from active authoring context. Empty plans create title-only drafts. Review seeded prose before publication. Course chapter tables remain generated. Draft portfolio cards and pages show yellow diagnostic panels with monospace publication metadata in preview. Portfolio listing entries show the abstract, featured image and caption. Full entry pages show the preview draft callout and Portfolio / Project source links, then the notebook body and a generated Related content section linking eligible pages in relation order. Abstracts and featured images stay on the listing; the notebook keeps its own content. Portfolio forms expose Title, Abstract, Featured image, Figure caption, Code location, Related content, and, while Planned, The problem, Planned content and Planned evidence. Creation accepts a featured-image upload atomically. Legacy brief fields remain preserved and fold into content/evidence when starting.
+
+Review `.venv/bin/wt migrate --starter-seeds`, then apply with `--starter-seeds --apply --expected-revision <reviewed revision>` to clean older Draft/Published post, portfolio and chapter records. The migration archives exact metadata preimages, removes consumed starter inputs and preserves source notebooks, chapter table summaries and Planned inputs. Starter fields belong to authoring inputs, not the typed chapter metadata schema.
+
 Active code directories are required for Draft/Published portfolio entries;
 archived source references must always resolve to existing archived code.
 Plan files must be under `<repo>/.tmp/`; persist their bodies before removing them.
@@ -156,11 +144,11 @@ sets the public sentence (post/course description, portfolio abstract, chapter t
 summary); `--internal-notes` sets CMS-only notes. Hidden aliases `--description`,
 `--planned-content`, `--planned-lab-and-evidence`, `--abstract`, `--introduction` and
 `--what-it-contains` still work; `--scope-notes` is removed. Patch files remain for
-variant fields and relations. Existing planning fields and actualized facts survive.
+variant fields and relations. Writing-brief changes apply only while Planned; public summaries and navigation remain editable after starting.
 `batch --file .tmp/batch.json` accepts `{"updates": [{"id": "...", "patch": {}}], "data": {}}`;
 the positional file form remains supported. Supply exactly one file form.
 `new section` and chapter section updates preserve catalog/plan/TOC consistency.
-Record actualized work explicitly. `make project NAME=<name>` scaffolds/registers
+`make project NAME=<name>` scaffolds/registers
 code; `wt register project <path> <title>` registers existing code. Registration
 requires an existing code directory. Missing referenced code or assets leave the
 workspace invalid and block saves, while deletions tolerate them so `wt delete`
@@ -174,7 +162,7 @@ and the project path belong in portfolio YAML; per-entry GitHub URLs are never
 stored. `project_path` is the single code reference (`projects/<name>`, or
 `archive/<date>/projects/<name>` for migrated historical entries), validated and
 turned into a source URL from shared repository settings. The CMS shows one
-Project path field with that default; repair it through `wt data portfolio` or
+Code location field with that default; repair it through `wt data portfolio` or
 the structured-data API.
 
 Planned notebooks have no authored content and never render in preview or production,
@@ -197,6 +185,12 @@ planned courses suppress all children in both modes. Preview shows started priva
 or public courses and their started children. Personal keeps its per-photo rules.
 
 `make preview PORT=4300` watches saved inputs, showing drafts and published pages locally.
+`make dev` starts the CMS (port 5200) and working preview (port 4200) together,
+opening each in a browser tab when ready. `PORT` and `CMS_PORT` override those
+ports. It rejects occupied ports, stops both servers if either exits, and Ctrl+C
+stops both and their foreground render processes. For agent verification without
+browser interaction, run `.venv/bin/python scripts/dev.py --no-browser` with
+explicit free `--port` and `--cms-port` values.
 `make build` validates/renders production. Only successful output is promoted.
 GitHub Actions rebuilds committed inputs on `main` and deploys to existing
 `gh-pages`. CMS `/cms/`, API `/api/`, and CLI call the same services. Notebook
@@ -268,46 +262,33 @@ New CMS plans default to private visibility, labeled Not on the live site.
 New posts, personal notebooks, portfolios, courses and chapters default Date to
 the creation day in the site's configured timezone. Preserve explicit dates;
 later saves do not refresh the default.
-Guided creation and editing capture the catalog plan fields for posts, portfolios,
-courses and chapters, the public summary, and internal notes. Retired fields (next
+Guided creation and Planned editors capture plan fields and the public summary. Draft/Published editors capture page metadata and internal notes; they omit the consumed writing brief. Retired fields (next
 steps, scope notes, takeaway, course progression) were archived under
 `archive/2026-10-09/retired-plan-fields/` and cleared; reintegrate them by hand
 if needed. Partial plans can be saved and started. Start seeds supported
 fields into notebook sections once and sets Draft/private. Publish sets public.
-Every artifact has persistent Markdown `internal_notes`, editable in the CMS,
+Draft and Published artifacts have persistent Markdown `internal_notes`, editable in the CMS,
 through `wt update <id> --internal-notes ...` (or a patch file), and the API.
-Notes and structured plans remain editable in every lifecycle, including Published;
-changing them never changes notebook bytes or publication state. Saved editors
+Planned entries other than courses must have empty `internal_notes` and `internal_todos`; planned courses may hold them while the course home is refined; null inputs normalize to empty text/list, and nonempty writes are rejected. Notes stay editable after publication; structured plans are editable only before starting. Notes never change notebook bytes or publication state. Notes remain Markdown in `internal_notes`; To-dos are an ordered `internal_todos` array of `{text, done}` objects. The modal supports Add/Enter, check/uncheck, edit text, and Remove, with a live completed/total fraction. Changes stay in the same editor form, survive closing the modal, and save atomically with the editor revision. Without JavaScript, Save adds the new item and applies checkmarks/Remove on save. Agents use `wt update <id> --patch-file .tmp/patch.json` or an API patch for the array; `wt context` and `wt kanban show` expose the current list. Existing Markdown notes are preserved. Saved editors
 offer Copy source path and Create Kanban task, opening the task composer with the
 current artifact already linked. The editor omits the build-brief panel and the
-duplicate portfolio notebook-path field. `wt plan` exports saved fields, notes,
-IDs, paths and context; course briefs include ordered
-chapter plans and notes, and chapter briefs include parent-course notes.
-`wt plan <stable-id>` returns JSON with identity/lifecycle, reserved or existing
-`source_path`, effective structured `plan`, `internal_notes`, the saved
-`build_brief`, and workspace `revision`. Use an exact registered stable ID, not a
-title, stem or source path. This read works for partial plans and every lifecycle;
-it neither creates nor executes a notebook. Course plans include ordered chapter
-plans in the build brief; chapter briefs include parent-course context.
-
-Treat saved plans (`wt plan <stable-id>`) as initial authoring intent that may
-become stale as drafts develop. Before continuing, reviewing, or summarizing
-started content, read the current notebook with `wt cat`. Purpose, audience,
-and scope guide the work; outlines, examples, and technical approaches can
-evolve as understanding improves. Explain discoveries that justify changes.
-Flag changes that materially expand or redirect the purpose, audience, or scope
-before proceeding unless already authorized. Once agreed, update only the
-relevant plan fields through supported commands. Routine drafting does not
-require plan synchronization. Keep public summaries and course navigation
-accurate.
+duplicate portfolio notebook-path field. `wt context <stable-id>` returns the
+artifact record, lifecycle, reading paths and workspace `revision`; while Planned,
+it also returns the structured writing brief as `plan` and its `plan_fields`
+schema. The plan keys disappear after starting, when the CMS course home or
+notebook becomes the content authority. Context reads work for partial plans and
+never create or execute notebooks. Course context includes ordered navigation;
+chapter context includes its parent course. Use the internal-notes modal’s
+separate Notes and To-dos fields for unfinished work. Keep public summaries and
+course navigation accurate. Historical plan text in raw structured records must
+not guide revisions of started content.
 
 Plans are not rendered directly in preview or production. Internal notes remain
 excluded from pages, generated course context and metadata. Started notebooks own
 their seeded content. Public fields include catalog `description`, portfolio
 `abstract`, and chapter-plan `summary` for the course table. Review seeded course
-purpose/audience and planned summaries as learner-facing prose before publishing.
-Actualized facts remain explicit completed-work records and can render in course
-context. Internal means excluded from the site, not confidential in a public Git
+description/prerequisites and planned summaries as learner-facing prose before publishing.
+Legacy actualized records remain preserved as history and never render in course context. Internal means excluded from the site, not confidential in a public Git
 repository. Preserve legacy plan text and existing authored notebooks; do not
 infer public summaries from notes or silently scrub previously authored prose.
 Kanban tracks work independently of publication state, using artifact links.
@@ -318,9 +299,10 @@ reference keeps its filename, media type and size. Use `wt attachments ls [OWNER
 `add OWNER --file PATH` (repeatable), `link OWNER ATTACHMENT_ID`, or
 `rm OWNER ATTACHMENT_ID`. OWNER is an exact stable ID or a card ID/`card#N`.
 Reads return the workspace revision; carry it with `--expected-revision` for
-attachment writes. Files are limited to 20 MB each. `wt plan` and build briefs
-include attachment paths. `wt kanban show card#N` returns the card plus current
-linked plans, internal notes, parent/course context and attachments for agents.
+attachment writes. Files are limited to 20 MB each. `wt context` exposes artifact attachment
+metadata; `wt kanban show card#N` returns the card's Notes and
+To-dos plus current linked plans, entity internal notes, parent/course context
+and attachments for agents.
 Context attachments never enter generated site output. They are repository files,
 so CMS-only does not mean confidential in a public repository.
 Removing the last reference moves the file and ownership metadata to
@@ -337,9 +319,8 @@ Use `/cms/courses/<slug>` to edit the course brief and organize its outline.
 Add sections, rename/reorder them, add chapters in context, reorder chapters or
 move them between sections within that course. Remove empty sections only,
 retaining at least one. All actions carry revisions and atomically synchronize
-catalog membership, contract TOC and chapter plans. The advanced contract editor
-remains available. A course metadata API patch can include `contract` for an
-atomic brief save. Do not derive actualized facts from the plan.
+catalog membership, contract TOC and chapter plans. The advanced contract editor is available only while Planned; started courses use outline controls and page settings. A course metadata API patch can include `contract` for an
+atomic save. Consumed writing briefs remain frozen.
 
 Course homes derive their chapter table from ordered TOC, full catalog chapter
 title, and chapter-plan `summary`, with columns Section, Chapter title, Summary.
@@ -355,13 +336,26 @@ single links can be cleared. Native selects are the no-JavaScript fallback.
 `/cms/lookup` is read-only (`q`, optional `kind`/`parent` filters). Search text is
 never a saved relationship; shared services validate selected registered IDs.
 Conflicts preserve submitted selections and original revisions, including missing
-IDs for explicit repair. Legacy course `planned.content` is offered as a summary
-only when the contract summary is empty, and persisted on explicit save; preserve
+IDs for explicit repair. Legacy course `planned.content` may be recovered while Planned when the contract summary is empty; preserve
 differing legacy text and unknown planning fields.
 
 ## Author Kanban and CMS collections
 
 Kanban is the final CMS tab, with To do / In progress / Review / Done columns.
+Cards have a fixed height with clamped title/description previews. Clicking the
+card surface opens a detail dialog with full text, attachments, linked content
+and Move controls. Cards can be dragged between columns; drops move the card immediately
+and save through the JSON API with its saved board revision, without reloading the page.
+The Move control uses the same background save with JavaScript and a native form otherwise.
+Unsaved edits block moving cards. Failed saves restore the original position, show the
+requested destination, and require reloading before another move; stale writes never retry.
+Edit and Remove
+remain visible on the board. Native
+`/cms/kanban?view=<card-id>` links open the same detail view without JavaScript.
+Each card has a Markdown Notes field and an ordered To-dos checklist for task-specific
+execution memory. Add, edit, check, and remove checklist items in Add/Edit; the
+card shows a completed/total count. These fields stay on the card and do not
+automatically change linked artifact notes or checklists.
 Task cards live in `backend/data/kanban.yaml` (version 1, `cards`); absence means
 an empty board, while malformed existing YAML requires explicit repair. Cards
 have permanent human references (`card#1`, `card#2`, ...) alongside immutable
@@ -371,9 +365,11 @@ IDs without saving. Task movement does not change artifact lifecycle or visibili
 Kanban stays off public pages. Frontend links point at the working preview; VS Code
 links require an existing canonical notebook, gallery data file or project directory.
 `kanban add` assigns both the internal ID and `card#N` reference automatically;
-it does not accept `--id`. Use `.venv/bin/wt kanban ls`, `add --title ... [--link <stable-id>]`,
-`update <card-id>`, `move <card-id> <column>`, or `rm <card-id>`; columns are
+it does not accept `--id`. Use `.venv/bin/wt kanban ls`, `add --title ... [--link <stable-id>] [--notes ...] [--todos-file .tmp/card-todos.json]`,
+`update <card-id> [--notes ...|--clear-notes] [--todos-file .tmp/card-todos.json]`,
+`move <card-id> <column>`, or `rm <card-id>`; columns are
 `todo`, `in-progress`, `review`, `done`. Mutations accept `--expected-revision`.
+The JSON file replaces the whole checklist using `[ {"text": "Check the result", "done": false} ]`; use `[]` to clear it. `wt kanban show <card-ref>` returns the current card Notes and To-dos plus live linked entity context.
 Read `wt kanban ls` first and pass its `board_revision` (`kanban:<hash>`) for a
 task-only coordinated write. Its workspace `revision` is still accepted when
 the decision depends on content as well. Board tokens survive unrelated
@@ -387,11 +383,11 @@ references are rejected. Explicit malformed-board repairs should include the
 known counter and identities. `--link` and `--clear-links` cannot be combined.
 
 Artifact editors and plan creation use one form with three visible sections:
-Basics (title, stable ID or name, chapter course and section), Plan (the writing brief;
+Basics (title, stable ID or name, chapter course and section), Plan (the writing brief, visible only while Planned;
 core fields are marked "Recommended to start"), Page (public summary or abstract,
 card or featured image, tags, related content, date and status). Internal notes
-open from a button beside the title in a native dialog, with images/files and a
-link to track a next step on Kanban. Closing this dialog preserves unsaved notes
+become available after starting and open from a button beside the title in a native dialog, with images/files and a
+link to create a scoped execution task on Kanban. Closing this dialog preserves unsaved notes
 and selected files; Save/Create persists them with the same form. Without JavaScript
 the notes remain visible inline. Kanban Add/Edit dialogs accept context files too.
 Plan and Page sit
@@ -400,8 +396,7 @@ form, so unsaved values and uploads survive any interaction. Reveal a collapsed
 section before native validation focuses a required control. Creation offers
 "Create and start draft". Only the title is required; an optional name defaults to
 the title. Summaries remain optional. Saved editors offer Add summary task (Add
-abstract task for portfolio), creating a linked Kanban card with the saved build
-brief and CLI instructions to retrieve current context and save the result.
+abstract task for portfolio), creating a linked Kanban card with execution instructions to retrieve current entity context and save the result. The card references the entity instead of copying its brief and notes.
 Save pending edits first; new plans must exist before they can have a task.
 An existing unfinished summary task is reused. The action uses the workspace
 revision because its decision depends on the saved content as well as the board.
@@ -455,10 +450,10 @@ Deletion permanently reserves removed IDs and notebook sources in catalog
 `retired_ids` and `retired_sources`, including planned entries without files.
 Do not reuse retired names or clear these reservations when deleting archives.
 Creation rejects case variants and active filenames owned by legacy post IDs.
-Courses and chapters have no tags. Their ordered outlines organize the material;
+Courses, chapters and portfolios have no tags. Ordered course outlines organize the material;
 course briefs and chapter summaries provide agent context. `new course` and
-`new chapter` do not accept `--tag`; metadata updates reject tags for these kinds.
-Legacy course/chapter labels are omitted on reads and removed on catalog saves;
+`new chapter` and `new portfolio` do not accept `--tag`; metadata updates reject tags for these kinds.
+Legacy course/chapter/portfolio labels are omitted on reads and removed on catalog saves;
 imports discard their tag/category metadata. Notebook cell tags remain supported.
 Other catalog entity kinds use tags as their single taxonomy. Generated frontend
 metadata maps tags to Quarto categories; the Posts listing uses native Quarto
@@ -480,6 +475,41 @@ full gallery metadata editor.
 Portfolio row Edit links open the combined artifact/detail editor with editing
 enabled immediately. Save and Cancel return to Portfolio; do not add a separate
 bulk-detail editor link to this flow.
+CMS portfolio rows show the stable ID, Edit in VS Code, Copy source path and
+Create Kanban task instead of expandable abstract/image details. Preserve their
+lifecycle/visibility badges and Edit/Delete controls. VS Code links require an
+existing notebook. Planned editors and post, portfolio and chapter rows show a
+gray View plan button in that position, before Copy source path. It opens the saved
+writing brief in a read-only CMS dialog with rendered Markdown and local equation
+typesetting, preserving unsaved editor values. `/cms/plan/<stable-id>` is the native
+page fallback. Empty/partial plans are readable; started entries have no active
+plan reader and use the existing source action.
+CMS post rows show the same stable ID and three developer controls while keeping
+their summary, tags, lifecycle/visibility badges and Edit/Delete controls.
+Post plans use Page on the left (Summary, Tags, Related content) and Plan on the
+right (The problem, Planned content, Planned evidence), with larger textareas and
+matching desktop column heights. Starting consumes those three writing fields
+once; draft editors keep page metadata and internal notes. Preserve legacy post
+audience/reference text in content/evidence when starting older briefs, retaining
+their saved keys. Never reseed or restructure existing authored post notebooks.
+Generated full post pages keep the **← Post** marker and draft preview panel,
+omit Summary and author from the title area, and append eligible Related content
+links in saved order. Summaries remain on the Posts listing; tags remain categories.
+Chapter plans use the same Page-left / Plan-right layout, textarea sizing and three
+seeded sections. Page keeps Course table summary and Related content. Visibility,
+Date and Status sit directly below Title in post, portfolio and chapter editors.
+Generated chapters keep their authored H1 and course navigation, omit the summary
+subtitle and author, and append eligible Related content links. Chapter summaries
+remain in the course table. Preserve existing authored chapter bodies and stored
+legacy briefs; never reseed started chapters. Expanded chapters in CMS course
+listings show stable IDs and the three developer controls alongside badges and
+Edit/Delete. Edit in VS Code requires an existing notebook.
+Course-outline chapter disclosures offer the same stable ID and developer tools,
+using View plan while Planned. Chapter Back, Cancel and Save preserve the editor's
+entry point: listing filters/pagination and its expanded course, or the parent
+course outline. Label the listing link Back to Courses and the outline link Back
+to the course title. Preserve that destination through failed saves, explicit
+conflict reloads, lifecycle actions and summary-task creation.
 Artifact publication and deletion controls belong in the editor toolbar beside
 Cancel and Save, without a separate Publication actions section. In draft post,
 portfolio, course and chapter editors, Publish submits the metadata form and
@@ -490,7 +520,8 @@ while metadata is dirty or saving. Validation or conflicts leave all
 changes unsaved. Disable Publish only while saving; keep it clickable for
 incomplete drafts and show the missing requirements after a failed attempt.
 Chapters still require a public published parent; publishing a course does not
-publish its chapters.
+publish its chapters. A chapter can leave Planned only after its course has started, so a
+planned course holds chapter plans only and drafts appear only under started courses.
 Blank photo width fields show a `100%` hint. Kanban card actions are visible;
 Add/Edit/Remove use native dialogs with keyboard dismissal, focus restoration,
 unsaved-change handling and server-rendered fallback links. Preserve revisions,

@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -13,12 +13,14 @@ from fastapi.templating import Jinja2Templates
 from starlette.datastructures import UploadFile
 
 from watchtower import planning
+from watchtower.course_home import HOME_LIST_FIELDS, seeded_home
 from watchtower.models import KANBAN_COLUMNS
 from watchtower.services.images import MAX_FIGURE_BYTES
 from watchtower.services.workspace import ServiceError
 
 from . import authoring
 from .attachments import read_uploads
+from .cms_markdown import render_plan_markdown
 
 NAVIGATION = [("home", "Home"), ("resume", "Résumé"), ("portfolio", "Portfolio"), ("posts", "Posts"), ("courses", "Courses"), ("personal", "Personal"), ("kanban", "Kanban")]
 KINDS = {"posts": "post", "courses": "course", "portfolio": "portfolio", "personal": "personal"}
@@ -83,6 +85,26 @@ def form_baseline(value: Any) -> dict[str, Any]:
     return baseline
 
 
+def chapter_return_url(parent: str, value: str = "") -> str:
+    """Keep chapter navigation within its course or the filtered course listing."""
+    workspace = "/cms/courses/" + quote(parent.split("/")[-1], safe="")
+    fallback = workspace + "#outline"
+    if any(character in value for character in "\\\r\n\t"):
+        return fallback
+    try:
+        target = urlsplit(value)
+    except ValueError:
+        return fallback
+    if target.scheme or target.netloc:
+        return fallback
+    if target.path == "/cms/courses":
+        filters = {"q", "lifecycle", "visibility", "tag", "page", "page_size"}
+        query = [(key, item) for key, item in parse_qsl(target.query, keep_blank_values=True) if key in filters]
+        query.append(("open_course", parent))
+        return "/cms/courses?" + urlencode(query) + "#" + quote(parent.replace("/", "-"), safe="")
+    return fallback
+
+
 def photo_editor_data(data: dict[str, Any]) -> dict[str, Any]:
     """Expose optional default states and missing required fields for explicit repair."""
     data = copy.deepcopy(data)
@@ -117,7 +139,7 @@ def collections(data: Any, prefix: tuple[str, ...] = ()) -> list[dict[str, Any]]
         for key, value in data.items():
             result.extend(collections(value, (*prefix, key)))
     elif isinstance(data, list) and (bool(data) and isinstance(data[0], dict) or not data and is_complex_collection(prefix)):
-        defaults = {"photos": {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}, "toc": {"id": "", "title": "", "chapters": []}, "chapters": {"chapter_id": "", "section": "", "content": "", "lab_and_evidence": ""}, "entries": {"id": "", "notebook_path": "", "project_path": "", "abstract": None, "figure_path": None, "figure_caption": None, "planned": {}}, "projects": {"title": "", "bullets": [], "artifact_id": None}, "employment": {"title": "", "company": "", "dates": "", "bullets": []}, "early_employment": {"title": "", "company": "", "dates": "", "bullets": []}, "education": {"institution": "", "degree": "", "dates": ""}, "skills": {"name": "", "entries": []}}
+        defaults = {"photos": {"heading": "", "path": "", "caption": "", "lifecycle": "draft"}, "toc": {"id": "", "title": "", "chapters": []}, "chapters": {"chapter_id": "", "section": "", "summary": ""}, "entries": {"id": "", "notebook_path": "", "project_path": "", "abstract": None, "figure_path": None, "figure_caption": None, "planned": {}}, "projects": {"title": "", "bullets": [], "artifact_id": None}, "employment": {"title": "", "company": "", "dates": "", "bullets": []}, "early_employment": {"title": "", "company": "", "dates": "", "bullets": []}, "education": {"institution": "", "degree": "", "dates": ""}, "skills": {"name": "", "entries": []}}
         prototype = blank_record(data[0]) if data else defaults.get(prefix[-1] if prefix else "", {})
         if prefix[-1] == "photos":
             prototype = {**defaults["photos"], "width": "", **prototype, "lifecycle": "draft"}
@@ -210,6 +232,8 @@ def apply_fields(data: dict[str, Any], form: Any) -> dict[str, Any]:
             raise ValueError("Invalid field path")
         if data.get("kind") in {"course", "chapter"} and path == ["tags"]:
             raise ValueError("Courses and chapters do not support tags.")
+        if data.get("kind") == "portfolio" and path == ["tags"]:
+            raise ValueError("Portfolio entries do not support tags.")
         node: Any = result
         for key in path[:-1]:
             node = node[int(key)] if isinstance(node, list) else node[key]
@@ -317,10 +341,11 @@ def cms_router(root: Path) -> APIRouter:
         for collection in context.get("collections", []):
             collection["fields"] = [field for field in collection["fields"] if visible_field(field)]
         context.update({"navigation": NAVIGATION, "root": str(root)})
-        try:
-            context.setdefault("relationship_artifacts", request.app.state.content.list()["artifacts"])
-        except ServiceError:
-            context.setdefault("relationship_artifacts", [])
+        if "relationship_artifacts" not in context:
+            try:
+                context["relationship_artifacts"] = request.app.state.content.list()["artifacts"]
+            except ServiceError:
+                context["relationship_artifacts"] = []
         if "fields" in context and context.get("sections") is None:
             data = context.get("artifact", context.get("data", {}))
             for field in context["fields"]:
@@ -339,7 +364,7 @@ def cms_router(root: Path) -> APIRouter:
                 if notes and data.get("lifecycle") != "planned":
                     context["notes_section"] = {"title": "Internal notes", "fields": notes, "fold": False}
                 elif notes:
-                    context["notes_section"] = {"title": "Context files", "fields": [], "fold": False}
+                    context["notes_section"] = {"title": "Internal notes", "fields": [], "fold": False}
         if context.get("name") == "profile":
             sections = []
             for key, label in [(None, "General"), ("contact", "Contact"), ("employment", "Employment"), ("early_employment", "Early employment"), ("skills", "Skills"), ("education", "Education"), ("projects", "Projects")]:
@@ -351,7 +376,8 @@ def cms_router(root: Path) -> APIRouter:
                 if groups or section_collections:
                     sections.append({"key": key, "title": label, "groups": groups, "collections": section_collections})
             context["profile_sections"] = sections
-        context.setdefault("last_build", request.app.state.builds.last_successful(mode="preview"))
+        if "last_build" not in context:
+            context["last_build"] = request.app.state.builds.last_successful(mode="preview")
         context["preview_url"] = (context.get("last_build") or {}).get("preview_url") or "http://127.0.0.1:4300"
         return templates.TemplateResponse(request=request, name=template, context=context, status_code=status)
 
@@ -391,7 +417,7 @@ def cms_router(root: Path) -> APIRouter:
                 lifecycle_options = [value for value in lifecycle_options if value != "planned"]
         if kind == "course" and artifact.get("lifecycle") != "planned" and artifact.get("contract", {}).get("home") is not None:
             lifecycle_options = ["draft", "published"]
-        context: dict[str, Any] = {"artifact": artifact, "record": result, "revision": revision or result["revision"], "error": error, "source_path": str(root / source) if source else None, "editor_url": editor_url, "section": "courses" if kind in {"course", "chapter"} else "posts" if kind == "post" else "portfolio" if kind == "portfolio" else "personal"}
+        context: dict[str, Any] = {"artifact": artifact, "record": result, "revision": revision or result["revision"], "error": error, "source_path": str(root / source) if source else None, "editor_url": editor_url, "section": "courses" if kind in {"course", "chapter"} else "posts" if kind == "post" else "portfolio" if kind == "portfolio" else "personal", "navigation_query": ""}
         if kind in authoring.KINDS:
             courses = None
             if kind == "chapter" and artifact.get("parent"):
@@ -400,6 +426,10 @@ def cms_router(root: Path) -> APIRouter:
                     courses = [{"id": parent["artifact"]["id"], "title": parent["artifact"]["title"], "sections": parent["contract"]["toc"]}]
                 except ServiceError:
                     courses = []
+                context["return_url"] = chapter_return_url(artifact["parent"], request.query_params.get("return_to", ""))
+                course_title = courses[0]["title"] if courses else "course"
+                context["back_label"] = "Back to Courses" if urlsplit(context["return_url"]).path == "/cms/courses" else "Back to " + course_title
+                context["navigation_query"] = "?" + urlencode({"return_to": context["return_url"]})
             context["sections"] = authoring.sections(kind, artifact, courses=courses, lifecycle_options=lifecycle_options or [artifact.get("lifecycle", "planned")])
             context["fields"] = []
             if task_id := request.query_params.get("summary_task"):
@@ -424,12 +454,30 @@ def cms_router(root: Path) -> APIRouter:
             return (0 if identifier == query else 1 if identifier.startswith(query) or title.startswith(query) else 2, title, identifier)
         return JSONResponse({"artifacts": sorted(matches, key=rank)[:30], "revision": listing["revision"]})
 
+    def chapter_source_records(request: Request, chapters: list[dict[str, Any]]) -> dict[str, Any]:
+        return request.app.state.content.inspect_many([chapter["id"] for chapter in chapters])
+
     def course_context(request: Request, slug: str, error: Any = None, submitted: dict[str, str] | None = None) -> dict[str, Any]:
         context = detail_context(request, "course/" + slug)
         context.update(error=error, submitted=submitted or {}, slug=slug)
+        context["chapter_records"] = chapter_source_records(request, [row["chapter"] for row in context["record"]["chapter_rows"]])
         if submitted:
             context["revision"] = submitted.get("revision", context["revision"])
         return context
+
+    @router.get("/plan/{artifact_id:path}")
+    def view_plan(request: Request, artifact_id: str) -> HTMLResponse:
+        record = request.app.state.content.inspect(artifact_id)
+        artifact = record["artifact"]
+        if artifact["lifecycle"] != "planned" or not planning.plan_fields(artifact["kind"]):
+            return HTMLResponse("This entry has no active plan. Open its editor to view the current content.", status_code=404)
+        plan = dict(record["authoring_plan"])
+        if artifact["kind"] == "course":
+            home = seeded_home(plan)
+            plan.update({key: getattr(home, key) for key in HOME_LIST_FIELDS})
+        sections = [(label, render_plan_markdown(body, f"plan-{index}")) for index, (label, body) in enumerate(planning.filled_fields(artifact["kind"], plan))]
+        editor_path = "/cms/courses/" + quote(artifact["id"].split("/")[-1], safe="") + "#course-brief" if artifact["kind"] == "course" else "/cms/artifact/" + quote(artifact["id"], safe="/")
+        return render(request, "plan_fragment.html" if request.headers.get("HX-Request") else "plan.html", {"artifact": artifact, "plan_sections": sections, "editor_path": editor_path, "title": "Plan · " + artifact["title"], "section": CREATE_SECTIONS[artifact["kind"]]})
 
     @router.get("/courses/{slug}")
     def course_workspace(request: Request, slug: str) -> HTMLResponse:
@@ -449,28 +497,25 @@ def cms_router(root: Path) -> APIRouter:
     def home() -> RedirectResponse:
         return RedirectResponse("/cms/home")
 
-    def creation_courses(request: Request) -> list[dict[str, Any]]:
-        courses = []
-        for course in request.app.state.content.list("course")["artifacts"]:
-            record = request.app.state.content.inspect(course["id"])
-            courses.append({"id": course["id"], "title": course["title"], "sections": record["contract"].get("toc", [])})
+    def creation_courses(request: Request, artifacts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        courses = [artifact for artifact in artifacts if artifact["kind"] == "course"]
         # A chapter started from a course page can only be placed in that course.
         if request.query_params.get("parent"):
             courses = [course for course in courses if course["id"] == request.query_params["parent"]]
-        return courses
+        records = request.app.state.content.inspect_many([course["id"] for course in courses])
+        return [{"id": course["id"], "title": course["title"], "sections": records[course["id"]]["contract"].get("toc", [])} for course in courses]
 
     def creation_context(request: Request, kind: str, values: dict[str, Any], revision: str | None, error: Any = None) -> dict[str, Any]:
         listing = request.app.state.content.list()
-        courses = creation_courses(request) if kind == "chapter" else []
-        return {"section": CREATE_SECTIONS.get(kind, "posts"), "kind": kind, "values": values, "revision": revision or listing["revision"], "courses": courses, "error": error, "sections": authoring.sections(kind, values, creating=True, courses=courses), "contextual": bool(request.query_params.get("parent"))}
+        courses = creation_courses(request, listing["artifacts"]) if kind == "chapter" else []
+        return {"section": CREATE_SECTIONS.get(kind, "posts"), "kind": kind, "values": values, "revision": revision or listing["revision"], "courses": courses, "error": error, "sections": authoring.sections(kind, values, creating=True, courses=courses), "contextual": bool(request.query_params.get("parent")), "relationship_artifacts": listing["artifacts"]}
 
     @router.get("/new")
     def new(request: Request, kind: str = "post") -> HTMLResponse:
         if kind not in CREATE_SECTIONS:
             return HTMLResponse("Unknown entry kind", status_code=404)
-        listing = request.app.state.content.list()
         values = authoring.ensure_shape(kind, {"kind": kind, "parent": request.query_params.get("parent", ""), "section": request.query_params.get("section", "")})
-        return render(request, "new.html", creation_context(request, kind, values, listing["revision"]))
+        return render(request, "new.html", creation_context(request, kind, values, None))
 
     @router.post("/new")
     async def create(request: Request, kind: str | None = None) -> Response:
@@ -493,7 +538,7 @@ def cms_router(root: Path) -> APIRouter:
             token = form_revision(form.get("revision"))
             title = str(values.get("title", "")).strip()
             data: dict[str, Any] = {"kind": selected_kind, "title": title, "relations": list(dict.fromkeys(str(item) for item in values.get("relations") or [] if str(item).strip())), "visibility": "private", "lifecycle": "planned"}
-            if selected_kind not in {"course", "chapter"}:
+            if selected_kind not in {"course", "chapter", "portfolio"}:
                 data["tags"] = authoring.tags_from(values.get("tags"))
             if selected_kind in planning.PLAN:
                 data.update(planning.plan_patch(selected_kind, authoring.creation_plan(selected_kind, values)))
@@ -513,7 +558,7 @@ def cms_router(root: Path) -> APIRouter:
                 data.update(id=f"{parent}/{slug}", path=f"content/notebooks/courses/{course_slug}/{slug}.ipynb", parent=parent, section=str(values.get("section", "")), toc_title=str(values.get("toc_title") or "").strip() or title or slug)
             elif selected_kind == "portfolio":
                 data["id"] = f"portfolio/{slug}"
-                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", **data.get("detail", {}), "abstract": (data.get("detail", {}).get("abstract") or "").strip() or None, "project_path": str(values.get("detail", {}).get("project_path") or "") or None}
+                data["detail"] = {"notebook_path": f"content/notebooks/portfolio/{slug}.ipynb", **data.get("detail", {}), "abstract": (data.get("detail", {}).get("abstract") or "").strip() or None, **{key: str(values.get("detail", {}).get(key) or "").strip() or None for key in ("project_path", "figure_path", "figure_caption")}}
             elif selected_kind == "project":
                 data["id"] = f"project/{slug}"
                 data["path"] = f"projects/{slug}"
@@ -523,7 +568,14 @@ def cms_router(root: Path) -> APIRouter:
             if selected_kind == "post":
                 result = request.app.state.content.create_post(slug, data, token, attachment_uploads=await read_uploads(form))
             else:
-                result = request.app.state.content.create(data, expected_revision=token, attachment_uploads=await read_uploads(form))
+                image = None
+                upload = form.get("featured_image")
+                if isinstance(upload, UploadFile) and upload.filename:
+                    try:
+                        image = await upload.read(MAX_FIGURE_BYTES + 1)
+                    finally:
+                        await upload.close()
+                result = request.app.state.content.create(data, expected_revision=token, attachment_uploads=await read_uploads(form), figure_image=image)
         except ServiceError as error:
             return render(request, "new.html", creation_context(request, selected_kind, values, str(form.get("revision") or ""), error.as_dict()), error.status)
         except (ValueError, KeyError, TypeError) as error:
@@ -636,7 +688,7 @@ def cms_router(root: Path) -> APIRouter:
         if context["artifact"]["kind"] in {"course", "chapter"}:
             artifact = context["artifact"]
             slug = (artifact["id"] if artifact["kind"] == "course" else artifact["parent"]).split("/")[-1]
-            target = "/cms/courses/" + slug + ("#outline" if artifact["kind"] == "chapter" else "#course-brief")
+            target = context["return_url"] if artifact["kind"] == "chapter" else "/cms/courses/" + slug + "#course-brief"
             if request.headers.get("HX-Request"):
                 return HTMLResponse("", headers={"HX-Redirect": target})
             return RedirectResponse(target, status_code=303)
@@ -662,6 +714,7 @@ def cms_router(root: Path) -> APIRouter:
         context["action_result"] = result
         if context["artifact"]["kind"] == "course" and not request.headers.get("HX-Request"):
             context.update(slug=artifact_id.split("/")[-1], submitted={})
+            context["chapter_records"] = chapter_source_records(request, [row["chapter"] for row in context["record"]["chapter_rows"]])
             return render(request, "course.html", context)
         return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context)
 
@@ -687,10 +740,14 @@ def cms_router(root: Path) -> APIRouter:
             context["summary_task_error"] = error.as_dict()
             if context["artifact"]["kind"] == "course" and not request.headers.get("HX-Request"):
                 context.update(slug=artifact_id.split("/")[-1], submitted={})
+                context["chapter_records"] = chapter_source_records(request, [row["chapter"] for row in context["record"]["chapter_rows"]])
                 return render(request, "course.html", context, error.status)
             return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context, error.status)
         target = ("/cms/courses/" + quote(artifact_id.split("/")[-1]) if plan["kind"] == "course" else "/cms/artifact/" + quote(artifact_id, safe="/"))
-        target += "?summary_task=" + quote(card["id"]) + ("#course-brief" if plan["kind"] == "course" else "#page")
+        query = {"summary_task": card["id"]}
+        if plan["kind"] == "chapter":
+            query["return_to"] = detail_context(request, artifact_id)["return_url"]
+        target += "?" + urlencode(query) + ("#course-brief" if plan["kind"] == "course" else "#page")
         if request.headers.get("HX-Request"):
             return HTMLResponse("", headers={"HX-Redirect": target})
         return RedirectResponse(target, status_code=303)
@@ -730,13 +787,13 @@ def cms_router(root: Path) -> APIRouter:
         try:
             values = apply_fields(baseline, form)
             if name == "portfolio":
-                # Consumed plans remain historical bytes, absent from the editor snapshot.
+                # Preserve legacy payloads until explicit cleanup; do not recreate removed seeds.
                 lifecycles = {a["id"]: a["lifecycle"] for a in request.app.state.content.list("portfolio")["artifacts"]}
                 stored = request.app.state.content.read_data(name)["data"]
-                plans = {entry["id"]: entry.get("planned", {}) for entry in stored.get("entries", [])}
+                plans = {entry["id"]: entry["planned"] for entry in stored.get("entries", []) if "planned" in entry}
                 for entry in values.get("entries", []):
-                    if lifecycles.get(entry["id"]) != "planned":
-                        entry.setdefault("planned", plans.get(entry["id"], {}))
+                    if lifecycles.get(entry["id"]) != "planned" and entry["id"] in plans:
+                        entry.setdefault("planned", plans[entry["id"]])
             if name == "photos":
                 images = await photo_uploads(form, len(baseline.get("photos", [])))
                 result = request.app.state.content.update_gallery(values, expected_revision=form_revision(revision), photo_images=images)
@@ -999,13 +1056,20 @@ def cms_router(root: Path) -> APIRouter:
             search = " ".join(q.split()).casefold()
             items = [item for item in items if search in " ".join(item["title"].split()).casefold()]
         items, pagination = paginate(request, items, page, page_size)
-        records = {item["id"]: request.app.state.content.inspect(item["id"]) for item in items} if section in {"courses", "portfolio"} else {}
+        record_ids = [item["id"] for item in items] if section in {"courses", "portfolio", "posts"} else []
+        if section == "courses":
+            course_ids = set(record_ids)
+            record_ids.extend(chapter["id"] for chapter in all_items if chapter["kind"] == "chapter" and chapter.get("parent") in course_ids)
+        records = request.app.state.content.inspect_many(record_ids)
+        if section == "courses":
+            for item in items:
+                records[item["id"]]["chapter_return_url"] = chapter_return_url(item["id"], "/cms/courses?" + request.url.query)
         profile = request.app.state.content.read_data("profile")["data"] if section in {"home", "resume"} else None
         photo_data = request.app.state.content.read_data("photos") if section == "personal" else None
         photos = photo_data["data"].get("photos", []) if photo_data else None
         photo_rows = None
         if photos is not None:
             photo_rows, pagination = paginate(request, list(enumerate(photos)), page, page_size)
-        return render(request, "section.html", {"section": section, "title": dict(NAVIGATION)[section], "artifacts": items, "all_artifacts": all_items, "records": records, "profile": profile, "profile_links": contact_links(profile["contact"]) if profile else [], "photo_rows": photo_rows, "photo_revision": photo_data["revision"] if photo_data else None, "photo_snapshot": photo_data["data"] if photo_data else None, "reorder": section == "personal" and reorder, "pagination": pagination, "tags": tags, "q": q, "tag": tag, "lifecycle": lifecycle, "visibility": visibility, "data_name": DATA_NAMES.get(section), "kind": KINDS.get(section) if section != "personal" else None, "last_build": request.app.state.builds.last_successful(mode="preview")})
+        return render(request, "section.html", {"section": section, "title": dict(NAVIGATION)[section], "artifacts": items, "all_artifacts": all_items, "records": records, "profile": profile, "profile_links": contact_links(profile["contact"]) if profile else [], "photo_rows": photo_rows, "photo_revision": photo_data["revision"] if photo_data else None, "photo_snapshot": photo_data["data"] if photo_data else None, "reorder": section == "personal" and reorder, "pagination": pagination, "tags": tags, "q": q, "tag": tag, "lifecycle": lifecycle, "visibility": visibility, "data_name": DATA_NAMES.get(section), "kind": KINDS.get(section) if section != "personal" else None, "last_build": request.app.state.builds.last_successful(mode="preview"), "relationship_artifacts": all_items})
 
     return router

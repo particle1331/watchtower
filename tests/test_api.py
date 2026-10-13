@@ -587,13 +587,16 @@ def test_new_plan_fields_follow_entry_kind(client, kind):
     enabled = {tuple(json.loads(html.unescape(match.group(1)))) for attrs in controls if "disabled" not in attrs and (match := re.search(r'name="field:([^"]+)"', attrs))}
     names = {path[-1] for path in enabled}
     chapter_fields = {"parent", "toc_title", "section", "lab_and_evidence"}
-    portfolio_fields = {"introduction", "what_it_contains", "intended_users"}
+    portfolio_fields = {"abstract", "figure_caption", "project_path"}
     assert names & chapter_fields == (chapter_fields if kind == "chapter" else set())
     assert names & portfolio_fields == (portfolio_fields if kind == "portfolio" else set())
     assert ("planned", "content") in enabled or ("plan", "content") in enabled or ("detail", "planned", "introduction") in enabled
     assert ("name",) in enabled
     assert "id" not in names and "path" not in names and "filename" not in names
-    assert (("tags",) in enabled) == (kind != "chapter")
+    assert (("tags",) in enabled) == (kind == "post")
+    if kind == 'portfolio':
+        assert {('detail', 'planned', key) for key in ('introduction', 'content', 'evidence')} <= enabled
+        assert not names & {'what_it_contains', 'intended_users', 'approach', 'success_criteria', 'references'}
     assert ("relations",) in enabled
     assert "scope_notes" not in names and "next_steps" not in names and "takeaway" not in names
 
@@ -609,7 +612,7 @@ def test_cms_portfolio_plan_generates_page_from_name_before_starting_notebook(cl
 
     page = client.get("/cms/new?kind=portfolio")
     revision = re.search(r'name="revision" value="([^"]+)"', page.text).group(1)
-    plan = {"introduction": "A browser interface for the agent.", "what_it_contains": "A durable journal and queryable sessions."}
+    plan = {"introduction": "A browser interface for the agent.", "content": "A durable journal and queryable sessions."}
     response = client.post("/cms/new", follow_redirects=False, data={
         "revision": revision, "kind": "portfolio", 'field:["name"]': "Demo", 'field:["title"]': "Demo",
         **{f'field:["detail", "planned", "{key}"]': value for key, value in plan.items()},
@@ -781,7 +784,7 @@ def create_portfolio(client):
 
 
 @pytest.mark.parametrize("format,extension", [("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp"), ("GIF", "gif")])
-def test_portfolio_image_upload_saves_caption_and_renders_above_abstract(client, monkeypatch, format, extension):
+def test_portfolio_image_upload_saves_caption_for_listing_only(client, monkeypatch, format, extension):
     import nbformat
 
     from watchtower.services.build import BuildService
@@ -805,7 +808,8 @@ def test_portfolio_image_upload_saves_caption_and_renders_above_abstract(client,
     assert path.startswith("backend/assets/portfolio/image-") and path.endswith(f".{extension}")
     assert (client.app.state.root / path).read_bytes() == image
     assert detail["figure_caption"] == "The featured figure caption."
-    assert 'class="featured-figure-preview"' in saved.text
+    assert 'class="featured-figure-preview"' not in saved.text
+    assert 'class="featured-figure-preview"' in client.get('/cms/artifact/portfolio/image').text
     assert client.get("/cms/figure/portfolio/image").content == image
     assert record["artifact"]["lifecycle"] == "planned"
     assert not (client.app.state.root / detail["notebook_path"]).exists()
@@ -820,9 +824,10 @@ def test_portfolio_image_upload_saves_caption_and_renders_above_abstract(client,
     assert 'Review content, then publish in CMS' in listing
     generated_page = nbformat.read(generated / "nb/portfolio/image.ipynb", as_version=4)
     header = generated_page.cells[0].source
-    # The abstract renders once, as labeled body content below the figure.
+    # Listing metadata stays off the full notebook page.
     assert "description" not in yaml.safe_load(header.split("---", 2)[1])
-    assert header.index("![The featured figure caption.](") < header.index("**Abstract.** The project abstract.")
+    assert '![The featured figure caption.](' not in header
+    assert '**Abstract.**' not in header
     assert any('aria-label="Publication status"' in cell.source and 'Review content, then publish in CMS' in cell.source for cell in generated_page.cells)
     assert (generated / relative).read_bytes() == image
 

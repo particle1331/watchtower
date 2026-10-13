@@ -107,7 +107,7 @@ def test_draft_notebook_cells_seed_title_sections_and_references():
     })
     assert cells[0] == '# Signal filters\n'
     assert cells[1].startswith('## The problem')
-    assert cells[-1] == '## References\n\n- ref1\n- ref2'
+    assert cells[-1] == '## Planned evidence\n\n### References\n\n- ref1\n- ref2'
     joined = '\n'.join(cells)
     assert 'INTERNAL' not in joined
     assert draft_notebook_cells('portfolio', 'Title only', {}) == ['# Title only\n']
@@ -115,11 +115,27 @@ def test_draft_notebook_cells_seed_title_sections_and_references():
 
 def test_plain_reference_lines_seed_as_a_list():
     from watchtower.starters import draft_sections
-    assert draft_sections('portfolio', {'references': 'ref1\nref2\nref3'}) == ['## References\n\n- ref1\n- ref2\n- ref3']
-    assert draft_sections('post', {'references': 'ref1\nref2'}) == ['## References\n\n- ref1\n- ref2']
+    assert draft_sections('portfolio', {'references': 'ref1\nref2\nref3'}) == ['## Planned evidence\n\n### References\n\n- ref1\n- ref2\n- ref3']
+    assert draft_sections('post', {'references': 'ref1\nref2'}) == ['## Planned evidence\n\n### References\n\n- ref1\n- ref2']
     # Authored Markdown keeps its own structure.
-    assert draft_sections('portfolio', {'references': 'Paragraph one.\n\nParagraph two.'}) == ['## References\n\nParagraph one.\n\nParagraph two.']
-    assert draft_sections('portfolio', {'references': '> quoted reference'}) == ['## References\n\n> quoted reference']
+    assert draft_sections('portfolio', {'references': 'Paragraph one.\n\nParagraph two.'}) == ['## Planned evidence\n\n### References\n\nParagraph one.\n\nParagraph two.']
+    assert draft_sections('portfolio', {'references': '> quoted reference'}) == ['## Planned evidence\n\n### References\n\n> quoted reference']
+
+
+def test_portfolio_legacy_brief_folds_into_three_sections_without_losing_saved_text():
+    from watchtower.planning import portfolio_plan
+    legacy = {'introduction': 'Problem.', 'what_it_contains': 'Components.', 'intended_users': 'Users.',
+              'approach': 'Design.', 'success_criteria': 'Passing checks.', 'references': 'Source one\nSource two'}
+    original = dict(legacy)
+    plan = portfolio_plan(legacy)
+    cells = draft_sections('portfolio', plan)
+    assert [cell.splitlines()[0] for cell in cells] == ['## The problem', '## Planned content', '## Planned evidence']
+    assert all(text in '\n\n'.join(cells) for text in ('Components.', 'Users.', 'Design.', 'Passing checks.', 'Source one', 'Source two'))
+    assert legacy == original
+    assert all(plan[key] == value for key, value in legacy.items())
+    assert portfolio_plan({**legacy, 'content': '', 'evidence': 'Explicit evidence.'})['content'] == ''
+    assert draft_sections('portfolio', {**legacy, 'content': 'New content.', 'evidence': 'New evidence.'}) == [
+        '## The problem\n\nProblem.', '## Planned content\n\nNew content.', '## Planned evidence\n\nNew evidence.']
 
 
 def test_portfolio_project_path_defaults_to_the_portfolio_name(content_service):
@@ -163,3 +179,67 @@ def test_rename_keeps_scaffold_titles_in_sync_without_reseeding(content_service)
         service.update('post/combined', {'title': 'Renamed', 'planned': {'content': 'Seeded body.'}})
     assert source.read_bytes() == before
     assert service.inspect('post/combined')['artifact']['title'] == 'Old title'
+
+
+def _plan_for(kind):
+    if kind == 'post':
+        return {'content': 'Outline body.', 'audience': 'Readers.', 'evidence': 'Evidence.', 'references': '- Ref one\n- Ref two'}
+    if kind == 'portfolio':
+        return {'introduction': 'The problem.', 'what_it_contains': 'Contents.', 'intended_users': 'Users.',
+                'approach': 'Approach.', 'success_criteria': 'Criteria.', 'references': '- Ref one'}
+    return {'content': 'Explain the idea.', 'lab_and_evidence': 'Practice the idea.'}
+
+
+@pytest.mark.parametrize('kind', ['post', 'portfolio', 'chapter'])
+def test_plan_preview_is_exactly_the_started_draft_body(content_service, kind):
+    """The plan page and the draft page share one body: the draft is definitive."""
+    service = content_service
+    if kind == 'chapter':
+        service.create({'id': 'course/demo', 'kind': 'course', 'title': 'Demo course', 'path': 'content/notebooks/courses/demo',
+                        'contract': {'planned': {'outcome': 'Build', 'description': 'Teach', 'chapters': []}}})
+        service.start('course/demo')
+        service.create({'id': 'course/demo/first', 'kind': 'chapter', 'title': 'First', 'parent': 'course/demo', 'section': 'main',
+                        'toc_title': 'First', 'path': 'content/notebooks/courses/demo/first.ipynb', 'plan': _plan_for(kind)})
+        identifier = 'course/demo/first'
+    elif kind == 'post':
+        identifier = 'post/guard'
+        service.create({'id': identifier, 'kind': 'post', 'title': 'Guard', 'path': 'content/notebooks/posts/guard.ipynb', 'planned': _plan_for(kind)})
+    else:
+        identifier = 'portfolio/guard'
+        service.create({'id': identifier, 'kind': 'portfolio', 'title': 'Guard', 'detail': {'planned': _plan_for(kind)}})
+    plan = service.inspect(identifier)['plan']
+    started = service.start(identifier)
+    notebook = nbformat.read(service.root / started['source_path'], as_version=4)
+    cells = [cell.source.strip() for cell in notebook.cells]
+    # Generated pages drop a title H1 that repeats the catalog title, except chapters, which keep it.
+    expected = '\n\n'.join(cells if kind == 'chapter' else cells[1:])
+    assert plan == expected
+    assert service.inspect(identifier)['plan'] == ''
+
+
+def test_plan_labels_are_the_draft_headings():
+    from watchtower.planning import PLAN, parse_plan_file
+    from watchtower.starters import SECTIONS
+    for kind in ('post', 'portfolio', 'chapter'):
+        labels = {field.key: field.label for field in PLAN[kind]}
+        for key, heading in SECTIONS[kind]:
+            if heading:
+                assert labels[key] == heading, (kind, key)
+    # Earlier labels still work in existing plan files.
+    assert parse_plan_file('portfolio', '## Problem\n\nWhy.\n\n## Success criteria\n\nHow.') == {'introduction': 'Why.', 'evidence': 'How.'}
+    assert parse_plan_file('post', '## Outline\n\nContent.\n\n## Examples and evidence\n\nEvidence.') == {'content': 'Content.', 'evidence': 'Evidence.'}
+    assert parse_plan_file('chapter', '## Outline\n\nContent.\n\n## Practice and evidence\n\nEvidence.') == {'content': 'Content.', 'lab_and_evidence': 'Evidence.'}
+    assert draft_sections('chapter', {'content': 'Legacy outline.', 'lab_and_evidence': 'Legacy exercise.'}) == [
+        '## Planned content\n\nLegacy outline.', '## Planned evidence\n\nLegacy exercise.']
+
+
+def test_post_legacy_brief_folds_into_supported_sections_without_readding_text():
+    from watchtower.planning import post_plan
+    legacy = {'content': 'Outline.', 'audience': 'Readers.', 'evidence': 'Experiment.', 'references': 'Source one\nSource two'}
+    normalized = post_plan(legacy)
+    assert legacy == {'content': 'Outline.', 'audience': 'Readers.', 'evidence': 'Experiment.', 'references': 'Source one\nSource two'}
+    assert all(normalized[key] == value for key, value in legacy.items() if key in {'audience', 'references'})
+    assert post_plan(normalized) == normalized
+    assert draft_sections('post', legacy) == ['## Planned content\n\nOutline.\n\n### Who this is for\n\nReaders.',
+                                            '## Planned evidence\n\nExperiment.\n\n### References\n\n- Source one\n- Source two']
+    assert draft_sections('post', {**normalized, 'content': '', 'evidence': 'Revised evidence.'}) == ['## Planned evidence\n\nRevised evidence.']

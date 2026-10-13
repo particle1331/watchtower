@@ -26,6 +26,7 @@ def entry(author, kind, **extra):
         data.update(path="content/notebooks/courses/authority", contract={"planned": {"description": "INITIAL-INTENT", "prerequisites": "Readers"}})
     elif kind == "chapter":
         author.create({"id": "course/parent", "kind": "course", "title": "Parent", "path": "content/notebooks/courses/parent", "contract": {"purpose": "PARENT-INTENT"}})
+        author.start("course/parent")  # Chapters may leave Planned only after their course has started.
         identifier = "course/parent/authority"
         data.update(id=identifier, parent="course/parent", section="main", toc_title="Authority",
                     path="content/notebooks/courses/parent/authority.ipynb", plan={"content": "INITIAL-INTENT", "summary": "Public summary"})
@@ -140,7 +141,7 @@ def test_structured_data_cannot_change_consumed_intent(author, kind):
     name = "portfolio" if kind == "portfolio" else "course/authority" if kind == "course" else "course/parent"
     record = author.read_data(name)
     if kind == "portfolio":
-        record["data"]["entries"][0]["planned"]["introduction"] = "Changed"
+        record["data"]["entries"][0]["planned"] = {"introduction": "Changed"}
     elif kind == "course":
         record["data"]["planned"]["description"] = "Changed"
     else:
@@ -158,7 +159,6 @@ def test_started_course_hides_parent_intent_and_actualized_while_preserving_navi
     identifier, data = entry(author, "chapter")
     author.create(data)
     author.update("course/parent", {"contract": {"actualized": {"summary": "LEGACY-COMPLETION"}}})
-    author.start("course/parent")
     author.start(identifier)
     snapshot = author.snapshot()
     course = next(a for a in snapshot.state.artifacts if a.id == "course/parent")
@@ -197,7 +197,7 @@ def test_portfolio_data_saves_keep_consumed_plan_out_of_response_and_snapshot(au
         assert saved.status_code == 200, saved.text
         assert "INITIAL-INTENT" not in saved.text
         assert author.read_plan(identifier)["summary"] == "Revised public summary"
-        assert author.read_data("portfolio")["data"]["entries"][0]["planned"]["introduction"] == "INITIAL-INTENT"
+        assert "planned" not in author.read_data("portfolio")["data"]["entries"][0]
         stale = client.post("/cms/data/portfolio", data={"revision": revision, "snapshot": snapshot,
                             'field:["entries", 0, "abstract"]': "Unsaved public summary"})
         assert stale.status_code == 412

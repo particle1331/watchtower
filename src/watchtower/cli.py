@@ -70,7 +70,7 @@ def new_post(
 ) -> None:
     """Plan a post without a notebook; --start also creates its draft notebook.
 
-    Plan file sections (## headings, by label or key, any case): Summary, Outline, Audience, Examples and evidence, References, Internal notes. Text before the first heading is an error. A field may come from a flag or a section, not both.
+    Plan file sections (## headings, by label or key, any case): Summary, The problem, Planned content, Planned evidence, Internal notes. Outline and Examples and evidence remain aliases for Planned content and Planned evidence. Text before the first heading is an error. A field may come from a flag or a section, not both.
     """
     from .content_cli import active, create_post
 
@@ -100,7 +100,7 @@ def new_course(
 ) -> None:
     """Plan a course: its contract and home page. Add chapters with new chapter.
 
-    Plan file sections (## headings, by label or key, any case): Card description, Purpose, Audience and prerequisites, Learning outcomes, Running project, Practice and assessment, References, Internal notes. Chapters are managed in the outline, not in the plan file. Text before the first heading is an error.
+    Plan file sections (## headings, by label or key, any case): Card description, Course outcome, Course description, Requirements, Prerequisites, References, Internal notes. Chapters are managed in the outline, not in the plan file. Text before the first heading is an error.
     """
     from .content_cli import active, create_course
 
@@ -133,7 +133,7 @@ def new_chapter(
 ) -> None:
     """Plan a chapter in a course section without a notebook; --start also creates it.
 
-    Plan file sections (## headings, by label or key, any case): Course table summary, Outline, Practice and evidence, Internal notes. The course table summary is the one-line row text on the course page.
+    Plan file sections (## headings, by label or key, any case): Course table summary, The problem, Planned content, Planned evidence, Internal notes. Outline and Practice and evidence remain accepted aliases. The course table summary is the one-line row text on the course page; it stays outside the chapter notebook.
     """
     from .content_cli import active, create_chapter
 
@@ -153,7 +153,6 @@ def new_portfolio(
     name: str = typer.Argument(..., help="stable name (letters, digits, hyphens); the ID becomes portfolio/NAME"),
     title: str | None = typer.Option(None, "--title", help="display title (default: derived from NAME)"),
     summary: SummaryFlag = None,
-    tag: TagFlag = None,
     figure_path: str | None = typer.Option(None, "--figure-path", help="featured image path under backend/assets/"),
     figure_caption: str | None = typer.Option(None, "--figure-caption", help="caption shown with the featured image"),
     project_path: str | None = typer.Option(None, "--project-path", help="repository-relative code directory (default: projects/NAME)"),
@@ -171,14 +170,14 @@ def new_portfolio(
 ) -> None:
     """Plan a portfolio entry; --start also creates its notebook and project code.
 
-    Plan file sections (## headings, by label or key, any case): Abstract, Problem, What it contains, Intended users, Implementation approach, Success criteria, References, Internal notes. Publishing needs the abstract, a featured figure and its caption; drafts may omit them.
+    Plan file sections (## headings, by label or key, any case): Abstract, The problem, Planned content, Planned evidence. Publishing needs the abstract, a featured figure and its caption; drafts may omit them. Portfolio entries have no tags.
     """
     from .content_cli import active, create_portfolio
 
     if not active():
         raise ValueError("portfolio plans need an active catalog (backend/data/catalog.yaml); run wt migrate first")
     options = {"--summary": summary, "--description": description, "--abstract": abstract, "--internal-notes": internal_notes, "--planned-content": planned_content, "--planned-lab-and-evidence": planned_lab_and_evidence, "--introduction": introduction, "--what-it-contains": what_it_contains, "--scope-notes": scope_notes}
-    create_portfolio(name, title=title, tags=tag, figure_path=figure_path, figure_caption=figure_caption, project_path=project_path, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
+    create_portfolio(name, title=title, figure_path=figure_path, figure_caption=figure_caption, project_path=project_path, options=options, plan_file=plan_file, start=start, expected_revision=expected_revision)
 
 
 @new_app.command("section")
