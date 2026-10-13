@@ -5,6 +5,7 @@ a small check-to-replace race; observed divergences are always preserved.
 """
 from __future__ import annotations
 
+import copy
 import fcntl
 import hashlib
 import json
@@ -13,6 +14,7 @@ import threading
 import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +42,8 @@ def revision(files: dict[str, bytes | None]) -> str:
     return digest(json.dumps({p: digest(b) for p, b in sorted(files.items())}, sort_keys=True).encode())
 
 
-def load_yaml(value: bytes, path: str) -> dict[str, Any]:
+@lru_cache(maxsize=128)
+def _parse_yaml(value: bytes, path: str) -> dict[str, Any]:
     parser = YAML(typ="safe")
     parser.allow_duplicate_keys = False
     try:
@@ -52,6 +55,11 @@ def load_yaml(value: bytes, path: str) -> dict[str, Any]:
     if "version" in result and (type(result["version"]) is not int or result["version"] != 1):
         raise ServiceError(f"{path}: unsupported version (expected 1)", paths=[path])
     return result
+
+
+def load_yaml(value: bytes, path: str) -> dict[str, Any]:
+    """Reuse strict parsing for identical bytes; never share mutable records."""
+    return copy.deepcopy(_parse_yaml(value, path))
 
 
 def sync_dir(path: Path) -> None:

@@ -665,6 +665,16 @@ class ContentService:
         result["build_brief"] = self._build_brief(artifact, state)
         if artifact.kind == "course":
             result["chapter_rows"] = course_rows(state.courses[artifact.id], state.artifacts)
+            # Source tools use this same captured workspace, without inspecting
+            # or validating all the chapters again just to check file existence.
+            chapter_ids = {identifier for section in state.courses[artifact.id].toc for identifier in section.chapters}
+            result["chapter_sources"] = {}
+            for chapter in state.artifacts:
+                if chapter.id not in chapter_ids:
+                    continue
+                chapter_path = source_path(chapter, state)
+                chapter_exists = bool(chapter_path and files.get(chapter_path) is not None)
+                result["chapter_sources"][chapter.id] = {"source_path": chapter_path, "editor_url": "vscode://file/" + quote(str(self.root / str(chapter_path)), safe="/") if chapter_exists else None}
         return result
 
     def _mutate(self, operation: str, callback: Any, expected_revision: str | None, *, missing_references_ok: bool = False) -> dict[str, Any]:

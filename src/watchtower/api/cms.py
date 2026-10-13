@@ -454,13 +454,10 @@ def cms_router(root: Path) -> APIRouter:
             return (0 if identifier == query else 1 if identifier.startswith(query) or title.startswith(query) else 2, title, identifier)
         return JSONResponse({"artifacts": sorted(matches, key=rank)[:30], "revision": listing["revision"]})
 
-    def chapter_source_records(request: Request, chapters: list[dict[str, Any]]) -> dict[str, Any]:
-        return request.app.state.content.inspect_many([chapter["id"] for chapter in chapters])
-
     def course_context(request: Request, slug: str, error: Any = None, submitted: dict[str, str] | None = None) -> dict[str, Any]:
         context = detail_context(request, "course/" + slug)
         context.update(error=error, submitted=submitted or {}, slug=slug)
-        context["chapter_records"] = chapter_source_records(request, [row["chapter"] for row in context["record"]["chapter_rows"]])
+        context["chapter_records"] = context["record"]["chapter_sources"]
         if submitted:
             context["revision"] = submitted.get("revision", context["revision"])
         return context
@@ -714,7 +711,7 @@ def cms_router(root: Path) -> APIRouter:
         context["action_result"] = result
         if context["artifact"]["kind"] == "course" and not request.headers.get("HX-Request"):
             context.update(slug=artifact_id.split("/")[-1], submitted={})
-            context["chapter_records"] = chapter_source_records(request, [row["chapter"] for row in context["record"]["chapter_rows"]])
+            context["chapter_records"] = context["record"]["chapter_sources"]
             return render(request, "course.html", context)
         return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context)
 
@@ -740,7 +737,7 @@ def cms_router(root: Path) -> APIRouter:
             context["summary_task_error"] = error.as_dict()
             if context["artifact"]["kind"] == "course" and not request.headers.get("HX-Request"):
                 context.update(slug=artifact_id.split("/")[-1], submitted={})
-                context["chapter_records"] = chapter_source_records(request, [row["chapter"] for row in context["record"]["chapter_rows"]])
+                context["chapter_records"] = context["record"]["chapter_sources"]
                 return render(request, "course.html", context, error.status)
             return render(request, "artifact_fragment.html" if request.headers.get("HX-Request") else "artifact.html", context, error.status)
         target = ("/cms/courses/" + quote(artifact_id.split("/")[-1]) if plan["kind"] == "course" else "/cms/artifact/" + quote(artifact_id, safe="/"))
@@ -1057,12 +1054,10 @@ def cms_router(root: Path) -> APIRouter:
             items = [item for item in items if search in " ".join(item["title"].split()).casefold()]
         items, pagination = paginate(request, items, page, page_size)
         record_ids = [item["id"] for item in items] if section in {"courses", "portfolio", "posts"} else []
-        if section == "courses":
-            course_ids = set(record_ids)
-            record_ids.extend(chapter["id"] for chapter in all_items if chapter["kind"] == "chapter" and chapter.get("parent") in course_ids)
         records = request.app.state.content.inspect_many(record_ids)
         if section == "courses":
             for item in items:
+                records.update(records[item["id"]]["chapter_sources"])
                 records[item["id"]]["chapter_return_url"] = chapter_return_url(item["id"], "/cms/courses?" + request.url.query)
         profile = request.app.state.content.read_data("profile")["data"] if section in {"home", "resume"} else None
         photo_data = request.app.state.content.read_data("photos") if section == "personal" else None
