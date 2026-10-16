@@ -24,6 +24,8 @@ htmlcov/
 archive/**/pdf/
 archive/2026-10-01/content-system-inputs/assets/contact.js
 archive/2026-10-01/content-system-inputs/assets/resume.pdf
+/archive/deleted/
+/backend/attachments/
 .venv/
 /.quarto/
 **/*.quarto_ipynb
