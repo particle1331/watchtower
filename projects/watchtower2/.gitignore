@@ -1,0 +1,16 @@
+# Prototype state and secrets stay outside Git.
+.tmp/
+.runtime/
+.venv/
+generated/
+build/
+dist/
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*

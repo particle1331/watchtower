@@ -35,6 +35,8 @@ wt = "watchtower.cli:main"
 
 [tool.uv.workspace]
 members = ["projects/*"]
+# Keep the independent CMS prototype's dependencies and environment separate.
+exclude = ["projects/watchtower2"]
 
 [dependency-groups]
 dev = [

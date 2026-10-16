@@ -538,25 +538,85 @@ artifacts:
   planned: {}
 - id: course/ai-assisted
   kind: course
-  title: 'AI-Assisted Development: A Process That Scales'
+  title: 'AI-Assisted Development: Building Watchtower2'
   path: content/notebooks/courses/ai-assisted
   visibility: private
   lifecycle: draft
   relations:
-  - project/ai-assisted
+  - project/watchtower2
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-02-components-and-state
+  - post/flet-03-forms-and-dialogs
+  - post/flet-04-async-work-and-services
+  - post/flet-05-navigation-and-lists
+  - post/flet-06-files-and-rich-content
   date: '2026-10-10'
-  description: Build a Habit Tracker with AI coding agents, explicit architecture,
-    scoped plans, executable checks, and a reviewable journal.
-  internal_notes: 'Ported from ../ai-assisted at source commit 1a3fd84 on 2026-10-10.
-    Source notebooks did not exist: the whitepaper and seven journals were converted
-    with wt notebook commands. Preserve historical approvals, stage test counts, and
-    open decisions; the copied code is the final implementation. Source files remain
-    unchanged. Keep the course private/draft until publication is requested.
+  description: Build and understand a real CMS prototype through scoped AI-assisted
+    changes, shared CLI/Flet services, Turso, B2 and demonstrated recovery.
+  internal_notes: '2026-10-15: Rebuilt around the independent Watchtower2 prototype
+    at the owner''s request. Only the overview is authored; Chapters 01–16 remain
+    Planned. Use the project design documents for engineering detail and the course
+    outline for the learning sequence. Provider engine/driver/runtime capabilities,
+    retention durations and the historical rebuild promise remain to be demonstrated.
+    Keep private/Draft until publication is explicitly requested. Adoption or migration
+    is a separate future decision.
+
+
+    The eight former Habit Tracker notebooks were retired through wt delete and their
+    exact archived bytes were hash-verified. The original project and course sidecars
+    remain preserved. Old chapter IDs/source paths stay reserved; the new overview
+    uses 00-watchtower2-overview.
+
+
+    Historical Habit Tracker provenance, not evidence for the Watchtower2 implementation:
+
+
+    Ported from ../ai-assisted at source commit 1a3fd84 on 2026-10-10. Source notebooks
+    did not exist: the whitepaper and seven journals were converted with wt notebook
+    commands. Preserve historical approvals, stage test counts, and open decisions;
+    the copied code is the final implementation. Source files remain unchanged. Keep
+    the course private/draft until publication is requested.
 
 
     **Design rule:** The human owns the architecture, and the important rules have
-    executable checks.'
-  internal_todos: []
+    executable checks.
+
+
+    Managed notebook archives:
+
+    - archive/deleted/04f330429079471daede73ee9d6e28e3
+
+    - archive/deleted/6c078059e32f4fafb0acb8816df80fd7
+
+    - archive/deleted/5fdfbe0d239642fcb87d264cb42801a0
+
+    - archive/deleted/1ce3a3cb13634f21980e0240d919352d
+
+    - archive/deleted/aa7eb3d4ac08493787ef814f4c0542d3
+
+    - archive/deleted/478380a249f3466687bd9d8991678305
+
+    - archive/deleted/5369d33ae0ed45c79003647b2b17cf8d
+
+    - archive/deleted/0f1262708ba449ec8455442471e00f9b
+
+
+    2026-10-16: General Flet instruction belongs in the six standalone Introduction
+    to Flet posts (flet-01 through flet-06, all Planned). Use them just in time; Chapters
+    03, 06, 07 and 13 retain Watchtower2 capability checks, integration decisions
+    and acceptance evidence. Keep the generic examples independent of Watchtower2,
+    Turso and B2. Relationships use registered IDs; do not insert links to nonexistent
+    Planned frontend pages.'
+  internal_todos:
+  - text: Walk through the three v1 save/storage traces and confirm the learner can
+      explain the authority map.
+    done: false
+  - text: Complete and review the disposable Turso, B2 and Flet capability report
+      before selecting implementation dependencies.
+    done: false
+  - text: Review the first wt2 Kanban implementation plan and record its observed
+      evidence before broad CMS implementation.
+    done: false
   attachments: []
   cover: content/notebooks/courses/ai-assisted/img/course-card-v3.png
   planned: {}
@@ -567,137 +627,23 @@ artifacts:
   path: projects/ai-assisted
   visibility: private
   lifecycle: draft
-  relations:
-  - course/ai-assisted
+  relations: []
   internal_notes: ''
+  internal_todos: []
   attachments: []
   tags: []
   planned: {}
-- id: course/ai-assisted/00-overview
-  kind: chapter
-  title: Building with AI Agents Without Losing the Architecture
-  path: content/notebooks/courses/ai-assisted/00-overview.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 00. Process overview
-  section: process-and-architecture
-- id: course/ai-assisted/01-domain-core
-  kind: chapter
-  title: 'Domain Core: Entities, Dates, and Streaks'
-  path: content/notebooks/courses/ai-assisted/01-domain-core.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 01. Domain core
-  section: build-the-habit-tracker
-- id: course/ai-assisted/02-persistence-and-architecture-test
-  kind: chapter
-  title: Persistence Ports and Executable Architecture Rules
-  path: content/notebooks/courses/ai-assisted/02-persistence-and-architecture-test.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 02. Ports and guardrails
-  section: build-the-habit-tracker
-- id: course/ai-assisted/03-use-cases
-  kind: chapter
-  title: Application Use Cases with Injected Dates
-  path: content/notebooks/courses/ai-assisted/03-use-cases.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 03. Use cases
-  section: build-the-habit-tracker
-- id: course/ai-assisted/04-cli
-  kind: chapter
-  title: The CLI and Its Composition Root
-  path: content/notebooks/courses/ai-assisted/04-cli.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 04. CLI and wiring
-  section: build-the-habit-tracker
-- id: course/ai-assisted/05-export-feature
-  kind: chapter
-  title: Add JSON Export Within Existing Boundaries
-  path: content/notebooks/courses/ai-assisted/05-export-feature.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 05. Bounded feature work
-  section: build-the-habit-tracker
-- id: course/ai-assisted/06-drift-audit
-  kind: chapter
-  title: Test the Guardrails with Deliberate Drift
-  path: content/notebooks/courses/ai-assisted/06-drift-audit.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 06. Drift experiment
-  section: audit-and-review
-- id: course/ai-assisted/07-independent-review
-  kind: chapter
-  title: Independent Review, Contract Repairs, and Honest Claims
-  path: content/notebooks/courses/ai-assisted/07-independent-review.ipynb
-  visibility: private
-  lifecycle: draft
-  relations: []
-  date: '2026-10-10'
-  internal_notes: ''
-  attachments: []
-  planned: {}
-  parent: course/ai-assisted
-  toc_title: 07. Review and evidence
-  section: audit-and-review
 - id: portfolio/habit-tracker
   kind: portfolio
   title: Habit Tracker
   visibility: private
   lifecycle: draft
   relations:
-  - course/ai-assisted
   - project/ai-assisted
   date: '2026-10-11'
   internal_notes: ''
+  internal_todos: []
   attachments: []
-  tags: []
-  planned: {}
 - id: project/text-decisions
   kind: project
   title: PyTorch Text Decision Models
@@ -1585,7 +1531,543 @@ artifacts:
   parent: course/enterprise-ai
   toc_title: 11. Capstone
   section: decisions
+- id: project/watchtower2
+  kind: project
+  title: Watchtower 2
+  path: projects/watchtower2
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/ai-assisted
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags: []
+  planned: {}
+- id: course/ai-assisted/00-watchtower2-overview
+  kind: chapter
+  title: 'Building Watchtower2: Architecture and Development Sequence'
+  path: content/notebooks/courses/ai-assisted/00-watchtower2-overview.ipynb
+  visibility: private
+  lifecycle: draft
+  relations:
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-02-components-and-state
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  parent: course/ai-assisted
+  toc_title: 00. Architecture and sequence
+  section: understand-and-design
+- id: course/ai-assisted/01-read-existing-system
+  kind: chapter
+  title: Reverse Engineering the Existing CMS
+  path: content/notebooks/courses/ai-assisted/01-read-existing-system.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 01. Read the existing system
+  section: understand-and-design
+- id: course/ai-assisted/02-architecture-and-agent-workflow
+  kind: chapter
+  title: Designing the Architecture and the Human Review Loop
+  path: content/notebooks/courses/ai-assisted/02-architecture-and-agent-workflow.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 02. Architecture and review
+  section: understand-and-design
+- id: course/ai-assisted/03-capability-spikes
+  kind: chapter
+  title: Testing Turso, B2 and Declarative Flet Before Committing to Them
+  path: content/notebooks/courses/ai-assisted/03-capability-spikes.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-03-forms-and-dialogs
+  - post/flet-04-async-work-and-services
+  - post/flet-05-navigation-and-lists
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 03. Prove the platform choices
+  section: understand-and-design
+- id: course/ai-assisted/04-wt2-kanban-slice
+  kind: chapter
+  title: 'Building the First wt2 Slice: Kanban Without a GUI'
+  path: content/notebooks/courses/ai-assisted/04-wt2-kanban-slice.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 04. The first wt2 slice
+  section: first-complete-slice
+- id: course/ai-assisted/05-turso-transactions
+  kind: chapter
+  title: Remote Transactions, Revisions and Unknown Commit Outcomes
+  path: content/notebooks/courses/ai-assisted/05-turso-transactions.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 05. Turso and request identity
+  section: first-complete-slice
+- id: course/ai-assisted/06-declarative-flet-slice
+  kind: chapter
+  title: Connecting a Declarative Flet Interface to the Same Backend
+  path: content/notebooks/courses/ai-assisted/06-declarative-flet-slice.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-02-components-and-state
+  - post/flet-03-forms-and-dialogs
+  - post/flet-04-async-work-and-services
+  - post/flet-05-navigation-and-lists
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 06. Flet over the same core
+  section: first-complete-slice
+- id: course/ai-assisted/07-b2-objects-and-ownership
+  kind: chapter
+  title: Verified B2 Uploads and Shared File Ownership
+  path: content/notebooks/courses/ai-assisted/07-b2-objects-and-ownership.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 07. Objects and ownership
+  section: files-and-recovery
+- id: course/ai-assisted/08-deletion-and-gc
+  kind: chapter
+  title: Backend-Owned Deletion and Garbage Collection Policies
+  path: content/notebooks/courses/ai-assisted/08-deletion-and-gc.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 08. Deletion and collection
+  section: files-and-recovery
+- id: course/ai-assisted/09-jobs-backups-and-recovery
+  kind: chapter
+  title: Recovering Jobs, Backups and Interrupted Storage Operations
+  path: content/notebooks/courses/ai-assisted/09-jobs-backups-and-recovery.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 09. Recovery and backups
+  section: files-and-recovery
+- id: course/ai-assisted/10-catalog-and-authoring-state
+  kind: chapter
+  title: Catalog Identity, Plans and Authoring Memory
+  path: content/notebooks/courses/ai-assisted/10-catalog-and-authoring-state.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 10. Catalog and authoring state
+  section: authoring-workflows
+- id: course/ai-assisted/11-content-notebook-operations
+  kind: chapter
+  title: Coordinating Content Notebooks with Database State
+  path: content/notebooks/courses/ai-assisted/11-content-notebook-operations.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 11. Content notebook operations
+  section: authoring-workflows
+- id: course/ai-assisted/12-course-outlines
+  kind: chapter
+  title: Course Homes, Ordered Outlines and Publication Dependencies
+  path: content/notebooks/courses/ai-assisted/12-course-outlines.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 12. Course organization
+  section: authoring-workflows
+- id: course/ai-assisted/13-collections-and-editor-workflows
+  kind: chapter
+  title: Completing Collections and Rich Editor Workflows
+  path: content/notebooks/courses/ai-assisted/13-collections-and-editor-workflows.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-03-forms-and-dialogs
+  - post/flet-05-navigation-and-lists
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 13. Collections and editors
+  section: authoring-workflows
+- id: course/ai-assisted/14-frontend-notebooks-and-preview
+  kind: chapter
+  title: Generating Frontend Notebooks and Bounding Preview Storage
+  path: content/notebooks/courses/ai-assisted/14-frontend-notebooks-and-preview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 14. Frontend notebooks and preview
+  section: build-and-release
+- id: course/ai-assisted/15-release-manifests-and-ci
+  kind: chapter
+  title: Freezing Releases and Deploying Without the Live Database
+  path: content/notebooks/courses/ai-assisted/15-release-manifests-and-ci.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 15. Releases and website CI
+  section: build-and-release
+- id: course/ai-assisted/16-architecture-audit-and-evaluation
+  kind: chapter
+  title: Auditing the Architecture and Evaluating the Prototype
+  path: content/notebooks/courses/ai-assisted/16-architecture-audit-and-evaluation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 16. Audit and evaluation
+  section: audit-and-evaluate
+- id: post/flet-01-declarative-ui-and-layout
+  kind: post
+  title: 'Introduction to Flet 01: Declarative UI and Layout'
+  path: content/notebooks/posts/flet-01-declarative-ui-and-layout.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-02-components-and-state
+  date: '2026-10-16'
+  description: Build a small declarative Flet interface and understand controls, components,
+    events and layout before adding application complexity.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A first Flet app can become a collection of control mutations copied
+      from examples without a clear account of how Python, the UI runtime and rendered
+      controls fit together. Establish a usable mental model and reproducible local
+      setup first.
+    content: 'Audience: Python programmers with no Flet experience. Introduce a standalone
+      six-post Introduction to Flet series; each article explains one reusable topic
+      with a small example that can run without Watchtower, Turso, B2 or paid services.
+      Pin and record the Python/Flet/tooling versions when authoring, and explain
+      local desktop versus Python-served browser execution without implying that deployment
+      modes have identical capabilities. Build a small in-memory reading-list interface
+      using the declarative entry point, controls and nested Row/Column/container
+      layout. Explain properties, callbacks, spacing, scrolling and narrow-window
+      behavior through that example. Show one small control-mutation counterexample
+      to motivate describing UI from state, then leave detailed state ownership to
+      Part 02. Include exact launch/stop instructions and a short runtime diagram.
+      The notebook explains and records the example; starting a GUI must be an explicit
+      action rather than a blocking cell automatically run during site rendering.
+      References: [creating an app](https://flet.dev/docs/getting-started/create-flet-app/),
+      [installation](https://flet.dev/docs/getting-started/installation/) and [declarative
+      model](https://flet.dev/docs/cookbook/declarative-vs-imperative/).'
+    evidence: Launch the pinned example in the recorded desktop and browser environments,
+      explain the visible control tree, resize it and identify the callback-to-state-to-render
+      path. Record the actual supported runtimes and any failure rather than claiming
+      all-platform coverage. The reader changes one layout rule and predicts the result.
+      Capture readable screenshots when the article is authored. Keep all state in
+      memory and make no CMS/backend implementation claims. End with a short recap
+      and a reference to Part 02 for state and composition.
+- id: post/flet-02-components-and-state
+  kind: post
+  title: 'Introduction to Flet 02: Components and State'
+  path: content/notebooks/posts/flet-02-components-and-state.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-03-forms-and-dialogs
+  date: '2026-10-16'
+  description: Choose where UI state lives, compose declarative components and preserve
+    the identity of editable list items.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A normal local variable can reset on a render, while shared mutable
+      state can make independent editors interfere. The reader needs to distinguish
+      component memory, shared view state and accepted application data before building
+      larger screens.
+    content: 'Recap Part 01 briefly and keep the example independently runnable. Use
+      the small reading list to introduce component inputs and callbacks, component-local
+      state, supported observable view models, shared context only where useful, and
+      stable list-item identity. Start with a lost-edit or wrong-row example, identify
+      its state/identity mistake, then correct it. Explain how an editor buffer differs
+      from the accepted in-memory record, and how save/cancel changes each. Keep Flet
+      decorators and hooks on presentation models; pure application/domain data should
+      not become framework-dependent merely because the UI observes it. Introduce
+      lifecycle/effects only enough to explain initialization and cleanup; detailed
+      async work belongs in Part 04. Avoid a catalog of every hook. Reference: [Flet
+      declarative components, observables and hooks](https://flet.dev/docs/cookbook/declarative-vs-imperative/).'
+    evidence: Edit one row, trigger an unrelated render, reorder/remove another row
+      and demonstrate that the edited buffer remains with the correct identity. Show
+      independent component instances retaining independent state, then demonstrate
+      explicit save and cancel. The reader identifies the owner and lifetime of each
+      value and can reproduce the broken ordinary-variable example before fixing it.
+      Record the limitations of any identity behavior not yet checked on the pinned
+      runtime. No database, revision protocol or Watchtower2 architecture is implemented
+      in this article.
+- id: post/flet-03-forms-and-dialogs
+  kind: post
+  title: 'Introduction to Flet 03: Forms and Dialogs'
+  path: content/notebooks/posts/flet-03-forms-and-dialogs.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-02-components-and-state
+  - post/flet-04-async-work-and-services
+  date: '2026-10-16'
+  description: Design declarative forms and dialogs that preserve entered values,
+    make validation clear and handle save, cancel and dismissal deliberately.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A form can look correct while losing entered text after validation,
+      a dialog close or a failed save. Treating dialog visibility, editor buffers
+      and accepted values as explicit states makes those behaviors understandable.
+    content: 'Build a standalone reading-item editor with a text field, checklist
+      and declarative dialog, recapping the state model from Part 02. Explain field
+      values, local validation messages, dirty state, save/cancel, pending submission,
+      dialog visibility and dismissal. Use an injectable in-memory save function to
+      reject a submission and retain its fields; distinguish convenient UI validation
+      from authoritative application validation without designing a database protocol.
+      Cover keyboard activation, labels, focus restoration and close-with-unsaved-edits
+      behavior. Define expected transitions before adding event handlers and keep
+      those handlers small. References: [declarative dialogs](https://flet.dev/docs/cookbook/declarative-dialogs/)
+      and [accessibility](https://flet.dev/docs/cookbook/accessibility/).'
+    evidence: Demonstrate empty/invalid input, edit/cancel, successful save, a rejected
+      save and dismissal with dirty fields. Verify that errors preserve input and
+      that accepted data changes only on success. Record focus/keyboard observations
+      on the chosen runtime; do not equate the presence of a label with demonstrated
+      accessibility. The reader draws the form-state transitions and implements one
+      additional validation rule. Distributed stale-write semantics and the Watchtower2
+      card workflow remain application-course material.
+- id: post/flet-04-async-work-and-services
+  kind: post
+  title: 'Introduction to Flet 04: Async Work and Services'
+  path: content/notebooks/posts/flet-04-async-work-and-services.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-03-forms-and-dialogs
+  - post/flet-05-navigation-and-lists
+  date: '2026-10-16'
+  description: Keep a Flet interface responsive while calling an application service
+    and showing loading, success and failure states.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A slow callback can freeze interaction, a late result can replace
+      newer data, and a render can accidentally trigger duplicate work. Readers need
+      a small explicit model of asynchronous UI work before connecting real services.
+    content: 'Use a standalone delayed reading-list lookup and fake save service with
+      controlled success/failure. Explain the event loop, supported async callbacks,
+      the difference between awaiting I/O and blocking work, and why async does not
+      automatically make CPU-heavy work nonblocking. Separate declarative rendering
+      from side effects and application calls. Model idle/loading/succeeded/failed
+      states, progress where meaningful, duplicate-submit prevention, stale-result
+      suppression and cleanup after navigating away or disposing a component. Distinguish
+      stopping observation from cancelling a remote operation; state what cancellation
+      the chosen API actually supports. Keep retry policy and durable work outside
+      the component. No real network account, queue, Turso or B2 is required. Reference:
+      [Flet async applications](https://flet.dev/docs/cookbook/async-apps/).'
+    evidence: Interact with the UI while a delayed operation runs, force a service
+      error, issue requests whose results arrive in reverse order and leave the screen
+      before completion. Show the intended final state and the absence of duplicate
+      saves. The reader traces one event through the service boundary and identifies
+      which state is temporary. Record actual runtime behavior and limitations of
+      cancellation. The main course later applies these techniques to Watchtower2
+      revision conflicts, upload operations and durable jobs; this article explains
+      the reusable UI mechanism.
+- id: post/flet-05-navigation-and-lists
+  kind: post
+  title: 'Introduction to Flet 05: Navigation and Lists'
+  path: content/notebooks/posts/flet-05-navigation-and-lists.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-04-async-work-and-services
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-16'
+  description: Build a small list/detail interface with explicit selection, routes,
+    filters, return behavior and keyboard access.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: Navigation and list refreshes can discard editor state, select the
+      wrong item or make the Back action ambiguous. A useful interface needs a stable
+      account of location, selection and temporary state.
+    content: 'Build an independently runnable in-memory reading-list/detail example
+      using the pinned declarative routing API. Define routes, route parameters and
+      not-found handling; distinguish a route, a selected item, a filter and an unsaved
+      editor buffer. Add search/filter and stable item identity, preserve the intended
+      return location and explain refresh/back behavior in the actually exercised
+      browser/desktop modes. Introduce list rendering/scrolling and when a measured
+      long-list problem warrants a different control or paging; avoid unsupported
+      performance claims. Include visible explicit actions, keyboard order and focus
+      behavior. A compact state diagram should explain navigation and dirty-editor
+      handling. References: [Router](https://flet.dev/docs/controls/router/) and [accessibility](https://flet.dev/docs/cookbook/accessibility/).'
+    evidence: Open a supported detail URL, exercise Back/return, filter the list,
+      remove or reorder a nonselected item and attempt navigation with unsaved edits.
+      Show that selection and editor state follow the intended identity and lifetime.
+      Distinguish observed deep-link/refresh behavior from assumptions about all deployment
+      modes. The reader adds an empty/not-found state and explains what state survives
+      navigation. Watchtower2-specific board columns, artifact lookup and course-outline
+      rules belong in the application course.
+- id: post/flet-06-files-and-rich-content
+  kind: post
+  title: 'Introduction to Flet 06: Files and Rich Content'
+  path: content/notebooks/posts/flet-06-files-and-rich-content.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-05-navigation-and-lists
+  date: '2026-10-16'
+  description: Handle file selection, cancellation and progress, and display Markdown,
+    math and images with explicit runtime assumptions.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: Selecting a file does not mean a server owns its bytes, and a browser-selected
+      filename is not a server filesystem path. Rich previews and file gestures also
+      have platform-dependent behavior that a successful desktop demo cannot establish.
+    content: 'Build a small standalone document/reading-item preview using explicit
+      local fixtures and a fake upload receiver. Explain selection identity, filename,
+      available bytes/path, cancellation, limits and upload progress separately. Use
+      the documented browser client-action approach where required by user-gesture
+      restrictions, and record the supported desktop/browser differences instead of
+      relying on a single imperative callback pattern. Demonstrate Markdown, a representative
+      math expression, code and image/error placeholders; describe the actual extension/rendering
+      support of the pinned control. Treat link opening and untrusted content as deliberate
+      application choices. Keep selected files while a dialog changes and clean only
+      app-owned temporary staging. References: [FilePicker](https://flet.dev/docs/services/filepicker/),
+      [PickFiles client action](https://flet.dev/docs/types/pickfiles/) and [Markdown](https://flet.dev/docs/controls/markdown/).'
+    evidence: Exercise selection and cancel, two same-named selections, invalid type/size,
+      rejected/failed fake upload and a missing preview image. Show which metadata
+      and bytes are actually available in each exercised runtime and that selection
+      alone does not establish durable ownership. Render the representative text/math
+      fixture and record supported/unsupported syntax. The reader traces file selection
+      through temporary UI state and an application call. B2 verification, ownership,
+      private downloads, release assets and garbage collection remain Watchtower2
+      backend concerns; this post does not implement them.
 retired_ids:
+- course/ai-assisted/00-overview
+- course/ai-assisted/01-domain-core
+- course/ai-assisted/02-persistence-and-architecture-test
+- course/ai-assisted/03-use-cases
+- course/ai-assisted/04-cli
+- course/ai-assisted/05-export-feature
+- course/ai-assisted/06-drift-audit
+- course/ai-assisted/07-independent-review
 - course/cli-test-course-2026
 - course/cli-test-course-2026/ch0-the-start
 - course/test
@@ -1606,6 +2088,14 @@ retired_ids:
 - project/yeah1
 - test-portfolio
 retired_sources:
+- content/notebooks/courses/ai-assisted/00-overview.ipynb
+- content/notebooks/courses/ai-assisted/01-domain-core.ipynb
+- content/notebooks/courses/ai-assisted/02-persistence-and-architecture-test.ipynb
+- content/notebooks/courses/ai-assisted/03-use-cases.ipynb
+- content/notebooks/courses/ai-assisted/04-cli.ipynb
+- content/notebooks/courses/ai-assisted/05-export-feature.ipynb
+- content/notebooks/courses/ai-assisted/06-drift-audit.ipynb
+- content/notebooks/courses/ai-assisted/07-independent-review.ipynb
 - content/notebooks/courses/cli-test-course-2026/ch0-the-start.ipynb
 - content/notebooks/courses/cli-test-course-2026/index.ipynb
 - content/notebooks/courses/test/index.ipynb

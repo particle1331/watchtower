@@ -4,6 +4,15 @@ A notebook publishing workspace with a local FastAPI/Jinja/HTMX CMS, a
 revision-aware CLI, and a generated Quarto website. The CMS uses
 a light layout with charcoal text and orange accents matching the public site.
 
+## CMS v2 prototype
+
+The [Watchtower2 project](projects/watchtower2/README.md) uses its
+[prototype plan](projects/watchtower2/docs/README.md) to reverse engineer the current
+system and explore a declarative Flet CMS, `wt2` CLI, Turso records and Backblaze
+B2 files through guided implementation stages. It is a separate
+prototype; adoption or migration is a future decision. The sources of truth below
+describe the current CMS.
+
 ## Sources of truth
 
 | Location | Contents |
@@ -45,11 +54,25 @@ sidecar leaves the last successful site available and reports the failure.
 Local edits do not deploy the live site; deployment builds committed inputs on
 `main` and promotes successful output.
 
-`archive/deleted/` is disposable history. Deleting individual files, operation
-folders or the whole directory in VS Code or bash is safe: active content,
-attachment ownership, validation and builds never depend on those files. Permanent
-ID/source reservations remain in managed data. Historical project directories
-referenced by active portfolio entries remain source dependencies.
+Every build cleans its generated projects and build history under the shared
+render lock, including after a failed render. Each mode keeps its current site,
+one successful fallback (`frontend/generated/<mode>-previous`), and the latest
+failed project. The latest 20 completed build records and logs per mode remain
+available, along with the records for retained outputs; queued jobs are preserved.
+Interrupted running jobs are reported as
+failed once a later worker acquires the render lock. Standalone generated
+projects used by PDF/export commands get a one-hour grace period. Cleanup errors
+are reported in the build record/log without changing a successful build status,
+and the next build retries cleanup.
+
+Delete managed content and files through the CLI, CMS or shared API. Backend
+workers handle retention and generated build cleanup. Direct filesystem/storage
+deletion is reserved for an explicitly reviewed repair. This also replaces the
+former permission to manually prune `archive/deleted/`. V1 has no archive-purge
+command yet; retain those archives until supported cleanup is implemented.
+Active content and builds do not depend on deleted archives; permanent ID/source
+reservations remain in managed data. Historical project directories referenced
+by active portfolio entries remain source dependencies.
 
 An existing workspace can move its former managed directories with
 `wt migrate --layout` to review the moves, then
@@ -481,11 +504,12 @@ cards use their existing row-removal controls; the built-in gallery stays.
 Context attachments move to that same deleted archive when their last reference
 is removed, including removal of an artifact, course chapters or a Kanban card.
 Shared files remain active until the final owner releases them. Ownership metadata
-is saved alongside the archived bytes. You may manually delete any operation
-folder—or all of `archive/deleted/`—using VS Code or the shell. Archives are never
-dependencies of active records, validation or builds. Pruning them does not change
-workspace revisions. Completed runtime journals retain no attachment byte copies.
-Permanent stable-ID/source reservations remain in the catalog after pruning.
+is saved alongside the archived bytes. Archive purge is reserved for supported
+backend cleanup; the current CLI does not yet implement it. Retain these archives
+rather than deleting operation folders through VS Code or the shell. Archives
+are not dependencies of active records, validation or builds. Completed runtime
+journals retain no attachment byte copies. Permanent stable-ID/source reservations
+remain in the catalog after eventual managed cleanup.
 
 CMS creation asks for a **Title** and an optional **Name**, generating the stable
 ID and source path from the name or, when blank, the title.

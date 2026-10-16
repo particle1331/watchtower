@@ -6,38 +6,404 @@ audience: Python programmers familiar with functions, classes, imports, exceptio
   experience is useful. No ML background, GPU, or paid API is required.
 planned:
   chapters:
-  - summary: Architecture briefs, scoped plans, executable guardrails, and honest
-      evidence from a small worked example.
-    chapter_id: course/ai-assisted/00-overview
-    section: process-and-architecture
-  - summary: Implement pure entities and streak rules, then record ambiguities and
-      correctness gaps for review.
-    chapter_id: course/ai-assisted/01-domain-core
-    section: build-the-habit-tracker
-  - summary: Share a repository contract across memory and SQLite adapters and enforce
-      allowed imports with an AST checker.
-    chapter_id: course/ai-assisted/02-persistence-and-architecture-test
-    section: build-the-habit-tracker
-  - summary: Coordinate domain rules through a repository port while keeping dates
-      explicit and errors meaningful.
-    chapter_id: course/ai-assisted/03-use-cases
-    section: build-the-habit-tracker
-  - summary: Wire SQLite and the service in one place, keep clock reads at the edge,
-      and test observable CLI behaviour.
-    chapter_id: course/ai-assisted/04-cli
-    section: build-the-habit-tracker
-  - summary: Add versioned JSON export with existing port methods and verify the precise
-      scope of the change.
-    chapter_id: course/ai-assisted/05-export-feature
-    section: build-the-habit-tracker
-  - summary: Inject a layer bypass and hidden clock read, compare detection before
-      and after, and bound audit claims.
-    chapter_id: course/ai-assisted/06-drift-audit
-    section: audit-and-review
-  - summary: Resolve review findings, align duplicate behaviour across adapters, and
-      distinguish fixes from product decisions.
-    chapter_id: course/ai-assisted/07-independent-review
-    section: audit-and-review
+  - summary: Understand the proposed storage authorities, shared CLI/Flet backend,
+      notebook-to-website pipeline and evidence-driven development sequence.
+    chapter_id: course/ai-assisted/00-watchtower2-overview
+    section: understand-and-design
+  - introduction: An agent can describe a large codebase convincingly without identifying
+      what actually happens during a save. The learner begins with the working Watchtower
+      v1 system and must distinguish observed behavior from assumptions before proposing
+      its successor.
+    content: 'Follow three read-only traces: save entity notes, attach a context file,
+      and generate a page. Locate CLI/CMS entry points, shared services, YAML records,
+      content notebooks, managed file bytes, revision checks, recovery journals and
+      generated frontend notebooks. Explain Git history versus working-directory disk
+      use: removing a tracked payload stops current use but does not erase prior commits.
+      Inventory current feature groups and distinguish active authored material, legitimate
+      retained history, abandoned uploads and disposable stages. Work from copied
+      fixtures; record file paths and observations without changing v1. Ask the agent
+      for a hypothesis and verify it against the next function or captured operation.'
+    lab_and_evidence: 'Produce three annotated request-to-storage traces, an authority
+      map and a baseline growth report with reproducible measurement steps. Identify
+      one incorrect initial assumption and the evidence that corrected it. The learner
+      must explain which bytes change on each save and why an archived Git payload
+      still occupies history. Complete the v1 parity inventory with each claim labeled
+      observed, inferred or unverified. No v2 implementation is required. Handoff:
+      concrete invariants and open questions for the architecture brief.'
+    summary: Trace a metadata save, an attachment upload and a build to identify authority,
+      coordination and the causes of storage growth.
+    chapter_id: course/ai-assisted/01-read-existing-system
+    section: understand-and-design
+  - introduction: A component diagram alone cannot constrain an implementation or
+      establish that its owner understands it. Decisions about sources of truth, failure
+      states and review scope must become concrete before an agent adds modules.
+    content: 'Write a compact architecture brief for projects/watchtower2: domain
+      rules, shared application use cases, CLI/Flet adapters, database/blob/source/renderer
+      boundaries and one explicit composition root. Define content versus frontend
+      notebooks and assign each class of state to Git, Turso, B2 or ignored local
+      storage. Specify invariants for permanent IDs, publication independence, stale
+      writes, verified ownership and protected deletion. Establish an architecture
+      decision record, a small change-plan template, evidence journal and unresolved-question
+      list. Derive the first domain state transitions using a Kanban card. Plan narrow
+      import checks and deliberate violations without inventing a generic plugin/repository
+      framework.'
+    lab_and_evidence: 'Review one proposed card-move change before implementation:
+      name affected rules, files, expected rows, conflicts and failure cases. Show
+      a dependency rule as a proposed executable check and identify what that check
+      cannot detect. The learner must explain why Flet cannot own retention or call
+      B2 directly, and why a database row cannot atomically commit a notebook on disk.
+      Keep product decisions separate from implementation choices. Handoff: bounded
+      capability experiments and the first use-case contract.'
+    summary: Turn observed behavior into storage authorities, dependency rules, small
+      implementation plans and reviewable evidence.
+    chapter_id: course/ai-assisted/02-architecture-and-agent-workflow
+    section: understand-and-design
+  - introduction: A familiar label such as SQLite-compatible, S3-compatible or declarative
+      does not prove that the selected Python driver and runtime support the operations
+      this CMS needs.
+    content: Use the companion Flet Parts 01 and 03–06 as background for setup, forms,
+      async work, navigation and files. This chapter evaluates those mechanisms against
+      Watchtower2 acceptance cases and runtime constraints; it does not reteach the
+      generic APIs. Separate a capability spike from production application code.
+      Select candidate Turso engine/driver combinations and verify Python compatibility,
+      transaction rollback, foreign keys, conditional writes, consistent reads, timeouts
+      and migration access. Verify B2 private upload/download, digest checks, exact
+      version identity, permanent deletion and key scopes. Use a tiny declarative
+      Flet experiment for dirty form state, dialogs, explicit Move, drag, file selection,
+      navigation, focus, Markdown/math and a long job. Probe the distinction between
+      local fake behavior and actual remote service behavior. Record exact package/provider
+      versions, runtime, cost limits and account prerequisites without assuming free-tier
+      guarantees. Avoid choosing an offline writable replica until its conflict model
+      exists.
+    lab_and_evidence: 'Write a capability report with commands, observations, unsupported
+      operations and decisions. Demonstrate a transaction rollback, one winner among
+      two conditional writers, verified object bytes and the difference between deleting
+      a marker and deleting a version. Show submitted UI values surviving a conflict.
+      Use disposable stores and independently scoped credentials. The learner must
+      identify which facts came from documentation and which were actually exercised.
+      Unresolved capabilities block their affected implementation, rather than being
+      silently assumed. Handoff: selected adapters and their contract checks.'
+    summary: Run disposable provider and interface experiments, pin compatible versions
+      and record which architectural assumptions they support.
+    chapter_id: course/ai-assisted/03-capability-spikes
+    section: understand-and-design
+  - introduction: Building every screen before establishing a complete use case makes
+      persistence, interface logic and domain rules difficult to separate. A small
+      Kanban slice exercises real mutable state with a limited dependency set.
+    content: Implement pure card rules and shared create/read/move/remove use cases,
+      then expose them through wt2. Use an isolated local database adapter for fast
+      development and retain the hosted-adapter contract selected in the spike. Define
+      permanent card numbers, immutable identity, board revisions, typed validation,
+      readable/versioned JSON output and useful error categories. Keep dependencies
+      small and construct adapters in one place. Introduce explicit operation identity
+      and expiry in the interface contract; the next chapter completes transport-failure
+      behavior. Keep Flet optional and absent from core imports. Check the database
+      schema and exact rows changed rather than hiding the transaction in a large
+      abstraction.
+    lab_and_evidence: 'Demonstrate create, move and remove against a disposable database,
+      then inspect the rows and counter. A stale move must change nothing; rollback
+      must preserve counter/card consistency; a deleted card number must never be
+      reused. Card saves create no tracked Git diff. Import and run the CLI without
+      Flet installed. Ask the learner to predict the next stored state and explain
+      the transaction before reading the implementation. Handoff: a working local
+      vertical slice with an explicit persistence contract.'
+    summary: Implement card creation, inspection, movement and removal through a headless
+      application core and a reviewable CLI contract.
+    chapter_id: course/ai-assisted/04-wt2-kanban-slice
+    section: first-complete-slice
+  - introduction: A network timeout does not reveal whether a database committed.
+      Blind retries can duplicate work, while automatically rebasing stale edits can
+      overwrite a human decision.
+    content: 'Implement the selected remote adapter without changing card use cases.
+      Enforce conditional board updates, constraints, short transactions and operation
+      receipts. Distinguish expected revision from operation ID: one protects a decision
+      based on a read; the other identifies a repeated request. Bind IDs to payloads
+      and reject expired requests even after receipts are pruned. Provide operation-status
+      inspection for unknown outcomes. Choose a single schema-upgrade coordinator,
+      record supported schema/protocol versions, invalidate old workers and refuse
+      incompatible writers. Make environment and checkout binding explicit. Do not
+      hold transactions across network uploads, UI waits or rendering.'
+    lab_and_evidence: 'Use two real clients to prove one winner for a stale-version
+      race. Simulate a lost response after commit, query its receipt and show one
+      effect on replay; a different payload with the same ID must fail. Demonstrate
+      outage, request expiry and incompatible-client errors. Explain why local SQLite
+      passing is insufficient evidence for remote semantics. Show ordinary task changes
+      leave Git untouched and unrelated edits preserve a board-scoped token. Handoff:
+      dependable shared use cases ready for a second interface.'
+    summary: Run the same card use cases through Turso and distinguish stale edits,
+      replayed requests and uncertain network results.
+    chapter_id: course/ai-assisted/05-turso-transactions
+    section: first-complete-slice
+  - introduction: Two interfaces drift when each implements its own validation and
+      persistence. A declarative component also needs a clear distinction between
+      unsaved local fields and authoritative saved records.
+    content: 'Use companion Flet Parts 02–05 for component/state, form/dialog, async
+      and routing mechanics. Focus this chapter on Watchtower2: map a real card use
+      case into editor state and prove the shared CLI/Flet contract, rather than writing
+      another framework introduction. Build a thin declarative Kanban screen over
+      the same create/read/move use cases. Define component/view state for loaded
+      version, edited fields, saving, validation failure and conflict. Keep event
+      handlers small and move business decisions into the application core. Provide
+      an explicit Move action alongside drag. Preserve entered values when a save
+      fails; require a deliberate reread/reconciliation after stale writes. Handle
+      dialog dismissal, focus, keyboard navigation, selection identity and long operations
+      without blocking the interface. Explain the accepted tradeoff: richer Flet components
+      and a Python UI replace v1''s HTML/no-JavaScript fallback, while accessibility
+      and error handling remain requirements.'
+    lab_and_evidence: 'Edit a card through wt2 and observe it through Flet, then reverse
+      the direction. Show both interfaces receiving the same stale-write result and
+      leaving identical stored data. Demonstrate a dirty form blocking movement and
+      retaining inputs after failure. An import/dependency check must show the core
+      does not import Flet and the CLI remains headless. The learner must trace one
+      click to one use case and one transaction. Handoff: confidence in the shared
+      boundary before adding more features.'
+    summary: Add one real card editor and movement flow while preserving dirty state,
+      revisions and backend authority.
+    chapter_id: course/ai-assisted/06-declarative-flet-slice
+    section: first-complete-slice
+  - introduction: Storing uploaded files in Git makes historical payloads persistent,
+      but simply moving bytes to a bucket introduces orphan uploads, shared-reference
+      races and uncertain finalization.
+    content: Use companion Flet Part 06 for generic file-selection and upload-progress
+      mechanics. This chapter owns Watchtower2's verified-byte, ownership, revision
+      and failure-recovery protocol. Model a logical digest separately from immutable
+      physical upload attempts and B2 version IDs. Persist intents before external
+      effects, validate limits and safe names, upload under unique keys, verify size
+      and SHA-256, then conditionally finalize ownership. Keep filenames on owner
+      links. Deduplicate only within a security namespace, preserve artifact/card
+      ownership and promote a task file to an entity without copying bytes. Separate
+      private context files from publishable site assets and scope credentials accordingly.
+      Implement CLI operations before connecting Flet file selection/progress. Do
+      not treat an ETag as universal checksum proof or hold a SQL transaction during
+      upload.
+    lab_and_evidence: 'Two owners share verified bytes; removing one leaves the other
+      functional. A rejected metadata save leaves no ready owner and an explainable
+      collectible attempt. Show duplicate upload, lost response, delayed completion
+      and a distinct replacement key. Inspect the owner rows together with actual
+      bucket/key/version/digest identities. The learner must explain every intermediate
+      state and where recovery finds it. Handoff: authoritative ownership roots for
+      the deletion service.'
+    summary: Separate attachment bytes from owner links and finalize uploads only
+      after verifying their exact physical versions.
+    chapter_id: course/ai-assisted/07-b2-objects-and-ownership
+    section: files-and-recovery
+  - introduction: 'Age and a zero live reference count are insufficient reasons to
+      delete bytes: an undo record, release, backup or pending operation may still
+      require them. Hidden object versions can also defeat apparent cleanup.'
+    content: Define roots, quarantine, eligibility, physical deletion claims and retryable
+      outcomes. Unlink immediately while reporting whether bytes are shared, retained,
+      scheduled or removed. Use typed, versioned policies with dry runs, per-run limits
+      and expected revisions. Direct purge may waive grace only when every protecting
+      root is absent. Prevent attachment to a claimed version and use unique replacement
+      identities to neutralize delayed workers. Inventory all B2 versions and markers.
+      Bound operational rows, caches and completed-card payloads without deleting
+      active/private work or unhanded-off results. Schedule bounded startup/post-operation/active-session
+      and explicit cleanup; no laptop-closed worker is required.
+    lab_and_evidence: 'Demonstrate attach-versus-delete with one transactional winner,
+      two collectors and a worker paused before an old-version delete. Reports explain
+      every retained object and count reclaimed bytes only after absence is confirmed.
+      Repeated disposable create/delete cycles settle to the declared retained set.
+      An unavailable root inventory stops deletion. Proposed durations remain configurable
+      and destructive use stays isolated until recovery evidence exists. The learner
+      must distinguish a leak from intentional retention and a removed link from reclaimed
+      bytes. Handoff: recovery drills that validate the retention promise.'
+    summary: Build one deletion service for direct actions and policies, with retained-root
+      explanations, transactional claims and exact-version cleanup.
+    chapter_id: course/ai-assisted/08-deletion-and-gc
+    section: files-and-recovery
+  - introduction: Moving records and files into separate services creates recoverable
+      intermediate states rather than one global transaction. A database backup is
+      incomplete if garbage collection removes the file versions that restored rows
+      reference.
+    content: Model durable operation states, worker leases/generations, bounded retry
+      and reconciliation. Distinguish a provider rejection from an unknown external
+      effect. Pin exact object versions in backup manifests outside the restored live
+      database, coordinate pin creation with GC and define a supported recovery window.
+      Restore in maintenance mode, validate objects, replace worker generations and
+      reconcile before enabling writes or collection. Verify provider backup/PITR
+      capabilities separately from application guarantees. Make missing authoritative
+      bytes an integrity fault requiring restore or explicit repair. Bound completed
+      records while retaining unresolved operations and divergent authored results.
+    lab_and_evidence: 'Crash before/after physical deletion and before its receipt,
+      resume and prove the resulting state. Restore the oldest supported disposable
+      snapshot after live owners were removed, and compare object digests. Show a
+      stale worker cannot finalize after an upgrade/restore. A missing object generates
+      a visible diagnostic without erasing ownership. Inventory records, objects and
+      pending jobs before and after the drill. The learner must explain the restore
+      promise and its cost in retained bytes. Handoff: the same operation machinery
+      for notebook/filesystem changes.'
+    summary: Make pending work inspectable, fence stale workers and prove that supported
+      restores still have their required object versions.
+    chapter_id: course/ai-assisted/09-jobs-backups-and-recovery
+    section: files-and-recovery
+  - introduction: 'A content entity mixes several kinds of information: public page
+      metadata, temporary planning inputs, durable authored content and unfinished
+      author memory. Flattening them into one document obscures authority and lifecycle
+      rules.'
+    content: Implement stable identities, kinds, source/route reservations, creation
+      dates, public summaries, ordered relations and scoped revisions. Model Planned/Draft/Published
+      separately from private/public visibility. Save writing briefs only while Planned;
+      consume them once at Start and keep started content authoritative. Implement
+      entity notes and ordered to-dos, including v1's kind-specific Planned restrictions.
+      Build context/lookup responses that reveal relevant parent information without
+      loading every sibling notebook. Keep notes/cards/context attachments out of
+      public export types. Support scoped validation and an explicit whole-workspace
+      integrity audit. Introduce CLI behavior first and add Flet forms over the same
+      contracts.
+    lab_and_evidence: 'Demonstrate lifecycle/visibility transitions, invalid relation
+      rejection, permanent reservation after retirement, immutable consumed plans
+      and ordered links. Check that an internal-note edit changes database state but
+      no notebook or tracked file. A malformed unrelated record should not block an
+      independent supported edit; publication still validates its selected dependencies.
+      The learner must identify the authority for each field at each lifecycle stage.
+      Handoff: source creation and execution coordinated with those records.'
+    summary: Implement artifact metadata, lifecycle, plans, notes, to-dos and ordered
+      relations with explicit public-data boundaries.
+    chapter_id: course/ai-assisted/10-catalog-and-authoring-state
+    section: authoring-workflows
+  - introduction: An SQL transaction cannot include a source notebook saved by an
+      editor. A crash or concurrent IDE save can otherwise leave metadata finalized
+      too early or overwrite authored work.
+    content: Bind one authoring checkout to one workspace. Coordinate Start, scaffold/register,
+      source rename and retirement through pending intents, expected source absence/hash,
+      ignored staging and a source gate. Seed content once and keep reservations permanent.
+      Expose cell reads/edits with byte-hash revisions through notebook-aware operations
+      rather than raw JSON manipulation. Preserve outputs, inline attachments, execution
+      metadata and cell-level options. For explicit execution, release the gate while
+      the kernel runs and save only if source bytes match; retain conflicting results
+      for inspection. Never execute cells as a side effect of CMS save or site rendering.
+      Explain why worktrees do not automatically branch a shared remote database.
+    lab_and_evidence: 'Inject interruption at each database/file boundary for Start
+      and retirement. Recovery must finish matching proposed bytes, resume matching
+      preimages and preserve every divergent version. A second Start cannot reseed
+      a notebook. A concurrent editor save prevents execution-result overwrite. Building
+      must leave source bytes unchanged. All experiments use source copies and disposable
+      stores. The learner must explain which store is authoritative while an operation
+      is pending. Handoff: source-aware course and collection workflows.'
+    summary: Implement Start and notebook operations with conditional file writes,
+      durable intents and recovery that preserves conflicting editor changes.
+    chapter_id: course/ai-assisted/11-content-notebook-operations
+    section: authoring-workflows
+  - introduction: A course outline is an invariant across several ordered records.
+      Independent row updates can produce duplicate membership, mismatched sections
+      or links to children whose parent is ineligible.
+    content: Implement committed course home fields and lists, sections, chapter membership/order,
+      full titles, short navigation labels and public summaries. Support add/rename/reorder/transfer
+      and removal of empty sections while keeping at least one. Define course-scoped
+      revisions and validate the whole affected ordering transaction. Generate course
+      tables/navigation from one authority; never author duplicate tables in notebook
+      bodies. Preserve preview and production parent/child rules, including Planned
+      suppression and public-parent requirements. Build CLI/context operations before
+      Flet outline controls, preserve return destinations and show unsaved/conflicted
+      state explicitly.
+    lab_and_evidence: 'Demonstrate chapter transfer/reorder, stale-outline rejection
+      with no partial rows and duplicate membership rejection. Compare exact preview/production
+      eligibility sets for planned, private, draft and published parents/children.
+      Edit a summary without changing notebook content. The learner must explain why
+      checking only the moved row''s version is inadequate. Handoff: broader editors
+      and collections using the established patterns.'
+    summary: Coordinate course sections, chapters, summaries and parent publication
+      rules in transactional use cases.
+    chapter_id: course/ai-assisted/12-course-outlines
+    section: authoring-workflows
+  - introduction: Feature parity often fails in small user interactions and kind-specific
+      constraints rather than in the main CRUD paths. Large editor callbacks make
+      these omissions hard to review.
+    content: Refer to companion Flet Parts 03, 05 and 06 for generic forms/dialogs,
+      routing/lists and file/rich-content controls. Teach the Watchtower2-specific
+      workflows and invariants here. Deliver separate reviewed sub-slices for portfolio/project
+      references, profile/résumé structure, per-photo heading/caption/image/width/publication
+      and complete Kanban linked context. Preserve image validation, metadata finalization,
+      active archived-code dependencies, permanent card references and task-to-entity
+      file promotion. Add search/select relationships, pagination, notes/to-do dialogs,
+      summary-task reuse and safe return navigation. Keep task state independent from
+      publication. Provide batch/data inspection and explicit repairs without silently
+      overwriting malformed inputs. Keep reusable form state and domain-specific validation
+      separate; connect each CLI/core sub-slice to a focused declarative Flet surface.
+    lab_and_evidence: 'Use the v1 feature inventory as a checklist of preserved/redesigned/incomplete
+      behavior, not as a count of screens. Demonstrate photo replacement failure preserving
+      the old image, a shared attachment promotion without copying, a summary task
+      linked to live context and a required code dependency blocking invalid deletion.
+      Exercise keyboard/dialog/dirty-state behavior and public-data exclusion. The
+      learner must trace one collection-specific rule through both interfaces. Handoff:
+      a consistent set of saved inputs for the frontend generator.'
+    summary: Extend the shared core to portfolio, profile, photos and linked task
+      context without duplicating save or deletion rules.
+    chapter_id: course/ai-assisted/13-collections-and-editor-workflows
+    section: authoring-workflows
+  - introduction: A preview that injects metadata into authored files mixes source
+      and presentation. Repeated copies of notebook outputs, hydrated images and logs
+      can also exhaust local disk even when Git is clean.
+    content: Define a captured input snapshot containing source hashes, metadata and
+      verified asset identities. Hydrate B2 site assets into ignored stages, generate
+      frontend notebook copies and QMD listings/homes, then render through Quarto
+      without executing kernels. Preserve existing public URL mapping and draft diagnostics.
+      Use a shared projection/render contract for preview and later releases. Promote
+      only successful output and keep the previous successful fallback through errors.
+      Introduce explicit renderer/export leases, safe immediate-child cleanup, no
+      symlink traversal, bounded records/logs and cache accounting. Run cleanup before
+      allocation and after builds, with visible retryable cleanup errors.
+    lab_and_evidence: 'Compare content notebook hashes before/after rendering and
+      inspect generated front matter separately. Show private/draft filtering, related
+      links, stored output rendering and missing-asset failure retaining the last
+      good site. Repeated builds converge to the configured retained stages; a slow
+      active export remains protected. The learner must explain what is disposable
+      and why deleting frontend copies cannot delete authored content. Handoff: the
+      same generator fed by a frozen release snapshot.'
+    summary: Capture eligible inputs, generate disposable frontend copies, render
+      stored outputs and reclaim stages without damaging current output.
+    chapter_id: course/ai-assisted/14-frontend-notebooks-and-preview
+    section: build-and-release
+  - introduction: A production build that reads live authoring state can change after
+      its commit. Keeping every release rebuildable forever can also pin storage forever,
+      so publication and retirement need explicit contracts.
+    content: Prepare a frozen release manifest with eligible public metadata, content
+      source hashes, exact site-asset versions/digests and renderer configuration
+      identity. Exclude plans, notes, cards, private context files and secrets. Pin
+      assets before export, reconcile uncertain exports and bind the manifest digest
+      to the resulting source commit through a receipt. Treat merge and deliberate
+      release as separate actions. Design CI to read the committed snapshot and narrowly
+      scoped read-only B2 site-input credentials without a Turso token. Demonstrate
+      GitHub Pages artifact deployment only in a disposable target. Define current/fallback/named
+      release pins, retirement and a bounded historical rebuild promise before enabling
+      automated cleanup.
+    lab_and_evidence: 'Build one frozen release twice around unrelated authoring edits
+      and compare captured inputs. A fresh checkout with permitted B2 credentials
+      must build without Turso access. A missing asset or failed render leaves the
+      previous deployment available. Show a current release protecting an otherwise
+      unowned object, then retire an eligible old release through the backend. The
+      learner must explain why commit identity cannot be embedded circularly in its
+      containing manifest, and what an old retired Git manifest no longer guarantees.
+      Handoff: a full isolated prototype for the final audit.'
+    summary: Export allowlisted public snapshots, pin exact assets and build an isolated
+      website deployment from Git plus B2 inputs.
+    chapter_id: course/ai-assisted/15-release-manifests-and-ci
+    section: build-and-release
+  - introduction: A passing suite and a functioning demonstration do not establish
+      feature parity, safe recovery or human understanding. An agent can also produce
+      a polished report that overstates what was exercised.
+    content: Audit the completed prototype against its authority map, dependency rules,
+      feature inventory and decision record. In a disposable copy inject a UI storage
+      bypass, a stale-save retry, an omitted retention root and an internal-data export;
+      establish which checks detect each fault. Re-run provider, recovery and release
+      drills and inspect database/object/local storage growth across repeated cycles.
+      Seek an independently reasoned review without assuming a particular agent topology.
+      Reconcile findings, intentional changes, untested cases and costs. Ask the owner
+      to explain and modify one workflow with bounded agent help. Evaluate continued
+      experiments, selective reuse or a separately planned adoption; no automatic
+      migration follows.
+    lab_and_evidence: Deliver a parity/limitations report, reproducible fault demonstrations,
+      storage accounting, restore/release evidence and a readable development record
+      tied to actual diffs. Mark unsupported claims and remaining unknowns explicitly.
+      The learner must trace a save and diagnose a failure without accepting an agent
+      summary as evidence. A review finding is complete only when accepted behavior
+      is recorded and the relevant check is demonstrated. Keep live v1 data, deployment
+      and credentials untouched. This closes the course by evaluating both the application
+      and the development process.
+    summary: Challenge guardrails with deliberate faults, compare v1 and v2 behavior
+      and decide future work from evidence and understood limitations.
+    chapter_id: course/ai-assisted/16-architecture-audit-and-evaluation
+    section: audit-and-evaluate
   outcomes: Write architecture and agent briefs; scope changes in files; enforce dependency
     and clock rules; test guardrails with deliberate violations; review adapter contracts;
     record findings, evidence, and open decisions honestly.
@@ -57,98 +423,115 @@ actualized:
     and clock checks. The final 98-test suite passes and the reproducible drift audit
     reports clean.
 toc:
-- id: process-and-architecture
-  title: Process and architecture
+- id: understand-and-design
+  title: Understand and design
   chapters:
-  - course/ai-assisted/00-overview
-- id: build-the-habit-tracker
-  title: Build the Habit Tracker
+  - course/ai-assisted/00-watchtower2-overview
+  - course/ai-assisted/01-read-existing-system
+  - course/ai-assisted/02-architecture-and-agent-workflow
+  - course/ai-assisted/03-capability-spikes
+- id: first-complete-slice
+  title: Build one complete slice
   chapters:
-  - course/ai-assisted/01-domain-core
-  - course/ai-assisted/02-persistence-and-architecture-test
-  - course/ai-assisted/03-use-cases
-  - course/ai-assisted/04-cli
-  - course/ai-assisted/05-export-feature
-- id: audit-and-review
-  title: Audit and review
+  - course/ai-assisted/04-wt2-kanban-slice
+  - course/ai-assisted/05-turso-transactions
+  - course/ai-assisted/06-declarative-flet-slice
+- id: files-and-recovery
+  title: Own files and recover safely
   chapters:
-  - course/ai-assisted/06-drift-audit
-  - course/ai-assisted/07-independent-review
-overview: course/ai-assisted/00-overview
+  - course/ai-assisted/07-b2-objects-and-ownership
+  - course/ai-assisted/08-deletion-and-gc
+  - course/ai-assisted/09-jobs-backups-and-recovery
+- id: authoring-workflows
+  title: Develop authoring workflows
+  chapters:
+  - course/ai-assisted/10-catalog-and-authoring-state
+  - course/ai-assisted/11-content-notebook-operations
+  - course/ai-assisted/12-course-outlines
+  - course/ai-assisted/13-collections-and-editor-workflows
+- id: build-and-release
+  title: Build and release the website
+  chapters:
+  - course/ai-assisted/14-frontend-notebooks-and-preview
+  - course/ai-assisted/15-release-manifests-and-ci
+- id: audit-and-evaluate
+  title: Audit and evaluate
+  chapters:
+  - course/ai-assisted/16-architecture-audit-and-evaluation
+overview: course/ai-assisted/00-watchtower2-overview
 home:
-  description: 'AI coding agents can produce code faster than its owner can build
-    a mental model of it. This course follows the Habit Tracker (`habit-tracker`)
-    project from pure domain logic to persistence, use cases, a command-line interface,
-    and a deliberately injected architecture violation. The build journals show the
-    plans, mistakes, review findings, and corrections that made each change inspectable.
+  outcome: 'Build and explain an isolated Watchtower2 prototype: a headless `wt2`
+    CLI and declarative Flet CMS over shared Python application services, Turso records,
+    Backblaze B2 files, and backend-owned deletion and garbage collection. Trace a
+    save, explain a conflict, recover interrupted work, and follow authored content
+    through frontend generation to a deliberate website release.
 
 
-    ## How to read the course
+    Each stage produces a small implementation, observable evidence and an explanation
+    you can review. The intended result is an application whose behavior you can maintain
+    and challenge. The current course is a draft: the overview is written and the
+    remaining chapters are planned; the proposed system has not been implemented.'
+  description: 'AI coding agents can add code faster than its owner develops a mental
+    model of it. This course uses a real content-management system to practice keeping
+    architectural decisions, implementation scope and evidence understandable as the
+    application grows. The running project is `projects/watchtower2/`, an independent
+    prototype informed by read-only study of the working Watchtower CMS.
 
 
-    Start with the process overview, then follow the ordered course path. Each numbered
-    chapter retains one build journal and adds a practice task. Read the historical
-    plan before inspecting the final code, and use the review and lessons to compare
-    intention with evidence. Historical test counts describe the original build stages.
+    ## How the course develops
 
 
-    ## Run the worked example
+    Begin by tracing the existing system and explaining its storage growth. Define
+    sources of truth and invariants, prove the provider assumptions, then build one
+    complete Kanban slice through the CLI and an early Flet screen. Extend those boundaries
+    to shared uploads, garbage collection, recovery, notebooks, course organization
+    and the other authoring workflows. Finish with disposable frontend generation,
+    frozen releases and an audit that deliberately challenges the checks.
 
 
-    [Download the Habit Tracker project](source/ai-assisted-project.zip) and open
-    the included `ai-assisted/toy-project/` directory. In the Watchtower checkout,
-    use this equivalent path from the repository root:
+    At each stage, inspect the relevant code, predict the stored changes, write a
+    small plan, review the diff and demonstrate a failure case. The human owns consequential
+    design choices. AI assistance supports the work; learner explanations and observed
+    results establish what is understood.
 
 
-    ```sh
-
-    cd projects/ai-assisted/toy-project
-
-    python3 -m unittest discover -s tests -t . -v
-
-    python3 tools/audit.py
-
-    python3 -m habits --help
-
-    ```
+    This is an evolving build course, not a report of a completed implementation.
+    Work uses isolated databases, object namespaces, source copies and publishing
+    targets. The working CMS remains independent. Whether to adopt the prototype is
+    a separate future decision.
 
 
-    The CLI stores its database in `habits.sqlite3` in the working directory. Set
-    `HABITS_DB` to a scratch database when experimenting, so each exercise can use
-    independent data. The code, tests, and original journals live together under `projects/ai-assisted/`.
+    ## Flet background
 
 
-    ## Before you change the example
-
-
-    Read the [Habit Tracker architecture brief](source/toy-project/ARCHITECTURE.md),
-    the [Habit Tracker agent rules](source/toy-project/AGENTS.md), and the [journal
-    template](source/toy-project/journal/README.md). Perform practice changes in your
-    own copy, write a new scoped journal entry, and keep deliberate violations in
-    a separate scratch copy. The original project includes product decisions that
-    are still open, including future-dated check-ins.
-
-
-    The [original whitepaper](source/WHITEPAPER.md) explains the process. The [original
-    Git timeline](source/git-history.txt) preserves the build''s commit identities
-    and file statistics; those commits belong to the source repository, rather than
-    Watchtower''s Git history.'
-  hardware_access: '**Tools.** Python 3.9 or later, a terminal, and a text editor.
-    The Habit Tracker project and its `unittest` suite use only the standard library.
-    An AI coding agent is optional for trying the workflow; reading and running the
-    case study requires no model API, paid service, or GPU.'
-  knowledge: '**Knowledge.** Basic Python functions, classes, exceptions, imports,
-    and tests. Familiarity with Git diffs helps when reviewing the record. No machine-learning
-    knowledge is required.'
-  references: ''
-  outcome: 'You will be able to write an architecture brief, scope a change before
-    implementation, enforce a dependency rule, test whether a guardrail detects a
-    violation, and record the evidence for a review. The worked example provides a
-    complete Python CLI with `add`, `checkin`, `list`, and versioned JSON `export`,
-    backed by interchangeable memory and SQLite repositories.
-
-
-    This is a case study with practice tasks. The downloadable Habit Tracker project
-    is the final implementation, so the journals describe earlier stages rather than
-    a sequence of incomplete starter checkouts. The example demonstrates the mechanisms
-    on a small codebase; it does not establish time savings or success at large scale.'
+    The companion **Introduction to Flet** post series covers declarative UI and layout,
+    components and state, forms and dialogs, async work and services, navigation and
+    lists, and files and rich content. Read the relevant post when a chapter needs
+    it. Watchtower2 chapters apply those concepts to its shared backend, editor buffers
+    and revisions, upload operations and job feedback. The six posts are currently
+    Planned; their articles will become available as they are authored.'
+  requirements:
+  - A computer with a terminal, Git, an editor or Jupyter, and uv; use the Python
+    version pinned by the Watchtower2 project. No GPU is required.
+  - An AI coding assistant for the assisted implementation exercises. Availability,
+    usage limits and cost depend on the chosen tool; no particular vendor or multi-agent
+    setup is required.
+  - Disposable Turso and Backblaze B2 resources with separately scoped credentials
+    for the remote chapters, plus a separate GitHub publishing target for the deployment
+    exercise. Local fixtures support earlier stages but do not establish remote-provider
+    behavior. Confirm current service limits and costs before provisioning.
+  - Quarto for the frontend/rendering chapters. Keep provider credentials out of notebooks
+    and Git; local experiments use the OS keyring and isolated configuration.
+  prerequisites:
+  - Comfort with Python functions, classes, modules, exceptions and basic automated
+    tests.
+  - Basic Git branches, commits and diffs, and the ability to navigate an unfamiliar
+    Python repository.
+  - A basic understanding of SQL tables and keys and HTTP requests is helpful. The
+    course introduces the transaction, object-storage and recovery concepts used by
+    the application; no machine-learning background is assumed.
+  references:
+  - '[Flet: declarative versus imperative UI](https://flet.dev/docs/cookbook/declarative-vs-imperative/)'
+  - '[Turso: Python quickstart and engine-specific access](https://docs.turso.tech/sdk/python/quickstart)'
+  - '[Backblaze B2: S3 Delete Object and version semantics](https://www.backblaze.com/apidocs/s3-delete-object)'
+  - '[GitHub Pages: custom build and deployment workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)'

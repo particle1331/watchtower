@@ -29,7 +29,10 @@ Use the CMS/CLI/API for `backend/data/`, `backend/assets/` and
 `backend/attachments/`; do not manually edit managed files except for an explicit
 repair. Validation/render failures retain the last successful preview/site.
 Local authoring does not deploy; successful committed builds on `main` do.
-Users may manually prune any files or directories under `archive/deleted/`.
+Delete managed entries/files through the CLI, CMS or shared API; backend workers
+apply retention policies. Do not manually prune managed storage or
+`archive/deleted/`, except for an explicitly reviewed repair. The CLI has no archive
+purge command; retain those archives until supported cleanup is implemented.
 Active state, revisions and builds never require deleted archives; permanent
 ID/source reservations remain in `backend/data/catalog.yaml`. Archived project
 directories still referenced by active portfolio entries remain dependencies.
@@ -196,6 +199,17 @@ GitHub Actions rebuilds committed inputs on `main` and deploys to existing
 `gh-pages`. CMS `/cms/`, API `/api/`, and CLI call the same services. Notebook
 body editing/execution remains in VS Code/Jupyter. CMS refresh uses saved files,
 reports async progress/failures, and never executes cells or changes publication.
+Every build prunes generated projects and build records under the render lock,
+before rendering and after completion/failure. Keep the current preview and
+production outputs, one successful fallback per mode (`<mode>-previous`), the
+latest failed project per mode, and the latest 20 completed records/logs per mode
+plus records for retained outputs.
+Queued jobs stay intact; a prior running record is interrupted once a new worker
+holds the exclusive render lock. Unclaimed standalone PDF/export projects get a
+one-hour grace period. Cleanup never follows job-directory symlinks. Cleanup
+errors are visible in build records/logs and retried on the next build without
+changing the outcome of a successful render. Pending workspace recovery journals
+are outside build retention.
 
 ## Tooling, writes, and isolation
 
@@ -310,8 +324,8 @@ Removing the last reference moves the file and ownership metadata to
 Shared files stay active while any owner references them. All managed writes,
 including whole-board repairs/batch updates, apply this cleanup atomically.
 Archived files are inert: no active reads, builds or reference counts depend on
-them. Users may manually prune any `archive/deleted/` content through VS Code or
-the shell without breaking active content or changing workspace revisions.
+them. This does not authorize manual pruning. Use supported backend cleanup;
+until an archive-purge operation exists, retain legacy deleted archives.
 Completed transaction journals discard attachment byte copies; pending recovery
 journals retain them until recovery completes.
 
@@ -437,9 +451,9 @@ registration; project deletion retains the code directory.
 Authored notebooks and removed course contracts are archived byte-for-byte under
 `archive/deleted/<operation-id>/`, with removed metadata and affected preimages
 in `record.json`. Images and project code stay in place. Archival copies and
-active-file removals share the revision/recovery transaction. Users may prune
-`archive/deleted/` manually; agents must not purge archives unless explicitly
-requested. Never edit archived notebook JSON. Individual photos, résumé rows and Kanban
+active-file removals share the revision/recovery transaction. Archive purge belongs
+to supported backend cleanup; manual filesystem pruning is reserved for an
+explicitly reviewed repair. Never edit archived notebook JSON. Individual photos, résumé rows and Kanban
 cards have existing removal controls; the built-in gallery is not deletable.
 
 CMS creation asks for a Title and an optional Name and generates a kind-specific
