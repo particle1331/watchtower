@@ -487,6 +487,137 @@ def test_multiple_service_clients_serialize_rendering(workspace, monkeypatch):
     assert counter["peak"] == 1
 
 
+def test_each_build_retires_old_outputs_and_preserves_both_modes_and_fallbacks(workspace, monkeypatch):
+    root, _ = workspace
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    service = BuildService(root)
+    outputs = {}
+    for mode in ("preview", "production"):
+        outputs[mode] = [service.build(mode) for _ in range(4)]
+    for mode, records in outputs.items():
+        current, previous = [Path(record["output_location"]).parent for record in records[-2:][::-1]]
+        assert (service.generated / mode).resolve() == current
+        assert (service.generated / f"{mode}-previous").resolve() == previous
+        assert (current / "_site/index.html").is_file()
+        assert (previous / "_site/index.html").is_file()
+        assert all(not (service.generated / "jobs" / record["id"]).exists() for record in records[:-2])
+        assert service.last_successful(mode)["id"] == records[-1]["id"]
+    assert len(list((service.generated / "jobs").iterdir())) == 4
+
+
+def test_failed_builds_keep_current_site_and_only_latest_failed_project(workspace, monkeypatch):
+    root, _ = workspace
+    service = BuildService(root)
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    success = service.build()
+    current = (service.generated / "preview").resolve()
+    monkeypatch.setattr(build_module.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=1))
+    failures = [service.build() for _ in range(3)]
+    assert all(record["status"] == "failed" for record in failures)
+    assert (service.generated / "preview").resolve() == current
+    assert (current / "_site/index.html").is_file()
+    assert service.last_successful()["id"] == success["id"]
+    assert not any((service.generated / "jobs" / record["id"]).exists() for record in failures[:-1])
+    assert Path(failures[-1]["stage_location"]).is_dir()
+    assert "Quarto exited" in service.get(failures[-1]["id"])["logs"]
+
+
+def test_build_reclaims_legacy_stages_but_protects_exports_and_queued_projects(workspace, monkeypatch):
+    root, _ = workspace
+    service = BuildService(root)
+    old, export = service.generate(), service.generate()
+    os.utime(old, (0, 0))
+    queued = service._record("preview")
+    queued_stage = service.generated / "jobs" / queued["id"]
+    queued_stage.mkdir()
+    os.utime(queued_stage, (0, 0))
+    queued["stage_location"] = str(queued_stage)
+    (service.runtime / f"{queued['id']}.json").write_text(json.dumps(queued))
+    outside = root / "keep-me"
+    outside.mkdir()
+    (outside / "authored.txt").write_text("Keep these bytes")
+    symlink = service.generated / "jobs" / ("a" * 32)
+    symlink.symlink_to(outside, target_is_directory=True)
+    corrupt = service.runtime / f"{'b' * 32}.json"
+    corrupt.write_text(json.dumps({"id": "b" * 32, "mode": [], "status": "failed"}))
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    result = service.build()
+    assert result["status"] == "succeeded"
+    assert not old.exists()
+    assert export.is_dir() and queued_stage.is_dir()
+    assert service.get(queued["id"])["status"] == "queued"
+    assert symlink.is_symlink() and (outside / "authored.txt").read_text() == "Keep these bytes"
+    assert corrupt.exists()
+
+
+def test_completed_build_records_and_logs_are_bounded(workspace, monkeypatch):
+    root, _ = workspace
+    service = BuildService(root)
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    records = [service.build() for _ in range(23)]
+    assert len(list(service.runtime.glob("*.json"))) == 20
+    assert len(list(service.runtime.glob("*.log"))) == 20
+    assert not (service.runtime / f"{records[0]['id']}.json").exists()
+    assert not Path(records[0]["log_location"]).exists()
+    assert service.get(records[-1]["id"])["status"] == "succeeded"
+    assert service.get(records[-3]["id"])["output_location"] is None
+    assert len(list((service.generated / "jobs").iterdir())) == 2
+
+
+def test_long_failure_streak_preserves_successful_build_metadata(workspace, monkeypatch):
+    root, _ = workspace
+    service = BuildService(root)
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    previous, current = service.build(), service.build()
+    monkeypatch.setattr(build_module.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=1))
+    failures = [service.build() for _ in range(23)]
+    assert service.last_successful()["id"] == current["id"]
+    assert service.get(previous["id"])["status"] == "succeeded"
+    assert len(list(service.runtime.glob("*.json"))) == 22
+    assert len(list((service.generated / "jobs").iterdir())) == 3
+    assert Path(failures[-1]["stage_location"]).is_dir()
+
+
+def test_cleanup_error_is_visible_without_failing_a_promoted_build(workspace, monkeypatch):
+    root, _ = workspace
+    service = BuildService(root)
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    service.build()
+    service.build()
+
+    def denied(path):
+        raise PermissionError("Cannot remove old generated project")
+
+    monkeypatch.setattr(build_module.shutil, "rmtree", denied)
+    result = service.build()
+    assert result["status"] == "succeeded"
+    assert "Cannot remove" in result["cleanup_error"]
+    assert "Build cleanup warning" in result["logs"]
+    assert (service.generated / "preview/_site/index.html").is_file()
+
+
+def test_reading_build_history_tolerates_concurrent_retirement(workspace, monkeypatch):
+    from watchtower.services.workspace import ServiceError
+
+    root, _ = workspace
+    service = BuildService(root)
+    monkeypatch.setattr(build_module.subprocess, "run", fake_quarto)
+    first, latest = service.build(), service.build()
+    retiring = service.runtime / f"{first['id']}.json"
+    read = Path.read_text
+
+    def retire_before_read(path, *args, **kwargs):
+        if path == retiring:
+            path.unlink(missing_ok=True)
+        return read(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", retire_before_read)
+    assert service.last_successful()["id"] == latest["id"]
+    with pytest.raises(ServiceError) as missing:
+        service.get(first["id"])
+    assert missing.value.status == 404
+
+
 def test_submit_returns_queued_record_before_worker_finishes(workspace, monkeypatch):
     root, snapshot = workspace
     calls = []

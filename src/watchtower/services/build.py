@@ -13,11 +13,13 @@ import json
 import os
 import posixpath
 import re
+import shutil
 import subprocess
 import sys
 import threading
+import time
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from datetime import UTC, datetime
 from html import escape
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -42,6 +44,8 @@ from watchtower.services.profile import build_resume_pdf, latex_profile
 from watchtower.services.workspace import ServiceError
 
 _MODES = {"preview", "production"}
+_BUILD_RECORDS_PER_MODE = 20
+_UNCLAIMED_STAGE_GRACE_SECONDS = 3600
 _LINK = re.compile(r"(!?\[[^\]]*\])\(([^\s)]+)([^)]*)\)")
 _HTML_REF = re.compile(r"((?:src|href)=[\"'])([^\"']+)([\"'])")
 _INCLUDE = re.compile(r"\{\{<\s*include\s+([^\s>]+)\s*>\}\}")
@@ -546,10 +550,12 @@ class BuildService:
             finally:
                 fcntl.flock(lock, fcntl.LOCK_UN)
 
-    def generate(self, mode: str = "preview") -> Path:
+    def generate(self, mode: str = "preview", *, job_id: str | None = None) -> Path:
         self._mode(mode)
+        if job_id is not None and not re.fullmatch(r"[0-9a-f]{32}", job_id):
+            raise ServiceError("Invalid build ID", code="invalid_build_id", status=400)
         snapshot = ContentService(self.root).snapshot()
-        stage = self.generated / "jobs" / uuid.uuid4().hex
+        stage = self.generated / "jobs" / (job_id or uuid.uuid4().hex)
         stage.mkdir(parents=True)
         return _Generator(snapshot, stage, mode).generate()
 
@@ -561,6 +567,7 @@ class BuildService:
             "status": "queued", "created_at": _now(), "started_at": None, "finished_at": None,
             "log_location": str(self.runtime / f"{job_id}.log"), "error": None,
             "output_location": None, "revision": None, "logs": "",
+            "stage_location": None,
             "preview_url": "http://127.0.0.1:4300" if mode == "preview" else None,
         }
         _atomic_json(self.runtime / f"{job_id}.json", record)
@@ -570,11 +577,12 @@ class BuildService:
         if not re.fullmatch(r"[0-9a-f]{32}", job_id):
             raise ServiceError("Invalid build ID", code="invalid_build_id", status=400)
         path = self.runtime / f"{job_id}.json"
-        if not path.is_file():
-            raise ServiceError(f"Unknown build: {job_id}", code="not_found", status=404)
-        record = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError as error:
+            raise ServiceError(f"Unknown build: {job_id}", code="not_found", status=404) from error
         log = Path(record["log_location"])
-        if log.exists():
+        with suppress(FileNotFoundError):
             record["logs"] = log.read_text(encoding="utf-8", errors="replace")[-16000:]
         preview = self.runtime.parent / "preview.json"
         if record["mode"] == "preview" and preview.exists():
@@ -585,21 +593,132 @@ class BuildService:
         self._mode(mode)
         records = []
         for path in self.runtime.glob("*.json"):
-            record = json.loads(path.read_text())
-            if record["mode"] == mode and record["status"] == "succeeded":
+            try:
+                record = json.loads(path.read_text())
+            except (FileNotFoundError, ValueError):
+                continue
+            if isinstance(record, dict) and record.get("mode") == mode and record.get("status") == "succeeded":
                 records.append(record)
-        if not records:
+        for record in sorted(records, key=lambda record: record["finished_at"], reverse=True):
+            try:
+                return self.get(record["id"])
+            except ServiceError as error:
+                if error.code != "not_found":
+                    raise
+        return None
+
+    def _stage_path(self, location: str | Path | None) -> Path | None:
+        """Accept only an immediate generated job directory, never external paths."""
+        if not isinstance(location, (str, Path)) or not location:
             return None
-        latest = max(records, key=lambda record: record["finished_at"])
-        return self.get(latest["id"])
+        path = Path(location).resolve()
+        if path.parent == self.generated / "jobs" and re.fullmatch(r"[0-9a-f]{32}", path.name):
+            return path
+        return None
+
+    def _prune(self, current_id: str) -> dict[str, int]:
+        """Retire completed build artifacts while holding the shared render lock."""
+        jobs = self.generated / "jobs"
+        if jobs.resolve() != jobs or self.runtime.resolve() != self.runtime:
+            raise OSError("Refusing cleanup through a generated-directory symlink")
+        records = []
+        for path in self.runtime.glob("*.json"):
+            if not re.fullmatch(r"[0-9a-f]{32}", path.stem):
+                continue
+            try:
+                record = json.loads(path.read_text())
+            except (OSError, ValueError):
+                continue
+            if (
+                not isinstance(record, dict) or record.get("id") != path.stem
+                or not isinstance(record.get("mode"), str) or record["mode"] not in _MODES
+                or not isinstance(record.get("status"), str)
+                or any(record.get(key) is not None and not isinstance(record[key], str) for key in ("created_at", "finished_at"))
+            ):
+                continue
+            # Only the current worker can be running while this lock is held.
+            # An earlier running record was left behind by an interrupted worker.
+            if record.get("status") == "running" and record["id"] != current_id:
+                record.update(status="failed", finished_at=_now(), error="Build worker interrupted before completion.")
+                _atomic_json(path, record)
+            records.append((path, record))
+
+        keep_records = {current_id}
+        keep_stages = set()
+        known_stages = set()
+        for mode in _MODES:
+            for name in (mode, f"{mode}-previous"):
+                stage = self._stage_path(self.generated / name)
+                if stage:
+                    keep_stages.add(stage)
+            completed = sorted(
+                (record for _, record in records if record["mode"] == mode and record.get("status") in {"succeeded", "failed"}),
+                key=lambda record: record.get("finished_at") or record.get("created_at") or "",
+                reverse=True,
+            )
+            keep_records.update(record["id"] for record in completed[:_BUILD_RECORDS_PER_MODE])
+            for status, limit in (("succeeded", 2), ("failed", 1)):
+                for record in [item for item in completed if item["status"] == status][:limit]:
+                    keep_records.add(record["id"])
+                    stage = self._stage_path(record.get("stage_location"))
+                    if stage:
+                        keep_stages.add(stage)
+        for _, record in records:
+            stage = self._stage_path(record.get("stage_location"))
+            if stage:
+                known_stages.add(stage)
+            if record["id"] == current_id or record.get("status") in {"queued", "running"}:
+                keep_records.add(record["id"])
+                if stage:
+                    keep_stages.add(stage)
+
+        removed_stages = 0
+        cutoff = time.time() - _UNCLAIMED_STAGE_GRACE_SECONDS
+        if jobs.exists():
+            for stage in jobs.iterdir():
+                if stage.is_symlink() or not stage.is_dir() or not re.fullmatch(r"[0-9a-f]{32}", stage.name):
+                    continue
+                if stage in keep_stages:
+                    continue
+                # generate() also supports standalone PDF/export consumers which
+                # have no build record. Allow them time to finish using the stage.
+                if stage not in known_stages and stage.stat().st_mtime > cutoff:
+                    continue
+                shutil.rmtree(stage)
+                removed_stages += 1
+        removed_records = 0
+        for path, record in records:
+            if record["id"] not in keep_records:
+                (self.runtime / f"{record['id']}.log").unlink(missing_ok=True)
+                path.unlink()
+                removed_records += 1
+            elif (stage := self._stage_path(record.get("stage_location"))) and not stage.exists():
+                record.update(stage_location=None, output_location=None)
+                _atomic_json(path, record)
+        return {"removed_stages": removed_stages, "removed_records": removed_records}
+
+    def _cleanup(self, record: dict[str, Any]) -> None:
+        try:
+            removed = self._prune(record["id"])
+            totals = record.setdefault("cleanup", {"removed_stages": 0, "removed_records": 0})
+            for key, count in removed.items():
+                totals[key] += count
+        except OSError as error:
+            # A cleanup failure must not turn a successfully promoted site into
+            # a failed build. Keep the error visible and retry on the next build.
+            record["cleanup_error"] = str(error)
+            with Path(record["log_location"]).open("a") as log:
+                log.write(f"\nBuild cleanup warning: {error}\n")
+        _atomic_json(self.runtime / f"{record['id']}.json", record)
 
     def _run(self, job_id: str) -> dict[str, Any]:
         record = self.get(job_id)
         with self._lock():
-            record.update(status="running", started_at=_now())
+            record.update(status="running", started_at=_now(), stage_location=str(self.generated / "jobs" / job_id))
             _atomic_json(self.runtime / f"{job_id}.json", record)
+            self._cleanup(record)
             try:
-                stage = self.generate(record["mode"])
+                stage = self.generate(record["mode"], job_id=job_id)
                 record["revision"] = (stage / ".watchtower-revision").read_text()
                 build_resume_pdf(stage)
                 with Path(record["log_location"]).open("ab") as log:
@@ -613,16 +732,22 @@ class BuildService:
                 # recovery journal must never replace the last successful preview.
                 ContentService(self.root).snapshot()
                 target = self.generated / record["mode"]
+                previous = self._stage_path(target)
+                if previous and previous.exists():
+                    fallback = self.generated / f".{record['mode']}-previous.{job_id}"
+                    fallback.symlink_to(previous.relative_to(self.generated), target_is_directory=True)
+                    os.replace(fallback, self.generated / f"{record['mode']}-previous")
                 temporary = self.generated / f".{record['mode']}.{job_id}"
                 temporary.symlink_to(stage.relative_to(self.generated), target_is_directory=True)
                 os.replace(temporary, target)
-                record.update(status="succeeded", output_location=str(target / "_site"))
+                record.update(status="succeeded", output_location=str(stage / "_site"))
             except Exception as error:
                 record.update(status="failed", error=str(error))
                 with Path(record["log_location"]).open("a") as log:
                     log.write(f"\n{type(error).__name__}: {error}\n")
             record["finished_at"] = _now()
             _atomic_json(self.runtime / f"{job_id}.json", record)
+            self._cleanup(record)
         return self.get(job_id)
 
     def build(self, mode: str = "preview") -> dict[str, Any]:
