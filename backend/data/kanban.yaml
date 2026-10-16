@@ -1,3 +1,128 @@
 version: 1
-cards: []
-next_number: 6
+cards:
+- id: ce3b71d95a3d41d69e912532839ced25
+  ref: card#7
+  title: add weak supervision notebook
+  description: I have an old weak supervision notebook I think in the archive. want
+    to bring it back. but critical issue is that maybe labeling functions are useless
+    now. maybe review if there's a way to bring them back. (for cost / efficiency
+    or what have you)
+  notes: ''
+  todos: []
+  attachments: []
+  column: todo
+  artifact_ids: []
+- id: 5c99a834adcd4f50baa61aed10647b74
+  ref: card#8
+  title: integrate attention notebook from 100-weeks-of-ai
+  description: "(no AI) when you start with BLFS course, and there's the discussion\
+    \ on transformers, then integrate this content.\r\n"
+  notes: ''
+  todos: []
+  attachments: []
+  column: todo
+  artifact_ids: []
+- id: 155a8f0002ba482798643ef378fbc14b
+  ref: card#9
+  title: deep learning foundations
+  description: have a lot of old notebooks on foundations of deep learning. have to
+    figure out to include it here. maybe a course. or a posts series. (neural nets,
+    backprop, cnns, training nns)
+  notes: ''
+  todos: []
+  attachments: []
+  column: in-progress
+  artifact_ids: []
+- id: 59e961937bb54bc5bc671b07670383dd
+  ref: card#11
+  title: 'Write summary: Understanding the repo CLI `wt`'
+  description: 'Summary task for post/001-watchtower-cli-and-knowledge-model.
+
+
+    Write the public summary for Understanding the repo CLI `wt` in one or two sentences.
+    Use only supported facts; ask for missing context instead of inventing details.
+    Keep internal notes out of the public text.
+
+
+    Read the latest context from the repository root before writing:
+
+    .venv/bin/wt context post/001-watchtower-cli-and-knowledge-model
+
+    Read the current notebook after starting: .venv/bin/wt cat post/001-watchtower-cli-and-knowledge-model
+
+
+    Save the result with .venv/bin/wt update post/001-watchtower-cli-and-knowledge-model
+    --summary <text> --expected-revision <revision from wt context>, then read context
+    again to verify it. Keep the artifact''s lifecycle and visibility unchanged.
+
+
+    Keep instructions, progress and evidence for this execution on the card. Before
+    marking it Done, save lasting findings to the linked content: accepted content
+    belongs in the notebook or public summary; unresolved decisions and follow-up
+    work belong in internal Notes and To-dos after starting. While Planned, update
+    the writing brief instead. Read current linked entity context with .venv/bin/wt
+    kanban show <card-ref>.'
+  notes: 'Saved the public summary for post/001-watchtower-cli-and-knowledge-model
+    (was ''dawg''). Read context and the notebook first; the post covers the catalog,
+    course contracts, cell operations, revisions, Kanban and validation. Verified
+    with wt context: lifecycle still published, visibility still public, revision
+    89d01fb4. Entity internal notes untouched. Awaiting review of the summary wording
+    before Done.'
+  todos: []
+  attachments: []
+  column: done
+  artifact_ids:
+  - post/001-watchtower-cli-and-knowledge-model
+- id: 3e4b90d3e7984cde81b46113bc3e936b
+  ref: card#12
+  title: fix manage course section
+  description: "instead of highlighted it should show\r\n\r\n<short_title> / <title>\
+    \ \r\n\r\nand instead of draft it should show draft public\r\n\r\nin the fold,\
+    \  add short_title edit field. \r\n\r\ndelete chapter link is out of place. put\
+    \ it next to \"Edit\" button as bin icon. also when fold is clicked, up down and\
+    \ edit buttons goes down along with it (it's on same row as \"Move to section\"\
+    ), it shouldn't do that it should remain fixed. "
+  notes: ''
+  todos: []
+  attachments:
+  - id: 8da944fc5b53da5ea7a769b969c2d7f4e24c6a3e65bdd9525165d3d60d791d82
+    name: Screenshot 2026-10-13 at 2.55.07 am.png
+    media_type: image/png
+    size: 199887
+  column: todo
+  artifact_ids: []
+- id: 8f8651a66c7445408afa281673317172
+  ref: card#13
+  title: smart diff
+  description: "instead of health tracker, make a tool for understanding the changes\
+    \ made by the agent. \r\n\r\ni.e. instead of git diff, we get something richer.\
+    \ which files changed. did it affect the architecture, classify the changes. which\
+    \ scripts change and how does it regress to other parts of the system. \r\n\r\n\
+    etc\r\n\r\nmaybe also understand tests? like for each test, we need to be able\
+    \ to know which parts of the system it covers. and explain that. \r\n\r\ntwo things:\
+    \ \r\n\r\n(1) understand diff\r\n(2) understand a unit test."
+  notes: ''
+  todos: []
+  attachments: []
+  column: todo
+  artifact_ids:
+  - course/ai-assisted
+- id: e8f134ad2795487c9273bb46e0e0c606
+  ref: card#14
+  title: encourage agents to add to todos.
+  description: ''
+  notes: ''
+  todos: []
+  attachments: []
+  column: todo
+  artifact_ids: []
+- id: 71b28d7171a546d5944fcb7e572d7014
+  ref: card#15
+  title: update wt post. update instructions. since planning drafting flow has changed
+  description: ''
+  notes: ''
+  todos: []
+  attachments: []
+  column: todo
+  artifact_ids: []
+next_number: 16
