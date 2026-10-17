@@ -125,4 +125,13 @@ cards:
   attachments: []
   column: todo
   artifact_ids: []
-next_number: 16
+- id: 303a4fc6a3fd40519117b373f6ca9403
+  ref: card#16
+  title: 'REMINDER: everything not in watchtower has to be in make'
+  description: e.g. make project NAME=my-project
+  notes: ''
+  todos: []
+  attachments: []
+  column: todo
+  artifact_ids: []
+next_number: 17

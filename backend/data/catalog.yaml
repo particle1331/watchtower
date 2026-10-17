@@ -5,7 +5,7 @@ artifacts:
   title: Understanding the repo CLI `wt`
   path: content/notebooks/posts/001-watchtower-cli-and-knowledge-model.ipynb
   visibility: public
-  lifecycle: published
+  lifecycle: draft
   relations: []
   date: '2026-09-30'
   description: 'A guide to the `wt` command-line tool: how the catalog, notebook cells,
@@ -544,7 +544,6 @@ artifacts:
   lifecycle: draft
   relations:
   - project/watchtower2
-  - post/flet-01-declarative-ui-and-layout
   - post/flet-02-components-and-state
   - post/flet-03-forms-and-dialogs
   - post/flet-04-async-work-and-services
@@ -1551,7 +1550,6 @@ artifacts:
   visibility: private
   lifecycle: draft
   relations:
-  - post/flet-01-declarative-ui-and-layout
   - post/flet-02-components-and-state
   date: '2026-10-15'
   internal_notes: ''
@@ -1597,7 +1595,6 @@ artifacts:
   visibility: private
   lifecycle: planned
   relations:
-  - post/flet-01-declarative-ui-and-layout
   - post/flet-03-forms-and-dialogs
   - post/flet-04-async-work-and-services
   - post/flet-05-navigation-and-lists
@@ -1813,51 +1810,6 @@ artifacts:
   parent: course/ai-assisted
   toc_title: 16. Audit and evaluation
   section: audit-and-evaluate
-- id: post/flet-01-declarative-ui-and-layout
-  kind: post
-  title: 'Introduction to Flet 01: Declarative UI and Layout'
-  path: content/notebooks/posts/flet-01-declarative-ui-and-layout.ipynb
-  visibility: private
-  lifecycle: planned
-  relations:
-  - post/flet-02-components-and-state
-  date: '2026-10-16'
-  description: Build a small declarative Flet interface and understand controls, components,
-    events and layout before adding application complexity.
-  internal_notes: ''
-  internal_todos: []
-  attachments: []
-  tags:
-  - flet
-  - python
-  planned:
-    introduction: A first Flet app can become a collection of control mutations copied
-      from examples without a clear account of how Python, the UI runtime and rendered
-      controls fit together. Establish a usable mental model and reproducible local
-      setup first.
-    content: 'Audience: Python programmers with no Flet experience. Introduce a standalone
-      six-post Introduction to Flet series; each article explains one reusable topic
-      with a small example that can run without Watchtower, Turso, B2 or paid services.
-      Pin and record the Python/Flet/tooling versions when authoring, and explain
-      local desktop versus Python-served browser execution without implying that deployment
-      modes have identical capabilities. Build a small in-memory reading-list interface
-      using the declarative entry point, controls and nested Row/Column/container
-      layout. Explain properties, callbacks, spacing, scrolling and narrow-window
-      behavior through that example. Show one small control-mutation counterexample
-      to motivate describing UI from state, then leave detailed state ownership to
-      Part 02. Include exact launch/stop instructions and a short runtime diagram.
-      The notebook explains and records the example; starting a GUI must be an explicit
-      action rather than a blocking cell automatically run during site rendering.
-      References: [creating an app](https://flet.dev/docs/getting-started/create-flet-app/),
-      [installation](https://flet.dev/docs/getting-started/installation/) and [declarative
-      model](https://flet.dev/docs/cookbook/declarative-vs-imperative/).'
-    evidence: Launch the pinned example in the recorded desktop and browser environments,
-      explain the visible control tree, resize it and identify the callback-to-state-to-render
-      path. Record the actual supported runtimes and any failure rather than claiming
-      all-platform coverage. The reader changes one layout rule and predicts the result.
-      Capture readable screenshots when the article is authored. Keep all state in
-      memory and make no CMS/backend implementation claims. End with a short recap
-      and a reference to Part 02 for state and composition.
 - id: post/flet-02-components-and-state
   kind: post
   title: 'Introduction to Flet 02: Components and State'
@@ -1865,7 +1817,6 @@ artifacts:
   visibility: private
   lifecycle: planned
   relations:
-  - post/flet-01-declarative-ui-and-layout
   - post/flet-03-forms-and-dialogs
   date: '2026-10-16'
   description: Choose where UI state lives, compose declarative components and preserve
@@ -2059,6 +2010,35 @@ artifacts:
       through temporary UI state and an application call. B2 verification, ownership,
       private downloads, release assets and garbage collection remain Watchtower2
       backend concerns; this post does not implement them.
+- id: post/flet-01
+  kind: post
+  title: 'Flet I: Basics'
+  path: content/notebooks/posts/flet-01.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-18'
+  description: "Introduction to Flet basics: Flet controls, event handling, and the\
+    \ challenges of keeping UI and state in sync.\r\n\r\n"
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  - ui
+- id: project/flet-basics
+  kind: project
+  title: Flet Basics
+  path: projects/flet-basics
+  visibility: public
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags: []
+  planned: {}
 retired_ids:
 - course/ai-assisted/00-overview
 - course/ai-assisted/01-domain-core
@@ -2082,6 +2062,7 @@ retired_ids:
 - portfolio/test1123
 - portfolio/yeah1
 - post/cli-test-post-2026
+- post/flet-01-declarative-ui-and-layout
 - post/test-planned-post
 - project/test-portfolio
 - project/test-portfolio-3
@@ -2110,5 +2091,6 @@ retired_sources:
 - content/notebooks/portfolio/test1123.ipynb
 - content/notebooks/portfolio/yeah1.ipynb
 - content/notebooks/posts/cli-test-post-2026.ipynb
+- content/notebooks/posts/flet-01-declarative-ui-and-layout.ipynb
 - content/notebooks/posts/htmx-todo.ipynb
 - content/notebooks/posts/test-planned-post.ipynb

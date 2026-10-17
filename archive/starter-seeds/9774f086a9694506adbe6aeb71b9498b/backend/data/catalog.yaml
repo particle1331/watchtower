@@ -1,0 +1,2114 @@
+version: 1
+artifacts:
+- id: post/001-watchtower-cli-and-knowledge-model
+  kind: post
+  title: Understanding the repo CLI `wt`
+  path: content/notebooks/posts/001-watchtower-cli-and-knowledge-model.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  date: '2026-09-30'
+  description: 'A guide to the `wt` command-line tool: how the catalog, notebook cells,
+    course contracts, revisions and Kanban cards fit together, and how to plan, author
+    and publish content from the terminal.'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - meta
+  - dev
+  route: nb/posts/001-watchtower-cli-and-knowledge-model.ipynb
+- id: course/llms-from-scratch
+  kind: course
+  title: Build a GPT Language Model from Scratch
+  path: content/notebooks/courses/llms-from-scratch
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: A planned path from text data to a small GPT and two fine-tuning tasks.
+  internal_notes: '**Design rule:** Keep one traceable model and data lineage, so
+    each new capability can be explained by a specific change to the inputs, architecture,
+    objective, or evaluation.'
+  internal_todos: []
+  attachments: []
+  cover: content/notebooks/courses/llms-from-scratch/img/course-cover.svg
+  planned: {}
+  route: nb/courses/llms-from-scratch/index.qmd
+- id: course/llms-from-scratch/00-overview
+  kind: chapter
+  title: The GPT Build and Evidence Plan
+  path: content/notebooks/courses/llms-from-scratch/00-overview.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: The model and experiment lineage for the complete course.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 00. Overview
+  section: orientation
+  route: nb/courses/llms-from-scratch/00-overview.ipynb
+- id: course/llms-from-scratch/01-introduction
+  kind: chapter
+  title: Language Models, Scope, and the Experiment Contract
+  path: content/notebooks/courses/llms-from-scratch/01-introduction.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Define next-token prediction and the evidence needed for the course
+    build.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 01. Language models
+  section: foundations
+  route: nb/courses/llms-from-scratch/01-introduction.ipynb
+- id: course/llms-from-scratch/02-text-data
+  kind: chapter
+  title: Tokenization, Context Windows, and Batches
+  path: content/notebooks/courses/llms-from-scratch/02-text-data.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Prepare text for next-token training and verify the target shift.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 02. Text data
+  section: foundations
+  route: nb/courses/llms-from-scratch/02-text-data.ipynb
+- id: course/llms-from-scratch/03-attention
+  kind: chapter
+  title: Causal Self-Attention and Multi-Head Attention
+  path: content/notebooks/courses/llms-from-scratch/03-attention.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Derive attention and test the causal boundary.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 03. Attention
+  section: gpt-build-and-pretraining
+  route: nb/courses/llms-from-scratch/03-attention.ipynb
+- id: course/llms-from-scratch/04-gpt-model
+  kind: chapter
+  title: Assembling a Decoder-Only GPT
+  path: content/notebooks/courses/llms-from-scratch/04-gpt-model.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Combine embeddings, decoder blocks, and a language-model head.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 04. GPT
+  section: gpt-build-and-pretraining
+  route: nb/courses/llms-from-scratch/04-gpt-model.ipynb
+- id: course/llms-from-scratch/05-pretraining
+  kind: chapter
+  title: Pretraining, Validation, and Generation
+  path: content/notebooks/courses/llms-from-scratch/05-pretraining.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Optimize next-token loss and inspect a checkpoint.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 05. Pretraining
+  section: gpt-build-and-pretraining
+  route: nb/courses/llms-from-scratch/05-pretraining.ipynb
+- id: course/llms-from-scratch/06-classification
+  kind: chapter
+  title: Fine-Tuning GPT for Text Classification
+  path: content/notebooks/courses/llms-from-scratch/06-classification.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Adapt a pretrained representation to a labeled task.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 06. Classification
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/06-classification.ipynb
+- id: course/llms-from-scratch/07-instructions
+  kind: chapter
+  title: Instruction Fine-Tuning and Response Evaluation
+  path: content/notebooks/courses/llms-from-scratch/07-instructions.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Teach GPT to respond to formatted requests and inspect its answers.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 07. Instructions
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/07-instructions.ipynb
+- id: course/llms-from-scratch/08-lora
+  kind: chapter
+  title: 'Optional: Parameter-Efficient Fine-Tuning with LoRA'
+  path: content/notebooks/courses/llms-from-scratch/08-lora.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Compare low-rank adapters with full-parameter updates.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 08. LoRA (optional)
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/08-lora.ipynb
+- id: course/llms-from-scratch/09-capstone
+  kind: chapter
+  title: 'Capstone: Reproduce and Compare the GPT Pipeline'
+  path: content/notebooks/courses/llms-from-scratch/09-capstone.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Assemble run records, evaluations, and limitations.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/llms-from-scratch
+  toc_title: 09. Capstone
+  section: adaptation-and-synthesis
+  route: nb/courses/llms-from-scratch/09-capstone.ipynb
+- id: course/reasoning-from-scratch
+  kind: course
+  title: Build a Reasoning Model from Scratch
+  path: content/notebooks/courses/reasoning-from-scratch
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: A planned, hands-on path from pretrained language-model generation
+    to inference-time reasoning, reinforcement learning, and distillation.
+  internal_notes: '**Design rule:** Treat improved reasoning as an empirical claim:
+    define correctness, measure quality and cost, and keep the evaluation fixed when
+    comparing methods.'
+  internal_todos: []
+  attachments: []
+  cover: backend/assets/courses/reasoning-from-scratch-94ba70e54d44-e55bd00ad6b5544c8aad6c7902be3fbfdb6f31816b1403318b1a0472bdec6b9b.png
+  planned: {}
+  route: nb/courses/reasoning-from-scratch/index.qmd
+- id: course/reasoning-from-scratch/00-overview
+  kind: chapter
+  title: Reasoning Model Pipeline and Evidence Contract
+  path: content/notebooks/courses/reasoning-from-scratch/00-overview.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  description: A conceptual map of the pretrained model, reasoning methods, and comparisons
+    planned for this course.
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Reasoning Model Pipeline and Evidence Contract
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/00-overview.ipynb
+- id: course/reasoning-from-scratch/01-introduction
+  kind: chapter
+  title: Understanding Reasoning Models
+  path: content/notebooks/courses/reasoning-from-scratch/01-introduction.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: 01. Introduction
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/01-introduction.ipynb
+- id: course/reasoning-from-scratch/02-generation
+  kind: chapter
+  title: Generate Text with a Pretrained Reasoning Base Model
+  path: content/notebooks/courses/reasoning-from-scratch/02-generation.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Generate Text with a Pretrained Reasoning Base Model
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/02-generation.ipynb
+- id: course/reasoning-from-scratch/03-evaluation
+  kind: chapter
+  title: Evaluate Reasoning Models
+  path: content/notebooks/courses/reasoning-from-scratch/03-evaluation.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Evaluate Reasoning Models
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/03-evaluation.ipynb
+- id: course/reasoning-from-scratch/04-inference-scaling
+  kind: chapter
+  title: Improve Reasoning with Inference-Time Scaling
+  path: content/notebooks/courses/reasoning-from-scratch/04-inference-scaling.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Improve Reasoning with Inference-Time Scaling
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/04-inference-scaling.ipynb
+- id: course/reasoning-from-scratch/05-self-refinement
+  kind: chapter
+  title: Inference-Time Scaling through Self-Refinement
+  path: content/notebooks/courses/reasoning-from-scratch/05-self-refinement.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Inference-Time Scaling through Self-Refinement
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/05-self-refinement.ipynb
+- id: course/reasoning-from-scratch/06-reinforcement-learning
+  kind: chapter
+  title: Train Reasoning Models with Reinforcement Learning
+  path: content/notebooks/courses/reasoning-from-scratch/06-reinforcement-learning.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Train Reasoning Models with Reinforcement Learning
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/06-reinforcement-learning.ipynb
+- id: course/reasoning-from-scratch/07-grpo
+  kind: chapter
+  title: Improving GRPO for Reasoning Reinforcement Learning
+  path: content/notebooks/courses/reasoning-from-scratch/07-grpo.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Improve GRPO for Reasoning Reinforcement Learning
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/07-grpo.ipynb
+- id: course/reasoning-from-scratch/08-distillation
+  kind: chapter
+  title: Distill Reasoning Models for Efficient Inference
+  path: content/notebooks/courses/reasoning-from-scratch/08-distillation.ipynb
+  visibility: public
+  lifecycle: draft
+  relations: []
+  planned: {}
+  parent: course/reasoning-from-scratch
+  toc_title: Distill Reasoning Models for Efficient Inference
+  section: orientation
+  route: nb/courses/reasoning-from-scratch/08-distillation.ipynb
+- id: course/text-classification-from-scratch
+  kind: course
+  title: Build Text Classifiers from Scratch
+  path: content/notebooks/courses/text-classification-from-scratch
+  visibility: public
+  lifecycle: draft
+  relations: []
+  description: Build and evaluate text classifiers through AI-written-text detection,
+    then train an LLM into a Jev-like decision model with PyTorch.
+  internal_notes: '**Design rule:** treat every score as evidence about a model on
+    a defined data distribution, not as proof about an individual text or a promise
+    of generalization to new tasks.'
+  internal_todos: []
+  attachments: []
+  cover: content/notebooks/courses/text-classification-from-scratch/img/course-cover.svg
+  planned: {}
+  route: nb/courses/text-classification-from-scratch/index.qmd
+- id: course/text-classification-from-scratch/01-introduction
+  kind: chapter
+  title: Define the Classification Problem
+  path: content/notebooks/courses/text-classification-from-scratch/01-introduction.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 01. Classification
+  section: foundations
+  route: nb/courses/text-classification-from-scratch/01-introduction.ipynb
+- id: course/text-classification-from-scratch/00-overview
+  kind: chapter
+  title: Text Classification Pipeline and Evidence Contract
+  path: content/notebooks/courses/text-classification-from-scratch/00-overview.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 00. Overview
+  section: orientation
+  route: nb/courses/text-classification-from-scratch/00-overview.ipynb
+- id: course/text-classification-from-scratch/02-data
+  kind: chapter
+  title: Build a Dataset with Reliable Labels
+  path: content/notebooks/courses/text-classification-from-scratch/02-data.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 02. Dataset
+  section: data-and-baselines
+  route: nb/courses/text-classification-from-scratch/02-data.ipynb
+- id: course/text-classification-from-scratch/03-splits
+  kind: chapter
+  title: Prevent Leakage with Grouped Splits
+  path: content/notebooks/courses/text-classification-from-scratch/03-splits.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 03. Splits
+  section: data-and-baselines
+  route: nb/courses/text-classification-from-scratch/03-splits.ipynb
+- id: course/text-classification-from-scratch/04-baseline
+  kind: chapter
+  title: Train a TF-IDF Logistic Regression Baseline
+  path: content/notebooks/courses/text-classification-from-scratch/04-baseline.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 04. Logistic regression
+  section: data-and-baselines
+  route: nb/courses/text-classification-from-scratch/04-baseline.ipynb
+- id: course/text-classification-from-scratch/05-transformers
+  kind: chapter
+  title: From Classical Models to General-Purpose Classifiers
+  path: content/notebooks/courses/text-classification-from-scratch/05-transformers.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 05. Model families
+  section: neural-classifiers
+  route: nb/courses/text-classification-from-scratch/05-transformers.ipynb
+- id: course/text-classification-from-scratch/06-finetuning
+  kind: chapter
+  title: Fine-Tune Encoder and Decoder Models
+  path: content/notebooks/courses/text-classification-from-scratch/06-finetuning.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 06. Fine-tuning
+  section: neural-classifiers
+  route: nb/courses/text-classification-from-scratch/06-finetuning.ipynb
+- id: course/text-classification-from-scratch/07-evaluation
+  kind: chapter
+  title: Evaluate Calibration and Failure Modes
+  path: content/notebooks/courses/text-classification-from-scratch/07-evaluation.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 07. Evaluation
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/07-evaluation.ipynb
+- id: course/text-classification-from-scratch/08-efficiency
+  kind: chapter
+  title: Measure Data Efficiency and Inference Cost
+  path: content/notebooks/courses/text-classification-from-scratch/08-efficiency.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 08. Efficiency
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/08-efficiency.ipynb
+- id: course/text-classification-from-scratch/09-deployment
+  kind: chapter
+  title: Package and Serve a Text Classifier
+  path: content/notebooks/courses/text-classification-from-scratch/09-deployment.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 09. Deployment
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/09-deployment.ipynb
+- id: course/text-classification-from-scratch/10-capstone
+  kind: chapter
+  title: 'Final Project: Train an LLM as a Jev-Like Decision Model'
+  path: content/notebooks/courses/text-classification-from-scratch/10-capstone.ipynb
+  visibility: public
+  lifecycle: published
+  relations: []
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  parent: course/text-classification-from-scratch
+  toc_title: 10. Capstone
+  section: evaluation-and-delivery
+  route: nb/courses/text-classification-from-scratch/10-capstone.ipynb
+- id: gallery/photos
+  kind: gallery
+  title: Personal
+  path: backend/data/photos.yaml
+  visibility: public
+  lifecycle: published
+  relations: []
+  tags: []
+  planned: {}
+  route: nb/photos/photos.ipynb
+- id: project/test1123
+  kind: project
+  title: Test1123
+  path: projects/test1123
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: project/12321
+  kind: project
+  title: '12321'
+  path: projects/12321
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: project/test
+  kind: project
+  title: Test
+  path: projects/test
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: project/12
+  kind: project
+  title: '12'
+  path: projects/12
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  tags: []
+  planned: {}
+- id: project/cli-test-portfolio-2026
+  kind: project
+  title: Cli Test Portfolio 2026
+  path: projects/cli-test-portfolio-2026
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  attachments: []
+  tags: []
+  planned: {}
+- id: course/ai-assisted
+  kind: course
+  title: 'AI-Assisted Development: Building Watchtower2'
+  path: content/notebooks/courses/ai-assisted
+  visibility: private
+  lifecycle: draft
+  relations:
+  - project/watchtower2
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-02-components-and-state
+  - post/flet-03-forms-and-dialogs
+  - post/flet-04-async-work-and-services
+  - post/flet-05-navigation-and-lists
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-10'
+  description: Build and understand a real CMS prototype through scoped AI-assisted
+    changes, shared CLI/Flet services, Turso, B2 and demonstrated recovery.
+  internal_notes: '2026-10-15: Rebuilt around the independent Watchtower2 prototype
+    at the owner''s request. Only the overview is authored; Chapters 01–16 remain
+    Planned. Use the project design documents for engineering detail and the course
+    outline for the learning sequence. Provider engine/driver/runtime capabilities,
+    retention durations and the historical rebuild promise remain to be demonstrated.
+    Keep private/Draft until publication is explicitly requested. Adoption or migration
+    is a separate future decision.
+
+
+    The eight former Habit Tracker notebooks were retired through wt delete and their
+    exact archived bytes were hash-verified. The original project and course sidecars
+    remain preserved. Old chapter IDs/source paths stay reserved; the new overview
+    uses 00-watchtower2-overview.
+
+
+    Historical Habit Tracker provenance, not evidence for the Watchtower2 implementation:
+
+
+    Ported from ../ai-assisted at source commit 1a3fd84 on 2026-10-10. Source notebooks
+    did not exist: the whitepaper and seven journals were converted with wt notebook
+    commands. Preserve historical approvals, stage test counts, and open decisions;
+    the copied code is the final implementation. Source files remain unchanged. Keep
+    the course private/draft until publication is requested.
+
+
+    **Design rule:** The human owns the architecture, and the important rules have
+    executable checks.
+
+
+    Managed notebook archives:
+
+    - archive/deleted/04f330429079471daede73ee9d6e28e3
+
+    - archive/deleted/6c078059e32f4fafb0acb8816df80fd7
+
+    - archive/deleted/5fdfbe0d239642fcb87d264cb42801a0
+
+    - archive/deleted/1ce3a3cb13634f21980e0240d919352d
+
+    - archive/deleted/aa7eb3d4ac08493787ef814f4c0542d3
+
+    - archive/deleted/478380a249f3466687bd9d8991678305
+
+    - archive/deleted/5369d33ae0ed45c79003647b2b17cf8d
+
+    - archive/deleted/0f1262708ba449ec8455442471e00f9b
+
+
+    2026-10-16: General Flet instruction belongs in the six standalone Introduction
+    to Flet posts (flet-01 through flet-06, all Planned). Use them just in time; Chapters
+    03, 06, 07 and 13 retain Watchtower2 capability checks, integration decisions
+    and acceptance evidence. Keep the generic examples independent of Watchtower2,
+    Turso and B2. Relationships use registered IDs; do not insert links to nonexistent
+    Planned frontend pages.'
+  internal_todos:
+  - text: Walk through the three v1 save/storage traces and confirm the learner can
+      explain the authority map.
+    done: false
+  - text: Complete and review the disposable Turso, B2 and Flet capability report
+      before selecting implementation dependencies.
+    done: false
+  - text: Review the first wt2 Kanban implementation plan and record its observed
+      evidence before broad CMS implementation.
+    done: false
+  attachments: []
+  cover: content/notebooks/courses/ai-assisted/img/course-card-v3.png
+  planned: {}
+  route: nb/courses/ai-assisted/index.qmd
+- id: project/ai-assisted
+  kind: project
+  title: 'AI-Assisted Development: Habit Tracker'
+  path: projects/ai-assisted
+  visibility: private
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags: []
+  planned: {}
+- id: portfolio/habit-tracker
+  kind: portfolio
+  title: Habit Tracker
+  visibility: private
+  lifecycle: draft
+  relations:
+  - project/ai-assisted
+  date: '2026-10-11'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+- id: project/text-decisions
+  kind: project
+  title: PyTorch Text Decision Models
+  path: projects/text-decisions
+  visibility: public
+  lifecycle: draft
+  relations: []
+  internal_notes: ''
+  attachments: []
+  tags: []
+  planned: {}
+- id: course/llm-applications
+  kind: course
+  title: 'Build LLM Applications: Retrieval, Agents, and Evaluation'
+  path: content/notebooks/courses/llm-applications
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/llms-from-scratch
+  - course/text-classification-from-scratch
+  - course/ai-assisted
+  date: '2026-10-12'
+  description: Build and evaluate a document assistant with hybrid retrieval, bounded
+    tool use, structured answers, and verified citations.
+  internal_notes: 'Added as a career-focused companion to the existing Watchtower
+    courses after reviewing ../100-weeks-of-ai. Recommended path: software-service
+    foundations from production-ai-systems, then this course, then deployment and
+    enterprise controls. Preserve the old program''s independent labs; a shared portfolio
+    is optional. Import topics and experiment designs, not promised benchmark wins.
+    Planned chapters are authoring intent, not completed instruction or measured model
+    quality. Multi-agent delegation, a handwritten MCP implementation, multimodal
+    retrieval, and long-term memory are optional later specializations.'
+  attachments: []
+  planned: {}
+  route: nb/courses/llm-applications/index.qmd
+- id: course/llm-applications/00-overview
+  kind: chapter
+  title: The Document Assistant and Evaluation Contract
+  path: content/notebooks/courses/llm-applications/00-overview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46acf1abe819ab7af2cbc1ddfc1859e795d67810ea7c6b29e84ae290d7119619
+    name: foundations-week16-original.qmd
+    media_type: application/octet-stream
+    size: 13503
+  - id: 90347b668f2fa396c7d5ff7aa8bb1a6576822e4f4cbbea7bda27b1e0190c366e
+    name: foundations-week31-original.qmd
+    media_type: application/octet-stream
+    size: 12035
+  - id: 5233d5a5a872b51281ba4eae3e8dcb994d0faf2a00315cab30ace3e60b971f71
+    name: ai-apps-week22-original.qmd
+    media_type: application/octet-stream
+    size: 19296
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 00. Overview
+  section: main
+- id: course/llm-applications/01-tool-calling
+  kind: chapter
+  title: Build a Tool-Calling Loop
+  path: content/notebooks/courses/llm-applications/01-tool-calling.ipynb
+  visibility: private
+  lifecycle: draft
+  relations: []
+  date: '2026-10-12'
+  internal_notes: "Adapted source topics: Foundations 8.\r\n\r\nPrerequisites and\
+    \ handoff: 00-overview; JSON and Python tests.\r\n\r\nThis is a planned lesson.\
+    \ Offline fixtures isolate mechanism checks; substantive model experiments are\
+    \ described separately where relevant. No promised improvement or completed execution\
+    \ is implied.\n\nDetailed source adaptation:\nRestores Foundations 8 text protocol,\
+    \ parser seams, restricted calculator, raw adapter, transcript memory and paired\
+    \ direct-answer comparison. Changes unsafe/reproducibility shortcuts: no hidden\
+    \ chain-of-thought requirement, ambiguous action policy explicit, temperature\
+    \ zero not a determinism guarantee; vault replaces source .env secret workflow.\
+    \ Scripted path verifies mechanics, live model path measures action quality.\n\
+    \nOriginal guides used:\n/Users/ronmedina-guest/code/100-weeks-of-ai/courses/foundations/week08/README.qmd"
+  attachments:
+  - id: b5a2401059fede785f43ecd84e2fc2ee811a25bceb9f354baad7c0777862df2a
+    name: foundations-week08-original.qmd
+    media_type: application/octet-stream
+    size: 16008
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 01. Tool loop
+  section: tool-use
+- id: course/llm-applications/02-agent-harness
+  kind: chapter
+  title: Bound Agent Execution and Connect Tools
+  path: content/notebooks/courses/llm-applications/02-agent-harness.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46d17085df8f513df58cecd3c65859df727d89719cffab3460075b5e80ff3db3
+    name: foundations-week09-original.qmd
+    media_type: application/octet-stream
+    size: 12131
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 02. Agent harness
+  section: tool-use
+- id: course/llm-applications/03-agent-evaluation
+  kind: chapter
+  title: Evaluate Agent Runs and Model Judges
+  path: content/notebooks/courses/llm-applications/03-agent-evaluation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 68eb5c347309575407b585c76e1f1e87a836d0bf31054c57436f3eb7f1e89656
+    name: foundations-week12-original.qmd
+    media_type: application/octet-stream
+    size: 13699
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 03. Agent evaluation
+  section: tool-use
+- id: course/llm-applications/04-lexical-search
+  kind: chapter
+  title: Build and Evaluate Lexical Search
+  path: content/notebooks/courses/llm-applications/04-lexical-search.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 2e797155cd3bc8c79b401351c2cd34bab64427ef93a5ef0c34ee16b0fd29b56d
+    name: foundations-week13-original.qmd
+    media_type: application/octet-stream
+    size: 16240
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 04. Lexical search
+  section: retrieval
+- id: course/llm-applications/05-dense-retrieval
+  kind: chapter
+  title: Build Dense Retrieval and Measure Approximation
+  path: content/notebooks/courses/llm-applications/05-dense-retrieval.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 16622aa641bba78905881681e4e30e0bdad0b562e0541a89edbdd8b3eb2cca7d
+    name: foundations-week14-original.qmd
+    media_type: application/octet-stream
+    size: 19498
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 05. Dense retrieval
+  section: retrieval
+- id: course/llm-applications/06-hybrid-reranking
+  kind: chapter
+  title: Combine Retrieval and Rerank Candidates
+  path: content/notebooks/courses/llm-applications/06-hybrid-reranking.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 815c683044d14488cc2316e7bc67fcf71521c3578c8ee9c28f9b23e7d923fa87
+    name: foundations-week15-original.qmd
+    media_type: application/octet-stream
+    size: 17491
+  - id: 86cd4afdb4825949bd944b7aee9b91000f9d7e8f073dc90d8272bc2c7fe5e8ae
+    name: ai-apps-week06-original.qmd
+    media_type: application/octet-stream
+    size: 16633
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 06. Hybrid search
+  section: retrieval
+- id: course/llm-applications/07-document-ingestion
+  kind: chapter
+  title: Chunk Documents and Maintain a Search Index
+  path: content/notebooks/courses/llm-applications/07-document-ingestion.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: d18f63daa39c2fc410b6fda1223d1a043e78dbb3502f6e0a2f5c2867f59b7377
+    name: ai-apps-week03-original.qmd
+    media_type: application/octet-stream
+    size: 18956
+  - id: fc8c6ba4bf5d819082b9f14aeb6c6c240f7a511c15698d86c6ef85e537e6b2e7
+    name: ai-apps-week20-original.qmd
+    media_type: application/octet-stream
+    size: 22919
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 07. Documents and index
+  section: retrieval
+- id: course/llm-applications/08-rag-evaluation
+  kind: chapter
+  title: Build Retrieval-Augmented Generation with Separate Measures
+  path: content/notebooks/courses/llm-applications/08-rag-evaluation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46acf1abe819ab7af2cbc1ddfc1859e795d67810ea7c6b29e84ae290d7119619
+    name: foundations-week16-original.qmd
+    media_type: application/octet-stream
+    size: 13503
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 08. RAG evaluation
+  section: answer-quality
+- id: course/llm-applications/09-structured-answers
+  kind: chapter
+  title: Validate Structured Answers and Verify Citations
+  path: content/notebooks/courses/llm-applications/09-structured-answers.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 012408db73ac817ae6951daee0c35d922955a54b0a412090bb3c81e8865218d0
+    name: ai-apps-week01-original.qmd
+    media_type: application/octet-stream
+    size: 19993
+  - id: 80e2fef8f00de79bc441826e59fdd47aa5758be3ca7b0d7d1d2b2dc3ec9cfd15
+    name: ai-apps-week15-original.qmd
+    media_type: application/octet-stream
+    size: 20319
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 09. Answers and citations
+  section: answer-quality
+- id: course/llm-applications/10-prompt-experiments
+  kind: chapter
+  title: Version Prompts and Run Defensible Comparisons
+  path: content/notebooks/courses/llm-applications/10-prompt-experiments.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 8c1d8e2959decca1bcd48596801b39404babf4ca5b63bde2735795a6b17308ad
+    name: foundations-week20-original.qmd
+    media_type: application/octet-stream
+    size: 10847
+  - id: 4509af154a6d10c03843387f66f5c728619dc29fb56f0f3b2c23bfa8b940a7cc
+    name: ai-apps-week14-original.qmd
+    media_type: application/octet-stream
+    size: 18159
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 10. Prompt experiments
+  section: answer-quality
+- id: course/llm-applications/11-iterative-retrieval
+  kind: chapter
+  title: Use Iterative Retrieval under an Explicit Budget
+  path: content/notebooks/courses/llm-applications/11-iterative-retrieval.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 98b538b3353af6caa88bd38cc0f993f4599320f545c49f9772a90aea1cac026d
+    name: foundations-week30-original.qmd
+    media_type: application/octet-stream
+    size: 16201
+  - id: fe0d9b8964ac7f6fdb5033b206345cac14457ab92a260f2bba1c1bb15f30917c
+    name: foundations-week27-original.qmd
+    media_type: application/octet-stream
+    size: 11252
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 11. Iterative retrieval
+  section: answer-quality
+- id: course/llm-applications/12-capstone
+  kind: chapter
+  title: Evaluate a Complete Document Assistant
+  path: content/notebooks/courses/llm-applications/12-capstone.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 5233d5a5a872b51281ba4eae3e8dcb994d0faf2a00315cab30ace3e60b971f71
+    name: ai-apps-week22-original.qmd
+    media_type: application/octet-stream
+    size: 19296
+  - id: 90347b668f2fa396c7d5ff7aa8bb1a6576822e4f4cbbea7bda27b1e0190c366e
+    name: foundations-week31-original.qmd
+    media_type: application/octet-stream
+    size: 12035
+  planned: {}
+  parent: course/llm-applications
+  toc_title: 12. Capstone
+  section: answer-quality
+- id: course/production-ai-systems
+  kind: course
+  title: Deploy and Operate AI Systems
+  path: content/notebooks/courses/production-ai-systems
+  visibility: private
+  lifecycle: planned
+  relations:
+  - course/ai-assisted
+  - course/llm-applications
+  - course/text-classification-from-scratch
+  date: '2026-10-12'
+  description: Build a model-backed web service and measure deployment, concurrency,
+    durable jobs, inference capacity, and recovery from failures.
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  route: nb/courses/production-ai-systems/index.qmd
+- id: course/production-ai-systems/00-overview
+  kind: chapter
+  title: The Service Architecture and Operational Evidence
+  path: content/notebooks/courses/production-ai-systems/00-overview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: ad5a6361e11a337cc4585d38b12aa1dfd608cb8fd7ecc606b6f7e7327e99da24
+    name: foundations-week18-original.qmd
+    media_type: application/octet-stream
+    size: 13461
+  - id: 1666242021510ca9721908a821a986f59ce4210d6d9514ef9a3bcd1793ce6dcf
+    name: systems-security-week15-original.qmd
+    media_type: application/octet-stream
+    size: 9858
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 00. Overview
+  section: main
+- id: course/production-ai-systems/01-python-execution
+  kind: chapter
+  title: Understand Python Execution, Concurrency, and Cancellation
+  path: content/notebooks/courses/production-ai-systems/01-python-execution.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 5987a6ec44724fcc14cc8f4e4ee3d093d3ca54356bfbf378a20b437a2ca2d38f
+    name: foundations-week32-original.qmd
+    media_type: application/octet-stream
+    size: 7983
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 01. Python execution
+  section: service-foundations
+- id: course/production-ai-systems/02-http-services
+  kind: chapter
+  title: Trace Networking and HTTP Service Failures
+  path: content/notebooks/courses/production-ai-systems/02-http-services.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 4f3ace0c5679472ed52eccefdede7fcaf703c3d2d30d3ce46bc83b965aa1c975
+    name: foundations-week33-original.qmd
+    media_type: application/octet-stream
+    size: 7552
+  - id: ad5a6361e11a337cc4585d38b12aa1dfd608cb8fd7ecc606b6f7e7327e99da24
+    name: foundations-week18-original.qmd
+    media_type: application/octet-stream
+    size: 13461
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 02. HTTP and networking
+  section: service-foundations
+- id: course/production-ai-systems/03-sql-and-transactions
+  kind: chapter
+  title: Model Relational Data and Protect Concurrent Updates
+  path: content/notebooks/courses/production-ai-systems/03-sql-and-transactions.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 7a5f7998997857b1e7752d47f884b4ac695b5b2b0d6d7c9364ac7499e45d9477
+    name: foundations-week34-original.qmd
+    media_type: application/octet-stream
+    size: 8155
+  - id: 551d231ee23934f788b30a57c9afda8baf0c7b63713512c8ac00dca22dbbc3e8
+    name: systems-security-week11-original.qmd
+    media_type: application/octet-stream
+    size: 7955
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 03. SQL and transactions
+  section: service-foundations
+- id: course/production-ai-systems/04-authenticated-streaming
+  kind: chapter
+  title: Build an Authenticated App with Cancellable Streaming
+  path: content/notebooks/courses/production-ai-systems/04-authenticated-streaming.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 12fd55de7e18ba59d0bc3c8acc43adb6324813760b3b5ae653a0c3c9e870b98b
+    name: foundations-week19-original.qmd
+    media_type: application/octet-stream
+    size: 21711
+  - id: ef4323d952e5c652898a311fbf39f95854972fffec83751430b2c1ed14dace0d
+    name: foundations-week35-original.qmd
+    media_type: application/octet-stream
+    size: 10624
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 04. Auth and streaming
+  section: service-foundations
+- id: course/production-ai-systems/05-deployment
+  kind: chapter
+  title: Deploy One Service with Reproducible Configuration
+  path: content/notebooks/courses/production-ai-systems/05-deployment.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 0e3a26d1a1b48bbc2c8816daaaec2ca05ad95ac0ee7e21e1d1ff7a6b82170cd4
+    name: systems-security-week10-original.qmd
+    media_type: application/octet-stream
+    size: 9603
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 05. Deployment
+  section: state-and-releases
+- id: course/production-ai-systems/06-release-engineering
+  kind: chapter
+  title: Version Releases and Return to a Working Service
+  path: content/notebooks/courses/production-ai-systems/06-release-engineering.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 7ab999611fb91a32e6c4d7ff18cbc8c7b2c860ced7df90494156f941bceaf86e
+    name: systems-security-week01-original.qmd
+    media_type: application/octet-stream
+    size: 7893
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 06. Releases
+  section: state-and-releases
+- id: course/production-ai-systems/07-durable-jobs
+  kind: chapter
+  title: Keep Background Jobs Correct across Retries and Restarts
+  path: content/notebooks/courses/production-ai-systems/07-durable-jobs.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 3c1c875aadba08af43ba4dc51ae9a4dda9134c84aab4d06c2cd1a23e385b1b80
+    name: systems-security-week02-original.qmd
+    media_type: application/octet-stream
+    size: 6527
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 07. Durable jobs
+  section: state-and-releases
+- id: course/production-ai-systems/08-migrations-and-restoration
+  kind: chapter
+  title: Evolve Data and Restore a Verified Backup
+  path: content/notebooks/courses/production-ai-systems/08-migrations-and-restoration.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 7e150c7d3471d9057a54d1440bb9c6c7739ebd1ae4b5cd99a14bb985427376c0
+    name: systems-security-week12-original.qmd
+    media_type: application/octet-stream
+    size: 8628
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 08. Data recovery
+  section: state-and-releases
+- id: course/production-ai-systems/09-cache-consistency
+  kind: chapter
+  title: Keep Cached Answers Consistent with Data and Permissions
+  path: content/notebooks/courses/production-ai-systems/09-cache-consistency.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 1e46e73e974ed31122927d8d5f27af0666496d6c05b5b793a6947cf08f84b554
+    name: systems-security-week13-original.qmd
+    media_type: application/octet-stream
+    size: 7931
+  - id: 56931311378f7ebe51787483ed4eca14e00f4f3751671dcfe147044cf2921510
+    name: ai-apps-week19-original.qmd
+    media_type: application/octet-stream
+    size: 10895
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 09. Cache consistency
+  section: state-and-releases
+- id: course/production-ai-systems/10-observation-and-debugging
+  kind: chapter
+  title: Trace Requests and Diagnose a Running Service
+  path: content/notebooks/courses/production-ai-systems/10-observation-and-debugging.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 3dd8b7afdcef43d8cb28e12745e47746fd6068e252bd403c744097c76b416154
+    name: systems-security-week14-original.qmd
+    media_type: application/octet-stream
+    size: 8609
+  - id: 8c28e8d0b9d02d3946f3786ed795ad1808fec944ca52d48548a0509c201537f4
+    name: foundations-week22-original.qmd
+    media_type: application/octet-stream
+    size: 11340
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 10. Observation and debugging
+  section: operations
+- id: course/production-ai-systems/11-inference-serving
+  kind: chapter
+  title: Measure Production Inference Serving
+  path: content/notebooks/courses/production-ai-systems/11-inference-serving.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 46d46efba51579bd93c607f5100b58e82f20440f0c8f041af99ac1ce981a0fd4
+    name: systems-security-week04-original.qmd
+    media_type: application/octet-stream
+    size: 8298
+  - id: cdab32b7f2bf23b6ee40c57edd7e09f9cf2711f3bfc4764aa3e08dc54b36994c
+    name: foundations-week26-original.qmd
+    media_type: application/octet-stream
+    size: 17467
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 11. Inference serving
+  section: operations
+- id: course/production-ai-systems/12-capacity
+  kind: chapter
+  title: Measure Whole-Application Capacity
+  path: content/notebooks/courses/production-ai-systems/12-capacity.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 90e9c1aa06e7dddc8b335117d405f940f6ef68580ce4da8bb08a9c0bd05ebcc9
+    name: systems-security-week05-original.qmd
+    media_type: application/octet-stream
+    size: 9729
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 12. Capacity
+  section: operations
+- id: course/production-ai-systems/13-recovery-exercise
+  kind: chapter
+  title: Practise Recovery from Known Service Failures
+  path: content/notebooks/courses/production-ai-systems/13-recovery-exercise.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: d6e91dec6f3a4a0508b3601240133e5d17c23c3f017a80b62afc760cc01fbdce
+    name: systems-security-week09-original.qmd
+    media_type: application/octet-stream
+    size: 9051
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 13. Recovery practice
+  section: operations
+- id: course/production-ai-systems/14-capstone
+  kind: chapter
+  title: Operate and Review a Complete AI Service
+  path: content/notebooks/courses/production-ai-systems/14-capstone.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 1666242021510ca9721908a821a986f59ce4210d6d9514ef9a3bcd1793ce6dcf
+    name: systems-security-week15-original.qmd
+    media_type: application/octet-stream
+    size: 9858
+  planned: {}
+  parent: course/production-ai-systems
+  toc_title: 14. Capstone
+  section: operations
+- id: course/enterprise-ai
+  kind: course
+  title: Build Enterprise AI with Permissions and Security
+  path: content/notebooks/courses/enterprise-ai
+  visibility: private
+  lifecycle: planned
+  relations:
+  - course/llm-applications
+  - course/production-ai-systems
+  - course/text-classification-from-scratch
+  date: '2026-10-12'
+  description: Build and test an AI assistant that enforces user permissions, handles
+    data lifecycle, resists injected instructions, and supports auditable decisions.
+  internal_notes: ''
+  attachments: []
+  planned: {}
+  route: nb/courses/enterprise-ai/index.qmd
+- id: course/enterprise-ai/00-overview
+  kind: chapter
+  title: The Organizational Assistant and Control Boundaries
+  path: content/notebooks/courses/enterprise-ai/00-overview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 807ff82ffa2023bfb050c1a73855b0fb3fdc0693c59c31765fb1daf70f59f664
+    name: enterprise-ai-week01-original.qmd
+    media_type: application/octet-stream
+    size: 13339
+  - id: 5a76ca42341210feeea80358b9772bf145b6c10b0747717d65a4980b3136e4a7
+    name: enterprise-ai-week03-original.qmd
+    media_type: application/octet-stream
+    size: 15307
+  - id: 475f57b70bde765f667859cebea21214fc7e5853ae56a763e46db4ba8bc85103
+    name: enterprise-ai-week08-original.qmd
+    media_type: application/octet-stream
+    size: 23671
+  - id: f9c54cd67990c1faacf05decb1d04f16907b43417de01a0b82a1795c7dfaf226
+    name: systems-security-week07-original.qmd
+    media_type: application/octet-stream
+    size: 6216
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 00. Overview
+  section: main
+- id: course/enterprise-ai/01-resource-authorization
+  kind: chapter
+  title: Authorize Every Tool Call and Resource Request
+  path: content/notebooks/courses/enterprise-ai/01-resource-authorization.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 807ff82ffa2023bfb050c1a73855b0fb3fdc0693c59c31765fb1daf70f59f664
+    name: enterprise-ai-week01-original.qmd
+    media_type: application/octet-stream
+    size: 13339
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 01. Authorization
+  section: permissions-and-data
+- id: course/enterprise-ai/02-permission-aware-retrieval
+  kind: chapter
+  title: Synchronize Documents and Permissions for Retrieval
+  path: content/notebooks/courses/enterprise-ai/02-permission-aware-retrieval.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 5a76ca42341210feeea80358b9772bf145b6c10b0747717d65a4980b3136e4a7
+    name: enterprise-ai-week03-original.qmd
+    media_type: application/octet-stream
+    size: 15307
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 02. Permission-aware RAG
+  section: permissions-and-data
+- id: course/enterprise-ai/03-sensitive-data-and-audit
+  kind: chapter
+  title: Handle Sensitive Data and Preserve Useful Audit Records
+  path: content/notebooks/courses/enterprise-ai/03-sensitive-data-and-audit.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 69676c267cd905e4b5941eaa19b362516fedc1b29a40ce1c4ed73cc59391ced4
+    name: enterprise-ai-week02-original.qmd
+    media_type: application/octet-stream
+    size: 22118
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 03. Sensitive data and audit
+  section: permissions-and-data
+- id: course/enterprise-ai/04-decision-traces
+  kind: chapter
+  title: Record Evidence for Reviewable Decisions
+  path: content/notebooks/courses/enterprise-ai/04-decision-traces.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 6130ede46c5766aadea7e007bd8c118dc1855bd3d30e246ca8de083ce9847953
+    name: enterprise-ai-week05-original.qmd
+    media_type: application/octet-stream
+    size: 19093
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 04. Decision evidence
+  section: permissions-and-data
+- id: course/enterprise-ai/05-data-lifecycle
+  kind: chapter
+  title: Expire and Delete Data across Dependent Stores
+  path: content/notebooks/courses/enterprise-ai/05-data-lifecycle.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 475f57b70bde765f667859cebea21214fc7e5853ae56a763e46db4ba8bc85103
+    name: enterprise-ai-week08-original.qmd
+    media_type: application/octet-stream
+    size: 23671
+  - id: 7e150c7d3471d9057a54d1440bb9c6c7739ebd1ae4b5cd99a14bb985427376c0
+    name: systems-security-week12-original.qmd
+    media_type: application/octet-stream
+    size: 8628
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 05. Data lifecycle
+  section: permissions-and-data
+- id: course/enterprise-ai/06-prompt-injection
+  kind: chapter
+  title: Measure Defenses against Indirect Prompt Injection
+  path: content/notebooks/courses/enterprise-ai/06-prompt-injection.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 97499644efe298dfdd85c1343caa2f0804e64fd03af82cb45452394b3b4a5478
+    name: ai-apps-week21-original.qmd
+    media_type: application/octet-stream
+    size: 23832
+  - id: f9c54cd67990c1faacf05decb1d04f16907b43417de01a0b82a1795c7dfaf226
+    name: systems-security-week07-original.qmd
+    media_type: application/octet-stream
+    size: 6216
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 06. Prompt injection
+  section: security
+- id: course/enterprise-ai/07-trusted-data-and-models
+  kind: chapter
+  title: Verify Data, Model, and Dependency Provenance
+  path: content/notebooks/courses/enterprise-ai/07-trusted-data-and-models.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: b32f71dee8344b3f83b1a11a63db63a554c4840e57b37a9abfbb5d473edc8d09
+    name: systems-security-week06-original.qmd
+    media_type: application/octet-stream
+    size: 5686
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 07. Trusted artifacts
+  section: security
+- id: course/enterprise-ai/08-network-isolation
+  kind: chapter
+  title: Define and Test Network Isolation
+  path: content/notebooks/courses/enterprise-ai/08-network-isolation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 9c28e1a1f8a9f6865c9258b711d788c6bc0b035484598f6de98075ff7307939f
+    name: enterprise-ai-week04-original.qmd
+    media_type: application/octet-stream
+    size: 19605
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 08. Network isolation
+  section: security
+- id: course/enterprise-ai/09-security-regressions
+  kind: chapter
+  title: Build a Security Regression Suite
+  path: content/notebooks/courses/enterprise-ai/09-security-regressions.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: e613bd68eb89531df3a6bd7e3d254adea2ae3496b53214ef56e8da198ec13d3a
+    name: systems-security-week08-original.qmd
+    media_type: application/octet-stream
+    size: 6233
+  - id: 97499644efe298dfdd85c1343caa2f0804e64fd03af82cb45452394b3b4a5478
+    name: ai-apps-week21-original.qmd
+    media_type: application/octet-stream
+    size: 23832
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 09. Security evaluation
+  section: security
+- id: course/enterprise-ai/10-costs-and-vendors
+  kind: chapter
+  title: Attribute Costs and Compare Build-versus-Buy Options
+  path: content/notebooks/courses/enterprise-ai/10-costs-and-vendors.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: 9ba319dd99995094784c1a67b447f038193eadb2d48dbd6e8bc56d3346c31a78
+    name: enterprise-ai-week07-original.qmd
+    media_type: application/octet-stream
+    size: 18200
+  - id: 5e25b9a117425abf178a082aadd01e1bf6d237d0c799c54c4e013045bdab251e
+    name: enterprise-ai-week09-original.qmd
+    media_type: application/octet-stream
+    size: 23014
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 10. Costs and alternatives
+  section: decisions
+- id: course/enterprise-ai/11-capstone
+  kind: chapter
+  title: Review an Enterprise Assistant and Its Design
+  path: content/notebooks/courses/enterprise-ai/11-capstone.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-12'
+  internal_notes: ''
+  attachments:
+  - id: aebd023906e00e7c9119d9067a577b930db1848b9816c6d19062a83e5a5ceccb
+    name: enterprise-ai-week10-original.qmd
+    media_type: application/octet-stream
+    size: 24383
+  planned: {}
+  parent: course/enterprise-ai
+  toc_title: 11. Capstone
+  section: decisions
+- id: project/watchtower2
+  kind: project
+  title: Watchtower 2
+  path: projects/watchtower2
+  visibility: private
+  lifecycle: draft
+  relations:
+  - course/ai-assisted
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags: []
+  planned: {}
+- id: course/ai-assisted/00-watchtower2-overview
+  kind: chapter
+  title: 'Building Watchtower2: Architecture and Development Sequence'
+  path: content/notebooks/courses/ai-assisted/00-watchtower2-overview.ipynb
+  visibility: private
+  lifecycle: draft
+  relations:
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-02-components-and-state
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  parent: course/ai-assisted
+  toc_title: 00. Architecture and sequence
+  section: understand-and-design
+- id: course/ai-assisted/01-read-existing-system
+  kind: chapter
+  title: Reverse Engineering the Existing CMS
+  path: content/notebooks/courses/ai-assisted/01-read-existing-system.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 01. Read the existing system
+  section: understand-and-design
+- id: course/ai-assisted/02-architecture-and-agent-workflow
+  kind: chapter
+  title: Designing the Architecture and the Human Review Loop
+  path: content/notebooks/courses/ai-assisted/02-architecture-and-agent-workflow.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 02. Architecture and review
+  section: understand-and-design
+- id: course/ai-assisted/03-capability-spikes
+  kind: chapter
+  title: Testing Turso, B2 and Declarative Flet Before Committing to Them
+  path: content/notebooks/courses/ai-assisted/03-capability-spikes.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-03-forms-and-dialogs
+  - post/flet-04-async-work-and-services
+  - post/flet-05-navigation-and-lists
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 03. Prove the platform choices
+  section: understand-and-design
+- id: course/ai-assisted/04-wt2-kanban-slice
+  kind: chapter
+  title: 'Building the First wt2 Slice: Kanban Without a GUI'
+  path: content/notebooks/courses/ai-assisted/04-wt2-kanban-slice.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 04. The first wt2 slice
+  section: first-complete-slice
+- id: course/ai-assisted/05-turso-transactions
+  kind: chapter
+  title: Remote Transactions, Revisions and Unknown Commit Outcomes
+  path: content/notebooks/courses/ai-assisted/05-turso-transactions.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 05. Turso and request identity
+  section: first-complete-slice
+- id: course/ai-assisted/06-declarative-flet-slice
+  kind: chapter
+  title: Connecting a Declarative Flet Interface to the Same Backend
+  path: content/notebooks/courses/ai-assisted/06-declarative-flet-slice.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-02-components-and-state
+  - post/flet-03-forms-and-dialogs
+  - post/flet-04-async-work-and-services
+  - post/flet-05-navigation-and-lists
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 06. Flet over the same core
+  section: first-complete-slice
+- id: course/ai-assisted/07-b2-objects-and-ownership
+  kind: chapter
+  title: Verified B2 Uploads and Shared File Ownership
+  path: content/notebooks/courses/ai-assisted/07-b2-objects-and-ownership.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 07. Objects and ownership
+  section: files-and-recovery
+- id: course/ai-assisted/08-deletion-and-gc
+  kind: chapter
+  title: Backend-Owned Deletion and Garbage Collection Policies
+  path: content/notebooks/courses/ai-assisted/08-deletion-and-gc.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 08. Deletion and collection
+  section: files-and-recovery
+- id: course/ai-assisted/09-jobs-backups-and-recovery
+  kind: chapter
+  title: Recovering Jobs, Backups and Interrupted Storage Operations
+  path: content/notebooks/courses/ai-assisted/09-jobs-backups-and-recovery.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 09. Recovery and backups
+  section: files-and-recovery
+- id: course/ai-assisted/10-catalog-and-authoring-state
+  kind: chapter
+  title: Catalog Identity, Plans and Authoring Memory
+  path: content/notebooks/courses/ai-assisted/10-catalog-and-authoring-state.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 10. Catalog and authoring state
+  section: authoring-workflows
+- id: course/ai-assisted/11-content-notebook-operations
+  kind: chapter
+  title: Coordinating Content Notebooks with Database State
+  path: content/notebooks/courses/ai-assisted/11-content-notebook-operations.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 11. Content notebook operations
+  section: authoring-workflows
+- id: course/ai-assisted/12-course-outlines
+  kind: chapter
+  title: Course Homes, Ordered Outlines and Publication Dependencies
+  path: content/notebooks/courses/ai-assisted/12-course-outlines.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 12. Course organization
+  section: authoring-workflows
+- id: course/ai-assisted/13-collections-and-editor-workflows
+  kind: chapter
+  title: Completing Collections and Rich Editor Workflows
+  path: content/notebooks/courses/ai-assisted/13-collections-and-editor-workflows.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-03-forms-and-dialogs
+  - post/flet-05-navigation-and-lists
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 13. Collections and editors
+  section: authoring-workflows
+- id: course/ai-assisted/14-frontend-notebooks-and-preview
+  kind: chapter
+  title: Generating Frontend Notebooks and Bounding Preview Storage
+  path: content/notebooks/courses/ai-assisted/14-frontend-notebooks-and-preview.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 14. Frontend notebooks and preview
+  section: build-and-release
+- id: course/ai-assisted/15-release-manifests-and-ci
+  kind: chapter
+  title: Freezing Releases and Deploying Without the Live Database
+  path: content/notebooks/courses/ai-assisted/15-release-manifests-and-ci.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 15. Releases and website CI
+  section: build-and-release
+- id: course/ai-assisted/16-architecture-audit-and-evaluation
+  kind: chapter
+  title: Auditing the Architecture and Evaluating the Prototype
+  path: content/notebooks/courses/ai-assisted/16-architecture-audit-and-evaluation.ipynb
+  visibility: private
+  lifecycle: planned
+  relations: []
+  date: '2026-10-15'
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  planned: {}
+  parent: course/ai-assisted
+  toc_title: 16. Audit and evaluation
+  section: audit-and-evaluate
+- id: post/flet-01-declarative-ui-and-layout
+  kind: post
+  title: 'Flet I: Basics'
+  path: content/notebooks/posts/flet-01-declarative-ui-and-layout.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-02-components-and-state
+  date: '2026-10-16'
+  description: Build a small declarative Flet interface and understand controls, components,
+    events and layout before adding application complexity.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A first Flet app can become a collection of control mutations copied
+      from examples without a clear account of how Python, the UI runtime and rendered
+      controls fit together. Establish a usable mental model and reproducible local
+      setup first.
+    content: 'Audience: Python programmers with no Flet experience. Introduce a standalone
+      six-post Introduction to Flet series; each article explains one reusable topic
+      with a small example that can run without Watchtower, Turso, B2 or paid services.
+      Pin and record the Python/Flet/tooling versions when authoring, and explain
+      local desktop versus Python-served browser execution without implying that deployment
+      modes have identical capabilities. Build a small in-memory reading-list interface
+      using the declarative entry point, controls and nested Row/Column/container
+      layout. Explain properties, callbacks, spacing, scrolling and narrow-window
+      behavior through that example. Show one small control-mutation counterexample
+      to motivate describing UI from state, then leave detailed state ownership to
+      Part 02. Include exact launch/stop instructions and a short runtime diagram.
+      The notebook explains and records the example; starting a GUI must be an explicit
+      action rather than a blocking cell automatically run during site rendering.
+      References: [creating an app](https://flet.dev/docs/getting-started/create-flet-app/),
+      [installation](https://flet.dev/docs/getting-started/installation/) and [declarative
+      model](https://flet.dev/docs/cookbook/declarative-vs-imperative/).'
+    evidence: Launch the pinned example in the recorded desktop and browser environments,
+      explain the visible control tree, resize it and identify the callback-to-state-to-render
+      path. Record the actual supported runtimes and any failure rather than claiming
+      all-platform coverage. The reader changes one layout rule and predicts the result.
+      Capture readable screenshots when the article is authored. Keep all state in
+      memory and make no CMS/backend implementation claims. End with a short recap
+      and a reference to Part 02 for state and composition.
+- id: post/flet-02-components-and-state
+  kind: post
+  title: 'Introduction to Flet 02: Components and State'
+  path: content/notebooks/posts/flet-02-components-and-state.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-01-declarative-ui-and-layout
+  - post/flet-03-forms-and-dialogs
+  date: '2026-10-16'
+  description: Choose where UI state lives, compose declarative components and preserve
+    the identity of editable list items.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A normal local variable can reset on a render, while shared mutable
+      state can make independent editors interfere. The reader needs to distinguish
+      component memory, shared view state and accepted application data before building
+      larger screens.
+    content: 'Recap Part 01 briefly and keep the example independently runnable. Use
+      the small reading list to introduce component inputs and callbacks, component-local
+      state, supported observable view models, shared context only where useful, and
+      stable list-item identity. Start with a lost-edit or wrong-row example, identify
+      its state/identity mistake, then correct it. Explain how an editor buffer differs
+      from the accepted in-memory record, and how save/cancel changes each. Keep Flet
+      decorators and hooks on presentation models; pure application/domain data should
+      not become framework-dependent merely because the UI observes it. Introduce
+      lifecycle/effects only enough to explain initialization and cleanup; detailed
+      async work belongs in Part 04. Avoid a catalog of every hook. Reference: [Flet
+      declarative components, observables and hooks](https://flet.dev/docs/cookbook/declarative-vs-imperative/).'
+    evidence: Edit one row, trigger an unrelated render, reorder/remove another row
+      and demonstrate that the edited buffer remains with the correct identity. Show
+      independent component instances retaining independent state, then demonstrate
+      explicit save and cancel. The reader identifies the owner and lifetime of each
+      value and can reproduce the broken ordinary-variable example before fixing it.
+      Record the limitations of any identity behavior not yet checked on the pinned
+      runtime. No database, revision protocol or Watchtower2 architecture is implemented
+      in this article.
+- id: post/flet-03-forms-and-dialogs
+  kind: post
+  title: 'Introduction to Flet 03: Forms and Dialogs'
+  path: content/notebooks/posts/flet-03-forms-and-dialogs.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-02-components-and-state
+  - post/flet-04-async-work-and-services
+  date: '2026-10-16'
+  description: Design declarative forms and dialogs that preserve entered values,
+    make validation clear and handle save, cancel and dismissal deliberately.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A form can look correct while losing entered text after validation,
+      a dialog close or a failed save. Treating dialog visibility, editor buffers
+      and accepted values as explicit states makes those behaviors understandable.
+    content: 'Build a standalone reading-item editor with a text field, checklist
+      and declarative dialog, recapping the state model from Part 02. Explain field
+      values, local validation messages, dirty state, save/cancel, pending submission,
+      dialog visibility and dismissal. Use an injectable in-memory save function to
+      reject a submission and retain its fields; distinguish convenient UI validation
+      from authoritative application validation without designing a database protocol.
+      Cover keyboard activation, labels, focus restoration and close-with-unsaved-edits
+      behavior. Define expected transitions before adding event handlers and keep
+      those handlers small. References: [declarative dialogs](https://flet.dev/docs/cookbook/declarative-dialogs/)
+      and [accessibility](https://flet.dev/docs/cookbook/accessibility/).'
+    evidence: Demonstrate empty/invalid input, edit/cancel, successful save, a rejected
+      save and dismissal with dirty fields. Verify that errors preserve input and
+      that accepted data changes only on success. Record focus/keyboard observations
+      on the chosen runtime; do not equate the presence of a label with demonstrated
+      accessibility. The reader draws the form-state transitions and implements one
+      additional validation rule. Distributed stale-write semantics and the Watchtower2
+      card workflow remain application-course material.
+- id: post/flet-04-async-work-and-services
+  kind: post
+  title: 'Introduction to Flet 04: Async Work and Services'
+  path: content/notebooks/posts/flet-04-async-work-and-services.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-03-forms-and-dialogs
+  - post/flet-05-navigation-and-lists
+  date: '2026-10-16'
+  description: Keep a Flet interface responsive while calling an application service
+    and showing loading, success and failure states.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: A slow callback can freeze interaction, a late result can replace
+      newer data, and a render can accidentally trigger duplicate work. Readers need
+      a small explicit model of asynchronous UI work before connecting real services.
+    content: 'Use a standalone delayed reading-list lookup and fake save service with
+      controlled success/failure. Explain the event loop, supported async callbacks,
+      the difference between awaiting I/O and blocking work, and why async does not
+      automatically make CPU-heavy work nonblocking. Separate declarative rendering
+      from side effects and application calls. Model idle/loading/succeeded/failed
+      states, progress where meaningful, duplicate-submit prevention, stale-result
+      suppression and cleanup after navigating away or disposing a component. Distinguish
+      stopping observation from cancelling a remote operation; state what cancellation
+      the chosen API actually supports. Keep retry policy and durable work outside
+      the component. No real network account, queue, Turso or B2 is required. Reference:
+      [Flet async applications](https://flet.dev/docs/cookbook/async-apps/).'
+    evidence: Interact with the UI while a delayed operation runs, force a service
+      error, issue requests whose results arrive in reverse order and leave the screen
+      before completion. Show the intended final state and the absence of duplicate
+      saves. The reader traces one event through the service boundary and identifies
+      which state is temporary. Record actual runtime behavior and limitations of
+      cancellation. The main course later applies these techniques to Watchtower2
+      revision conflicts, upload operations and durable jobs; this article explains
+      the reusable UI mechanism.
+- id: post/flet-05-navigation-and-lists
+  kind: post
+  title: 'Introduction to Flet 05: Navigation and Lists'
+  path: content/notebooks/posts/flet-05-navigation-and-lists.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-04-async-work-and-services
+  - post/flet-06-files-and-rich-content
+  date: '2026-10-16'
+  description: Build a small list/detail interface with explicit selection, routes,
+    filters, return behavior and keyboard access.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: Navigation and list refreshes can discard editor state, select the
+      wrong item or make the Back action ambiguous. A useful interface needs a stable
+      account of location, selection and temporary state.
+    content: 'Build an independently runnable in-memory reading-list/detail example
+      using the pinned declarative routing API. Define routes, route parameters and
+      not-found handling; distinguish a route, a selected item, a filter and an unsaved
+      editor buffer. Add search/filter and stable item identity, preserve the intended
+      return location and explain refresh/back behavior in the actually exercised
+      browser/desktop modes. Introduce list rendering/scrolling and when a measured
+      long-list problem warrants a different control or paging; avoid unsupported
+      performance claims. Include visible explicit actions, keyboard order and focus
+      behavior. A compact state diagram should explain navigation and dirty-editor
+      handling. References: [Router](https://flet.dev/docs/controls/router/) and [accessibility](https://flet.dev/docs/cookbook/accessibility/).'
+    evidence: Open a supported detail URL, exercise Back/return, filter the list,
+      remove or reorder a nonselected item and attempt navigation with unsaved edits.
+      Show that selection and editor state follow the intended identity and lifetime.
+      Distinguish observed deep-link/refresh behavior from assumptions about all deployment
+      modes. The reader adds an empty/not-found state and explains what state survives
+      navigation. Watchtower2-specific board columns, artifact lookup and course-outline
+      rules belong in the application course.
+- id: post/flet-06-files-and-rich-content
+  kind: post
+  title: 'Introduction to Flet 06: Files and Rich Content'
+  path: content/notebooks/posts/flet-06-files-and-rich-content.ipynb
+  visibility: private
+  lifecycle: planned
+  relations:
+  - post/flet-05-navigation-and-lists
+  date: '2026-10-16'
+  description: Handle file selection, cancellation and progress, and display Markdown,
+    math and images with explicit runtime assumptions.
+  internal_notes: ''
+  internal_todos: []
+  attachments: []
+  tags:
+  - flet
+  - python
+  planned:
+    introduction: Selecting a file does not mean a server owns its bytes, and a browser-selected
+      filename is not a server filesystem path. Rich previews and file gestures also
+      have platform-dependent behavior that a successful desktop demo cannot establish.
+    content: 'Build a small standalone document/reading-item preview using explicit
+      local fixtures and a fake upload receiver. Explain selection identity, filename,
+      available bytes/path, cancellation, limits and upload progress separately. Use
+      the documented browser client-action approach where required by user-gesture
+      restrictions, and record the supported desktop/browser differences instead of
+      relying on a single imperative callback pattern. Demonstrate Markdown, a representative
+      math expression, code and image/error placeholders; describe the actual extension/rendering
+      support of the pinned control. Treat link opening and untrusted content as deliberate
+      application choices. Keep selected files while a dialog changes and clean only
+      app-owned temporary staging. References: [FilePicker](https://flet.dev/docs/services/filepicker/),
+      [PickFiles client action](https://flet.dev/docs/types/pickfiles/) and [Markdown](https://flet.dev/docs/controls/markdown/).'
+    evidence: Exercise selection and cancel, two same-named selections, invalid type/size,
+      rejected/failed fake upload and a missing preview image. Show which metadata
+      and bytes are actually available in each exercised runtime and that selection
+      alone does not establish durable ownership. Render the representative text/math
+      fixture and record supported/unsupported syntax. The reader traces file selection
+      through temporary UI state and an application call. B2 verification, ownership,
+      private downloads, release assets and garbage collection remain Watchtower2
+      backend concerns; this post does not implement them.
+retired_ids:
+- course/ai-assisted/00-overview
+- course/ai-assisted/01-domain-core
+- course/ai-assisted/02-persistence-and-architecture-test
+- course/ai-assisted/03-use-cases
+- course/ai-assisted/04-cli
+- course/ai-assisted/05-export-feature
+- course/ai-assisted/06-drift-audit
+- course/ai-assisted/07-independent-review
+- course/cli-test-course-2026
+- course/cli-test-course-2026/ch0-the-start
+- course/test
+- course/test123
+- htmx-todo
+- portfolio/12
+- portfolio/12321
+- portfolio/cli-test-portfolio-2026
+- portfolio/test
+- portfolio/test-portfolio-3
+- portfolio/test1
+- portfolio/test1123
+- portfolio/yeah1
+- post/cli-test-post-2026
+- post/test-planned-post
+- project/test-portfolio
+- project/test-portfolio-3
+- project/yeah1
+- test-portfolio
+retired_sources:
+- content/notebooks/courses/ai-assisted/00-overview.ipynb
+- content/notebooks/courses/ai-assisted/01-domain-core.ipynb
+- content/notebooks/courses/ai-assisted/02-persistence-and-architecture-test.ipynb
+- content/notebooks/courses/ai-assisted/03-use-cases.ipynb
+- content/notebooks/courses/ai-assisted/04-cli.ipynb
+- content/notebooks/courses/ai-assisted/05-export-feature.ipynb
+- content/notebooks/courses/ai-assisted/06-drift-audit.ipynb
+- content/notebooks/courses/ai-assisted/07-independent-review.ipynb
+- content/notebooks/courses/cli-test-course-2026/ch0-the-start.ipynb
+- content/notebooks/courses/cli-test-course-2026/index.ipynb
+- content/notebooks/courses/test/index.ipynb
+- content/notebooks/courses/test123/index.ipynb
+- content/notebooks/portfolio/12.ipynb
+- content/notebooks/portfolio/12321.ipynb
+- content/notebooks/portfolio/cli-test-portfolio-2026.ipynb
+- content/notebooks/portfolio/test-portfolio-3.ipynb
+- content/notebooks/portfolio/test-portfolio.ipynb
+- content/notebooks/portfolio/test.ipynb
+- content/notebooks/portfolio/test1.ipynb
+- content/notebooks/portfolio/test1123.ipynb
+- content/notebooks/portfolio/yeah1.ipynb
+- content/notebooks/posts/cli-test-post-2026.ipynb
+- content/notebooks/posts/htmx-todo.ipynb
+- content/notebooks/posts/test-planned-post.ipynb

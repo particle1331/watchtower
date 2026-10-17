@@ -1,0 +1,12 @@
+{
+  "starter_seeds": {
+    "post/flet-01": {
+      "introduction": "",
+      "content": "",
+      "evidence": ""
+    }
+  },
+  "preimages": [
+    "backend/data/catalog.yaml"
+  ]
+}

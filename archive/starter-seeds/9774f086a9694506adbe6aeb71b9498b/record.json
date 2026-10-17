@@ -1,0 +1,12 @@
+{
+  "starter_seeds": {
+    "post/flet-01-declarative-ui-and-layout": {
+      "introduction": "A first Flet app can become a collection of control mutations copied from examples without a clear account of how Python, the UI runtime and rendered controls fit together. Establish a usable mental model and reproducible local setup first.",
+      "content": "Audience: Python programmers with no Flet experience. Introduce a standalone six-post Introduction to Flet series; each article explains one reusable topic with a small example that can run without Watchtower, Turso, B2 or paid services. Pin and record the Python/Flet/tooling versions when authoring, and explain local desktop versus Python-served browser execution without implying that deployment modes have identical capabilities. Build a small in-memory reading-list interface using the declarative entry point, controls and nested Row/Column/container layout. Explain properties, callbacks, spacing, scrolling and narrow-window behavior through that example. Show one small control-mutation counterexample to motivate describing UI from state, then leave detailed state ownership to Part 02. Include exact launch/stop instructions and a short runtime diagram. The notebook explains and records the example; starting a GUI must be an explicit action rather than a blocking cell automatically run during site rendering. References: [creating an app](https://flet.dev/docs/getting-started/create-flet-app/), [installation](https://flet.dev/docs/getting-started/installation/) and [declarative model](https://flet.dev/docs/cookbook/declarative-vs-imperative/).",
+      "evidence": "Launch the pinned example in the recorded desktop and browser environments, explain the visible control tree, resize it and identify the callback-to-state-to-render path. Record the actual supported runtimes and any failure rather than claiming all-platform coverage. The reader changes one layout rule and predicts the result. Capture readable screenshots when the article is authored. Keep all state in memory and make no CMS/backend implementation claims. End with a short recap and a reference to Part 02 for state and composition."
+    }
+  },
+  "preimages": [
+    "backend/data/catalog.yaml"
+  ]
+}
