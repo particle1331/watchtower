@@ -1,7 +1,7 @@
 ---
 description: Implements scoped code changes with minimal diffs and verifies the result.
 mode: subagent
-model: opencode-go/claude-haiku-5-5
+model: opencode-go/deepseek-v4.1-flash
 variant: max
 permission:
   task: deny

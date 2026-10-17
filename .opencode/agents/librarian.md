@@ -1,7 +1,7 @@
 ---
 description: Researches external documentation, libraries, APIs, and current implementation patterns.
 mode: subagent
-model: opencode-go/claude-haiku-5-5
+model: opencode-go/deepseek-v4.1-flash
 variant: high
 permission:
   edit: deny
