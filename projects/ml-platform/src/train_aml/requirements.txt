@@ -8,4 +8,4 @@ pandera==0.20.4
 psycopg[binary]==3.2.3
 azure-identity==1.17.1
 # AML sets up torch/mpi for distributed; pin here to match the cluster image.
-torch==2.4.1
+torch==2.13.0
